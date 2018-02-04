@@ -2,7 +2,15 @@
 
 **FLIP Fluids** is a powerful liquid simulation plugin that gives you the ability to create high quality fluid effects all within [Blender](https://www.blender.org/), the free and open source 3D creation suite. Created by Ryan Guy and Dennis Fassbaender.
 
-After three years of development, the **FLIP Fluids** simulator is nearly ready to enter a beta testing phase. Information about how to become a part of the upcoming beta will be announced on February 4th.
+## FLIP Fluids Beta
+
+The core fluid engine, a FLIP-based fluid solver, has been under development for over three years with over a year of development focused on tightly integrating the simulator into Blender as an addon. We are excited to announce that the **FLIP Fluids simulator** is now ready to enter a beta testing phase! **The beta will begin on February 13th**.
+
+<p align="center">
+<a href="https://www.youtube.com/watch?v=5s7L3ruVaXk"><img src="http://rlguy.com/blender_flip_fluids/images/call_for_beta_testers_youtube.png"></a>
+</p>
+
+Find out more about the **FLIP Fluids Beta** and how to request an invite here: [FLIP Fluids Beta Information](../../wiki/FLIP-Fluids-Beta-Information-and-Resources)
 
 ## Features
 
