@@ -7,7 +7,7 @@
 The core fluid engine, a FLIP-based fluid solver, has been under development for over three years with over a year of development focused on tightly integrating the simulator into Blender as an addon. We are excited to announce that the **FLIP Fluids simulator** is now ready to enter a beta testing phase! **The beta will begin on February 13th**.
 
 <p align="center">
-<a href="https://www.youtube.com/watch?v=5s7L3ruVaXk"><img src="http://rlguy.com/blender_flip_fluids/images/call_for_beta_testers_youtube.png"></a>
+<a href="https://www.youtube.com/watch?v=5s7L3ruVaXk"><img src="http://rlguy.com/blender_flip_fluids/images/call_for_beta_testers_youtube.png" width="600px"></a>
 </p>
 
 Find out more about the **FLIP Fluids Beta** and how to request an invite here: [FLIP Fluids Beta Information](../../wiki/FLIP-Fluids-Beta-Information-and-Resources)
