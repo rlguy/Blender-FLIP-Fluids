@@ -72,3 +72,28 @@ The addon interface was designed with a focus on functionality and usability to 
   </tr>
 <tr>
 </table>
+
+## Release Notes
+
+Release notes are only displayed for the most recent version. The complete changelog may be viewed [here](changelog.txt)
+
+#### Version: 0.1.2b
+
+ * Notes:
+    * For more detailed info on the following changes, you may view the corresponding issue in the FLIP Fluids issue tracker: https://github.com/rlguy/Blender-FLIP-Fluids-Beta/issues
+    * To avoid potential errors/problems, please create brand new .blend files when testing this version
+<!-- -->
+* Added:
+    * Added operator to 'FLIP Fluid Display Settings' panel to enable the whitewater simulation feature (issue [#42](https://github.com/rlguy/Blender-FLIP-Fluids-Beta/issues/42))
+    * Added functionality to 'inverse' outflow objects (issue [#80](https://github.com/rlguy/Blender-FLIP-Fluids-Beta/issues/80))
+<!-- -->
+* Changed:
+    * Changed preset info '?' icon to '!' icon (issue [#64](https://github.com/rlguy/Blender-FLIP-Fluids-Beta/issues/64))
+    * Cycles visibility restriction settings are now set on domain, fluid, inflow, and outflow objects so that they are not rendered when rendering in the viewport (issue [#44](https://github.com/rlguy/Blender-FLIP-Fluids-Beta/issues/44))
+    * Fixed bug where cache meshes wouldn't copy domain object transforms properly (issue [#41](https://github.com/rlguy/Blender-FLIP-Fluids-Beta/issues/41))
+    * Particle scale property now has a soft minimum value (issue [#64](https://github.com/rlguy/Blender-FLIP-Fluids-Beta/issues/64))
+    * Fixed Python error message when deleting unheld cache files
+    * Fixed crash that could happen if the GPU Scalar Field option is disabled (issue [#86](https://github.com/rlguy/Blender-FLIP-Fluids-Beta/issues/86))
+    * The simulator will now select the most 'powerful' GPU by default (issue [#6](https://github.com/rlguy/Blender-FLIP-Fluids-Beta/issues/6))
+    * Fixed whitewater issues with AMD GPU hardware (issue [#78](https://github.com/rlguy/Blender-FLIP-Fluids-Beta/issues/78))
+    * Fixed crash that would occur if an obstacle mesh contained loose geometry (issue [#91](https://github.com/rlguy/Blender-FLIP-Fluids-Beta/issues/91))
