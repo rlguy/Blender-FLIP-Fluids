@@ -13,7 +13,7 @@ Notes:
 Added:
     - Added functionality to specify GPU compute device (issue #7)
     - Added feature to offset timeline simulation playback (issue #165)
-    - Added visualization for preview mesh grid to the debug grid view (issue #158)
+    - Added visualization for preview mesh grid to the debug grid view (issue #160)
     - Added functionality to enable/disable smooth meshing around obstacles (issue #158)
     - Added operators to add/remove selected objects as FLIP Fluid objects (issue #204)
     - Added functionality to set amount of influence when adding object velocity
@@ -24,7 +24,7 @@ Added:
       to the 'FLIP Fluid Advanced' panel
     - Added functionality to set region format for CSV file export (issue #225)
     - Added support for deformable meshes when using the 'Add Object Velocity to
-      Inflow' feature (issue #225)
+      Inflow' feature (issue #226)
 
 Changed:
     - Fixed 'Out of memory' error when inflow object is outside of domain (issue #123)
