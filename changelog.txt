@@ -1,6 +1,43 @@
 FLIP Fluids Beta Addon
 
 ********************************************************************************
+Version: 0.1.3b
+
+Notes:
+    - For more detailed info on the following changes, you may view the 
+      corresponding issue in the FLIP Fluids issue tracker:
+        https://github.com/rlguy/Blender-FLIP-Fluids-Beta/issues
+    - To avoid potential errors/problems, please create brand new .blend files
+      when testing this version
+
+Added:
+    - Added functionality to specify GPU compute device (issue #7)
+    - Added feature to offset timeline simulation playback (issue #165)
+    - Added visualization for preview mesh grid to the debug grid view (issue #158)
+    - Added functionality to enable/disable smooth meshing around obstacles (issue #158)
+    - Added operators to add/remove selected objects as FLIP Fluid objects (issue #204)
+    - Added functionality to set amount of influence when adding object velocity
+      to inflow (issue #220)
+    - Added functionality to set number of emissions per substep for inflow
+      objects (issue #224)
+    - Added functionality to enable/disable experimental optimization features
+      to the 'FLIP Fluid Advanced' panel
+    - Added functionality to set region format for CSV file export (issue #225)
+    - Added support for deformable meshes when using the 'Add Object Velocity to
+      Inflow' feature (issue #225)
+
+Changed:
+    - Fixed 'Out of memory' error when inflow object is outside of domain (issue #123)
+    - Reduced crashes while rendering (issue #34)
+    - Fixed error that would occur if frame was computed too quickly (issue #143)
+    - Fixed cache mesh stats early text cutoff (issue #198)
+    - Fluid initial velocity can now be animated (issue #208)
+    - Fixed error that would occur when a temporary directory does not exist (issue #217)
+    - Addon will now delete the cache directory when closing an unsaved scene (issue #215)
+    - Fixed issues related to writing savestate data on network drives (issue #134)
+    - Fixed bug where animated inflow meshes would not interpolate on substeps (issue #224)
+
+********************************************************************************
 Version: 0.1.2b
 
 Notes:
