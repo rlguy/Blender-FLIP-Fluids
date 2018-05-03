@@ -1,4 +1,4 @@
-# Blender FLIP Fluids
+# FLIP Fluids
 
 **FLIP Fluids** is a powerful liquid simulation plugin that gives you the ability to create high quality fluid effects all within [Blender](https://www.blender.org/), the free and open source 3D creation suite. Created by Ryan Guy and Dennis Fassbaender.
 
@@ -6,31 +6,19 @@ The core fluid engine, a modern FLIP-based fluid solver, has been under developm
 
 The **FLIP Fluids** simulator was created to improve on many aspects of Blender's internal Elbeem fluid simulation system such as speed, performance, accuracy, customizability, and user experience. We use a familiar and intuitive simulation workflow, so if you have experience with the internal fluid simulator or other fluid simulation software, you will be able to get yourself up and running with **FLIP Fluids** in no time!
 
-We are excited to announce that the **FLIP Fluids** addon is ready for release and will launch on **May 1st, 2018**. The **FLIP Fluids** addon will be available on the Blender Market for $76 USD.
-
-## FLIP Fluids Beta
-
-The **FLIP Fluids** project is currently in a closed beta testing phase involving over 250 testers which started February 13th and will close on April 28th (2018). You may access beta material here: [FLIP Fluids Beta Information](../../wiki/FLIP-Fluids-Beta-Information-and-Resources). We are no longer accepting beta applications.
-
-<p align="center">
-<a href="https://www.youtube.com/watch?v=5s7L3ruVaXk"><img src="http://rlguy.com/blender_flip_fluids/images/call_for_beta_testers_youtube.png" width="600px"></a>
-</p>
-
-We would like to thank everyone for all of the help and support during the FLIP Fluids Beta and we will be launching the addon with the following discounts:
-
-- 50% off for testers who have submitted an animation for the upcoming demo video
-- 20% off for beta testers
-- 10% off for all beta applicants
-
-You should receive an email with a discount code closer to the release date.
-
 ## Getting the FLIP Fluids Addon
 
-The **FLIP Fluids** addon will be available **May 1st, 2018** on the Blender Market (link to be announced) for $76 USD.  Purchasing a license entitles you to to full FLIP Fluids feature set and content, tool support, and helps ensure the continued development of the addon.
+You may purchase the **FLIP Fluids** addon on the [Blender Market](https://www.blendermarket.com/products/flipfluids). Purchasing a license entitles you to to full FLIP Fluids feature set and content, tool support, and helps ensure the continued development of the addon.
 
 #### Getting Support
 
-You can get support for the **FLIP Fluids** addon by reading the [documentation and wiki](https://github.com/rlguy/Blender-FLIP-Fluids-Beta/wiki) or through the Blender Market messaging system (upon release). Support is granted to all customers whom have purchased a license.
+You can get support for the **FLIP Fluids** addon by reading the [documentation and wiki](https://github.com/rlguy/Blender-FLIP-Fluids-Beta/wiki) or through the Blender Market messaging system. Support is granted to all customers whom have purchased a license.
+
+## FLIP Fluids Beta
+
+A closed beta testing phase involving over 250 testers ran from February 13th to April 28th (2018). The project is no longer in beta. You may access old beta material here: [FLIP Fluids Beta Information](../../wiki/FLIP-Fluids-Beta-Information-and-Resources). Some beta resources may no longer available.
+
+**Why is the repository called Blender-FLIP-Fluids-Beta if it's not in beta?** We will not be changing the repository name so that we don't break links for the many pages that link to us.
 
 ## Key Features
 
@@ -202,7 +190,8 @@ Source code files will state their license at the top of the file. Assets will i
 
 ## Links
 
-- Blender Market Page (link to be announced)
+- [Blender Market Page](https://www.blendermarket.com/products/flipfluids)
 - [Documentation and Wiki](https://github.com/rlguy/Blender-FLIP-Fluids-Beta/wiki)
 - [Bug/Issue Tracker](https://github.com/rlguy/Blender-FLIP-Fluids-Beta/issues)
 - [Facebook Page](https://www.facebook.com/FLIPFluids/)
+- [BlenderPhysics Page](http://blenderphysics.com/#filter=.FLIP-Fluids)
