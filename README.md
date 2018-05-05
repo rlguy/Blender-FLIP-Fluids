@@ -18,8 +18,6 @@ You can get support for the **FLIP Fluids** addon by reading the [documentation 
 
 A closed beta testing phase involving over 250 testers ran from February 13th to April 28th (2018). The project is no longer in beta. You may access old beta material here: [FLIP Fluids Beta Information](../../wiki/FLIP-Fluids-Beta-Information-and-Resources). Some beta resources may no longer available.
 
-**Why is the repository called Blender-FLIP-Fluids-Beta if it's not in beta?** We will not be changing the repository name so that we don't break links for the many pages that link to us.
-
 ## Key Features
 
 <table>
