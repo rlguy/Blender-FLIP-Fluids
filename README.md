@@ -174,7 +174,11 @@ We ran a closed beta testing phase involving over 250 testers to ensure that thi
 - 8 GB RAM minimum, 16 GB or more of RAM memory is highly recommended
 - OpenCL™ capable graphics card
 
-Only the Windows operating system is supported at the moment. Support for OS X and Linux will come at a later date!
+#### Mac OS X and Linux support
+
+At this moment, support for Mac OS X and Linux is **experimental**. This means that the addon has not yet undergone extensive testing on OS X and Linux operating systems.
+
+If you are planning to purchase the addon for use on OS X or Linux we first **highly recommend** trying the [FLIP Fluids Demo](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/FLIP-Fluids-Demo-Addon) to test if the simulator will work on your system.
 
 ## License
 
