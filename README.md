@@ -195,5 +195,5 @@ Source code files will state their license at the top of the file. Assets will i
 - [Blender Market Page](https://www.blendermarket.com/products/flipfluids)
 - [Documentation and Wiki](https://github.com/rlguy/Blender-FLIP-Fluids-Beta/wiki)
 - [Bug/Issue Tracker](https://github.com/rlguy/Blender-FLIP-Fluids-Beta/issues)
-- [Facebook Page](https://www.facebook.com/FLIPFluids/)
 - [BlenderPhysics Page](http://blenderphysics.com/#filter=.FLIP-Fluids)
+- [Facebook Page](https://www.facebook.com/FLIPFluids/) | [Twitter](https://twitter.com/flipfluids)
