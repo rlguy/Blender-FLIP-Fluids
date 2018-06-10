@@ -54,7 +54,7 @@ def render_complete(scene):
     IS_FRAME_REQUIRING_RELOAD = True
 
 
-def scene_update_post(scene):
+def frame_change_post(scene):
     global IS_FRAME_REQUIRING_RELOAD
     if IS_FRAME_REQUIRING_RELOAD:
         IS_FRAME_REQUIRING_RELOAD = False
@@ -257,7 +257,7 @@ def __generate_icosphere():
         p.use_smooth = True
 
     obj = bpy.data.objects.new("Icosphere", mesh)
-    bpy.context.scene.objects.link(obj) 
+    bpy.context.layer_collection.collection.objects.link(obj) 
 
     return obj
 
