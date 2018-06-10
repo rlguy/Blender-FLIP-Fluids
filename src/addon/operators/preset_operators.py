@@ -124,7 +124,7 @@ class FlipFluidPresetCreateNewPackage(bpy.types.Operator):
 
 
     def draw(self, context):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = context.active_object.flip_fluid.domain
         settings = dprops.presets.new_package_settings
 
         column = self.layout.column()
@@ -183,7 +183,7 @@ class FlipFluidPresetDeletePackage(bpy.types.Operator):
 
 
     def draw(self, context):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = context.active_object.flip_fluid.domain
         settings = dprops.presets.delete_package_settings
 
         column = self.layout.column()
@@ -231,7 +231,7 @@ class FlipFluidPresetDeletePackage(bpy.types.Operator):
 
 
     def invoke(self, context, event):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = context.active_object.flip_fluid.domain
         settings = dprops.presets.delete_package_settings
         settings.reset()
         return context.window_manager.invoke_props_dialog(self)
@@ -403,7 +403,7 @@ class FlipFluidPresetCreateNewPreset(bpy.types.Operator):
 
 
     def draw_column(self, context, column_data, column):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = context.active_object.flip_fluid.domain
         settings = dprops.presets.new_preset_settings
         collection = column_data['collection']
 
@@ -511,7 +511,7 @@ class FlipFluidPresetCreateNewPreset(bpy.types.Operator):
 
 
     def draw_custom_properties(self, context, base_column):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = context.active_object.flip_fluid.domain
         settings = dprops.presets.new_preset_settings
 
         base_column.separator()
@@ -587,7 +587,7 @@ class FlipFluidPresetCreateNewPreset(bpy.types.Operator):
     def draw(self, context):
         default_window_height = 28
 
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = context.active_object.flip_fluid.domain
         settings = dprops.presets.new_preset_settings
         package_info = preset_library.package_identifier_to_info(settings.package)
 
@@ -813,7 +813,7 @@ class FlipFluidPresetDeletePreset(bpy.types.Operator):
 
 
     def draw(self, context):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = context.active_object.flip_fluid.domain
         settings = dprops.presets.delete_preset_settings
 
         column = self.layout.column()
@@ -869,7 +869,7 @@ class FlipFluidPresetDeletePreset(bpy.types.Operator):
 
 
     def invoke(self, context, event):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = context.active_object.flip_fluid.domain
         settings = dprops.presets.delete_preset_settings
         settings.reset()
         return context.window_manager.invoke_props_dialog(self)
@@ -946,7 +946,7 @@ class FlipFluidPresetDisplayInfo(bpy.types.Operator):
 
 
     def generation_column_partitions(self, context):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = context.active_object.flip_fluid.domain
         settings = dprops.presets.display_preset_settings
         collection_ids = [settings.current_display_panel]
         chunks = settings.ui_properties.generate_column_partition_chunks(collection_ids)
@@ -954,7 +954,7 @@ class FlipFluidPresetDisplayInfo(bpy.types.Operator):
 
 
     def draw_partition_chunk(self, context, chunk, column):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = context.active_object.flip_fluid.domain
         settings = dprops.presets.display_preset_settings
         dummy_props = settings.get_dummy_domain_properties()
         collection = chunk['collection']
@@ -1010,7 +1010,7 @@ class FlipFluidPresetDisplayInfo(bpy.types.Operator):
 
 
     def draw_preset_properties(self, context, base_column):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = context.active_object.flip_fluid.domain
         settings = dprops.presets.display_preset_settings
 
         base_column.separator()
@@ -1059,7 +1059,7 @@ class FlipFluidPresetDisplayInfo(bpy.types.Operator):
     def draw(self, context):
         default_window_height = 23
 
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = context.active_object.flip_fluid.domain
         settings = dprops.presets.display_preset_settings
 
         base_column = self.layout.column()
@@ -1171,7 +1171,7 @@ class FlipFluidPresetExportPackage(bpy.types.Operator):
 
 
     def draw(self, context):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = context.active_object.flip_fluid.domain
         settings = dprops.presets.export_package_settings
 
         split = self.layout.split(percentage=0.25)
@@ -1373,7 +1373,7 @@ class FlipFluidPresetImportPackage(bpy.types.Operator):
 
 
     def generation_column_partitions(self, context):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = context.active_object.flip_fluid.domain
         settings = dprops.presets.import_package_settings
         collection_ids = [settings.current_display_panel]
         chunks = settings.ui_properties.generate_column_partition_chunks(collection_ids)
@@ -1381,7 +1381,7 @@ class FlipFluidPresetImportPackage(bpy.types.Operator):
 
 
     def draw_partition_chunk(self, context, chunk, column):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = context.active_object.flip_fluid.domain
         settings = dprops.presets.import_package_settings
         dummy_props = settings.get_dummy_domain_properties()
         collection = chunk['collection']
@@ -1437,7 +1437,7 @@ class FlipFluidPresetImportPackage(bpy.types.Operator):
 
 
     def draw_preset_properties(self, context, base_column):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = context.active_object.flip_fluid.domain
         settings = dprops.presets.import_package_settings
 
         base_column.separator()
@@ -1487,7 +1487,7 @@ class FlipFluidPresetImportPackage(bpy.types.Operator):
     def draw(self, context):
         default_window_height = 28
 
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = context.active_object.flip_fluid.domain
         settings = dprops.presets.import_package_settings
 
         base_column = self.layout.column()
@@ -2013,7 +2013,7 @@ class FlipFluidPresetEditPreset(bpy.types.Operator):
 
 
     def draw_custom_properties(self, context, base_column):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = context.active_object.flip_fluid.domain
         settings = dprops.presets.edit_preset_settings
 
         base_column.separator()
@@ -2084,7 +2084,7 @@ class FlipFluidPresetEditPreset(bpy.types.Operator):
     def draw(self, context):
         default_window_height = 30
 
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = context.active_object.flip_fluid.domain
         settings = dprops.presets.edit_preset_settings
         package_info = preset_library.package_identifier_to_info(settings.package)
 

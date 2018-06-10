@@ -27,11 +27,11 @@ class FlipFluidDomainTypeFluidWorldPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        obj_props = context.scene.objects.active.flip_fluid
+        obj_props = context.active_object.flip_fluid
         return obj_props.is_active and obj_props.object_type == "TYPE_DOMAIN"
 
     def get_domain_size(self, context):
-        domain = context.scene.objects.active
+        domain = context.active_object
         minx = miny = minz = float("inf")
         maxx = maxy = maxz = -float("inf")
         for v in domain.data.vertices:
@@ -41,7 +41,7 @@ class FlipFluidDomainTypeFluidWorldPanel(bpy.types.Panel):
         return max(maxx - minx, maxy - miny, maxz - minz)
 
     def draw(self, context):
-        obj = context.scene.objects.active
+        obj = context.active_object
         wprops = obj.flip_fluid.domain.world
 
         box = self.layout.box()

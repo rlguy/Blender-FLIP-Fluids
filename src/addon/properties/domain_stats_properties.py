@@ -251,7 +251,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.is_stats_current = True
 
 
-    def scene_update_post(self, scene):
+    def frame_change_post(self, scene):
         if self.is_stats_current:
             return
         self.refresh_stats()
