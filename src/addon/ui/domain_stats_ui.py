@@ -28,7 +28,7 @@ class FlipFluidDomainTypeStatsPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        obj_props = context.scene.objects.active.flip_fluid
+        obj_props = context.active_object.flip_fluid
         return obj_props.is_active and obj_props.object_type == "TYPE_DOMAIN"
 
 
@@ -64,7 +64,7 @@ class FlipFluidDomainTypeStatsPanel(bpy.types.Panel):
 
 
     def draw_frame_info_simulation_stats(self, context, box):
-        sprops = context.scene.objects.active.flip_fluid.domain.stats
+        sprops = context.active_object.flip_fluid.domain.stats
 
         subbox = box.box()
         row = subbox.row()
@@ -102,7 +102,7 @@ class FlipFluidDomainTypeStatsPanel(bpy.types.Panel):
 
 
     def draw_frame_info_timing_stats(self, context, box):
-        sprops = context.scene.objects.active.flip_fluid.domain.stats
+        sprops = context.active_object.flip_fluid.domain.stats
 
         subbox = box.box()
         row = subbox.row()
@@ -158,7 +158,7 @@ class FlipFluidDomainTypeStatsPanel(bpy.types.Panel):
 
 
     def draw_frame_info_mesh_stats(self, context, box):
-        sprops = context.scene.objects.active.flip_fluid.domain.stats
+        sprops = context.active_object.flip_fluid.domain.stats
 
         subbox = box.box()
         row = subbox.row()
@@ -237,7 +237,7 @@ class FlipFluidDomainTypeStatsPanel(bpy.types.Panel):
 
 
     def draw_frame_info(self, context, box):
-        sprops = context.scene.objects.active.flip_fluid.domain.stats
+        sprops = context.active_object.flip_fluid.domain.stats
 
         column = box.column()
         split = column.split()
@@ -258,7 +258,7 @@ class FlipFluidDomainTypeStatsPanel(bpy.types.Panel):
 
 
     def draw_cache_info_simulation_stats(self, context, box):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = context.active_object.flip_fluid.domain
         sprops = dprops.stats
 
         subbox = box.box()
@@ -301,7 +301,7 @@ class FlipFluidDomainTypeStatsPanel(bpy.types.Panel):
             
 
     def draw_cache_info_timing_stats(self, context, box):
-        sprops = context.scene.objects.active.flip_fluid.domain.stats
+        sprops = context.active_object.flip_fluid.domain.stats
 
         subbox = box.box()
         row = subbox.row()
@@ -357,7 +357,7 @@ class FlipFluidDomainTypeStatsPanel(bpy.types.Panel):
 
 
     def draw_cache_info_mesh_stats(self, context, box):
-        sprops = context.scene.objects.active.flip_fluid.domain.stats
+        sprops = context.active_object.flip_fluid.domain.stats
 
         subbox = box.box()
         row = subbox.row()
@@ -440,7 +440,7 @@ class FlipFluidDomainTypeStatsPanel(bpy.types.Panel):
 
 
     def draw_cache_info(self, context, box):
-        sprops = context.scene.objects.active.flip_fluid.domain.stats
+        sprops = context.active_object.flip_fluid.domain.stats
 
         box.separator()
         if not sprops.is_cache_info_available:
@@ -452,7 +452,7 @@ class FlipFluidDomainTypeStatsPanel(bpy.types.Panel):
         self.draw_cache_info_mesh_stats(context, box)
 
     def draw(self, context):
-        sprops = context.scene.objects.active.flip_fluid.domain.stats
+        sprops = context.active_object.flip_fluid.domain.stats
 
         row = self.layout.row()
         row.prop(sprops, "cache_info_type", expand=True)

@@ -24,7 +24,7 @@ def _select_make_active(context, active_object):
     for obj in context.selected_objects:
         obj.select = False
     active_object.select = True
-    context.scene.objects.active = active_object
+    context.active_object = active_object
 
 
 class FlipFluidHelperSelectDomain(bpy.types.Operator):
@@ -158,14 +158,14 @@ class FlipFluidHelperAddObjects(bpy.types.Operator):
 
 
     def execute(self, context):
-        original_active_object = bpy.context.scene.objects.active
+        original_active_object = bpy.context.active_object
         for obj in context.selected_objects:
             if not obj.type == 'MESH':
                 continue
-            bpy.context.scene.objects.active = obj
+            bpy.context.active_object = obj
             bpy.ops.flip_fluid_operators.flip_fluid_add()
             obj.flip_fluid.object_type = self.object_type
-        bpy.context.scene.objects.active = original_active_object
+        bpy.context.active_object = original_active_object
         return {'FINISHED'}
 
 
@@ -183,13 +183,13 @@ class FlipFluidHelperRemoveObjects(bpy.types.Operator):
 
 
     def execute(self, context):
-        original_active_object = bpy.context.scene.objects.active
+        original_active_object = bpy.context.active_object
         for obj in context.selected_objects:
             if not obj.type == 'MESH':
                 continue
-            bpy.context.scene.objects.active = obj
+            bpy.context.active_object = obj
             bpy.ops.flip_fluid_operators.flip_fluid_remove()
-        bpy.context.scene.objects.active = original_active_object
+        bpy.context.active_object = original_active_object
         return {'FINISHED'}
 
 
