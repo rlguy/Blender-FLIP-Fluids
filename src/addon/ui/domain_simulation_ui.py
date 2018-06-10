@@ -27,12 +27,12 @@ class FlipFluidDomainTypePanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        obj_props = context.active_object.flip_fluid
+        obj_props = context.scene.objects.active.flip_fluid
         return obj_props.is_active and obj_props.object_type == "TYPE_DOMAIN"
 
 
     def draw_bake_operator(self, context, box):
-        dprops = context.active_object.flip_fluid.domain
+        dprops = context.scene.objects.active.flip_fluid.domain
         bakeprops = dprops.bake
         if not bakeprops.is_simulation_running:
             if bakeprops.is_autosave_available:
@@ -97,7 +97,7 @@ class FlipFluidDomainTypePanel(bpy.types.Panel):
 
 
     def draw_export_settings(self, context, box):
-        obj = context.active_object
+        obj = context.scene.objects.active
         sprops = obj.flip_fluid.domain.simulation
 
         column = box.column(align=True)
@@ -107,7 +107,7 @@ class FlipFluidDomainTypePanel(bpy.types.Panel):
 
 
     def draw_resolution_settings(self, context, box):
-        obj = context.active_object
+        obj = context.scene.objects.active
         sprops = obj.flip_fluid.domain.simulation
 
         column = box.column(align=True)
@@ -128,7 +128,7 @@ class FlipFluidDomainTypePanel(bpy.types.Panel):
 
 
     def draw_time_settings(self, context, box):
-        obj = context.active_object
+        obj = context.scene.objects.active
         sprops = obj.flip_fluid.domain.simulation
 
         column = box.column(align=True)
@@ -151,8 +151,8 @@ class FlipFluidDomainTypePanel(bpy.types.Panel):
 
 
     def draw(self, context):
-        obj = context.active_object
-        obj_props = context.active_object.flip_fluid
+        obj = context.scene.objects.active
+        obj_props = context.scene.objects.active.flip_fluid
 
         column = self.layout.column()
         column.prop(obj_props, "object_type")

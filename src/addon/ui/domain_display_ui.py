@@ -28,12 +28,12 @@ class FlipFluidDomainTypeDisplayPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        obj_props = context.active_object.flip_fluid
+        obj_props = context.scene.objects.active.flip_fluid
         return obj_props.is_active and obj_props.object_type == "TYPE_DOMAIN"
 
 
     def draw_surface_display_settings(self, context):
-        domain_object = context.active_object
+        domain_object = context.scene.objects.active
         rprops = domain_object.flip_fluid.domain.render
 
         column = self.layout.column()
@@ -53,7 +53,7 @@ class FlipFluidDomainTypeDisplayPanel(bpy.types.Panel):
 
 
     def draw_whitewater_display_settings(self, context):
-        obj = context.active_object
+        obj = context.scene.objects.active
         dprops = obj.flip_fluid.domain
         rprops = dprops.render
         is_whitewater_enabled = dprops.whitewater.enable_whitewater_simulation
@@ -205,7 +205,7 @@ class FlipFluidDomainTypeDisplayPanel(bpy.types.Panel):
 
 
     def draw(self, context):
-        domain_object = context.active_object
+        domain_object = context.scene.objects.active
         rprops = domain_object.flip_fluid.domain.render
 
         self.draw_surface_display_settings(context)

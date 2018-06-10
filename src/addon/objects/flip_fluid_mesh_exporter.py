@@ -219,7 +219,7 @@ class MeshExporter():
 
     def _get_static_triangle_mesh_data(self, obj):
         if obj.type == 'MESH':
-            depsgraph = bpy.context.depsgraph
+            scene = bpy.context.scene
 
             # Ignore edge split modifiers. The edge split modifier does
             # not alter vertex positions and may generate a non-manifold mesh 
@@ -231,8 +231,9 @@ class MeshExporter():
                     m.show_render = False
 
             triangulation_mod = obj.modifiers.new("flip_triangulate", "TRIANGULATE")
-            mesh = obj.to_mesh(depsgraph = depsgraph,
-                               apply_modifiers = True)
+            mesh = obj.to_mesh(scene = scene, 
+                               apply_modifiers = True, 
+                               settings = 'RENDER')
 
             triangle_mesh = self._mesh_data_to_triangle_mesh(mesh, obj.matrix_world)
 

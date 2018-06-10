@@ -135,7 +135,7 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
         self.end_time = duration
 
 
-    def frame_change_post(self, scene):
+    def scene_update_post(self, scene):
         self._update_locked_cell_size_resolution()
         self._update_start_end_time()
 

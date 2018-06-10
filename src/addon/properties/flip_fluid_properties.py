@@ -42,7 +42,7 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
         del bpy.types.Scene.flip_fluid
 
 
-    def frame_change_post(self, scene):
+    def scene_update_post(self, scene):
         if not self.is_custom_icons_loaded:
             self._initialize_custom_icons()
 
@@ -61,17 +61,13 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
         return n
 
 
-    def get_domain_object(self, update=False):
+    def get_domain_object(self):
         domain = bpy.data.objects.get(self.domain_object_name)
         if not domain or not domain.flip_fluid.is_domain():
             for obj in bpy.data.objects:
                 if obj.flip_fluid.is_domain():
                     domain = obj
-                    # not allowed to write to scene datablock in a function called via property panel draw
-                    # instead this should be done when a panel object is updated
-                    # now called from object_properties.py:106 in cls.object_type's update callback with update=True
-                    if update:
-                        self.domain_object_name = domain.name           
+                    self.domain_object_name = domain.name
                     break
         if domain is not None and domain.flip_fluid.object_type != 'TYPE_DOMAIN':
             return None
@@ -161,8 +157,8 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
         self.is_custom_icons_loaded = True
 
 
-def frame_change_post(scene):
-    scene.flip_fluid.frame_change_post(scene)
+def scene_update_post(scene):
+    scene.flip_fluid.scene_update_post(scene)
 
 
 def register():

@@ -27,11 +27,11 @@ class FlipFluidDomainTypeWhitewaterPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        obj_props = context.active_object.flip_fluid
+        obj_props = context.scene.objects.active.flip_fluid
         return obj_props.is_active and obj_props.object_type == "TYPE_DOMAIN"
 
     def draw(self, context):
-        obj = context.active_object
+        obj = context.scene.objects.active
         dprops = obj.flip_fluid.domain
         wprops = dprops.whitewater
         is_whitewater_enabled = wprops.enable_whitewater_simulation

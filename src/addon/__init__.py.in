@@ -18,7 +18,7 @@ bl_info = {
     "name" : "FLIP Fluids",
     "description": "A FLIP Fluid Simulation Tool for Blender",
     "author" : "Ryan Guy <ryan.l.guy[at]gmail.com>, Dennis Fassbaender <info[at]df-videos.de>",
-    "version" : (1, 0, 2),
+    "version" : (@FLUIDENGINE_VERSION_MAJOR@, @FLUIDENGINE_VERSION_MINOR@, @FLUIDENGINE_VERSION_REVISION@),
     "blender" : (2, 7, 8),
     "location" : "Properties > Physics > FLIP Fluid",
     "warning" : "",
@@ -66,10 +66,12 @@ from . import (
         global_vars
         )
 
+
 @bpy.app.handlers.persistent
-def frame_change_post(scene):
-    properties.frame_change_post(scene)
-    render.frame_change_post(scene)
+def scene_update_post(scene):
+    properties.scene_update_post(scene)
+    render.scene_update_post(scene)
+
 
 @bpy.app.handlers.persistent
 def frame_change_pre(scene):
@@ -135,7 +137,8 @@ def register():
     operators.register()
     ui.register()
     presets.register()
-    bpy.app.handlers.frame_change_post.append(frame_change_post)
+
+    bpy.app.handlers.scene_update_post.append(scene_update_post)
     bpy.app.handlers.frame_change_pre.append(frame_change_pre)
     bpy.app.handlers.render_pre.append(render_pre)
     bpy.app.handlers.render_post.append(render_post)
@@ -155,7 +158,8 @@ def unregister():
     operators.unregister()
     ui.unregister()
     presets.unregister()
-    bpy.app.handlers.frame_change_post.remove(frame_change_post)
+
+    bpy.app.handlers.scene_update_post.remove(scene_update_post)
     bpy.app.handlers.frame_change_pre.remove(frame_change_pre)
     bpy.app.handlers.render_pre.remove(render_pre)
     bpy.app.handlers.render_post.remove(render_post)

@@ -123,6 +123,7 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
     def get_object_type():
         return self.object_type
 
+
     def is_none(self):
         return self.object_type == 'TYPE_NONE'
 
@@ -195,11 +196,11 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
         else:
             newtype = 'TYPE_NONE'
 
-        active_object = bpy.context.active_object
+        active_object = bpy.context.scene.objects.active
         if oldtype == 'TYPE_NONE' and newtype != 'TYPE_NONE':
-            self._save_object_view_settings(bpy.context.active_object)
+            self._save_object_view_settings(bpy.context.scene.objects.active)
         if oldtype != 'TYPE_NONE' and newtype == 'TYPE_NONE':
-            self._reset_object_view_settings(bpy.context.active_object)
+            self._reset_object_view_settings(bpy.context.scene.objects.active)
             self._toggle_cycles_ray_visibility(active_object, True)
 
         if oldtype != 'TYPE_DOMAIN' and newtype == 'TYPE_DOMAIN':
@@ -226,7 +227,7 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
 
 
     def _update_object_type(self, context):
-        obj = context.active_object
+        obj = context.scene.objects.active
         primary_layer = 0
         object_layer = 14
 
@@ -265,10 +266,7 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
             obj.show_name = True
             self._set_object_layer(obj, object_layer)
             context.scene.layers[object_layer] = True
-            
-        # this function also gets called on addon enable, at which point bpy.context is restricted and has no access to scene
-        if bpy.context.scene:
-            bpy.context.scene.flip_fluid.get_domain_object(update = True)
+
 
     def _save_object_view_settings(self, obj):
         if self.is_view_settings_saved:
@@ -277,9 +275,8 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
         self.saved_view_settings.hide_render = obj.hide_render
         self.saved_view_settings.show_name = obj.show_name
         self.saved_view_settings.draw_type = obj.draw_type
-        # TODO: layers no longer exist - rework as collections
-        # for i in range(20):
-        #     self.saved_view_settings.layers[i] = obj.layers[i]
+        for i in range(20):
+            self.saved_view_settings.layers[i] = obj.layers[i]
         self.is_view_settings_saved = True
         
 
@@ -298,23 +295,19 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
 
 
     def _set_object_layer(self, obj, layeridx):
-        # TODO: layers no longer exist - rework as collections
-        return
         obj.layers[layeridx] = True
         for i in range(20):
             obj.layers[i] = (i == layeridx)
 
 
     def _set_object_layers(self, obj, layers):
-        # TODO: layers no longer exist - rework as collections
-        return
         obj.layers[layers[0]] = True
         for i in range(20):
             obj.layers[i] = (i in layers)
 
 
-def frame_change_post(scene):
-    domain_properties.frame_change_post(scene)
+def scene_update_post(scene):
+    domain_properties.scene_update_post(scene)
 
 
 def frame_change_pre(scene):

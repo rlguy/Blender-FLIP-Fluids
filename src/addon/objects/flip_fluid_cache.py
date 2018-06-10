@@ -107,8 +107,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         cache_object.lock_location = (True, True, True)
         cache_object.lock_rotation = (True, True, True)
         cache_object.lock_scale = (True, True, True)
-        # .link method has moved
-        bpy.context.layer_collection.collection.objects.link(cache_object)
+        bpy.context.scene.objects.link(cache_object)
 
         self.cache_object_name = cache_object.name
         self._initialize_cache_object_octane(cache_object)
@@ -254,7 +253,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         duplivert_object.scale[1] *= scale
         duplivert_object.scale[2] *= scale
         self.apply_duplivert_object_material(duplivert_object)
-        bpy.context.layer_collection.collection.objects.link(duplivert_object)
+        bpy.context.scene.objects.link(duplivert_object)
 
         cache_object.dupli_type = 'VERTS'
 

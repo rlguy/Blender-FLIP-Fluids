@@ -27,11 +27,11 @@ class FlipFluidDomainTypeFluidSurfacePanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        obj_props = context.active_object.flip_fluid
+        obj_props = context.scene.objects.active.flip_fluid
         return obj_props.is_active and obj_props.object_type == "TYPE_DOMAIN"
 
     def draw(self, context):
-        obj = context.active_object
+        obj = context.scene.objects.active
         sprops = obj.flip_fluid.domain.surface
 
         column = self.layout.column(align=True)

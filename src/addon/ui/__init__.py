@@ -45,7 +45,7 @@ from . import(
 
 
 def append_to_PHYSICS_PT_add_panel(self, context):
-    obj = context.active_object
+    obj = context.scene.objects.active
     if not obj.type == 'MESH':
         return
 

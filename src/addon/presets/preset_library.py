@@ -248,7 +248,7 @@ def generate_dummy_domain_object():
     mesh_data = bpy.data.meshes.new("temp_domain_mesh")
     mesh_data.from_pydata([], [], [])
     dummy_object = bpy.data.objects.new("temp_domain_object", mesh_data)
-    bpy.context.layer_collection.collection.objects.link(dummy_object)
+    bpy.context.scene.objects.link(dummy_object)
     dummy_object.flip_fluid.domain.dummy_initialize()
     if dobj is not None:
         dummy_object.parent = dobj

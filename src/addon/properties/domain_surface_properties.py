@@ -115,7 +115,7 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
         add(path + ".invert_contact_normals",          "Invert Contact Normals",     group_id=0)
 
 
-    def frame_change_post(self, scene):
+    def scene_update_post(self, scene):
         self._update_auto_compute_chunks()
 
 

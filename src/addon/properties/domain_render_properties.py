@@ -277,8 +277,8 @@ class DomainRenderProperties(bpy.types.PropertyGroup):
         add(path + ".spray_particle_scale",                       "Spray Particle Scale",      group_id=2, key_path=key_path, key_value=value2)
         
 
-    def frame_change_post(self, scene):
-        self._frame_change_post_update_hold_frame_number(scene)
+    def scene_update_post(self, scene):
+        self._scene_update_post_update_hold_frame_number(scene)
 
 
     def reset_bake(self):
@@ -290,7 +290,7 @@ class DomainRenderProperties(bpy.types.PropertyGroup):
             self.is_hold_frame_number_set = True
 
 
-    def _frame_change_post_update_hold_frame_number(self, scene):
+    def _scene_update_post_update_hold_frame_number(self, scene):
         if self.hold_frame or self.is_hold_frame_number_set:
             return
         if self.hold_frame_number != scene.frame_current:

@@ -24,7 +24,7 @@ class FlipFluidAdd(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        obj = context.active_object
+        obj = context.scene.objects.active
         obj.flip_fluid.is_active = True
         return {'FINISHED'}
 
@@ -36,7 +36,7 @@ class FlipFluidRemove(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        obj = context.active_object
+        obj = context.scene.objects.active
         obj.flip_fluid.object_type = 'TYPE_NONE'
         obj.flip_fluid.is_active = False
         return {'FINISHED'}

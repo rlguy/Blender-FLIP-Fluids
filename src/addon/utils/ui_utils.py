@@ -156,7 +156,7 @@ def force_ui_redraw():
     mesh_data = bpy.data.meshes.new("test_mesh_data")
     mesh_data.from_pydata([], [], [])
     obj = bpy.data.objects.new("test_object", mesh_data)
-    bpy.context.layer_collection.collection.objects.link(obj)
+    bpy.context.scene.objects.link(obj)
     bpy.data.objects.remove(obj, True)
     mesh_data.user_clear()
     bpy.data.meshes.remove(mesh_data)
