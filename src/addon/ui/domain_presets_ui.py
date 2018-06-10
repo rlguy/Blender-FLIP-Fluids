@@ -30,12 +30,12 @@ class FlipFluidDomainTypePresetsPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        obj_props = context.scene.objects.active.flip_fluid
+        obj_props = context.active_object.flip_fluid
         return obj_props.is_active and obj_props.object_type == "TYPE_DOMAIN"
 
 
     def draw_preset_selector(self, context):
-        obj = context.scene.objects.active
+        obj = context.active_object
         dprops = obj.flip_fluid.domain
         preprops = dprops.presets
 
@@ -133,7 +133,7 @@ class FlipFluidDomainTypePresetsPanel(bpy.types.Panel):
 
 
     def draw_preset_stack(self, context):
-        obj = context.scene.objects.active
+        obj = context.active_object
         preprops = obj.flip_fluid.domain.presets
 
         column = self.layout.column()
@@ -192,7 +192,7 @@ class FlipFluidDomainTypePresetsPanel(bpy.types.Panel):
 
 
     def draw_preset_manager(self, context):
-        obj = context.scene.objects.active
+        obj = context.active_object
         preprops = obj.flip_fluid.domain.presets
 
         self.layout.separator()

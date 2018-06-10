@@ -84,7 +84,7 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
         self.material_import = 'ALL_MATERIALS'
 
 
-    def scene_update_post(self, scene):
+    def frame_change_post(self, scene):
         self._check_material_properties()
 
 

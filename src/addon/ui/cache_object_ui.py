@@ -29,7 +29,7 @@ class FlipFluidCacheObjectTypePanel(bpy.types.Panel):
         dprops = context.scene.flip_fluid.get_domain_properties()
         if dprops is None:
             return False
-        obj = context.scene.objects.active
+        obj = context.active_object
         return dprops.mesh_cache.is_cache_object(obj)
 
 
@@ -285,7 +285,7 @@ class FlipFluidCacheObjectTypePanel(bpy.types.Panel):
     def draw(self, context):
         dprops = self.get_domain_properties()
 
-        obj = context.scene.objects.active
+        obj = context.active_object
         cache_props = dprops.mesh_cache.get_mesh_cache_from_blender_object(obj)
         if cache_props is None:
             return
