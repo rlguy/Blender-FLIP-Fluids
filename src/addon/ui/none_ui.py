@@ -27,13 +27,13 @@ class FlipFluidNoneTypePanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        obj_props = context.scene.objects.active.flip_fluid
+        obj_props = context.active_object.flip_fluid
         return obj_props.is_active and obj_props.object_type == 'TYPE_NONE'
 
 
     def draw(self, context):
-        obj = context.scene.objects.active
-        obj_props = context.scene.objects.active.flip_fluid
+        obj = context.active_object
+        obj_props = context.active_object.flip_fluid
 
         column = self.layout.column()
         column.prop(obj_props, "object_type")

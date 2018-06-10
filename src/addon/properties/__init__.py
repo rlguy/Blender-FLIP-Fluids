@@ -42,9 +42,9 @@ from . import (
     )
 
 
-def scene_update_post(scene):
-    object_properties.scene_update_post(scene)
-    flip_fluid_properties.scene_update_post(scene)
+def frame_change_post(scene):
+    object_properties.frame_change_post(scene)
+    flip_fluid_properties.frame_change_post(scene)
 
 
 def frame_change_pre(scene):

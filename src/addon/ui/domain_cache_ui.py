@@ -28,7 +28,7 @@ class FlipFluidDomainTypeCachePanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        obj_props = context.scene.objects.active.flip_fluid
+        obj_props = context.active_object.flip_fluid
         return obj_props.is_active and obj_props.object_type == "TYPE_DOMAIN"
 
 
@@ -50,7 +50,7 @@ class FlipFluidDomainTypeCachePanel(bpy.types.Panel):
 
 
     def draw(self, context):
-        domain_object = context.scene.objects.active
+        domain_object = context.active_object
         dprops = domain_object.flip_fluid.domain
         cprops = dprops.cache
 
