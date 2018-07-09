@@ -7,7 +7,7 @@ about: Create a report to help us improve
 <!--
 Have you read the FLIP Fluids Guidelines for Reporting Bugs/Issues document? If your bug report does not adhere to our guidelines, you may be asked to resubmit your bug report: https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Guidelines-for-Reporting-Bugs-and-Issues
 
-Feature requests, scene troubleshooting help, and questions will not be accepted on this issue tracker. See our technical support guidelines document: https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Technical-Support-Guidelines
+Feature requests, scene troubleshooting help, and questions will not be accepted on this issue tracker unless first approved through the Blender Market messaging system. See our technical support guidelines document: https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Technical-Support-Guidelines
 -->
 
 #### System Information
