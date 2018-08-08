@@ -4,14 +4,6 @@ about: Feature requests are on hold and will not be accepted at this time.
 
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+Notice: As of August 7th, 2018 there will be a hold placed on proposing feature requests. This hold will be lifted once we finish working through some of the current popular feature requests. Feature requests at this time will not be accepted. Thank you for your patience.
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
-
-**Describe alternatives you've considered**
-A clear and concise description of any alternative solutions or features you've considered.
-
-**Additional context**
-Add any other context or screenshots about the feature request here.
+This issue tracker is not the correct place to propose feature requests. See [Guidelines for Feature Requests](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Guidelines-for-Feature-Requests) for more information.
