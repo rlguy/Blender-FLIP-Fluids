@@ -1,3 +1,5 @@
+<p align="center"><a href="https://www.blendermarket.com/products/flipfluids"><img src="https://i.imgur.com/SddzqUG.png"></a></p>
+
 # FLIP Fluids
 
 **FLIP Fluids** is a powerful liquid simulation plugin that gives you the ability to create high quality fluid effects all within [Blender](https://www.blender.org/), the free and open source 3D creation suite. Created by Ryan Guy and Dennis Fassbaender.
