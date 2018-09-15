@@ -67,6 +67,7 @@ endif()
 
 # Configure compiler/OS specific flags
 if(MSVC)
+    message(WARNING "WARNING: Compilation using MSVC (Microsoft Visual Studio) is experimental and not officially supported. Building with MSVC may result in errors and performance issues.")
     add_definitions(-DCL_USE_DEPRECATED_OPENCL_1_1_APIS -DNOMINMAX -D_CRT_SECURE_NO_WARNINGS)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /O2 /W4 /EHsc /wd4244")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LARGEADDRESSAWARE")
