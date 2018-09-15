@@ -190,6 +190,10 @@ This program uses multiple licenses. See the files ```LICENSE_GPLv3.md```, ```LI
 
 Source code files will state their license at the top of the file. Assets will include a license file and information in their containing directory.
 
+### Source code availability
+
+The FLIP Fluids addon is developed in our team's own private repository. Due to licensing restrictions, the project source contained in this public repository cannot contain the royalty-free content (See [LICENSE_Standard_Royalty_Free.md](LICENSE_Standard_Royalty_Free.md)) of the Blender Market product and cannot contain features that depend upon the royalty-free content. This public repository will often not be up-to-date with the private development repository. The full source code including all features and royalty-free content is distributed with the Blender Market product.
+
 ## Links
 
 - [Blender Market Page](https://www.blendermarket.com/products/flipfluids)
