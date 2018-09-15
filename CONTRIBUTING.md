@@ -12,4 +12,6 @@ Feature requests, scene troubleshooting help, questions, or comments will not be
 
 ### Pull Requests
 
-Pull requests will not be accepted for this repository. The **FLIP Fluids** addon is developed in our team's own private repository. Due to licensing restrictions, the project source contained in this public repository does not contain the full feature set of the addon and will often not be up-to-date with the private development repository.
+Pull requests will not be accepted for this repository. 
+
+The **FLIP Fluids** addon is developed in our team's own private repository. Due to licensing restrictions, the project source contained in this public repository cannot contain the royalty-free content (See [LICENSE_Standard_Royalty_Free.md](LICENSE_Standard_Royalty_Free.md)) of the Blender Market product and cannot contain features that depend upon the royalty-free content. This public repository will often not be up-to-date with the private development repository. The full source code including all features and royalty-free content is distributed with the Blender Market product.
