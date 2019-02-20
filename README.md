@@ -226,7 +226,7 @@ Once successfully built, the addon and python bindings will be located in the ``
 ## Links
 
 - [Blender Market Page](https://www.blendermarket.com/products/flipfluids)
-- [Documentation and Wiki](https://github.com/rlguy/Blender-FLIP-Fluids-Beta/wiki)
-- [Bug/Issue Tracker](https://github.com/rlguy/Blender-FLIP-Fluids-Beta/issues)
-- [BlenderPhysics Page](http://blenderphysics.com/#filter=.FLIP-Fluids)
-- [Facebook Page](https://www.facebook.com/FLIPFluids/) | [Twitter](https://twitter.com/flipfluids)
+- [Documentation and Wiki](https://github.com/rlguy/Blender-FLIP-Fluids/wiki)
+- [Bug/Issue Tracker](https://github.com/rlguy/Blender-FLIP-Fluids/issues)
+- [BlenderPhysics Page](http://blenderphysics.com/flipfluids/)
+- [Facebook](https://www.facebook.com/FLIPFluids/) | [Twitter](https://twitter.com/flipfluids) | [Instagram](https://www.instagram.com/flip.fluids/)
