@@ -223,6 +223,10 @@ will generate Makefiles for the MinGW compiler which can then be built using the
 
 Once successfully built, the addon and python bindings will be located in the ```build/bl_flip_fluids/``` directory.
 
+## Release Notes
+
+See this documentation page for release notes: [Release Notes](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Release-Notes)
+
 ## Links
 
 - [Blender Market Page](https://www.blendermarket.com/products/flipfluids)
