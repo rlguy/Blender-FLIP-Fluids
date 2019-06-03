@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,216 +25,252 @@ from bpy.props import (
         )
 
 from .. import types
+from ..utils import version_compatibility_utils as vcu
 
 
 class DomainRenderProperties(bpy.types.PropertyGroup):
-    @classmethod
-    def register(cls):
-        cls.render_display = EnumProperty(
-                name="Render Display Mode",
-                description="How to display the surface mesh for rendering",
-                items=types.display_modes,
-                default='DISPLAY_FINAL',
-                )
-        cls.viewport_display = EnumProperty(
-                name="Viewport Display Mode",
-                description="How to display the surface mesh in the viewport",
-                items=types.display_modes,
-                default='DISPLAY_FINAL',
-                )
-        cls.whitewater_render_display = EnumProperty(
-                name="Whitewater Render Display Mode",
-                description="How to display the whitewater particles for rendering",
-                items=types.display_modes,
-                default='DISPLAY_FINAL',
-                )
-        cls.whitewater_viewport_display = EnumProperty(
-                name="Whitewater Viewport Display Mode",
-                description="How to display the whitewater particles in the viewport",
-                items=types.display_modes,
-                default='DISPLAY_FINAL',
-                )
-        cls.render_whitewater_pct = IntProperty(
-                name="Whitewater", 
-                description="Percentage of total whitewater particles to display", 
-                min=0, max=100,
-                default=100,
-                subtype='PERCENTAGE',
-                )
-        cls.render_foam_pct = IntProperty(
-                name="Foam", 
-                description="Percentage of total foam particles to display", 
-                min=0, max=100,
-                default=100,
-                subtype='PERCENTAGE',
-                )
-        cls.render_bubble_pct = IntProperty(
-                name="Bubble", 
-                description="Percentage of total bubble particles to display", 
-                min=0, max=100,
-                default=100,
-                subtype='PERCENTAGE',
-                )
-        cls.render_spray_pct = IntProperty(
-                name="Spray", 
-                description="Percentage of total spray particles to display", 
-                min=0, max=100,
-                default=100,
-                subtype='PERCENTAGE',
-                )
-        cls.viewport_whitewater_pct = IntProperty(
-                name="Whitewater", 
-                description="Percentage of total whitewater particles to display", 
-                min=0, max=100,
-                default=25,
-                subtype='PERCENTAGE',
-                )
-        cls.viewport_foam_pct = IntProperty(
-                name="Foam", 
-                description="Percentage of total foam particles to display", 
-                min=0, max=100,
-                default=25,
-                subtype='PERCENTAGE',
-                )
-        cls.viewport_bubble_pct = IntProperty(
-                name="Bubble", 
-                description="Percentage of total bubble particles to display", 
-                min=0, max=100,
-                default=25,
-                subtype='PERCENTAGE',
-                )
-        cls.viewport_spray_pct = IntProperty(
-                name="Spray", 
-                description="Percentage of total spray particles to display", 
-                min=0, max=100,
-                default=25,
-                subtype='PERCENTAGE',
-                )
-        cls.whitewater_view_settings_mode = EnumProperty(
-                name="View Settings Mode",
-                description="How display settings will be applied to whitewater particles",
-                items=types.whitewater_view_settings_modes,
-                default='VIEW_SETTINGS_WHITEWATER',
-                )
-        cls.whitewater_particle_object = StringProperty(
-                name="Whitewater",
-                description="Show this object in place of whitewater particles",
-                )
-        cls.foam_particle_object = StringProperty(
-                name="Foam",
-                description="Show this object in place of foam particles",
-                )
-        cls.bubble_particle_object = StringProperty(
-                name="Bubble",
-                description="Show this object in place of bubble particles",
-                )
-        cls.spray_particle_object = StringProperty(
-                name="Spray",
-                description="Show this object in place of spray particles",
-                )
-        cls.whitewater_use_icosphere_object = BoolProperty(
-                name="Icosphere",
-                description="Show an icosphere in place of whitewater particles",
-                default=True,
-                )
-        cls.foam_use_icosphere_object = BoolProperty(
-                name="Icosphere",
-                description="Show an icosphere in place of foam particles",
-                default=True,
-                )
-        cls.bubble_use_icosphere_object = BoolProperty(
-                name="Icosphere",
-                description="Show an icosphere in place of bubble particles",
-                default=True,
-                )
-        cls.spray_use_icosphere_object = BoolProperty(
-                name="Icosphere",
-                description="Show an icosphere in place of spray particles",
-                default=True,
-                )
-        cls.only_display_whitewater_in_render = BoolProperty(
-                name="Render Only",
-                description="Only display whitewater particle object during render."
-                    " Exclude in viewport.",
-                default = True,
-                )
-        cls.only_display_foam_in_render = BoolProperty(
-                name="Render Only",
-                description="Only display foam particle object during render."
-                    " Exclude in viewport.",
-                default=True,
-                )
-        cls.only_display_bubble_in_render = BoolProperty(
-                name="Render Only",
-                description="Only display bubble particle object during render."
-                    " Exclude in viewport.",
-                default=True,
-                )
-        cls.only_display_spray_in_render = BoolProperty(
-                name="Render Only",
-                description="Only display spray particle object during render."
-                    " Exclude in viewport.",
-                default=True,
-                )
-        cls.whitewater_particle_scale = FloatProperty(
-                name="Scale",
-                description="Scale of the whitewater particle object",
-                min=0.0,
-                default=0.04,
-                step=0.1,
-                precision=3,
-                )
-        cls.foam_particle_scale = FloatProperty(
-                name="Scale",
-                description="Scale of the foam particle object",
-                min=0.0,
-                default=0.04,
-                step=0.1,
-                precision=3,
-                )
-        cls.bubble_particle_scale = FloatProperty(
-                name="Scale",
-                description="Scale of the bubble particle object",
-                min=0.0,
-                default=0.04,
-                step=0.1,
-                precision=3,
-                )
-        cls.spray_particle_scale = FloatProperty(
-                name="Scale",
-                description="Scale of the spray particle object",
-                min=0.0,
-                default=0.04,
-                step=0.1,
-                precision=3,
-                )
-        cls.whitewater_particle_object_settings_mode = EnumProperty(
-                name="Particle Object Settings Mode",
-                description="How particle object settings will be applied to whitewater particles",
-                items=types.whitewater_object_settings_modes,
-                default='WHITEWATER_OBJECT_SETTINGS_WHITEWATER',
-                )
-        cls.hold_frame = BoolProperty(
-                name="Hold Frame",
-                description="Hold a frame in place, regardless of timeline position",
-                default=False,
-                update=lambda self, context: self._update_hold_frame(context),
-                )
-        cls.hold_frame_number = IntProperty(
-                name="Frame", 
-                description="Frame number to be held",
-                min=0,
-                default=0,
-                ) 
+    conv = vcu.convert_attribute_to_28
+    
+    render_display = EnumProperty(
+            name="Render Display Mode",
+            description="How to display the surface mesh for rendering",
+            items=types.display_modes,
+            default='DISPLAY_FINAL',
+            ); exec(conv("render_display"))
+    viewport_display = EnumProperty(
+            name="Viewport Display Mode",
+            description="How to display the surface mesh in the viewport",
+            items=types.display_modes,
+            default='DISPLAY_FINAL',
+            ); exec(conv("viewport_display"))
+    render_surface_motion_blur = BoolProperty(
+            name="Render Motion Blur",
+            description="Enable surface motion blur rendering. Motion blur"
+                " vectors must be generated to render motion blur. See"
+                " Surface panel to enable motion blur vector generation."
+                " Motion blur must also be enabled in the Cycles render"
+                " properties",
+            default=True,
+            ); exec(conv("render_surface_motion_blur"))
+    surface_motion_blur_scale = FloatProperty(
+            name="Scale",
+            description="Scale of the surface motion blur vectors. Increasing this"
+                " value will increase the amount of motion blur. Negative"
+                " values will reverse the direction of blur",
+            default=1.00,
+            min=-10.0, max=10.0,
+            step=0.1,
+            precision=3,
+            ); exec(conv("surface_motion_blur_scale"))
+    whitewater_render_display = EnumProperty(
+            name="Whitewater Render Display Mode",
+            description="How to display the whitewater particles for rendering",
+            items=types.display_modes,
+            default='DISPLAY_FINAL',
+            ); exec(conv("whitewater_render_display"))
+    whitewater_viewport_display = EnumProperty(
+            name="Whitewater Viewport Display Mode",
+            description="How to display the whitewater particles in the viewport",
+            items=types.display_modes,
+            default='DISPLAY_FINAL',
+            ); exec(conv("whitewater_viewport_display"))
+    render_whitewater_motion_blur = BoolProperty(
+            name="Render Motion Blur",
+            description="Enable whitewater motion blur rendering. Motion blur"
+                " vectors must be generated to render motion blur. See"
+                " Whitewater panel to enable motion blur vector generation."
+                " Motion blur must also be enabled in the Cycles render"
+                " properties",
+            default=True,
+            ); exec(conv("render_whitewater_motion_blur"))
+    whitewater_motion_blur_scale = FloatProperty(
+            name="Scale",
+            description="Scale of the whitewater motion blur vectors. Increasing this"
+                " value will increase the amount of motion blur. Negative"
+                " values will reverse the direction of blur",
+            default=1.00,
+            min=-10.0, max=10.0,
+            step=0.1,
+            precision=3,
+            ); exec(conv("whitewater_motion_blur_scale"))
+    render_whitewater_pct = IntProperty(
+            name="Whitewater", 
+            description="Percentage of total whitewater particles to display", 
+            min=0, max=100,
+            default=100,
+            subtype='PERCENTAGE',
+            ); exec(conv("render_whitewater_pct"))
+    render_foam_pct = IntProperty(
+            name="Foam", 
+            description="Percentage of total foam particles to display", 
+            min=0, max=100,
+            default=100,
+            subtype='PERCENTAGE',
+            ); exec(conv("render_foam_pct"))
+    render_bubble_pct = IntProperty(
+            name="Bubble", 
+            description="Percentage of total bubble particles to display", 
+            min=0, max=100,
+            default=100,
+            subtype='PERCENTAGE',
+            ); exec(conv("render_bubble_pct"))
+    render_spray_pct = IntProperty(
+            name="Spray", 
+            description="Percentage of total spray particles to display", 
+            min=0, max=100,
+            default=100,
+            subtype='PERCENTAGE',
+            ); exec(conv("render_spray_pct"))
+    viewport_whitewater_pct = IntProperty(
+            name="Whitewater", 
+            description="Percentage of total whitewater particles to display", 
+            min=0, max=100,
+            default=25,
+            subtype='PERCENTAGE',
+            ); exec(conv("viewport_whitewater_pct"))
+    viewport_foam_pct = IntProperty(
+            name="Foam", 
+            description="Percentage of total foam particles to display", 
+            min=0, max=100,
+            default=25,
+            subtype='PERCENTAGE',
+            ); exec(conv("viewport_foam_pct"))
+    viewport_bubble_pct = IntProperty(
+            name="Bubble", 
+            description="Percentage of total bubble particles to display", 
+            min=0, max=100,
+            default=25,
+            subtype='PERCENTAGE',
+            ); exec(conv("viewport_bubble_pct"))
+    viewport_spray_pct = IntProperty(
+            name="Spray", 
+            description="Percentage of total spray particles to display", 
+            min=0, max=100,
+            default=25,
+            subtype='PERCENTAGE',
+            ); exec(conv("viewport_spray_pct"))
+    whitewater_view_settings_mode = EnumProperty(
+            name="View Settings Mode",
+            description="How display settings will be applied to whitewater particles",
+            items=types.whitewater_view_settings_modes,
+            default='VIEW_SETTINGS_WHITEWATER',
+            ); exec(conv("whitewater_view_settings_mode"))
+    whitewater_particle_object = StringProperty(
+            name="Whitewater",
+            description="Show this object in place of whitewater particles",
+            ); exec(conv("whitewater_particle_object"))
+    foam_particle_object = StringProperty(
+            name="Foam",
+            description="Show this object in place of foam particles",
+            ); exec(conv("foam_particle_object"))
+    bubble_particle_object = StringProperty(
+            name="Bubble",
+            description="Show this object in place of bubble particles",
+            ); exec(conv("bubble_particle_object"))
+    spray_particle_object = StringProperty(
+            name="Spray",
+            description="Show this object in place of spray particles",
+            ); exec(conv("spray_particle_object"))
+    whitewater_use_icosphere_object = BoolProperty(
+            name="Icosphere",
+            description="Show an icosphere in place of whitewater particles",
+            default=True,
+            ); exec(conv("whitewater_use_icosphere_object"))
+    foam_use_icosphere_object = BoolProperty(
+            name="Icosphere",
+            description="Show an icosphere in place of foam particles",
+            default=True,
+            ); exec(conv("foam_use_icosphere_object"))
+    bubble_use_icosphere_object = BoolProperty(
+            name="Icosphere",
+            description="Show an icosphere in place of bubble particles",
+            default=True,
+            ); exec(conv("bubble_use_icosphere_object"))
+    spray_use_icosphere_object = BoolProperty(
+            name="Icosphere",
+            description="Show an icosphere in place of spray particles",
+            default=True,
+            ); exec(conv("spray_use_icosphere_object"))
+    only_display_whitewater_in_render = BoolProperty(
+            name="Render Only",
+            description="Only display whitewater particle object during render."
+                " Exclude in viewport",
+            default = True,
+            ); exec(conv("only_display_whitewater_in_render"))
+    only_display_foam_in_render = BoolProperty(
+            name="Render Only",
+            description="Only display foam particle object during render."
+                " Exclude in viewport",
+            default=True,
+            ); exec(conv("only_display_foam_in_render"))
+    only_display_bubble_in_render = BoolProperty(
+            name="Render Only",
+            description="Only display bubble particle object during render."
+                " Exclude in viewport",
+            default=True,
+            ); exec(conv("only_display_bubble_in_render"))
+    only_display_spray_in_render = BoolProperty(
+            name="Render Only",
+            description="Only display spray particle object during render."
+                " Exclude in viewport",
+            default=True,
+            ); exec(conv("only_display_spray_in_render"))
+    whitewater_particle_scale = FloatProperty(
+            name="Scale",
+            description="Scale of the whitewater particle object",
+            min=0.0,
+            default=0.04,
+            step=0.1,
+            precision=3,
+            ); exec(conv("whitewater_particle_scale"))
+    foam_particle_scale = FloatProperty(
+            name="Scale",
+            description="Scale of the foam particle object",
+            min=0.0,
+            default=0.04,
+            step=0.1,
+            precision=3,
+            ); exec(conv("foam_particle_scale"))
+    bubble_particle_scale = FloatProperty(
+            name="Scale",
+            description="Scale of the bubble particle object",
+            min=0.0,
+            default=0.04,
+            step=0.1,
+            precision=3,
+            ); exec(conv("bubble_particle_scale"))
+    spray_particle_scale = FloatProperty(
+            name="Scale",
+            description="Scale of the spray particle object",
+            min=0.0,
+            default=0.04,
+            step=0.1,
+            precision=3,
+            ); exec(conv("spray_particle_scale"))
+    whitewater_particle_object_settings_mode = EnumProperty(
+            name="Particle Object Settings Mode",
+            description="How particle object settings will be applied to whitewater particles",
+            items=types.whitewater_object_settings_modes,
+            default='WHITEWATER_OBJECT_SETTINGS_WHITEWATER',
+            ); exec(conv("whitewater_particle_object_settings_mode"))
+    hold_frame = BoolProperty(
+            name="Hold Frame",
+            description="Hold a frame in place, regardless of timeline position",
+            default=False,
+            update=lambda self, context: self._update_hold_frame(context),
+            options = {'HIDDEN'},
+            ); exec(conv("hold_frame"))
+    hold_frame_number = IntProperty(
+            name="Frame", 
+            description="Frame number to be held",
+            min=0,
+            default=0,
+            options = {'HIDDEN'},
+            ) ; exec(conv("hold_frame_number"))
 
 
-        cls.current_frame = IntProperty(default=-1)
-        cls.is_hold_frame_number_set = BoolProperty(default=False)
-
-
-    @classmethod
-    def unregister(cls):
-        pass
+    current_frame = IntProperty(default=-1); exec(conv("current_frame"))
+    is_hold_frame_number_set = BoolProperty(default=False); exec(conv("is_hold_frame_number_set"))
 
 
     def register_preset_properties(self, registry, path):
@@ -243,6 +279,7 @@ class DomainRenderProperties(bpy.types.PropertyGroup):
         add(path + ".viewport_display",                           "Surface Viewport",          group_id=0)
         add(path + ".whitewater_render_display",                  "Whitewater Render",         group_id=0)
         add(path + ".whitewater_viewport_display",                "Whitewater Viewport",       group_id=0)
+        add(path + ".render_surface_motion_blur",                 "Render Motion Blur",        group_id=0)
 
         add(path + ".whitewater_view_settings_mode",              "Whitewater View Mode",      group_id=1, is_key=True)
         key_path = path + ".whitewater_view_settings_mode"

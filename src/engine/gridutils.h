@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +29,18 @@ SOFTWARE.
 
 namespace GridUtils {
     void extrapolateGrid(Array3d<float> *grid, Array3d<bool> *valid, int numLayers);
+    void _initializeStatusGridThread(int startidx, int endidx, Array3d<bool> *valid, Array3d<char> *status);
+    void _findExtrapolationCells(int startidx, int endidx, Array3d<char> *status, std::vector<GridIndex> *cells);
+    void _extrapolateCellsThread(int startidx, int endidx, 
+                                 std::vector<GridIndex> *cells, 
+                                 Array3d<char> *status, 
+                                 Array3d<float> *grid);
+
+    void featherGrid6(Array3d<bool> *grid, int numthreads);
+    void _featherGrid6Thread(Array3d<bool> *grid, Array3d<bool> *valid, int startidx, int endidx);
+
+    void featherGrid26(Array3d<bool> *grid, int numthreads);
+    void _featherGrid26Thread(Array3d<bool> *grid, Array3d<bool> *valid, int startidx, int endidx);
 }
 
 #endif

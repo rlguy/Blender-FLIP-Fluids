@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -86,7 +86,8 @@ int main() {
     vmath::vec3 boxPosition(0.5 * (x - boxWidth), 0.5 * (y - boxHeight), 0.5 * (z - boxDepth));
     AABB box(boxPosition, boxWidth, boxHeight, boxDepth);
     TriangleMesh boxMesh = getTriangleMeshFromAABB(box);
-    MeshObject boxFluidObject(isize, jsize, ksize, dx, boxMesh);
+    MeshObject boxFluidObject(isize, jsize, ksize, dx);
+    boxFluidObject.updateMeshStatic(boxMesh);
     fluidsim.addMeshFluid(boxFluidObject);
     
     fluidsim.addBodyForce(0.0, -25.0, 0.0);

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -55,6 +55,7 @@ USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "fragmentedvector.h"
 #include "markerparticle.h"
 #include "array3d.h"
+#include "blockarray3d.h"
 #include "boundedbuffer.h"
 #include "macvelocityfield.h"
 
@@ -62,6 +63,7 @@ struct VelocityAdvectorParameters {
     FragmentedVector<MarkerParticle> *particles;
     MACVelocityField *vfield;
     ValidVelocityComponentGrid *validVelocities;
+    double particleRadius = 1.0;
 };
 
 class VelocityAdvector {
@@ -75,16 +77,25 @@ public:
 private:
     enum class Direction { U, V, W };
 
-    struct CountGridData {
-        Array3d<int> countGrid;
+    struct GridCountData {
+        std::vector<int> gridCount;
         std::vector<int> simpleGridIndices;
         std::vector<int> overlappingGridIndices;
+        std::vector<bool> invalidPoints;
         int startidx = 0;
         int endidx = 0;
+    };
 
-        CountGridData() {}
-        CountGridData(int isize, int jsize, int ksize) : 
-                        countGrid(isize, jsize, ksize, 0) {}
+    struct ParticleGridCountData {
+        int numthreads = 1;
+        int gridsize = 1;
+        std::vector<int> totalGridCount;
+        std::vector<GridCountData> threadGridCountData;
+    };
+
+    struct ScalarData {
+        float scalar = 0.0f;
+        float weight = 0.0f;
     };
 
     struct PointData {
@@ -98,22 +109,36 @@ private:
                     : x(px), y(py), z(pz), v(vel) {}
     };
 
-    struct BlockData {
-        int blockID;
-        GridIndex blockIndex;
-        PointData *pointData;
-        int numPoints;
-        float *velocityData;
-        float *weightData;
+    struct ComputeBlock {
+        GridBlock<ScalarData> gridBlock;
+        PointData *particleData;
+        int numParticles = 0;
+        float radius = 0.0f;
     };
 
     void _initializeParameters(VelocityAdvectorParameters params);
     void _advectGrid(Direction dir);
-    void _computeCountGridDataThread(int startidx, int endidx, Direction dir, 
-                                     CountGridData *data);
-    void _advectionProducerThread(BoundedBuffer<BlockData> *blockQueue, 
-                                  BoundedBuffer<BlockData> *finishedBlockQueue, 
+    vmath::vec3 _getDirectionOffset(Direction dir);
+    void _initializeBlockGrid(BlockArray3d<ScalarData> &blockphi, Direction dir);
+    void _initializeActiveBlocksThread(int startidx, int endidx,
+                                       Array3d<bool> *activeBlocks,
+                                       Direction dir);
+    void _computeGridCountData(BlockArray3d<ScalarData> &blockphi, 
+                               ParticleGridCountData &countdata,
+                               Direction dir);
+    void _initializeGridCountData(BlockArray3d<ScalarData> &blockphi, 
+                                  ParticleGridCountData &countdata);
+    void _computeGridCountDataThread(int startidx, int endidx, 
+                                     BlockArray3d<ScalarData> *blockphi, 
+                                     GridCountData *countdata,
+                                     Direction dir);
+    void _sortParticlesIntoBlocks(ParticleGridCountData &countdata, 
+                                  std::vector<PointData> &sortedParticleData, 
+                                  std::vector<int> &blockToParticleIndex,
                                   Direction dir);
+
+    void _advectionProducerThread(BoundedBuffer<ComputeBlock> *blockQueue, 
+                                  BoundedBuffer<ComputeBlock> *finishedBlockQueue);
 
     // Parameters
     FragmentedVector<MarkerParticle> *_particles;

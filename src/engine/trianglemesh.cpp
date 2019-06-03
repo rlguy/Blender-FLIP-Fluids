@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -570,6 +570,10 @@ void TriangleMesh::_smoothTriangleMesh(double value) {
 }
 
 void TriangleMesh::smooth(double value, int iterations) {
+    if (iterations == 0) {
+        return;
+    }
+
     _vertexTriangles.clear();
     _updateVertexTriangles();
     for (int i = 0; i < iterations; i++) {

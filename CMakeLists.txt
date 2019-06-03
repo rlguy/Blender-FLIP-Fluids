@@ -1,5 +1,5 @@
 #[[
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -32,14 +32,15 @@ function(set_output_directories DIR)
 endfunction(set_output_directories)
 
 option(DISTRIBUTE_SOURCE "Include source code in addon" ON)
-option(WITH_OPENCL "Compile project with OpenCL features" ON)
+option(WITH_OPENCL "Compile project with OpenCL features" OFF)
 
 project(bl_flip_fluids)
 set(CMAKE_BUILD_TYPE Release)
 
 set(FLUIDENGINE_VERSION_MAJOR 1)
 set(FLUIDENGINE_VERSION_MINOR 0)
-set(FLUIDENGINE_VERSION_REVISION 2)
+set(FLUIDENGINE_VERSION_REVISION 5)
+set(FLUIDENGINE_VERSION_LABEL "1.0.5 GitHub Release 04-JUN-2019")
 
 # Configure OpenCL
 if(WITH_OPENCL)
@@ -81,6 +82,7 @@ elseif(APPLE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++11 -Wall -Wno-return-type-c-linkage")
 else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++11 -Wall -fPIC -pthread")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -include ${PROJECT_SOURCE_DIR}/src/engine/glibc_version_header/force_link_glibc_2.5.h")
 endif()
 
 # Configure Version

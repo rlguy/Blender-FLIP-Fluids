@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -51,16 +51,25 @@ namespace MeshUtils {
     double _randomDouble(double min, double max);
 
     void _getCollisionGridZ(
-        TriangleMesh &m, double dx, Array3d<std::vector<double> > &zcollisions);
+        TriangleMesh &m, double dx, Array3d<std::vector<float> > &zcollisions);
+
+    void _getCollisionGridZThread(
+        int startidx, int endidx, 
+        double dx, 
+        vmath::vec3 jitter,
+        TriangleMesh *m, 
+        Array3d<std::vector<int> > *ztrigrid,
+        Array3d<std::vector<float> > *zcollisions);
 
     void getCellsInsideTriangleMesh(
         TriangleMesh &m, int isize, int jsize, int ksize, double dx,
         std::vector<GridIndex> &cells);
 
-    void _getCollisionGridZSubd2(
-        TriangleMesh &m, double dx, 
-        Array3d<std::vector<double> > &zcollisions,
-        Array3d<std::vector<double> > &zsubcollisions);
+    void _getCellsInsideTriangleMeshThread(
+        int startidx, int endidx, 
+        int isize, int jsize, int ksize, double dx,
+        Array3d<std::vector<float> > *zcollisions,
+        std::vector<GridIndex> *cells);
 
     bool isCellInside(double z, std::vector<double> *zvals);
 
@@ -74,14 +83,6 @@ namespace MeshUtils {
     unsigned char getCellFillMask(
         GridIndex g, double dx, Array3d<std::vector<double> > &zsubcollisions);
 
-
-    void getCellsInsideTriangleMeshSubd2(
-        TriangleMesh &m, int isize, int jsize, int ksize, double dx,
-        std::vector<GridIndex> &cells, std::vector<unsigned char> &cell_masks);
-
-    void getCellsInsideTriangleMeshSubd2(
-        TriangleMesh mesh, double dx,
-        std::vector<GridIndex> &cells, std::vector<unsigned char> &cell_masks);
 
     void getGridNodesInsideTriangleMesh(TriangleMesh mesh, double dx, 
                                         Array3d<bool> &nodes);

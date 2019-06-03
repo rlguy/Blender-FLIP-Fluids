@@ -2,21 +2,17 @@
 
 **FLIP Fluids** is a powerful liquid simulation plugin that gives you the ability to create high quality fluid effects all within [Blender](https://www.blender.org/), the free and open source 3D creation suite. Created by Ryan Guy and Dennis Fassbaender.
 
-The core fluid engine, a modern FLIP-based fluid solver, has been under development for over three years with over a year of development focused on tightly integrating the simulator into Blender as an addon.
+The core fluid engine, a modern FLIP-based fluid solver, has been under development for over four years with over two years of development focused on tightly integrating the simulator into Blender as an addon.
 
 The **FLIP Fluids** simulator was created to improve on many aspects of Blender's internal Elbeem fluid simulation system such as speed, performance, accuracy, customizability, and user experience. We use a familiar and intuitive simulation workflow, so if you have experience with the internal fluid simulator or other fluid simulation software, you will be able to get yourself up and running with **FLIP Fluids** in no time!
 
 ## Getting the FLIP Fluids Addon
 
-You may purchase the **FLIP Fluids** addon on the [Blender Market](https://www.blendermarket.com/products/flipfluids). Purchasing a license entitles you to to full FLIP Fluids feature set and content, tool support, and helps ensure the continued development of the addon.
+You may purchase the **FLIP Fluids** addon on the [Blender Market](https://www.blendermarket.com/products/flipfluids). Purchasing a license entitles you to to full FLIP Fluids feature set and content, tool support, and helps ensure the continued development of the addon. Thanks to the amazing support of the Blender community, we have been able to further develop the addon on a full-time basis for over a year!
 
 #### Getting Support
 
 You can get support for the **FLIP Fluids** addon by reading the [documentation and wiki](https://github.com/rlguy/Blender-FLIP-Fluids-Beta/wiki) or through the Blender Market messaging system. Support is granted to all customers whom have purchased a license.
-
-## FLIP Fluids Beta
-
-A closed beta testing phase involving over 250 testers ran from February 13th to April 28th (2018). The project is no longer in beta. You may access old beta material here: [FLIP Fluids Beta Information](../../wiki/FLIP-Fluids-Beta-Information-and-Resources). Some beta resources may no longer available.
 
 ## Key Features
 
@@ -86,7 +82,7 @@ We ran a closed beta testing phase involving over 250 testers to ensure that thi
     </td>
   </tr>
 </table>
-	
+    
 ### More Features
 
 <ul>
@@ -168,17 +164,14 @@ We ran a closed beta testing phase involving over 250 testers to ensure that thi
 
 ## System Requirements
 
-- Windows 7, Windows 8, Windows 8.1, or Windows 10
-- Blender 2.79 (64-bit)
+- Windows, MacOS, or Linux operating system
+- Blender 2.79 (64-bit) or *Blender 2.80 (64-bit)
 - CPU 64-bit Intel® or AMD® multi-core processor
 - 8 GB RAM minimum, 16 GB or more of RAM memory is highly recommended
-- OpenCL™ capable graphics card
 
-#### Mac OS X and Linux support
+#### *Blender 2.80 support
 
-At this moment, support for Mac OS X and Linux is **experimental**. This means that the addon has not yet undergone extensive testing on OS X and Linux operating systems.
-
-If you are planning to purchase the addon for use on OS X or Linux we first **highly recommend** trying the [FLIP Fluids Demo](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/FLIP-Fluids-Demo-Addon) to test if the simulator will work on your system.
+At this moment, Blender 2.80 is is beta and our support for Blender 2.80 is experimental. Blender 2.80 is constantly changing and it is possible that a change in Blender 2.80 could break the addon in a daily build and we cannot guarantee that the addon will work in every daily build. A stable release of Blender 2.80 is planned for July 2019. [See this document for known issues](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Frequently-Asked-Questions#known-issues).
 
 ## License
 
@@ -196,11 +189,13 @@ The FLIP Fluids addon is developed in our team's own private repository. Due to 
 
 ### Source Code Dependencies
 
-There are three dependencies that are required to build this program:
+There are three dependencies to build this program:
 
-1. OpenCL headers (can be found at [khronos.org](https://www.khronos.org/registry/cl/))
-2. An OpenCL SDK specific to your GPU vender (AMD, NVIDIA, Intel, etc.)
-3. A compiler that supports C++11
+1. A compiler that supports C++11
+2. (optional) OpenCL headers (can be found at khronos.org)
+3. (optional) An OpenCL SDK specific to your GPU vender (AMD, NVIDIA, Intel, etc.)
+
+_WARNING: Compilation using MSVC (Microsoft Visual Studio Compiler) is experimental and not officially supported. Building with MSVC may result in errors and performance issues._
 
 ### Building
 

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -62,14 +62,14 @@ class MeshObject
 {
 public:
     MeshObject();
-    MeshObject(int i, int j, int k, double dx, TriangleMesh mesh);
-    MeshObject(int i, int j, int k, double dx, std::vector<TriangleMesh> meshes);
-    MeshObject(int i, int j, int k, double dx, std::vector<TriangleMesh> meshes,
-                                               std::vector<TriangleMesh> translations);
+    MeshObject(int i, int j, int k, double dx);
     ~MeshObject();
     
     void getGridDimensions(int *i, int *j, int *k);
-    void setFrame(int f);
+    void updateMeshStatic(TriangleMesh meshCurrent);
+    void updateMeshAnimated(TriangleMesh meshPrevious, 
+                            TriangleMesh meshCurrent, 
+                            TriangleMesh meshNext);
     void getCells(std::vector<GridIndex> &cells);
     void getCells(float frameInterpolation, 
                   std::vector<GridIndex> &cells);
@@ -77,7 +77,6 @@ public:
     void clearObjectStatus();
     TriangleMesh getMesh();
     TriangleMesh getMesh(float frameInterpolation);
-    TriangleMesh getFrameMesh(int frameno);
     std::vector<vmath::vec3> getVertexTranslations();
     std::vector<vmath::vec3> getVertexTranslations(float frameInterpolation);
     std::vector<vmath::vec3> getVertexVelocities(double dt);
@@ -92,16 +91,19 @@ public:
 
     void inverse();
     bool isInversed();
-    void setMeshExpansion(float exp);
-    float getMeshExpansion();
     void setFriction(float f);
     float getFriction();
+    void setWhitewaterInfluence(float value);
+    float getWhitewaterInfluence();
+    void setSheetingStrength(float value);
+    float getSheetingStrength();
+    void setMeshExpansion(float exp);
+    float getMeshExpansion();
 
     void enableAppendObjectVelocity();
     void disableAppendObjectVelocity();
     bool isAppendObjectVelocityEnabled();
     RigidBodyVelocity getRigidBodyVelocity(double framedt);
-    RigidBodyVelocity getRigidBodyVelocity(double framedt, int frameno);
     void setObjectVelocityInfluence(float value);
     float getObjectVelocityInfluence();
 
@@ -140,18 +142,31 @@ private:
     int _jsize = 0;
     int _ksize = 0;
     double _dx = 0.0;
-    std::vector<TriangleMesh> _meshes;
 
+    TriangleMesh _meshPrevious;
+    TriangleMesh _meshCurrent;
+    TriangleMesh _meshNext;
+    std::vector<vmath::vec3> _vertexTranslationsCurrent;
+    std::vector<vmath::vec3> _vertexTranslationsNext;
+
+    /*
+    std::vector<TriangleMesh> _meshes;
+    std::vector<std::vector<vmath::vec3> > _vertexTranslations;
     int _currentFrame = 0;
+    */
+
     bool _isEnabled = true;
     bool _isInversed = false;
-    float _meshExpansion = 0.0f;
+    bool _isAnimated = false;
+    bool _isChangingTopology = false;
     float _friction = 0.0f;
+    float _whitewaterInfluence = 1.0f;
+    float _sheetingStrength = 1.0f;
+    float _meshExpansion = 0.0f;
     bool _isAppendObjectVelocityEnabled = false;
     float _objectVelocityInfluence = 1.0f;
     bool _isObjectStateChanged = false;
 
-    std::vector<std::vector<vmath::vec3> > _vertexTranslations;
 
     int _numIslandsForFractureOptimizationTrigger = 25;
     int _finishedWorkQueueSize = 10;

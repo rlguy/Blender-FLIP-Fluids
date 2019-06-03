@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -42,36 +42,9 @@ namespace clcpp {
 #if WITH_OPENCL
 
 /********************************************************************************
-    PLATFORM
+    DEVICE INFO
 ********************************************************************************/
-class Device;
-struct ContextProperties;
 
-class Platform
-{
-public:
-    Platform();
-    Platform(cl_platform_id pid);
-
-    cl_platform_id operator()();
-    bool isDeviceTypeEnabled(cl_device_type dtype);
-    void getDevices(cl_device_type dtype, std::vector<Device> &devices);
-    void getDevices(cl_device_type dtype, std::string deviceName, std::vector<Device> &devices);
-    ContextProperties getContextProperties();
-    float getComputeScore(cl_device_type dtype);
-    static void get(std::vector<Platform> &platforms);
-    static void get(cl_device_type dtype, std::vector<Platform> &platforms);
-    static void get(cl_device_type dtype, std::string deviceName, std::vector<Platform> &platforms);
-
-private:
-    cl_platform_id _id;
-    bool _isInitialized = false;
-};
-
-/********************************************************************************
-    DEVICE
-********************************************************************************/
-    
 struct DeviceInfo {
     std::string toString() {
         std::ostringstream ss;
@@ -127,6 +100,47 @@ struct DeviceInfo {
     size_t cl_device_max_work_group_size;
     GridIndex cl_device_max_work_item_sizes;
 };
+
+#else
+
+struct DeviceInfo {
+};
+
+#endif
+// ENDIF WITH_OPENCL
+
+#if WITH_OPENCL
+
+/********************************************************************************
+    PLATFORM
+********************************************************************************/
+class Device;
+struct ContextProperties;
+
+class Platform
+{
+public:
+    Platform();
+    Platform(cl_platform_id pid);
+
+    cl_platform_id operator()();
+    bool isDeviceTypeEnabled(cl_device_type dtype);
+    void getDevices(cl_device_type dtype, std::vector<Device> &devices);
+    void getDevices(cl_device_type dtype, std::string deviceName, std::vector<Device> &devices);
+    ContextProperties getContextProperties();
+    float getComputeScore(cl_device_type dtype);
+    static void get(std::vector<Platform> &platforms);
+    static void get(cl_device_type dtype, std::vector<Platform> &platforms);
+    static void get(cl_device_type dtype, std::string deviceName, std::vector<Platform> &platforms);
+
+private:
+    cl_platform_id _id;
+    bool _isInitialized = false;
+};
+
+/********************************************************************************
+    DEVICE
+********************************************************************************/
 
 class Device
 {

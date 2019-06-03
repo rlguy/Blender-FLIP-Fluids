@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -640,37 +640,7 @@ vmath::vec3 MACVelocityField::evaluateVelocityAtPositionLinear(double x, double 
 void MACVelocityField::extrapolateVelocityField(ValidVelocityComponentGrid &validGrid, 
                                                 int numLayers) {
     
-    int U = 0; int V = 1; int W = 2;
-    std::vector<int> workQueue({W, V, U});
-
-    int numCPU = ThreadUtils::getMaxThreadCount();
-    int numthreads = (int)fmin(numCPU, workQueue.size());
-    std::vector<std::thread> threads(numthreads);
-
-    FLUIDSIM_ASSERT(numthreads > 0);
-
-    while (!workQueue.empty()) {
-
-        numthreads = (int)fmin(numCPU, workQueue.size());
-        for (int tidx = 0; tidx < numthreads; tidx++) {
-            int gridID = workQueue.back();
-            workQueue.pop_back();
-
-            if (gridID == U) {
-                threads[tidx] = std::thread(&GridUtils::extrapolateGrid,
-                                         &_u, &(validGrid.validU), numLayers);
-            } else if (gridID == V) {
-                threads[tidx] = std::thread(&GridUtils::extrapolateGrid,
-                                         &_v, &(validGrid.validV), numLayers);
-            } else if (gridID == W) {
-                threads[tidx] = std::thread(&GridUtils::extrapolateGrid,
-                                         &_w, &(validGrid.validW), numLayers);
-            }
-        }
-
-        for (int tidx = 0; tidx < numthreads; tidx++) {
-            threads[tidx].join();
-        }
-    }
-
+    GridUtils::extrapolateGrid(&_u, &(validGrid.validU), numLayers);
+    GridUtils::extrapolateGrid(&_v, &(validGrid.validV), numLayers);
+    GridUtils::extrapolateGrid(&_w, &(validGrid.validW), numLayers);
 }

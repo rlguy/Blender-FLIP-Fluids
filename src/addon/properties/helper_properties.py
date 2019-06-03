@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,25 +23,30 @@ from bpy.props import (
         )
 
 from . import preset_properties
+from ..utils import version_compatibility_utils as vcu
 
 
 class FlipFluidHelperProperties(bpy.types.PropertyGroup):
+    conv = vcu.convert_attribute_to_28
+
+    enable_auto_frame_load = BoolProperty(
+            name="Auto-Load Baked Frames",
+            description="Automatically load frames as they finish baking",
+            default=False,
+            ); exec(conv("enable_auto_frame_load"))
+    playback_frame_offset = IntProperty(
+            name="Playback Offset",
+            description="Frame offset for simulation playback",
+            default=0,
+            ); exec(conv("playback_frame_offset"))
+
+
     @classmethod
     def register(cls):
         bpy.types.Scene.flip_fluid_helper = PointerProperty(
                 name="Flip Fluid Helper Properties",
                 description="",
                 type=cls,
-                )
-        cls.enable_auto_frame_load = BoolProperty(
-                name="Auto-Load Baked Frames",
-                description="Automatically load frames as they finish baking",
-                default=False,
-                )
-        cls.playback_frame_offset = IntProperty(
-                name="Playback Offset",
-                description="Frame offset for simulation playback",
-                default=0,
                 )
 
 
@@ -52,7 +57,7 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
 
     def get_addon_preferences(self):
         id_name = __name__.split(".")[0]
-        return bpy.context.user_preferences.addons[id_name].preferences
+        return vcu.get_blender_preferences(bpy.context).addons[id_name].preferences
 
 
     def frame_complete_callback(self):

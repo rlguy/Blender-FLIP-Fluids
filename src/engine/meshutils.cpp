@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +29,7 @@ SOFTWARE.
 #include "grid3d.h"
 #include "collision.h"
 #include "trianglemesh.h"
+#include "threadutils.h"
 
 namespace MeshUtils {
 
@@ -75,7 +76,7 @@ void _getTriangleGridZ(
 
 void _getTriangleCollisionsZ(
         vmath::vec3 origin, std::vector<int> &indices, TriangleMesh &m,
-        std::vector<double> &collisions) {
+        std::vector<float> &collisions) {
 
     vmath::vec3 dir(0.0, 0.0, 1.0);
     vmath::vec3 v1, v2, v3, coll;
@@ -92,12 +93,10 @@ void _getTriangleCollisionsZ(
 }
 
 double _randomDouble(double min, double max) {
-    return min + (double)rand() / ((double)RAND_MAX / (max - min));
+    return min + ((double)rand() / (double)RAND_MAX) * (max - min);
 }
 
-void _getCollisionGridZ(
-        TriangleMesh &m, double dx, Array3d<std::vector<double> > &zcollisions) {
-
+void _getCollisionGridZ(TriangleMesh &m, double dx, Array3d<std::vector<float> > &zcollisions) {
     Array3d<std::vector<int> > ztrigrid(zcollisions.width, zcollisions.height, 1);
     _getTriangleGridZ(m, dx, ztrigrid);
 
@@ -107,26 +106,50 @@ void _getCollisionGridZ(
        shared by two triangles. To reduce the chance of this occurring, a random
        jitter will be added to the position of the grid cell centers. 
     */
-    double jit = 0.05*dx;
+    double jit = 0.001 * dx;
     vmath::vec3 jitter(_randomDouble(jit, -jit), 
                        _randomDouble(jit, -jit), 
                        _randomDouble(jit, -jit));
 
-    std::vector<double> *zvals;
-    vmath::vec3 gp;
-    std::vector<int> *tris;
-    for (int j = 0; j < ztrigrid.height; j++) {
-        for (int i = 0; i < ztrigrid.width; i++) {
-            tris = ztrigrid.getPointer(i, j, 0);
-            if (tris->size() == 0) {
-                continue;
-            }
+    int gridsize = ztrigrid.width * ztrigrid.height;
+    int numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)fmin(numCPU, gridsize);
+    std::vector<std::thread> threads(numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
+    for (int i = 0; i < numthreads; i++) {
+        threads[i] = std::thread(&_getCollisionGridZThread,
+                                 intervals[i], intervals[i + 1], 
+                                 dx, jitter, &m, &ztrigrid, &zcollisions);
+    }
 
-            zvals = zcollisions.getPointer(i, j, 0);
-            zvals->reserve(tris->size());
-            gp = Grid3d::GridIndexToCellCenter(i, j, -1, dx) + jitter;
-            _getTriangleCollisionsZ(gp, *tris, m, *zvals);
+    for (int i = 0; i < numthreads; i++) {
+        threads[i].join();
+    }
+    
+}
+
+void _getCollisionGridZThread(int startidx, int endidx, 
+                              double dx, 
+                              vmath::vec3 jitter,
+                              TriangleMesh *m, 
+                              Array3d<std::vector<int> > *ztrigrid,
+                              Array3d<std::vector<float> > *zcollisions) {
+
+    int isize = ztrigrid->width;
+    int jsize = ztrigrid->height;
+    std::vector<float> *zvals;
+    std::vector<int> *tris;
+    for (int idx = startidx; idx < endidx; idx++) {
+        GridIndex g = Grid3d::getUnflattenedIndex(idx, isize, jsize);
+        tris = ztrigrid->getPointer(g.i, g.j, 0);
+        if (tris->size() == 0) {
+            continue;
         }
+
+        zvals = zcollisions->getPointer(g.i, g.j, 0);
+        zvals->reserve(tris->size());
+        vmath::vec3 gp = Grid3d::GridIndexToCellCenter(g.i, g.j, -1, dx) + jitter;
+        _getTriangleCollisionsZ(gp, *tris, *m, *zvals);
     }
 }
 
@@ -134,92 +157,61 @@ void getCellsInsideTriangleMesh(
         TriangleMesh &m, int isize, int jsize, int ksize, double dx,
         std::vector<GridIndex> &cells) {
 
-    Array3d<std::vector<double> > zcollisions(isize, jsize, 1);
+    Array3d<std::vector<float> > zcollisions(isize, jsize, 1);
     _getCollisionGridZ(m, dx, zcollisions);
 
-    std::vector<double> *zvals;
-    for (int k = 0; k < ksize; k++) {
-        for (int j = 0; j < jsize; j++) {
-            for (int i = 0; i < isize; i++) {
-                zvals = zcollisions.getPointer(i, j, 0);
-                if (zvals->size() % 2 != 0) {
-                    continue;
-                }
-
-                double z = Grid3d::GridIndexToCellCenter(i, j, k, dx).z;
-                int numless = 0;
-                for (unsigned int zidx = 0; zidx < zvals->size(); zidx++) {
-                    if (zvals->at(zidx) < z) {
-                        numless++;
-                    }
-                }
-
-                if (numless % 2 == 1) {
-                    cells.push_back(GridIndex(i, j, k));
-                }
-            }
-        }
+    int gridsize = isize * jsize * ksize;
+    int numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)fmin(numCPU, gridsize);
+    std::vector<std::thread> threads(numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
+    std::vector<std::vector<GridIndex> > threadResults(numthreads);
+    for (int i = 0; i < numthreads; i++) {
+        threads[i] = std::thread(&_getCellsInsideTriangleMeshThread,
+                                 intervals[i], intervals[i + 1], 
+                                 isize, jsize, ksize, dx,
+                                 &zcollisions,
+                                 &(threadResults[i]));
     }
 
+    int numcells = 0;
+    for (int i = 0; i < numthreads; i++) {
+        threads[i].join();
+        numcells += threadResults[i].size();
+    }
+
+    cells.reserve(numcells);
+    for (size_t i = 0; i < threadResults.size(); i++) {
+        cells.insert(cells.end(), threadResults[i].begin(), threadResults[i].end());
+    }
 }
 
-void _getCollisionGridZSubd2(TriangleMesh &m, double dx, 
-                             Array3d<std::vector<double> > &zcollisions,
-                             Array3d<std::vector<double> > &zsubcollisions) {
+void _getCellsInsideTriangleMeshThread(
+        int startidx, int endidx, 
+        int isize, int jsize, int ksize, double dx,
+        Array3d<std::vector<float> > *zcollisions,
+        std::vector<GridIndex> *cells) {
 
-    Array3d<std::vector<int> > ztrigrid(zcollisions.width, zcollisions.height, 1);
-    _getTriangleGridZ(m, dx, ztrigrid);
+    std::vector<float> *zvals;
+    for (int idx = startidx; idx < endidx; idx++) {
+        GridIndex g = Grid3d::getUnflattenedIndex(idx, isize, jsize);
+        zvals = zcollisions->getPointer(g.i, g.j, 0);
+        if (zvals->size() % 2 != 0) {
+            continue;
+        }
 
-    /* Triangles that align perfectly with grid cell centers may produce 
-       imperfect collision results due to an edge case where a line-mesh 
-       intersection can report two collisions when striking an edge that is 
-       shared by two triangles. To reduce the chance of this occurring, a random
-       jitter will be added to the position of the grid cell centers. 
-    */
-
-    double jit = 0.05*dx;
-    vmath::vec3 jitter(_randomDouble(jit, -jit), 
-                       _randomDouble(jit, -jit), 
-                       _randomDouble(jit, -jit));
-
-    std::vector<double> *zvals;
-    vmath::vec3 gp;
-    std::vector<int> *tris;
-    for (int j = 0; j < zcollisions.height; j++) {
-        for (int i = 0; i < zcollisions.width; i++) {
-            tris = ztrigrid.getPointer(i, j, 0);
-            if (tris->size() == 0) {
-                continue;
+        float z = Grid3d::GridIndexToCellCenter(g, dx).z;
+        int numless = 0;
+        for (size_t zidx = 0; zidx < zvals->size(); zidx++) {
+            if (zvals->at(zidx) < z) {
+                numless++;
             }
+        }
 
-            zvals = zcollisions.getPointer(i, j, 0);
-            zvals->reserve(tris->size());
-            gp = Grid3d::GridIndexToCellCenter(i, j, -1, dx) + jitter;
-            _getTriangleCollisionsZ(gp, *tris, m, *zvals);
+        if (numless % 2 == 1) {
+            cells->push_back(g);
         }
     }
-
-    jit = 0.05*0.5*dx;
-    jitter = vmath::vec3(_randomDouble(jit, -jit), 
-                         _randomDouble(jit, -jit), 
-                         _randomDouble(jit, -jit));
-    for (int j = 0; j < zsubcollisions.height; j++) {
-        for (int i = 0; i < zsubcollisions.width; i++) {
-            int trigridi = (int)floor(0.5*i);
-            int trigridj = (int)floor(0.5*j);
-
-            tris = ztrigrid.getPointer(trigridi, trigridj, 0);
-            if (tris->size() == 0) {
-                continue;
-            }
-
-            zvals = zsubcollisions.getPointer(i, j, 0);
-            zvals->reserve(tris->size());
-            gp = Grid3d::GridIndexToCellCenter(i, j, -1, 0.5*dx) + jitter;
-            _getTriangleCollisionsZ(gp, *tris, m, *zvals);
-        }
-    }
-
 }
 
 bool isCellInside(double z, std::vector<double> *zvals) {
@@ -352,84 +344,6 @@ unsigned char getCellFillMask(GridIndex g, double dx,
     return mask;
 }
 
-void getCellsInsideTriangleMeshSubd2(
-        TriangleMesh &m, int isize, int jsize, int ksize, double dx,
-        std::vector<GridIndex> &cells, std::vector<unsigned char> &cell_masks) {
-
-    Array3d<std::vector<double> > zcollisions(isize, jsize, 1);
-    Array3d<std::vector<double> > zsubcollisions(2*isize, 2*jsize, 1);
-    _getCollisionGridZSubd2(m, dx, zcollisions, zsubcollisions);
-
-    Array3d<bool> cellgrid(isize, jsize, ksize, false);
-    std::vector<double> *zvals;
-    int cellCount = 0;
-    for (int k = 0; k < ksize; k++) {
-        for (int j = 0; j < jsize; j++) {
-            for (int i = 0; i < isize; i++) {
-                zvals = zcollisions.getPointer(i, j, 0);
-                if (isCellInside(i, j, k, dx, zvals)) {
-                    cellgrid.set(i, j, k, true);
-                    cellCount++;
-                }
-            }
-        }
-    }
-
-    std::vector<GridIndex> insideCells;
-    std::vector<GridIndex> borderCells;
-    insideCells.reserve(cellCount / 2);
-    borderCells.reserve(cellCount / 2);
-    sortInsideBorderCells(cellgrid, insideCells, borderCells);
-
-    Array3d<unsigned char> maskGrid(isize, jsize, ksize, 0);
-    for (unsigned int i = 0; i < insideCells.size(); i++) {
-        maskGrid.set(insideCells[i], 255);
-    }
-
-    double hdx = 0.5 * dx;
-    for (unsigned int i = 0; i < borderCells.size(); i++) {
-        unsigned char mask = getCellFillMask(borderCells[i], hdx, zsubcollisions);
-        maskGrid.set(borderCells[i], mask);
-    }
-
-    for (int k = 0; k < ksize; k++) {
-        for (int j = 0; j < jsize; j++) {
-            for (int i = 0; i < isize; i++) {
-                if (maskGrid(i, j, k) != 0) {
-                    cells.push_back(GridIndex(i, j, k));
-                    cell_masks.push_back(maskGrid(i, j, k));
-                }
-            }
-        }
-    }
-
-}
-
-void getCellsInsideTriangleMeshSubd2(
-        TriangleMesh mesh, double dx,
-        std::vector<GridIndex> &cells, std::vector<unsigned char> &cell_masks) {
-
-    AABB bbox(mesh.vertices);
-    GridIndex goffset = Grid3d::positionToGridIndex(bbox.position, dx);
-    vmath::vec3 offset = Grid3d::GridIndexToPosition(goffset, dx);
-    mesh.translate(-offset);
-    bbox.position -= offset;
-
-    int inf = std::numeric_limits<int>::max();
-    GridIndex gmin, gmax;
-    Grid3d::getGridIndexBounds(bbox, dx, inf, inf, inf, &gmin, &gmax);
-
-    MeshUtils::getCellsInsideTriangleMeshSubd2(
-        mesh, gmax.i + 1, gmax.j + 1, gmax.k + 1, dx, cells, cell_masks
-    );
-
-    for (unsigned int i = 0; i < cells.size(); i++) {
-        cells[i].i = cells[i].i + goffset.i;
-        cells[i].j = cells[i].j + goffset.j;
-        cells[i].k = cells[i].k + goffset.k;
-    }
-}
-
 void getGridNodesInsideTriangleMesh(TriangleMesh mesh, double dx, 
                                     std::vector<GridIndex> &nodes) {
     mesh.translate(vmath::vec3(0.5 * dx, 0.5 * dx, 0.5 * dx));
@@ -511,7 +425,6 @@ void getGridNodesInsideTriangleMesh(TriangleMesh mesh, double dx,
             }
         }
     }
-
 }
 
 void _splitInsideOutsideMesh(TriangleMesh &mesh, AABB bbox, 

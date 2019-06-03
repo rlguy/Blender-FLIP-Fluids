@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,82 +24,35 @@ SOFTWARE.
 
 #include "particlemesher.h"
 
+#include "trianglemesh.h"
 #include "polygonizer3d.h"
-#include "clscalarfield.h"
-#include "fluidmaterialgrid.h"
-#include "aabb.h"
-#include "meshlevelset.h"
+#include "threadutils.h"
+#include "gridutils.h"
+
 
 ParticleMesher::ParticleMesher() {
 }
 
-ParticleMesher::ParticleMesher(int isize, int jsize, int ksize, double dx) :
-                                                    _isize(isize), _jsize(jsize), _ksize(ksize), _dx(dx) {
+TriangleMesh ParticleMesher::meshParticles(ParticleMesherParameters params) {
+    _initialize(params);
 
-}
+    MesherComputeChunkData data;
+    _generateComputeChunkData(data);
+    
+    double scale = _localdx / _subdx;
+    vmath::vec3 scaleVect(scale, scale, scale);
+    vmath::vec3 invscaleVect(1.0/scale, 1.0/scale, 1.0/scale);
 
-ParticleMesher::~ParticleMesher() {
-
-}
-
-void ParticleMesher::setSubdivisionLevel(int n) {
-    FLUIDSIM_ASSERT(n >= 1);
-    _subdivisionLevel = n;
-}
-
-void ParticleMesher::setNumPolygonizationSlices(int n) {
-    FLUIDSIM_ASSERT(n >= 1);
-
-    if (n > _isize) {
-        n = _isize;
+    TriangleMesh mesh;
+    for (size_t i = 0; i < data.computeChunks.size(); i++) {
+        MesherComputeChunk c = data.computeChunks[i];
+        TriangleMesh chunkMesh = _polygonizeComputeChunk(c, data);
+        chunkMesh.scale(scaleVect);
+        mesh.join(chunkMesh);
     }
+    mesh.scale(invscaleVect);
 
-    _numPolygonizationSlices = n;
-}
-
-TriangleMesh ParticleMesher::meshParticles(FragmentedVector<vmath::vec3> &particles,
-                                           double particleRadius,
-                                           MeshLevelSet &solidSDF) {
-    FLUIDSIM_ASSERT(particleRadius > 0.0);
-
-    _particleRadius = particleRadius;
-
-    if (_numPolygonizationSlices == 1) {
-        return _polygonizeAll(particles, solidSDF);
-    }
-
-    return _polygonizeSlices(particles, solidSDF);
-}
-
-void ParticleMesher::setScalarFieldAccelerator(CLScalarField *accelerator) {
-    _scalarFieldAccelerator = accelerator;
-    _isScalarFieldAcceleratorSet = true;
-}
-
-void ParticleMesher::setScalarFieldAccelerator() {
-    _isScalarFieldAcceleratorSet = false;
-}
-
-void ParticleMesher::enablePreviewMesher(double dx) {
-    _initializePreviewMesher(dx);
-    _isPreviewMesherEnabled = true;
-}
-
-void ParticleMesher::disablePreviewMesher() {
-    _isPreviewMesherEnabled = false;
-}
-
-TriangleMesh ParticleMesher::getPreviewMesh(FluidMaterialGrid &materialGrid) {
-    if (!_isPreviewMesherEnabled) {
-        return TriangleMesh();
-    }
-
-    FluidMaterialGrid pmgrid(_pisize, _pjsize, _pksize);
-    _getPreviewMaterialGrid(materialGrid, pmgrid);
-    _pfield.setMaterialGrid(pmgrid);
-
-    Polygonizer3d polygonizer(&_pfield);
-    return polygonizer.polygonizeSurface();
+    return mesh;
 }
 
 TriangleMesh ParticleMesher::getPreviewMesh() {
@@ -114,403 +67,30 @@ TriangleMesh ParticleMesher::getPreviewMesh() {
     return polygonizer.polygonizeSurface();
 }
 
-TriangleMesh ParticleMesher::_polygonizeAll(FragmentedVector<vmath::vec3> &particles,
-                                            MeshLevelSet &solidSDF) {
-    int subd = _subdivisionLevel;
-    int width = _isize*subd;
-    int height = _jsize*subd;
-    int depth = _ksize*subd;
-    double dx = _dx / (double)subd;
+void ParticleMesher::_initialize(ParticleMesherParameters params) {
+    _isize = params.isize;
+    _jsize = params.jsize;
+    _ksize = params.ksize;
+    _dx = params.dx;
 
-    ScalarField field(width + 1, height + 1, depth + 1, dx);
+    _subdivisions = params.subdivisions;
+    _computechunks = params.computechunks;
+    _radius = params.radius;
 
-    FluidMaterialGrid mgrid(_isize, _jsize, _ksize);
-    _getMaterialGrid(mgrid);
-    mgrid.setSubdivisionLevel(subd);
-
-    field.setSolidSDF(solidSDF);
-    field.setMaterialGrid(mgrid);
-    field.setPointRadius(_particleRadius);
-    field.setSurfaceThreshold(0.0);
-    field.fill(_getMaxDistanceValue());
-    _addPointsToScalarField(particles, field);
-
+    _isPreviewMesherEnabled = params.isPreviewMesherEnabled;
     if (_isPreviewMesherEnabled) {
-        _addScalarFieldToPreviewField(field);
+        _initializePreviewMesher(params.previewdx);
     }
 
-    Polygonizer3d polygonizer(&field, &solidSDF);
-
-    return polygonizer.polygonizeSurface();
-}
-
-TriangleMesh ParticleMesher::_polygonizeSlices(FragmentedVector<vmath::vec3> &particles,
-                                               MeshLevelSet &solidSDF) {
-    int width, height, depth;
-    double dx;
-    _getSubdividedGridDimensions(&width, &height, &depth, &dx);
-
-    int sliceWidth = ceil((double)width / (double)_numPolygonizationSlices);
-    int numSlices = ceil((double)width / (double)sliceWidth);
-
-    if (numSlices == 1) {
-        return _polygonizeAll(particles, solidSDF);
-    }
-
-    TriangleMesh mesh;
-    for (int i = 0; i < numSlices; i++) {
-        int startidx = i*sliceWidth;
-        int endidx = startidx + sliceWidth - 1;
-        endidx = endidx < width ? endidx : width - 1;
-
-        TriangleMesh sliceMesh = _polygonizeSlice(startidx, endidx, 
-                                                  particles,
-                                                  solidSDF);
-
-        vmath::vec3 offset = _getSliceGridPositionOffset(startidx, endidx);
-        sliceMesh.translate(offset);
-        mesh.join(sliceMesh);
-    }
-
-    return mesh;
-}
-
-TriangleMesh ParticleMesher::_polygonizeSlice(int startidx, int endidx, 
-                                              FragmentedVector<vmath::vec3> &particles,
-                                              MeshLevelSet &solidSDF) {
-
-    int width, height, depth;
-    double dx;
-    _getSubdividedGridDimensions(&width, &height, &depth, &dx);
-
-    bool isStartSlice = startidx == 0;
-    bool isEndSlice = endidx == width - 1;
-    bool isMiddleSlice = !isStartSlice && !isEndSlice;
-
-    int gridWidth = endidx - startidx + 1;
-    int gridHeight = height;
-    int gridDepth = depth;
-    if (isStartSlice || isEndSlice) {
-        gridWidth++;
-    } else if (isMiddleSlice) {
-        gridWidth += 2;
-    }
-
-    ScalarField field(gridWidth + 1, gridHeight + 1, gridDepth + 1, dx);
-    _computeSliceScalarField(startidx, endidx, particles, solidSDF, field);
-
-    if (_isPreviewMesherEnabled) {
-        _addScalarFieldSliceToPreviewField(startidx, endidx, field);
-    }
-
-    Array3d<bool> mask(gridWidth, gridHeight, gridDepth);
-    _getSliceMask(startidx, endidx, mask);
-
-    Polygonizer3d polygonizer(&field, &solidSDF);
-    polygonizer.setSurfaceCellMask(&mask);
-
-    return polygonizer.polygonizeSurface();
-}
-
-void ParticleMesher::_getSubdividedGridDimensions(int *i, int *j, int *k, double *dx) {
-    *i = _isize*_subdivisionLevel;
-    *j = _jsize*_subdivisionLevel;
-    *k = _ksize*_subdivisionLevel;
-    *dx = _dx / (double)_subdivisionLevel;
-}
-
-void ParticleMesher::_computeSliceScalarField(int startidx, int endidx, 
-                                                       FragmentedVector<vmath::vec3> &particles,
-                                                       MeshLevelSet &solidSDF,
-                                                       ScalarField &field) {
-    int width, height, depth;
-    field.getGridDimensions(&width, &height, &depth);
-
-    FluidMaterialGrid sliceMaterialGrid(width - 1, height - 1, depth - 1);
-    _getSliceMaterialGrid(startidx, endidx, sliceMaterialGrid);
-
-    vmath::vec3 fieldOffset = _getSliceGridPositionOffset(startidx, endidx);
-    field.setOffset(fieldOffset);
-    field.setSolidSDF(solidSDF);
-    field.setMaterialGrid(sliceMaterialGrid);
-    field.setPointRadius(_particleRadius);
-    field.setSurfaceThreshold(0.0);
-    field.fill(_getMaxDistanceValue());
-
-    _addPointsToScalarField(particles, field);
-    _updateScalarFieldSeam(startidx, endidx, field);
-}
-
-vmath::vec3 ParticleMesher::_getSliceGridPositionOffset(int startidx, int endidx) {
-    (void)endidx;
-    int width, height, depth;
-    double dx;
-    _getSubdividedGridDimensions(&width, &height, &depth, &dx);
-
-    bool isStartSlice = startidx == 0;
-
-    double offx;
-    if (isStartSlice) {
-        offx = startidx*dx;
-    } else {
-        offx = (startidx - 1)*dx;
-    }
-
-    return vmath::vec3(offx, 0.0, 0.0); 
-}
-
-void ParticleMesher::_getSliceParticles(int startidx, int endidx, 
-                                                 FragmentedVector<vmath::vec3> &particles,
-                                                 FragmentedVector<vmath::vec3> &sliceParticles) {
-    AABB bbox = _getSliceAABB(startidx, endidx);
-    for (unsigned int i = 0; i < particles.size(); i++) {
-        if (bbox.isPointInside(particles[i])) {
-            sliceParticles.push_back(particles[i]);
-        }
-    }
-}
-
-
-void ParticleMesher::_getSliceMaterialGrid(int startidx, int endidx,
-                                                    FluidMaterialGrid &sliceMaterialGrid) {
-    (void)endidx;
-
-    FluidMaterialGrid materialGrid(_isize, _jsize, _ksize);
-    _getMaterialGrid(materialGrid);
-    materialGrid.setSubdivisionLevel(_subdivisionLevel);
-    
-    Material m;
-    for (int k = 0; k < sliceMaterialGrid.depth; k++) {
-        for (int j = 0; j < sliceMaterialGrid.height; j++) {
-            for (int i = 0; i < sliceMaterialGrid.width; i++) {
-                m = materialGrid(startidx + i, j, k);
-                sliceMaterialGrid.set(i, j, k, m);
-            }
-        }
-    }
-}
-
-void ParticleMesher::_getMaterialGrid(FluidMaterialGrid &materialGrid) {
-    int w = materialGrid.width;
-    int h = materialGrid.height;
-    int d = materialGrid.depth;
-    for (int j = 0; j < h; j++) {
-        for (int i = 0; i < w; i++) {
-            materialGrid.setSolid(i, j, 0);
-            materialGrid.setSolid(i, j, d-1);
-        }
-    }
-
-    for (int k = 0; k < d; k++) {
-        for (int i = 0; i < w; i++) {
-            materialGrid.setSolid(i, 0, k);
-            materialGrid.setSolid(i, h-1, k);
-        }
-    }
-
-    for (int k = 0; k < d; k++) {
-        for (int j = 0; j < h; j++) {
-            materialGrid.setSolid(0, j, k);
-            materialGrid.setSolid(w-1, j, k);
-        }
-    }
-
-}
-
-AABB ParticleMesher::_getSliceAABB(int startidx, int endidx) {
-    int width, height, depth;
-    double dx;
-    _getSubdividedGridDimensions(&width, &height, &depth, &dx);
-
-    bool isStartSlice = startidx == 0;
-    bool isEndSlice = endidx == width - 1;
-    bool isMiddleSlice = !isStartSlice && !isEndSlice;
-
-    double gridWidth = (endidx - startidx + 1)*dx;
-    double gridHeight = height*dx;
-    double gridDepth = depth*dx;
-    if (isStartSlice || isEndSlice) {
-        gridWidth += dx;
-    } else if (isMiddleSlice) {
-        gridWidth += 2.0*dx;
-    }
-
-    vmath::vec3 offset = _getSliceGridPositionOffset(startidx, endidx);
-
-    AABB bbox(offset, gridWidth, gridHeight, gridDepth);
-    bbox.expand(2.0*_particleRadius);
-
-    return bbox;
-}
-
-void ParticleMesher::_addPointsToScalarField(FragmentedVector<vmath::vec3> &points,
-                                                      ScalarField &field) {
-    
-    if (_isScalarFieldAcceleratorSet) {
-        _addPointsToScalarFieldAccelerator(points, field);
-        return;
-    }
-
-    int subd = _subdivisionLevel;
-    int width = _isize*subd;
-    int height = _jsize*subd;
-    int depth = _ksize*subd;
-    double dx = _dx / (double)subd;
-    double r = _particleRadius;
-    vmath::vec3 offset = field.getOffset();
-
-    Array3d<float>* nodes = field.getPointerToScalarField();
-    nodes->fill(_getMaxDistanceValue());
-
-    GridIndex g, gmin, gmax;
-    vmath::vec3 p;
-    vmath::vec3 pminOffset(-r, -r, -r);
-    vmath::vec3 pmaxOffset(r, r, r);
-    for(int pidx = 0; pidx < (int)points.size(); pidx++) {
-        p = points[pidx] - offset;
-
-        gmin = Grid3d::positionToGridIndex(p + pminOffset, dx);
-        gmax = Grid3d::positionToGridIndex(p + pmaxOffset, dx);
-        gmin.i = fmax(0, gmin.i);
-        gmin.j = fmax(0, gmin.j);
-        gmin.k = fmax(0, gmin.k);
-        gmax.i = fmin(width, gmax.i + 1);
-        gmax.j = fmin(height, gmax.j + 1);
-        gmax.k = fmin(depth, gmax.k + 1);
-
-        for(int k = gmin.k; k <= gmax.k; k++) {
-            for(int j = gmin.j; j <= gmax.j; j++) {
-                for(int i = gmin.i; i <= gmax.i; i++) {
-                    vmath::vec3 cpos = Grid3d::GridIndexToPosition(i, j, k, dx);
-                    float dist = vmath::length(cpos - p) - r;
-                    if (dist < nodes->get(i, j, k)) {
-                        nodes->set(i, j, k, dist);
-                    }
-                }
-            }
-        }
-    }
-
-    for (int k = 0; k < depth + 1; k++) {
-        for (int j = 0; j < height + 1; j++) {
-            for (int i = 0; i < width + 1; i++) {
-                nodes->set(i, j, k, -nodes->get(i, j, k));
-            }
-        }
-    }
-}
-
-void ParticleMesher::_addPointsToScalarFieldAccelerator(FragmentedVector<vmath::vec3> &points,
-                                                        ScalarField &field) {
-    bool isThresholdSet = _scalarFieldAccelerator->isMaxScalarFieldValueThresholdSet();
-    double origThreshold = _scalarFieldAccelerator->getMaxScalarFieldValueThreshold();
-    _scalarFieldAccelerator->setMaxScalarFieldValueThreshold();
-
-    int n = _maxParticlesPerScalarFieldAddition;
-    std::vector<vmath::vec3> positions;
-    positions.reserve(fmin(n, points.size()));
-
-    for (int startidx = 0; startidx < (int)points.size(); startidx += n) {
-        int endidx = startidx + n - 1;
-        if (endidx >= (int)points.size()) {
-            endidx = points.size() - 1;
-        }
-
-        positions.clear();
-        for (int i = startidx; i <= endidx; i++) {
-            positions.push_back(points[i]);
-        }
-
-        _scalarFieldAccelerator->addLevelSetPoints(positions, field);
-    }
-
-    Array3d<float>* fieldvals = field.getPointerToScalarField();
-    for (int k = 0; k < fieldvals->depth; k++) {
-        for (int j = 0; j < fieldvals->height; j++) {
-            for (int i = 0; i < fieldvals->width; i++) {
-                fieldvals->set(i, j, k, -fieldvals->get(i, j, k));
-            }
-        }
-    }
-
-    if (!isThresholdSet) {
-        _scalarFieldAccelerator->setMaxScalarFieldValueThreshold();
-    } else {
-        _scalarFieldAccelerator->setMaxScalarFieldValueThreshold(origThreshold);
-    }
-}
-
-void ParticleMesher::_updateScalarFieldSeam(int startidx, int endidx,
-                                                     ScalarField &field) {
-    int width, height, depth;
-    double dx;
-    _getSubdividedGridDimensions(&width, &height, &depth, &dx);
-
-    bool isStartSlice = startidx == 0;
-    bool isEndSlice = endidx == width - 1;
-
-    if (!isStartSlice) {
-        _applyScalarFieldSliceSeamData(field);
-    }
-    if (!isEndSlice) {
-        _saveScalarFieldSliceSeamData(field);
-    }
-}
-
-void ParticleMesher::_applyScalarFieldSliceSeamData(ScalarField &field) {
-    int width, height, depth;
-    field.getGridDimensions(&width, &height, &depth);
-
-    for (int k = 0; k < depth; k++) {
-        for (int j = 0; j < height; j++) {
-            for (int i = 0; i <= 2; i++) {
-                field.setScalarFieldValue(i, j, k, _scalarFieldSeamData(i, j, k));
-            }
-        }
-    }
-}
-
-void ParticleMesher::_saveScalarFieldSliceSeamData(ScalarField &field) {
-    int width, height, depth;
-    field.getGridDimensions(&width, &height, &depth);
-
-    _scalarFieldSeamData = Array3d<float>(3, height, depth);
-    for (int k = 0; k < depth; k++) {
-        for (int j = 0; j < height; j++) {
-            for (int i = 0; i <= 2; i++) {
-                _scalarFieldSeamData.set(i, j, k, field.getRawScalarFieldValue(i + width - 3, j, k));
-            }
-        }
-    }
-}
-
-void ParticleMesher::_getSliceMask(int startidx, int endidx, Array3d<bool> &mask) {
-    mask.fill(true);
-
-    int width, height, depth;
-    double dx;
-    _getSubdividedGridDimensions(&width, &height, &depth, &dx);
-
-    bool isStartSlice = startidx == 0;
-    bool isEndSlice = endidx == width - 1;
-
-    if (!isStartSlice) {
-        int idx = 0;
-        for (int k = 0; k < mask.depth; k++) {
-            for (int j = 0; j < mask.height; j++) {
-                mask.set(idx, j, k, false);
-            }
-        }
-    }
-
-    if (!isEndSlice) {
-        int idx = mask.width - 1;
-        for (int k = 0; k < mask.depth; k++) {
-            for (int j = 0; j < mask.height; j++) {
-                mask.set(idx, j, k, false);
-            }
-        }
-    }
+    _particles = params.particles;
+    _solidSDF = params.solidSDF;
+
+    _subisize = _isize * _subdivisions + 1;
+    _subjsize = _jsize * _subdivisions + 1;
+    _subksize = _ksize * _subdivisions + 1;
+    _subdx = _dx / (double)_subdivisions;
+
+    _initializeSeamData();
 }
 
 void ParticleMesher::_initializePreviewMesher(double pdx) {
@@ -518,96 +98,538 @@ void ParticleMesher::_initializePreviewMesher(double pdx) {
     double height = _jsize * _dx;
     double depth = _ksize * _dx;
 
-    _pisize = fmax(ceil(width / pdx), 1);
-    _pjsize = fmax(ceil(height / pdx), 1);
-    _pksize = fmax(ceil(depth / pdx), 1);
+    _pisize = std::max((int)ceil(width / pdx), 1);
+    _pjsize = std::max((int)ceil(height / pdx), 1);
+    _pksize = std::max((int)ceil(depth / pdx), 1);
     _pdx = pdx;
 
     _pfield = ScalarField(_pisize + 1, _pjsize + 1, _pksize + 1, _pdx);
     _pfield.setSurfaceThreshold(0.0);
 }
 
-void ParticleMesher::_addScalarFieldToPreviewField(ScalarField &field) {
-    vmath::vec3 pv;
-    for (int k = 0; k < _pksize + 1; k++) {
-        for (int j = 0; j < _pjsize + 1; j++) {
-            for (int i = 0; i < _pisize + 1; i++) {
-                pv = Grid3d::GridIndexToPosition(i, j, k, _pdx);
-                double fval = field.trilinearInterpolation(pv);
-                _pfield.setScalarFieldValue(i, j, k, fval);
-            }
-        }
-    }
+void ParticleMesher::_initializeSeamData() {
+    _seamData.reset();
 }
 
-void ParticleMesher::_addScalarFieldSliceToPreviewField(
-        int startidx, int endidx, ScalarField &field) {
+void ParticleMesher::_generateComputeChunkData(MesherComputeChunkData &data) {
+    _initializeComputeChunkDataActiveBlocks(data);
+    _initializeComputeChunkDataComputeChunks(data);
+}
 
-    int isize, jsize, ksize;
-    field.getGridDimensions(&isize, &jsize, &ksize);
+void ParticleMesher::_initializeComputeChunkDataActiveBlocks(MesherComputeChunkData &data) {
+    BlockArray3dParameters temp;
+    temp.isize = _subisize;
+    temp.jsize = _subjsize;
+    temp.ksize = _subksize;
+    temp.blockwidth = _blockwidth;
+    Dims3d dims = BlockArray3d<bool>::getBlockDimensions(temp);
 
-    double width = isize * _dx;
-    double height = jsize * _dx;
-    double depth = ksize * _dx;
-    vmath::vec3 offset = _getSliceGridPositionOffset(startidx, endidx);
-    AABB bbox(offset, width, height, depth);
+    data.activeBlocks = Array3d<bool>(dims.i, dims.j, dims.k, false);
 
-    vmath::vec3 pv;
-    for (int k = 0; k < _pksize + 1; k++) {
-        for (int j = 0; j < _pjsize + 1; j++) {
-            for (int i = 0; i < _pisize + 1; i++) {
-                pv = Grid3d::GridIndexToPosition(i, j, k, _pdx);
-                if (!bbox.isPointInside(pv)) {
-                    continue;
+    double blockdx = _blockwidth * _subdx;
+    for (size_t i = 0; i < _particles->size(); i++) {
+        vmath::vec3 p = _particles->at(i);
+        GridIndex g = Grid3d::positionToGridIndex(p, blockdx);
+        data.activeBlocks.set(g, true);
+    }
+
+    int numthreads = ThreadUtils::getMaxThreadCount();
+    GridUtils::featherGrid26(&(data.activeBlocks), numthreads);
+}
+
+void ParticleMesher::_initializeComputeChunkDataComputeChunks(MesherComputeChunkData &data) {
+    int bi = data.activeBlocks.width;
+    int bj = data.activeBlocks.height;
+    int bk = data.activeBlocks.depth;
+
+    Direction splitdir = Direction::U;
+    int splitwidth = bi;
+    if (bj > splitwidth) {
+        splitdir = Direction::V;
+        splitwidth = bj;
+    }
+    if (bk > splitwidth) {
+        splitdir = Direction::W;
+        splitwidth = bk;
+    }
+
+    int nchunks = _computechunks;
+    int chunkwidth = (int)ceil((float)splitwidth/(float)nchunks);
+    nchunks = (int)ceil((float)splitwidth/(float)chunkwidth);
+
+    typedef std::pair<GridIndex, GridIndex> IndexPair;
+    std::vector<IndexPair> chunkBounds;
+    int startidx = 0;
+    for (int i = 0; i < nchunks; i++) {
+        int endidx = startidx + chunkwidth;
+        endidx = std::min(endidx, splitwidth);
+
+        GridIndex ming(0, 0, 0);
+        GridIndex maxg(bi, bj, bk);
+        if (splitdir == Direction::U) {
+            ming.i = startidx;
+            maxg.i = endidx;
+        } else if (splitdir == Direction::V) {
+            ming.j = startidx;
+            maxg.j = endidx;
+        } else if (splitdir == Direction::W) {
+            ming.k = startidx;
+            maxg.k = endidx;
+        }
+
+        maxg.i = std::min(maxg.i + 1, bi);
+        maxg.j = std::min(maxg.j + 1, bj);
+        maxg.k = std::min(maxg.k + 1, bk);
+
+        chunkBounds.push_back(IndexPair(ming, maxg));
+        startidx = endidx;
+    }
+
+    std::vector<IndexPair> chunkBoundsOptimized;
+    for (size_t cidx = 0; cidx < chunkBounds.size(); cidx++) {
+        GridIndex gmin = chunkBounds[cidx].first;
+        GridIndex gmax = chunkBounds[cidx].second;
+
+        bool isActive = false;
+        GridIndex gminOptimized = gmax;
+        GridIndex gmaxOptimized = gmin;
+
+        for (int k = gmin.k; k < gmax.k; k++) {
+            for (int j = gmin.j; j < gmax.j; j++) {
+                for (int i = gmin.i; i < gmax.i; i++) {
+                    if (data.activeBlocks(i, j, k)) {
+                        isActive = true;
+                        gminOptimized.i = std::min(gminOptimized.i, i);
+                        gminOptimized.j = std::min(gminOptimized.j, j);
+                        gminOptimized.k = std::min(gminOptimized.k, k);
+                        gmaxOptimized.i = std::max(gmaxOptimized.i, i + 1);
+                        gmaxOptimized.j = std::max(gmaxOptimized.j, j + 1);
+                        gmaxOptimized.k = std::max(gmaxOptimized.k, k + 1);
+                    }
                 }
-
-                double fval = field.trilinearInterpolation(pv - offset);
-                _pfield.setScalarFieldValue(i, j, k, fval);
             }
         }
+
+        if (splitdir == Direction::U) {
+            gminOptimized.j = std::max(gminOptimized.j - 1, 0);
+            gminOptimized.k = std::max(gminOptimized.k - 1, 0);
+            gmaxOptimized.j = std::min(gmaxOptimized.j + 1, bj);
+            gmaxOptimized.k = std::min(gmaxOptimized.k + 1, bk);
+        } else if (splitdir == Direction::V) {
+            gminOptimized.i = std::max(gminOptimized.i - 1, 0);
+            gminOptimized.k = std::max(gminOptimized.k - 1, 0);
+            gmaxOptimized.i = std::min(gmaxOptimized.i + 1, bi);
+            gmaxOptimized.k = std::min(gmaxOptimized.k + 1, bk);
+        } else if (splitdir == Direction::W) {
+            gminOptimized.i = std::max(gminOptimized.i - 1, 0);
+            gminOptimized.j = std::max(gminOptimized.j - 1, 0);
+            gmaxOptimized.i = std::min(gmaxOptimized.i + 1, bi);
+            gmaxOptimized.j = std::min(gmaxOptimized.j + 1, bj);
+        }
+
+        if (isActive) {
+            chunkBoundsOptimized.push_back(IndexPair(gminOptimized, gmaxOptimized));
+        }
+    }
+
+
+    chunkBounds = chunkBoundsOptimized;
+    for (size_t cidx = 0; cidx < chunkBounds.size(); cidx++) {
+        GridIndex gmin = chunkBounds[cidx].first;
+        GridIndex gmax = chunkBounds[cidx].second;
+
+        MesherComputeChunk c;
+        c.id = cidx;
+        c.minBlockIndex = gmin;
+        c.maxBlockIndex = gmax;
+        c.minGridIndex = GridIndex(_blockwidth * gmin.i, 
+                                   _blockwidth * gmin.j, 
+                                   _blockwidth * gmin.k);
+
+        if (cidx == chunkBounds.size() - 1) {
+            c.maxGridIndex = GridIndex(std::min(_blockwidth * gmax.i, _subisize), 
+                                       std::min(_blockwidth * gmax.j, _subjsize), 
+                                       std::min(_blockwidth * gmax.k, _subksize));
+        } else {
+            //c.maxGridIndex = GridIndex(std::min(_blockwidth * (gmax.i - 1) + 1, _subisize), 
+            //                           std::min(_blockwidth * (gmax.j - 1) + 1, _subjsize), 
+            //                           std::min(_blockwidth * (gmax.k - 1) + 1, _subksize));
+            c.maxGridIndex = GridIndex(std::min(_blockwidth * gmax.i, _subisize), 
+                                       std::min(_blockwidth * gmax.j, _subjsize), 
+                                       std::min(_blockwidth * gmax.k, _subksize));
+            if (splitdir == Direction::U) {
+                c.maxGridIndex.i = std::min(_blockwidth * (gmax.i - 1) + 1, _subisize);
+            } else if (splitdir == Direction::V) {
+                c.maxGridIndex.j = std::min(_blockwidth * (gmax.j - 1) + 1, _subjsize);
+            } else if (splitdir == Direction::W) {
+                c.maxGridIndex.k = std::min(_blockwidth * (gmax.k - 1) + 1, _subksize);
+            }
+        }
+
+        c.positionOffset = Grid3d::GridIndexToPosition(c.minGridIndex, _subdx);
+        c.splitDirection = splitdir;
+        c.isize = c.maxGridIndex.i - c.minGridIndex.i;
+        c.jsize = c.maxGridIndex.j - c.minGridIndex.j;
+        c.ksize = c.maxGridIndex.k - c.minGridIndex.k;
+
+        data.computeChunks.push_back(c);
     }
 }
 
-void ParticleMesher::_getPreviewMaterialGrid(
-        FluidMaterialGrid &materialGrid, FluidMaterialGrid &previewGrid) {
+TriangleMesh ParticleMesher::_polygonizeComputeChunk(MesherComputeChunk chunk, 
+                                                     MesherComputeChunkData &data) {
     
-    for (int j = 0; j < _pjsize; j++) {
-        for (int i = 0; i < _pisize; i++) {
-            previewGrid.setSolid(i, j, 0);
-            previewGrid.setSolid(i, j, _pksize-1);
+    ScalarFieldData fieldData;
+    _initializeScalarFieldData(chunk, data, fieldData);
+
+    if (fieldData.particles.empty()) {
+        return TriangleMesh();
+    }
+
+    _computeScalarField(fieldData);
+    _updateSeamData(fieldData);
+
+    Polygonizer3d polygonizer(&(fieldData.fieldValues), _solidSDF);
+
+    TriangleMesh m = polygonizer.polygonizeSurface();
+    m.translate(chunk.positionOffset);
+    
+    return m;
+}
+
+void ParticleMesher::_initializeScalarFieldData(MesherComputeChunk chunk,  
+                                                MesherComputeChunkData &data,
+                                                ScalarFieldData &fieldData) {
+    float eps = 1e-6;
+    vmath::vec3 pmin = chunk.positionOffset;
+    vmath::vec3 pmax = Grid3d::GridIndexToPosition(chunk.maxGridIndex, _subdx);
+    AABB bbox(pmin, pmax);
+    bbox.expand(2.0f * (_radius + eps));
+    int count = 0;
+    for (size_t i = 0; i < _particles->size(); i++) {
+        if (bbox.isPointInside(_particles->at(i))) {
+            count++;
         }
     }
 
-    for (int k = 0; k < _pksize; k++) {
-        for (int i = 0; i < _pisize; i++) {
-            previewGrid.setSolid(i, 0, k);
-            previewGrid.setSolid(i, _pjsize-1, k);
+    if (count == 0) {
+        return;
+    }
+
+    fieldData.particles.reserve(count);
+    for (size_t i = 0; i < _particles->size(); i++) {
+        vmath::vec3 p = _particles->at(i);
+        if (bbox.isPointInside(p)) {
+            fieldData.particles.push_back(p - chunk.positionOffset);
         }
     }
 
-    for (int k = 0; k < _pksize; k++) {
-        for (int j = 0; j < _pjsize; j++) {
-            previewGrid.setSolid(0, j, k);
-            previewGrid.setSolid(_pisize-1, j, k);
-        }
-    }
+    BlockArray3dParameters params;
+    params.isize = chunk.isize;
+    params.jsize = chunk.jsize;
+    params.ksize = chunk.ksize;
+    params.blockwidth = _blockwidth;
 
-    vmath::vec3 c;
-    GridIndex g;
-    for (int k = 0; k < _pksize; k++) {
-        for (int j = 0; j < _pjsize; j++) {
-            for (int i = 0; i < _pisize; i++) {
-                c = Grid3d::GridIndexToCellCenter(i, j, k, _pdx);
-                g = Grid3d::positionToGridIndex(c, _dx);
-
-                if (!Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize)) {
-                    continue;
-                }
-
-                if (materialGrid.isCellSolid(g)) {
-                    previewGrid.setSolid(i, j, k);
+    for (int k = chunk.minBlockIndex.k; k < chunk.maxBlockIndex.k; k++) {
+        for (int j = chunk.minBlockIndex.j; j < chunk.maxBlockIndex.j; j++) {
+            for (int i = chunk.minBlockIndex.i; i < chunk.maxBlockIndex.i; i++) {
+                if (data.activeBlocks(i, j, k)) {
+                    params.activeblocks.push_back(GridIndex(i - chunk.minBlockIndex.i,
+                                                            j - chunk.minBlockIndex.j,
+                                                            k - chunk.minBlockIndex.k));
                 }
             }
+        }
+    }
+
+    fieldData.computeChunk = chunk;
+    fieldData.scalarField = BlockArray3d<float>(params);
+    fieldData.scalarField.fill(_getMaxDistanceValue());
+
+    fieldData.fieldValues = ScalarField(chunk.isize, chunk.jsize, chunk.ksize, _subdx);
+    fieldData.fieldValues.fill(_getMaxDistanceValue());
+    fieldData.fieldValues.setSurfaceThreshold(0.0);
+    fieldData.fieldValues.setOffset(chunk.positionOffset);
+    fieldData.fieldValues.setSolidSDF(*_solidSDF);
+}
+
+float ParticleMesher::_getMaxDistanceValue() {
+    return 3.0 * _radius;
+}
+
+void ParticleMesher::_computeScalarField(ScalarFieldData &fieldData) {
+    ParticleGridCountData gridCountData;
+    _computeGridCountData(fieldData, gridCountData);
+
+    std::vector<vmath::vec3> sortedParticles;
+    std::vector<int> blockToParticleIndex;
+    _sortParticlesIntoBlocks(fieldData, gridCountData, sortedParticles, blockToParticleIndex);
+
+    std::vector<GridBlock<float> > gridBlocks;
+    fieldData.scalarField.getActiveGridBlocks(gridBlocks);
+    BoundedBuffer<ComputeBlock> computeBlockQueue(gridBlocks.size());
+    BoundedBuffer<ComputeBlock> finishedComputeBlockQueue(gridBlocks.size());
+    int numComputeBlocks = 0;
+    for (size_t bidx = 0; bidx < gridBlocks.size(); bidx++) {
+        GridBlock<float> b = gridBlocks[bidx];
+        if (gridCountData.totalGridCount[b.id] == 0) {
+            continue;
+        }
+
+        ComputeBlock computeBlock;
+        computeBlock.gridBlock = b;
+        computeBlock.particleData = &(sortedParticles[blockToParticleIndex[b.id]]);
+        computeBlock.numParticles = gridCountData.totalGridCount[b.id];
+        computeBlockQueue.push(computeBlock);
+        numComputeBlocks++;
+    }
+
+    int numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)fmin(numCPU, computeBlockQueue.size());
+    std::vector<std::thread> producerThreads(numthreads);
+    for (int i = 0; i < numthreads; i++) {
+        producerThreads[i] = std::thread(&ParticleMesher::_scalarFieldProducerThread, this,
+                                         &computeBlockQueue, &finishedComputeBlockQueue);
+    }
+
+    Array3d<float>* fieldValues = fieldData.fieldValues.getPointerToScalarField();
+
+    int numComputeBlocksProcessed = 0;
+    while (numComputeBlocksProcessed < numComputeBlocks) {
+        std::vector<ComputeBlock> finishedBlocks;
+        finishedComputeBlockQueue.popAll(finishedBlocks);
+        for (size_t i = 0; i < finishedBlocks.size(); i++) {
+            ComputeBlock block = finishedBlocks[i];
+            GridIndex gridOffset(block.gridBlock.index.i * _blockwidth,
+                                 block.gridBlock.index.j * _blockwidth,
+                                 block.gridBlock.index.k * _blockwidth);
+
+            int datasize = _blockwidth * _blockwidth * _blockwidth;
+            for (int vidx = 0; vidx < datasize; vidx++) {
+                GridIndex localidx = Grid3d::getUnflattenedIndex(vidx, _blockwidth, _blockwidth);
+                GridIndex fieldidx = GridIndex(localidx.i + gridOffset.i,
+                                               localidx.j + gridOffset.j,
+                                               localidx.k + gridOffset.k);
+                if (fieldValues->isIndexInRange(fieldidx)) {
+                    fieldValues->set(fieldidx, block.gridBlock.data[vidx]);
+                }
+            }
+        }
+
+        numComputeBlocksProcessed += finishedBlocks.size();
+    }
+
+    for (int k = 0; k < fieldValues->depth; k++) {
+        for (int j = 0; j < fieldValues->height; j++) {
+            for (int i = 0; i < fieldValues->width; i++) {
+                fieldValues->set(i, j, k, -fieldValues->get(i, j, k));
+            }
+        }
+    }
+
+    computeBlockQueue.notifyFinished();
+    for (size_t i = 0; i < producerThreads.size(); i++) {
+        computeBlockQueue.notifyFinished();
+        producerThreads[i].join();
+    }
+
+    if (_isPreviewMesherEnabled) {
+        _addComputeChunkScalarFieldToPreviewField(fieldData);
+    }
+}
+
+void ParticleMesher::_computeGridCountData(ScalarFieldData &fieldData, 
+                                           ParticleGridCountData &gridCountData) {
+
+    _initializeGridCountData(fieldData, gridCountData);
+
+    int numthreads = gridCountData.numthreads;
+    std::vector<std::thread> threads(numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, fieldData.particles.size(), numthreads);
+    for (int i = 0; i < numthreads; i++) {
+        threads[i] = std::thread(&ParticleMesher::_computeGridCountDataThread, this,
+                                 intervals[i], intervals[i + 1], &fieldData, 
+                                 &(gridCountData.threadGridCountData[i]));
+    }
+
+    for (int i = 0; i < numthreads; i++) {
+        threads[i].join();
+    }
+
+    for (int tidx = 0; tidx < gridCountData.numthreads; tidx++) {
+        std::vector<int> *threadGridCount = &(gridCountData.threadGridCountData[tidx].gridCount);
+        for (size_t i = 0; i < gridCountData.totalGridCount.size(); i++) {
+            gridCountData.totalGridCount[i] += threadGridCount->at(i);
+        }
+    }
+}
+
+void ParticleMesher::_initializeGridCountData(ScalarFieldData &fieldData, 
+                                              ParticleGridCountData &gridCountData) {
+    int numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)fmin(numCPU, fieldData.particles.size());
+    int numblocks = fieldData.scalarField.getNumActiveGridBlocks();
+    gridCountData.numthreads = numthreads;
+    gridCountData.gridsize = numblocks;
+    gridCountData.threadGridCountData = std::vector<GridCountData>(numthreads);
+    for (int i = 0; i < numthreads; i++) {
+        gridCountData.threadGridCountData[i].gridCount = std::vector<int>(numblocks, 0);
+    }
+    gridCountData.totalGridCount = std::vector<int>(numblocks, 0);
+}
+
+void ParticleMesher::_computeGridCountDataThread(int startidx, int endidx, 
+                                                 ScalarFieldData *fieldData, 
+                                                 GridCountData *countData) {
+
+    countData->simpleGridIndices = std::vector<int>(endidx - startidx, -1);
+    countData->invalidPoints = std::vector<bool>(endidx - startidx, false);
+    countData->startidx = startidx;
+    countData->endidx = endidx;
+
+    float sr = _searchRadiusFactor * (float)_radius;
+    float blockdx = _blockwidth * _subdx;
+    for (int i = startidx; i < endidx; i++) {
+        vmath::vec3 p = fieldData->particles[i];
+        GridIndex blockIndex = Grid3d::positionToGridIndex(p, blockdx);
+        vmath::vec3 blockPosition = Grid3d::GridIndexToPosition(blockIndex, blockdx);
+
+        if (p.x - sr > blockPosition.x && 
+                p.y - sr > blockPosition.y && 
+                p.z - sr > blockPosition.z && 
+                p.x + sr < blockPosition.x + blockdx && 
+                p.y + sr < blockPosition.y + blockdx && 
+                p.z + sr < blockPosition.z + blockdx) {
+            int blockid = fieldData->scalarField.getBlockID(blockIndex);
+            countData->simpleGridIndices[i - startidx] = blockid;
+
+            if (blockid != -1) {
+                countData->gridCount[blockid]++;
+            } else {
+                countData->invalidPoints[i - startidx] = true;
+            }
+        } else {
+            GridIndex gmin = Grid3d::positionToGridIndex(p.x - sr, p.y - sr, p.z - sr, blockdx);
+            GridIndex gmax = Grid3d::positionToGridIndex(p.x + sr, p.y + sr, p.z + sr, blockdx);
+
+            int overlapCount = 0;
+            for (int gk = gmin.k; gk <= gmax.k; gk++) {
+                for (int gj = gmin.j; gj <= gmax.j; gj++) {
+                    for (int gi = gmin.i; gi <= gmax.i; gi++) {
+                        int blockid = fieldData->scalarField.getBlockID(gi, gj, gk);
+                        if (blockid != -1) {
+                            countData->gridCount[blockid]++;
+                            countData->overlappingGridIndices.push_back(blockid);
+                            overlapCount++;
+                        }
+                    }
+                }
+            }
+
+            if (overlapCount == 0) {
+                countData->invalidPoints[i - startidx] = true;
+            }
+            countData->simpleGridIndices[i - startidx] = -overlapCount;
+        }
+    }
+}
+
+void ParticleMesher::_sortParticlesIntoBlocks(ScalarFieldData &fieldData, 
+                                              ParticleGridCountData &gridCountData,
+                                              std::vector<vmath::vec3> &sortedParticles,
+                                              std::vector<int> &blockToParticleIndex) {
+
+    blockToParticleIndex = std::vector<int>(gridCountData.gridsize, 0);
+    int currentIndex = 0;
+    for (size_t i = 0; i < blockToParticleIndex.size(); i++) {
+        blockToParticleIndex[i] = currentIndex;
+        currentIndex += gridCountData.totalGridCount[i];
+    }
+    std::vector<int> blockToParticleIndexCurrent = blockToParticleIndex;
+    int totalParticleCount = currentIndex;
+
+    sortedParticles = std::vector<vmath::vec3>(totalParticleCount);
+    for (int tidx = 0; tidx < gridCountData.numthreads; tidx++) {
+        GridCountData *countData = &(gridCountData.threadGridCountData[tidx]);
+
+        int indexOffset = countData->startidx;
+        int currentOverlappingIndex = 0;
+        for (size_t i = 0; i < countData->simpleGridIndices.size(); i++) {
+            if (countData->invalidPoints[i]) {
+                continue;
+            }
+
+            vmath::vec3 p = fieldData.particles[i + indexOffset];
+            if (countData->simpleGridIndices[i] >= 0) {
+                int blockid = countData->simpleGridIndices[i];
+                int sortedIndex = blockToParticleIndexCurrent[blockid];
+                sortedParticles[sortedIndex] = p;
+                blockToParticleIndexCurrent[blockid]++;
+            } else {
+                int numblocks = -(countData->simpleGridIndices[i]);
+                for (int blockidx = 0; blockidx < numblocks; blockidx++) {
+                    int blockid = countData->overlappingGridIndices[currentOverlappingIndex];
+                    currentOverlappingIndex++;
+
+                    int sortedIndex = blockToParticleIndexCurrent[blockid];
+                    sortedParticles[sortedIndex] = p;
+                    blockToParticleIndexCurrent[blockid]++;
+                }
+            }
+        }
+    }
+}
+
+void ParticleMesher::_scalarFieldProducerThread(BoundedBuffer<ComputeBlock> *computeBlockQueue,
+                                                BoundedBuffer<ComputeBlock> *finishedComputeBlockQueue) {
+    
+    float r = _radius;
+    float sr = _searchRadiusFactor * r;
+
+    while (computeBlockQueue->size() > 0) {
+        std::vector<ComputeBlock> computeBlocks;
+        int numBlocks = computeBlockQueue->pop(_numComputeBlocksPerJob, computeBlocks);
+        if (numBlocks == 0) {
+            continue;
+        }
+
+        for (size_t bidx = 0; bidx < computeBlocks.size(); bidx++) {
+            ComputeBlock block = computeBlocks[bidx];
+            GridIndex blockIndex = block.gridBlock.index;
+            vmath::vec3 blockPositionOffset = Grid3d::GridIndexToPosition(blockIndex, _blockwidth * _subdx);
+
+            for (int pidx = 0; pidx < block.numParticles; pidx++) {
+                vmath::vec3 p = block.particleData[pidx];
+                p -= blockPositionOffset;
+
+                vmath::vec3 pmin(p.x - sr, p.y - sr, p.z - sr);
+                vmath::vec3 pmax(p.x + sr, p.y + sr, p.z + sr);
+                GridIndex gmin = Grid3d::positionToGridIndex(pmin, _subdx);
+                GridIndex gmax = Grid3d::positionToGridIndex(pmax, _subdx);
+                gmax.i++;
+                gmax.j++;
+                gmax.k++;
+
+                for (int k = gmin.k; k <= gmax.k; k++) {
+                    for (int j = gmin.j; j <= gmax.j; j++) {
+                        for (int i = gmin.i; i <= gmax.i; i++) {
+                            if (i < 0 || j < 0 || k < 0 ||
+                                    i >= _blockwidth || j >= _blockwidth || k >= _blockwidth) {
+                                continue;
+                            }
+
+                            vmath::vec3 gpos = Grid3d::GridIndexToPosition(i, j, k, _subdx);
+                            float dist = vmath::length(gpos - p) - r;
+                            int flatidx = Grid3d::getFlatIndex(i, j, k, _blockwidth, _blockwidth);
+                            if (dist < block.gridBlock.data[flatidx]) {
+                                 block.gridBlock.data[flatidx] = dist;
+                            }
+                        }
+                    }
+                }
+            }
+
+            finishedComputeBlockQueue->push(block);
         }
     }
 }
@@ -640,6 +662,117 @@ void ParticleMesher::_setScalarFieldSolidBorders(ScalarField &field) {
     }
 }
 
-float ParticleMesher::_getMaxDistanceValue() {
-    return 3.0 * _particleRadius;
+void ParticleMesher::_addComputeChunkScalarFieldToPreviewField(ScalarFieldData &fieldData) {
+    int isize, jsize, ksize;
+    fieldData.fieldValues.getGridDimensions(&isize, &jsize, &ksize);
+
+    double width = isize * _dx;
+    double height = jsize * _dx;
+    double depth = ksize * _dx;
+    vmath::vec3 offset = fieldData.computeChunk.positionOffset;
+    AABB bbox(offset, width, height, depth);
+
+    vmath::vec3 pv;
+    for (int k = 0; k < _pksize + 1; k++) {
+        for (int j = 0; j < _pjsize + 1; j++) {
+            for (int i = 0; i < _pisize + 1; i++) {
+                pv = Grid3d::GridIndexToPosition(i, j, k, _pdx);
+                if (!bbox.isPointInside(pv)) {
+                    continue;
+                }
+
+                double fval = fieldData.fieldValues.trilinearInterpolation(pv - offset);
+                _pfield.setScalarFieldValue(i, j, k, fval);
+            }
+        }
+    }
+}
+
+void ParticleMesher::_updateSeamData(ScalarFieldData &fieldData) {
+    _applySeamData(fieldData);
+    _commitSeamData(fieldData);
+}
+
+void ParticleMesher::_applySeamData(ScalarFieldData &fieldData) {
+    if (!_seamData.isInitialized) {
+        return;
+    }
+
+    MesherComputeChunk chunk = fieldData.computeChunk;
+    GridIndex gmin = chunk.minGridIndex;
+    GridIndex gmax = chunk.maxGridIndex;
+    Direction dir = chunk.splitDirection;
+
+    bool isJoinedAtSeam = false;
+    if (dir == Direction::U) {
+        isJoinedAtSeam = gmin.i == _seamData.minGridIndex.i;
+        gmax.i = gmin.i + 1;
+    } else if (dir == Direction::V) {
+        isJoinedAtSeam = gmin.j == _seamData.minGridIndex.j;
+        gmax.j = gmin.j + 1;
+    } else if (dir == Direction::W) {
+        isJoinedAtSeam = gmin.k == _seamData.minGridIndex.k;
+        gmax.k = gmin.k + 1;
+    }
+
+    if (!isJoinedAtSeam) {
+        return;
+    }
+
+    Array3d<float>* fieldValues = fieldData.fieldValues.getPointerToScalarField();
+    for (int k = 0; k < _seamData.data.depth; k++) {
+        for (int j = 0; j < _seamData.data.height; j++) {
+            for (int i = 0; i < _seamData.data.width; i++) {
+                GridIndex fieldIndex(_seamData.minGridIndex.i + i - gmin.i,
+                                     _seamData.minGridIndex.j + j - gmin.j,
+                                     _seamData.minGridIndex.k + k - gmin.k);
+                if (!fieldValues->isIndexInRange(fieldIndex)) {
+                    continue;
+                }
+
+                fieldValues->set(fieldIndex, _seamData.data(i, j, k));
+            }
+        }
+    }
+
+    gmax = gmax; // This statement avoids a 'variable set but not used' false-positive
+                 // warning in gcc versions < 6
+}
+
+void ParticleMesher::_commitSeamData(ScalarFieldData &fieldData) {
+    MesherComputeChunk chunk = fieldData.computeChunk;
+    GridIndex gmin = chunk.minGridIndex;
+    GridIndex gmax = chunk.maxGridIndex;
+    Direction dir = chunk.splitDirection;
+
+    Array3d<float>* fieldValues = fieldData.fieldValues.getPointerToScalarField();
+    GridIndex fieldOffset;
+    if (dir == Direction::U) {
+        gmin.i = gmax.i - 1;
+        fieldOffset = GridIndex(fieldValues->width - 1, 0, 0);
+    } else if (dir == Direction::V) {
+        gmin.j = gmax.j - 1;
+        fieldOffset = GridIndex(0, fieldValues->height - 1, 0);
+    } else if (dir == Direction::W) {
+        gmin.k = gmax.k - 1;
+        fieldOffset = GridIndex(0, 0, fieldValues->depth - 1);
+    }
+
+    _seamData.direction = dir;
+    _seamData.minGridIndex = gmin;
+    _seamData.maxGridIndex = gmax;
+
+    _seamData.data = Array3d<float>(gmax.i - gmin.i, gmax.j - gmin.j, gmax.k - gmin.k);
+    for (int k = 0; k < _seamData.data.depth; k++) {
+        for (int j = 0; j < _seamData.data.height; j++) {
+            for (int i = 0; i < _seamData.data.width; i++) {
+                GridIndex fieldIndex(fieldOffset.i + i, 
+                                     fieldOffset.j + j, 
+                                     fieldOffset.k + k);
+                _seamData.data.set(i, j, k, fieldValues->get(fieldIndex));
+            }
+        }
+    }
+
+    _seamData.isInitialized = true;
 }

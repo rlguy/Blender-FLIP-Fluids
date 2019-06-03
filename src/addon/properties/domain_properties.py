@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -62,101 +62,97 @@ from . import (
         )
 from .. import types
 from ..objects import flip_fluid_cache
+from ..utils import version_compatibility_utils as vcu
 
 
 class FlipFluidDomainProperties(bpy.types.PropertyGroup):
-    @classmethod
-    def register(cls):
-        cls.render = PointerProperty(
-                name="Domain Render Properties",
-                description="",
-                type=domain_render_properties.DomainRenderProperties,
-                )
-        cls.bake = PointerProperty(
-                name="Domain Bake Properties",
-                description="",
-                type=domain_bake_properties.DomainBakeProperties,
-                )
-        cls.simulation = PointerProperty(
-                name="Domain Simulation Properties",
-                description="",
-                type=domain_simulation_properties.DomainSimulationProperties,
-                )
-        cls.cache = PointerProperty(
-                name="Domain Cache Properties",
-                description="",
-                type=domain_cache_properties.DomainCacheProperties,
-                )
-        cls.surface = PointerProperty(
-                name="Domain Surface Properties",
-                description="",
-                type=domain_surface_properties.DomainSurfaceProperties,
-                )
-        cls.whitewater = PointerProperty(
-                name="Domain Whitewater Properties",
-                description="",
-                type=domain_whitewater_properties.DomainWhitewaterProperties,
-                )
-        cls.world = PointerProperty(
-                name="Domain World Properties",
-                description="",
-                type=domain_world_properties.DomainWorldProperties,
-                )
-        cls.presets = PointerProperty(
-                name="Domain Presets Properties",
-                description="",
-                type=domain_presets_properties.DomainPresetsProperties,
-                )
-        cls.materials = PointerProperty(
-                name="Domain Materials Properties",
-                description="",
-                type=domain_materials_properties.DomainMaterialsProperties,
-                )
-        cls.advanced = PointerProperty(
-                name="Domain Advanced Properties",
-                description="",
-                type=domain_advanced_properties.DomainAdvancedProperties,
-                )
-        cls.debug = PointerProperty(
-                name="Domain Debug Properties",
-                description="",
-                type=domain_debug_properties.DomainDebugProperties,
-                )
-        cls.stats = PointerProperty(
-                name="Domain Stats Properties",
-                description="",
-                type=domain_stats_properties.DomainStatsProperties,
-                )
-        cls.mesh_cache = PointerProperty(
-                name="Domain Mesh Cache",
-                description="",
-                type=flip_fluid_cache.FlipFluidCache,
-                )
-        cls.property_registry = PointerProperty(
-                name="Domain Property Registry",
-                description="",
-                type=preset_properties.PresetRegistry,
-                )
+    conv = vcu.convert_attribute_to_28
 
-
-    @classmethod
-    def unregister(cls):
-        pass
+    render = PointerProperty(
+            name="Domain Render Properties",
+            description="",
+            type=domain_render_properties.DomainRenderProperties,
+            ); exec(conv("render"))
+    bake = PointerProperty(
+            name="Domain Bake Properties",
+            description="",
+            type=domain_bake_properties.DomainBakeProperties,
+            ); exec(conv("bake"))
+    simulation = PointerProperty(
+            name="Domain Simulation Properties",
+            description="",
+            type=domain_simulation_properties.DomainSimulationProperties,
+            ); exec(conv("simulation"))
+    cache = PointerProperty(
+            name="Domain Cache Properties",
+            description="",
+            type=domain_cache_properties.DomainCacheProperties,
+            ); exec(conv("cache"))
+    surface = PointerProperty(
+            name="Domain Surface Properties",
+            description="",
+            type=domain_surface_properties.DomainSurfaceProperties,
+            ); exec(conv("surface"))
+    whitewater = PointerProperty(
+            name="Domain Whitewater Properties",
+            description="",
+            type=domain_whitewater_properties.DomainWhitewaterProperties,
+            ); exec(conv("whitewater"))
+    world = PointerProperty(
+            name="Domain World Properties",
+            description="",
+            type=domain_world_properties.DomainWorldProperties,
+            ); exec(conv("world"))
+    presets = PointerProperty(
+            name="Domain Presets Properties",
+            description="",
+            type=domain_presets_properties.DomainPresetsProperties,
+            ); exec(conv("presets"))
+    materials = PointerProperty(
+            name="Domain Materials Properties",
+            description="",
+            type=domain_materials_properties.DomainMaterialsProperties,
+            ); exec(conv("materials"))
+    advanced = PointerProperty(
+            name="Domain Advanced Properties",
+            description="",
+            type=domain_advanced_properties.DomainAdvancedProperties,
+            ); exec(conv("advanced"))
+    debug = PointerProperty(
+            name="Domain Debug Properties",
+            description="",
+            type=domain_debug_properties.DomainDebugProperties,
+            ); exec(conv("debug"))
+    stats = PointerProperty(
+            name="Domain Stats Properties",
+            description="",
+            type=domain_stats_properties.DomainStatsProperties,
+            ); exec(conv("stats"))
+    mesh_cache = PointerProperty(
+            name="Domain Mesh Cache",
+            description="",
+            type=flip_fluid_cache.FlipFluidCache,
+            ); exec(conv("mesh_cache"))
+    property_registry = PointerProperty(
+            name="Domain Property Registry",
+            description="",
+            type=preset_properties.PresetRegistry,
+            ); exec(conv("property_registry"))
 
 
     def initialize(self):
         self.simulation.initialize()
         self.cache.initialize()
         self.advanced.initialize()
-        self.materials.initialize()
+        #self.materials.initialize()
         self._initialize_cache()
         self._initialize_property_registry()
-        self.presets.initialize()
+        #self.presets.initialize()
 
 
     def dummy_initialize(self):
         self.simulation.initialize()
-        self.materials.initialize()
+        #self.materials.initialize()
         self._initialize_property_registry()
 
 
@@ -259,8 +255,10 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
         self.render.scene_update_post(scene)
         self.simulation.scene_update_post(scene)
         self.surface.scene_update_post(scene)
+        self.world.scene_update_post(scene)
+        self.debug.scene_update_post(scene)
         self.stats.scene_update_post(scene)
-        self.materials.scene_update_post(scene)
+        #self.materials.scene_update_post(scene)
 
 
     def frame_change_pre(self, scene):
@@ -276,13 +274,14 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
         self.cache.load_post()
         self.stats.load_post()
         self.debug.load_post()
-        self.presets.load_post()
+        #self.presets.load_post()
         self.advanced.load_post()
+        #self.materials.load_post()
         self._initialize_property_registry()
 
 
     def save_pre(self):
-        self.materials.save_pre()
+        pass
 
 
     def save_post(self):

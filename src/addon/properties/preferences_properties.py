@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,19 +25,14 @@ from bpy.props import (
         )
 
 from ..ui import helper_ui
+from ..utils import version_compatibility_utils as vcu
 
 
 class FLIPFluidGPUDevice(bpy.types.PropertyGroup):
-    @classmethod
-    def register(cls):
-        cls.name = StringProperty()
-        cls.description = StringProperty()
-        cls.score = FloatProperty()
-
-
-    @classmethod
-    def unregister(cls):
-        pass
+    conv = vcu.convert_attribute_to_28
+    name = StringProperty(); exec(conv("name"))
+    description = StringProperty(); exec(conv("description"))
+    score = FloatProperty(); exec(conv("score"))
 
 
 class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
@@ -46,19 +41,37 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
     enable_helper = BoolProperty(
                 name="Enable Helper Toolbox",
                 description="Enable the FLIP Fluid helper menu in the 3D view toolbox."
-                    " This menu contains operators to help with workflow and simulation setup.",
+                    " This menu contains operators to help with workflow and simulation setup",
                 default=True,
                 update=lambda self, context: self._update_enable_helper(context),
                 options={'HIDDEN'},
                 )
+    exec(vcu.convert_attribute_to_28("enable_helper"))
+
+    beginner_friendly_mode = BoolProperty(
+                name="Beginner Friendly Mode",
+                description="Beginner friendly mode will show only the most important settings"
+                    " and hide more advanced settings that are not as commonly used in basic"
+                    " simulations. Enabling this will simplify the UI and help you focus on the"
+                    " simulation settings that matter the most while you learn. This setting is"
+                    " also available from the FLIP Fluids toolbox menu",
+                default=False,
+                options={'HIDDEN'},
+                )
+    exec(vcu.convert_attribute_to_28("beginner_friendly_mode"))
+
     selected_gpu_device = EnumProperty(
                 name="GPU Compute Device",
                 description="Device that will be used for GPU acceleration features",
                 items=lambda self, context=None: self._get_gpu_device_enums(context),
                 )
+    exec(vcu.convert_attribute_to_28("selected_gpu_device"))
 
     gpu_devices = CollectionProperty(type=FLIPFluidGPUDevice)
+    exec(vcu.convert_attribute_to_28("gpu_devices"))
+
     is_gpu_devices_initialized = BoolProperty(False)
+    exec(vcu.convert_attribute_to_28("is_gpu_devices_initialized"))
 
 
     def _update_enable_helper(self, context):
@@ -76,46 +89,68 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
 
     def draw(self, context):
         column = self.layout.column(align=True)
+
         split = column.split()
         column_left = split.column(align=True)
         column_right = split.column()
 
-        column_left.prop(self, "enable_helper")
-        column_left.separator()
-        column_left.separator()
+        helper_column = column_left.column()
+        helper_column.prop(self, "beginner_friendly_mode")
+        helper_column.prop(self, "enable_helper")
+        helper_column.separator()
+        helper_column.separator()
 
-        column_left.label("GPU Compute Device:")
-        if self.is_gpu_devices_initialized:
-            column_left.operator(
-                "flip_fluid_operators.preferences_find_gpu_devices", 
-                text="Refresh GPU Device List", 
-                icon="FILE_REFRESH"
-            )
-        else:
-            column_left.operator(
-                "flip_fluid_operators.preferences_find_gpu_devices", 
-                text="Search for GPU Devices", 
-                icon="VIEWZOOM"
-            )
-
-        gpu_box = column_left.box()
-        if not self.is_gpu_devices_initialized:
-            gpu_box.label("Click 'Search for GPU Devices' to initialize device list...")
-        else:
-            if len(self.gpu_devices) == 1:
-                gpu_box.label(str(len(self.gpu_devices)) + " device found:")
-            else:
-                gpu_box.label(str(len(self.gpu_devices)) + " devices found:")
-
-        if len(self.gpu_devices) > 0:
-            gpu_box.prop(self, "selected_gpu_device", expand=True)
-
-        column_left.separator()
-        column_left.separator()
-
-        column_left.label("User Settings:")
+        # These operators need to be reworked to support both 2.79 and 2.80
+        """
+        column_left.label(text="User Settings:")
         column_left.operator("flip_fluid_operators.preferences_import_user_data", icon="IMPORT")
         column_left.operator("flip_fluid_operators.preferences_export_user_data", icon="EXPORT")
+        column_left.separator()
+        column_left.separator()
+        """
+
+        column_left.label(text="Info and Links:")
+        column_left.operator(
+                "wm.url_open", 
+                text="Frequently Asked Questions", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Frequently-Asked-Questions"
+        column_left.operator(
+                "wm.url_open", 
+                text="Scene Troubleshooting", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Scene-Troubleshooting"
+        column_left.operator(
+                "wm.url_open", 
+                text="Tutorials and Learning Resources", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Video-Learning-Series"
+
+        column_left.separator()
+        row = column_left.row(align=True)
+        row.operator(
+                "wm.url_open", 
+                text="Facebook", 
+            ).url = "https://www.facebook.com/FLIPFluids"
+        row.operator(
+                "wm.url_open", 
+                text="Twitter", 
+            ).url = "https://twitter.com/flipfluids"
+        row.operator(
+                "wm.url_open", 
+                text="Instagram", 
+            ).url = "https://www.instagram.com/flip.fluids/"
+        row.operator(
+                "wm.url_open", 
+                text="YouTube", 
+            ).url = "https://www.youtube.com/channel/UCJlVTm456gRwxt86vfGvyRg"
+
+        column_left.separator()
+        column_left.operator(
+                "flip_fluid_operators.check_for_updates", 
+                text="Check for Updates", 
+                icon="WORLD"
+            )
         column_left.separator()
 
 
@@ -129,7 +164,7 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
 
 def load_post():
     id_name = __name__.split(".")[0]
-    preferences = bpy.context.user_preferences.addons[id_name].preferences
+    preferences = vcu.get_blender_preferences(bpy.context).addons[id_name].preferences
     if not preferences.enable_helper:
         helper_ui.unregister()
 

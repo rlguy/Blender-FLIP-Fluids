@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,31 +29,24 @@ int MeshFluidSource::_IDCounter = 0;
 MeshFluidSource::MeshFluidSource() {
 }
 
-MeshFluidSource::MeshFluidSource(int i, int j, int k, double dx, TriangleMesh mesh) :
+MeshFluidSource::MeshFluidSource(int i, int j, int k, double dx) :
         _isize(i), _jsize(j), _ksize(k), _dx(dx), 
-        _meshObject(i, j, k, dx, mesh),
-        _sourceSDF(i, j, k, dx) {
-    _initializeID();
-}
-
-MeshFluidSource::MeshFluidSource(int i, int j, int k, double dx, 
-                   std::vector<TriangleMesh> meshes) :
-        _isize(i), _jsize(j), _ksize(k), _dx(dx), 
-        _meshObject(i, j, k, dx, meshes),
-        _sourceSDF(i, j, k, dx) {
-    _initializeID();
-}
-
-MeshFluidSource::MeshFluidSource(int i, int j, int k, double dx, 
-                   std::vector<TriangleMesh> meshes,
-                   std::vector<TriangleMesh> translations) :
-        _isize(i), _jsize(j), _ksize(k), _dx(dx), 
-        _meshObject(i, j, k, dx, meshes, translations),
+        _meshObject(i, j, k, dx),
         _sourceSDF(i, j, k, dx) {
     _initializeID();
 }
 
 MeshFluidSource::~MeshFluidSource() {
+}
+
+void MeshFluidSource::updateMeshStatic(TriangleMesh meshCurrent) {
+    _meshObject.updateMeshStatic(meshCurrent);
+}
+
+void MeshFluidSource::updateMeshAnimated(TriangleMesh meshPrevious, 
+                                         TriangleMesh meshCurrent, 
+                                         TriangleMesh meshNext) {
+    _meshObject.updateMeshAnimated(meshPrevious, meshCurrent, meshNext);
 }
 
 void MeshFluidSource::enable() {
@@ -69,8 +62,8 @@ bool MeshFluidSource::isEnabled() {
 }
 
 void MeshFluidSource::setSubstepEmissions(int n) {
-    if (n < 1) {
-        n = 1;
+    if (n < 0) {
+        n = 0;
     }
     _substepEmissions = n;
 }
@@ -159,6 +152,18 @@ bool MeshFluidSource::isRigidMeshEnabled() {
     return _isRigidMesh;
 }
 
+void MeshFluidSource::enableConstrainedFluidVelocity() {
+    _isConstrainedFluidVelocity = true;
+}
+
+void MeshFluidSource::disableConstrainedFluidVelocity() {
+    _isConstrainedFluidVelocity = false;
+}
+
+bool MeshFluidSource::isConstrainedFluidVelocityEnabled() {
+    return _isConstrainedFluidVelocity;
+}
+
 void MeshFluidSource::outflowInverse() {
     _isOutflowInversed = !_isOutflowInversed;
 }
@@ -168,8 +173,6 @@ bool MeshFluidSource::isOutflowInversed() {
 }
 
 void MeshFluidSource::setFrame(int f, float frameInterpolation) {
-    _meshObject.setFrame(f);
-
     float eps = 1e-6;
     bool isFrameChanged = f != _currentFrame;
     bool isInterpolationChanged = fabs(frameInterpolation - _currentFrameInterpolation) > eps;
@@ -190,6 +193,14 @@ void MeshFluidSource::update(double dt) {
     std::vector<vmath::vec3> vertexVelocities = _meshObject.getVertexVelocities(dt, _currentFrameInterpolation);
     AABB domainbbox(vmath::vec3(), (_isize + 1) * _dx, (_jsize + 1) * _dx, (_ksize + 1) * _dx);
 
+    AABB meshbbox(sourceMesh.vertices);
+    double eps = (_dx * _dx * _dx) * 0.125;
+    if (!meshbbox.isIntersecting(domainbbox, eps)) {
+        sourceMesh = TriangleMesh();
+        vertexVelocities.clear();
+    }
+
+
     if (_isRigidMesh) {
         _sourceSDF.disableVelocityData();
     } else {
@@ -197,7 +208,7 @@ void MeshFluidSource::update(double dt) {
     }
     _sourceSDF.fastCalculateSignedDistanceField(sourceMesh, vertexVelocities, _exactBand);
 
-    if (!_isRigidMesh) {
+    if (!_isRigidMesh && meshbbox.isIntersecting(domainbbox)) {
         _calculateVelocityFieldData();
     }
 

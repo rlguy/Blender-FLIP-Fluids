@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,7 @@ SOFTWARE.
 int VersionUtils::_major = @FLUIDENGINE_VERSION_MAJOR@;
 int VersionUtils::_minor = @FLUIDENGINE_VERSION_MINOR@;
 int VersionUtils::_revision = @FLUIDENGINE_VERSION_REVISION@;
+std::string VersionUtils::_label = "@FLUIDENGINE_VERSION_LABEL@";
 
 void VersionUtils::getVersion(int *major, int *minor, int *revision) {
     *major = _major;
@@ -44,4 +45,8 @@ int VersionUtils::getMinor() {
 
 int VersionUtils::getRevision() {
     return _revision;
+}
+
+std::string VersionUtils::getLabel() {
+    return _label;
 }

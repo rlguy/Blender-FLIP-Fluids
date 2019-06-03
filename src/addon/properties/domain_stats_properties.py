@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,24 +25,19 @@ from bpy.props import (
         )
 
 from .. import types
+from ..utils import version_compatibility_utils as vcu
 
 # ##############################################################################
 #   STATS PROPERTIES
 # ##############################################################################
 
 class ByteProperty(bpy.types.PropertyGroup):
-    @classmethod
-    def register(cls):
-        cls.bytes = FloatProperty(
-                default=-1.0, 
-                get=lambda self: self._get_bytes(),
-                set=lambda self, value: self._set_bytes(value),
-                )
-
-
-    @classmethod
-    def unregister(cls):
-        pass
+    conv = vcu.convert_attribute_to_28
+    bytes = FloatProperty(
+            default=-1.0, 
+            get=lambda self: self._get_bytes(),
+            set=lambda self, value: self._set_bytes(value),
+            ); exec(conv("bytes"))
 
 
     def get(self):
@@ -65,39 +60,27 @@ class ByteProperty(bpy.types.PropertyGroup):
 
 
 class MeshStatsProperties(bpy.types.PropertyGroup):
-    @classmethod
-    def register(cls):
-        cls.enabled = bpy.props.BoolProperty(default=False)
-        cls.verts = bpy.props.IntProperty(default=-1)
-        cls.faces = bpy.props.IntProperty(default=-1)
-        cls.bytes = PointerProperty(type=ByteProperty)
-
-
-    @classmethod
-    def unregister(cls):
-        pass
+    conv = vcu.convert_attribute_to_28
+    enabled = bpy.props.BoolProperty(default=False); exec(conv("enabled"))
+    verts = bpy.props.IntProperty(default=-1); exec(conv("verts"))
+    faces = bpy.props.IntProperty(default=-1); exec(conv("faces"))
+    bytes = PointerProperty(type=ByteProperty); exec(conv("bytes"))
 
 
 class TimeStatsProperties(bpy.types.PropertyGroup):
-    @classmethod
-    def register(cls):
-        cls.time = FloatProperty(
-                default=-1.0, 
-                precision = 1
-                )
-        cls.pct = FloatProperty(
-                min=0, max=100,
-                default=0.0, 
-                precision = 1,
-                subtype='PERCENTAGE',
-                get=lambda self: self._get_time_pct(),
-                set=lambda self, value: None,
-                )
-
-
-    @classmethod
-    def unregister(cls):
-        pass
+    conv = vcu.convert_attribute_to_28
+    time = FloatProperty(
+            default=-1.0, 
+            precision = 1
+            ); exec(conv("time"))
+    pct = FloatProperty(
+            min=0, max=100,
+            default=0.0, 
+            precision = 1,
+            subtype='PERCENTAGE',
+            get=lambda self: self._get_time_pct(),
+            set=lambda self, value: None,
+            ); exec(conv("pct"))
 
 
     def set_time_pct(self, value):
@@ -112,93 +95,92 @@ class TimeStatsProperties(bpy.types.PropertyGroup):
 
 
 class DomainStatsProperties(bpy.types.PropertyGroup):
-    @classmethod
-    def register(cls):
-        cls.cache_info_type = EnumProperty(
-                name="Cache Info Display Mode",
-                description="Type of cache info to display",
-                items=types.cache_info_modes,
-                default='CACHE_INFO',
-                update=lambda self, context: self._update_cache_info_type(context),
-                )
-        cls.current_info_frame = IntProperty(
-                name="Frame", 
-                description="Select frame number", 
-                min=0,
-                default=0,
-                update=lambda self, context: self._update_current_info_frame(context),
-                )
-        cls.lock_info_frame_to_timeline = BoolProperty(
-                name="Lock To Timeline",
-                description="Set frame number to current frame in timeline",
-                default=True,
-                update=lambda self, context: self._update_lock_info_frame_to_timeline(context),
-                )
-        temp_directory = bpy.context.user_preferences.filepaths.temporary_directory
-        cls.csv_save_filepath = StringProperty(
-                name="",
-                default=os.path.join(temp_directory, "flip_fluid_stats.csv"), 
-                subtype='FILE_PATH'
-                )
-        cls.csv_region_format = EnumProperty(
-                name="Region Format",
-                description="CSV region formatting",
-                items=types.csv_regions,
-                default='CSV_REGION_US',
-                )
+    conv = vcu.convert_attribute_to_28
+    
+    cache_info_type = EnumProperty(
+            name="Cache Info Display Mode",
+            description="Type of cache info to display",
+            items=types.cache_info_modes,
+            default='CACHE_INFO',
+            update=lambda self, context: self._update_cache_info_type(context),
+            ); exec(conv("cache_info_type"))
+    current_info_frame = IntProperty(
+            name="Frame", 
+            description="Select frame number", 
+            min=0,
+            default=0,
+            update=lambda self, context: self._update_current_info_frame(context),
+            ); exec(conv("current_info_frame"))
+    lock_info_frame_to_timeline = BoolProperty(
+            name="Lock To Timeline",
+            description="Set frame number to current frame in timeline",
+            default=True,
+            update=lambda self, context: self._update_lock_info_frame_to_timeline(context),
+            ); exec(conv("lock_info_frame_to_timeline"))
+    temp_directory = vcu.get_blender_preferences(bpy.context).filepaths.temporary_directory
+    csv_save_filepath = StringProperty(
+            name="",
+            default=os.path.join(temp_directory, "flip_fluid_stats.csv"), 
+            subtype='FILE_PATH'
+            ); exec(conv("csv_save_filepath"))
+    csv_region_format = EnumProperty(
+            name="Region Format",
+            description="CSV region formatting",
+            items=types.csv_regions,
+            default='CSV_REGION_US',
+            ); exec(conv("csv_region_format"))
 
-        cls.stats_filename = bpy.props.StringProperty(default='flipstats.data')
-        cls.is_stats_current = bpy.props.BoolProperty(default=False)
+    stats_filename = bpy.props.StringProperty(default='flipstats.data'); exec(conv("stats_filename"))
+    is_stats_current = bpy.props.BoolProperty(default=False); exec(conv("is_stats_current"))
 
-        # Cache Info
-        cls.cache_info_simulation_stats_expanded = BoolProperty(default=True)
-        cls.cache_info_timing_stats_expanded = BoolProperty(default=True)
-        cls.cache_info_mesh_stats_expanded = BoolProperty(default=True)
-        cls.is_cache_info_available = BoolProperty(default=False)
-        cls.num_cache_frames = IntProperty(default=-1)
-        cls.estimated_frame_speed = FloatProperty(default=-1)
-        cls.estimated_time_remaining = IntProperty(default=-1)
-        cls.estimated_time_remaining_timestamp = IntProperty(default=-1)
-        cls.is_estimated_time_remaining_available = BoolProperty(default=False)
-        cls.cache_bytes = PointerProperty(type=ByteProperty)
+    # Cache Info
+    cache_info_simulation_stats_expanded = BoolProperty(default=True); exec(conv("cache_info_simulation_stats_expanded"))
+    cache_info_timing_stats_expanded = BoolProperty(default=True); exec(conv("cache_info_timing_stats_expanded"))
+    cache_info_mesh_stats_expanded = BoolProperty(default=True); exec(conv("cache_info_mesh_stats_expanded"))
+    is_cache_info_available = BoolProperty(default=False); exec(conv("is_cache_info_available"))
+    num_cache_frames = IntProperty(default=-1); exec(conv("num_cache_frames"))
+    estimated_frame_speed = FloatProperty(default=-1); exec(conv("estimated_frame_speed"))
+    estimated_time_remaining = IntProperty(default=-1); exec(conv("estimated_time_remaining"))
+    estimated_time_remaining_timestamp = IntProperty(default=-1); exec(conv("estimated_time_remaining_timestamp"))
+    is_estimated_time_remaining_available = BoolProperty(default=False); exec(conv("is_estimated_time_remaining_available"))
+    cache_bytes = PointerProperty(type=ByteProperty); exec(conv("cache_bytes"))
 
-        # Frame Info
-        cls.frame_info_simulation_stats_expanded = BoolProperty(default=True)
-        cls.frame_info_timing_stats_expanded = BoolProperty(default=True)
-        cls.frame_info_mesh_stats_expanded = BoolProperty(default=True)
-        cls.display_frame_viscosity_timing_stats = BoolProperty(default=False)
-        cls.display_frame_diffuse_timing_stats = BoolProperty(default=False)
-        cls.display_frame_diffuse_particle_stats = BoolProperty(default=False)
-        cls.is_frame_info_available = bpy.props.BoolProperty(default=False)
-        cls.frame_info_id = IntProperty(default=-1)
-        cls.frame_substeps = IntProperty(default=-1)
-        cls.frame_delta_time = FloatProperty(default=0.0)
-        cls.frame_fluid_particles = IntProperty(default=-1)
-        cls.frame_diffuse_particles = IntProperty(default=-1)
+    # Frame Info
+    frame_info_simulation_stats_expanded = BoolProperty(default=True); exec(conv("frame_info_simulation_stats_expanded"))
+    frame_info_timing_stats_expanded = BoolProperty(default=True); exec(conv("frame_info_timing_stats_expanded"))
+    frame_info_mesh_stats_expanded = BoolProperty(default=True); exec(conv("frame_info_mesh_stats_expanded"))
+    display_frame_viscosity_timing_stats = BoolProperty(default=False); exec(conv("display_frame_viscosity_timing_stats"))
+    display_frame_diffuse_timing_stats = BoolProperty(default=False); exec(conv("display_frame_diffuse_timing_stats"))
+    display_frame_diffuse_particle_stats = BoolProperty(default=False); exec(conv("display_frame_diffuse_particle_stats"))
+    is_frame_info_available = bpy.props.BoolProperty(default=False); exec(conv("is_frame_info_available"))
+    frame_info_id = IntProperty(default=-1); exec(conv("frame_info_id"))
+    frame_substeps = IntProperty(default=-1); exec(conv("frame_substeps"))
+    frame_delta_time = FloatProperty(default=0.0); exec(conv("frame_delta_time"))
+    frame_fluid_particles = IntProperty(default=-1); exec(conv("frame_fluid_particles"))
+    frame_diffuse_particles = IntProperty(default=-1); exec(conv("frame_diffuse_particles"))
 
-        # Mesh Info
-        cls.surface_mesh = PointerProperty(type=MeshStatsProperties)
-        cls.preview_mesh = PointerProperty(type=MeshStatsProperties)
-        cls.foam_mesh = PointerProperty(type=MeshStatsProperties)
-        cls.bubble_mesh = PointerProperty(type=MeshStatsProperties)
-        cls.spray_mesh = PointerProperty(type=MeshStatsProperties)
-        cls.particle_mesh = PointerProperty(type=MeshStatsProperties)
-        cls.obstacle_mesh = PointerProperty(type=MeshStatsProperties)
+    # Mesh Info
+    surface_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surface_mesh"))
+    preview_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("preview_mesh"))
+    surfaceblur_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surfaceblur_mesh"))
+    foam_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("foam_mesh"))
+    bubble_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("bubble_mesh"))
+    spray_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("spray_mesh"))
+    foamblur_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("foamblur_mesh"))
+    bubbleblur_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("bubbleblur_mesh"))
+    sprayblur_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("sprayblur_mesh"))
+    particle_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("particle_mesh"))
+    obstacle_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("obstacle_mesh"))
 
-        # Time Info
-        cls.time_mesh = PointerProperty(type=TimeStatsProperties)
-        cls.time_advection = PointerProperty(type=TimeStatsProperties)
-        cls.time_particles = PointerProperty(type=TimeStatsProperties)
-        cls.time_pressure = PointerProperty(type=TimeStatsProperties)
-        cls.time_diffuse = PointerProperty(type=TimeStatsProperties)
-        cls.time_viscosity = PointerProperty(type=TimeStatsProperties)
-        cls.time_objects = PointerProperty(type=TimeStatsProperties)
-        cls.time_other = PointerProperty(type=TimeStatsProperties)
-
-
-    @classmethod
-    def unregister(cls):
-        pass
+    # Time Info
+    time_mesh = PointerProperty(type=TimeStatsProperties); exec(conv("time_mesh"))
+    time_advection = PointerProperty(type=TimeStatsProperties); exec(conv("time_advection"))
+    time_particles = PointerProperty(type=TimeStatsProperties); exec(conv("time_particles"))
+    time_pressure = PointerProperty(type=TimeStatsProperties); exec(conv("time_pressure"))
+    time_diffuse = PointerProperty(type=TimeStatsProperties); exec(conv("time_diffuse"))
+    time_viscosity = PointerProperty(type=TimeStatsProperties); exec(conv("time_viscosity"))
+    time_objects = PointerProperty(type=TimeStatsProperties); exec(conv("time_objects"))
+    time_other = PointerProperty(type=TimeStatsProperties); exec(conv("time_other"))
 
 
     def register_preset_properties(self, registry, path):
@@ -319,13 +301,17 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.frame_fluid_particles = data['fluid_particles']
         self.frame_diffuse_particles = data['diffuse_particles']
 
-        self._set_mesh_stats_data(self.surface_mesh,  data['surface'])
-        self._set_mesh_stats_data(self.preview_mesh,  data['preview'])
-        self._set_mesh_stats_data(self.foam_mesh,     data['foam'])
-        self._set_mesh_stats_data(self.bubble_mesh,   data['bubble'])
-        self._set_mesh_stats_data(self.spray_mesh,    data['spray'])
-        self._set_mesh_stats_data(self.particle_mesh, data['particles'])
-        self._set_mesh_stats_data(self.obstacle_mesh, data['obstacle'])
+        self._set_mesh_stats_data(self.surface_mesh,      data['surface'])
+        self._set_mesh_stats_data(self.preview_mesh,      data['preview'])
+        self._set_mesh_stats_data(self.surfaceblur_mesh,  data['surfaceblur'])
+        self._set_mesh_stats_data(self.foam_mesh,         data['foam'])
+        self._set_mesh_stats_data(self.bubble_mesh,       data['bubble'])
+        self._set_mesh_stats_data(self.spray_mesh,        data['spray'])
+        self._set_mesh_stats_data(self.foamblur_mesh,  data['foamblur'])
+        self._set_mesh_stats_data(self.bubbleblur_mesh,  data['bubbleblur'])
+        self._set_mesh_stats_data(self.sprayblur_mesh,  data['sprayblur'])
+        self._set_mesh_stats_data(self.particle_mesh,     data['particles'])
+        self._set_mesh_stats_data(self.obstacle_mesh,     data['obstacle'])
 
         total_time = max(data['timing']['total'], 1e-6)
         time_other = (total_time - data['timing']['mesh']
@@ -395,12 +381,20 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
                 cache_size += fdata['surface']['bytes']
             if fdata['preview']['enabled']:
                 cache_size += fdata['preview']['bytes']
+            if fdata['surfaceblur']['enabled']:
+                cache_size += fdata['surfaceblur']['bytes']
             if fdata['foam']['enabled']:
                 cache_size += fdata['foam']['bytes']
             if fdata['bubble']['enabled']:
                 cache_size += fdata['bubble']['bytes']
             if fdata['spray']['enabled']:
                 cache_size += fdata['spray']['bytes']
+            if fdata['foamblur']['enabled']:
+                cache_size += fdata['foamblur']['bytes']
+            if fdata['bubbleblur']['enabled']:
+                cache_size += fdata['bubbleblur']['bytes']
+            if fdata['sprayblur']['enabled']:
+                cache_size += fdata['sprayblur']['bytes']
             if fdata['particles']['enabled']:
                 cache_size += fdata['particles']['bytes']
             if fdata['obstacle']['enabled']:
@@ -426,16 +420,24 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
 
         is_surface_enabled = False
         is_preview_enabled = False
+        is_surfaceblur_enabled = False
         is_foam_enabled = False
         is_bubble_enabled = False
         is_spray_enabled = False
+        is_foamblur_enabled = False
+        is_bubbleblur_enabled = False
+        is_sprayblur_enabled = False
         is_particles_enabled = False
         is_obstacle_enabled = False
         surface_bytes = 0
         preview_bytes = 0
+        surfaceblur_bytes = 0
         foam_bytes = 0
         bubble_bytes = 0
         spray_bytes = 0
+        foamblur_bytes = 0
+        bubbleblur_bytes = 0
+        sprayblur_bytes = 0
         particles_bytes = 0
         obstacle_bytes = 0
 
@@ -464,6 +466,9 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             if fdata['preview']['enabled']:
                 is_preview_enabled = True
                 preview_bytes += fdata['preview']['bytes']
+            if fdata['surfaceblur']['enabled']:
+                is_surfaceblur_enabled = True
+                surfaceblur_bytes += fdata['surfaceblur']['bytes']
             if fdata['foam']['enabled']:
                 is_foam_enabled = True
                 foam_bytes += fdata['foam']['bytes']
@@ -473,6 +478,15 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             if fdata['spray']['enabled']:
                 is_spray_enabled = True
                 spray_bytes += fdata['spray']['bytes']
+            if fdata['foamblur']['enabled']:
+                is_foamblur_enabled = True
+                foamblur_bytes += fdata['foamblur']['bytes']
+            if fdata['bubbleblur']['enabled']:
+                is_bubbleeblur_enabled = True
+                bubbleblur_bytes += fdata['bubbleblur']['bytes']
+            if fdata['sprayblur']['enabled']:
+                is_sprayblur_enabled = True
+                sprayblur_bytes += fdata['sprayblur']['bytes']
             if fdata['particles']['enabled']:
                 is_particles_enabled = True
                 particles_bytes += fdata['particles']['bytes']
@@ -497,17 +511,25 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
 
         self.surface_mesh.enabled = is_surface_enabled
         self.preview_mesh.enabled = is_preview_enabled
+        self.surfaceblur_mesh.enabled = is_surfaceblur_enabled
         self.foam_mesh.enabled = is_foam_enabled
         self.bubble_mesh.enabled = is_bubble_enabled
         self.spray_mesh.enabled = is_spray_enabled
+        self.foamblur_mesh.enabled = is_foamblur_enabled
+        self.bubbleblur_mesh.enabled = is_bubbleblur_enabled
+        self.sprayblur_mesh.enabled = is_sprayblur_enabled
         self.particle_mesh.enabled = is_particles_enabled
         self.obstacle_mesh.enabled = is_obstacle_enabled
 
         self.surface_mesh.bytes.set(surface_bytes)
         self.preview_mesh.bytes.set(preview_bytes)
+        self.surfaceblur_mesh.bytes.set(surfaceblur_bytes)
         self.foam_mesh.bytes.set(foam_bytes)
         self.bubble_mesh.bytes.set(bubble_bytes)
         self.spray_mesh.bytes.set(spray_bytes)
+        self.foamblur_mesh.bytes.set(foamblur_bytes)
+        self.bubbleblur_mesh.bytes.set(bubbleblur_bytes)
+        self.sprayblur_mesh.bytes.set(sprayblur_bytes)
         self.particle_mesh.bytes.set(particles_bytes)
         self.obstacle_mesh.bytes.set(obstacle_bytes)
 

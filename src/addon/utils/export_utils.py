@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
 
 import bpy
 from mathutils import Vector, Matrix, Quaternion, Euler, Color
+from . import version_compatibility_utils as vcu
 
 
 def flip_fluid_object_to_dict(obj, object_properties):
@@ -95,6 +96,8 @@ def get_property_fcurve_from_path(obj, path_name, index = 0):
 
 
 def get_property_data_dict(obj, prop_group, prop_name, index = None):
+    dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+
     is_index_set = index != None
     if not is_index_set:
         index = 0
@@ -102,8 +105,7 @@ def get_property_data_dict(obj, prop_group, prop_name, index = None):
     if is_property_animated(obj, prop_name, index):
         values = []
         fcurve = get_property_fcurve(obj, prop_name, index)
-        frame_start = bpy.context.scene.frame_start
-        frame_end = bpy.context.scene.frame_end
+        frame_start, frame_end = dprops.simulation.get_frame_range()
         for i in range(frame_start, frame_end + 1):
             values.append(fcurve.evaluate(i))
 
@@ -125,6 +127,8 @@ def get_property_data_dict(obj, prop_group, prop_name, index = None):
 
 
 def get_property_data_dict_from_path(obj, prop_group, path_name, index = None):
+    dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+    
     is_index_set = index != None
     if not is_index_set:
         index = 0
@@ -132,8 +136,7 @@ def get_property_data_dict_from_path(obj, prop_group, path_name, index = None):
     if is_property_path_animated(obj, path_name, index):
         values = []
         fcurve = get_property_fcurve_from_path(obj, path_name, index)
-        frame_start = bpy.context.scene.frame_start
-        frame_end = bpy.context.scene.frame_end
+        frame_start, frame_end = dprops.simulation.get_frame_range()
         for i in range(frame_start, frame_end + 1):
             values.append(fcurve.evaluate(i))
 
@@ -389,7 +392,7 @@ def transform_data_to_world_matrix(transform):
     mat_scale[1][1] = transform['scale'][1]
     mat_scale[2][2] = transform['scale'][2]
 
-    return mat_loc * mat_rot * mat_scale
+    return vcu.element_multiply(vcu.element_multiply(mat_loc, mat_rot), mat_scale)
 
 
 def get_object_world_matrix_data_dict(obj):
@@ -407,7 +410,7 @@ def get_object_world_matrix_data_dict(obj):
 
 def get_object_bbox_center(obj):
         local_bbox_center = 0.125 * sum((Vector(b) for b in obj.bound_box), Vector())
-        global_bbox_center = obj.matrix_world * local_bbox_center
+        global_bbox_center = vcu.element_multiply(obj.matrix_world, local_bbox_center)
         return global_bbox_center
 
 
@@ -431,7 +434,7 @@ def get_object_center_data_dict(obj):
         ret_dict['data'] = center
 
     obj.matrix_world = orig_matrix_world
-    bpy.context.scene.update()
+    vcu.depsgraph_update()
 
     return ret_dict
 

@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,9 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys, os, shutil, zipfile, json, struct, traceback
+import sys, os, shutil, zipfile, json, struct, traceback, math
 
 from .objects import flip_fluid_map
+from .operators import bake_operators
 from .pyfluid import (
         FluidSimulation,
         TriangleMesh,
@@ -27,6 +28,8 @@ from .pyfluid import (
         )
 
 FLUIDSIM_OBJECT = None
+SIMULATION_DATA = None
+CACHE_DIRECTORY = ""
 
 
 class LibraryVersionError(Exception):
@@ -36,31 +39,279 @@ class LibraryVersionError(Exception):
         return str(self.value)
 
 
-def __extract_mesh(zfile, path):
-    bobj_data = zfile.read(path)
-    return TriangleMesh.from_bobj(bobj_data)
+def __set_simulation_object(fluidsim_object):
+    global FLUIDSIM_OBJECT
+    FLUIDSIM_OBJECT = fluidsim_object
 
 
-def __extract_data(zfile):
-    jsonstr = zfile.read("data.json").decode("utf-8")
-    json_data = json.loads(jsonstr)
+def __get_simulation_object():
+    global FLUIDSIM_OBJECT
+    return FLUIDSIM_OBJECT
+
+
+def __set_simulation_data(data):
+    global SIMULATION_DATA
+    SIMULATION_DATA = data
+
+
+def __get_simulation_data():
+    global SIMULATION_DATA
+    return SIMULATION_DATA
+
+
+def __set_cache_directory(cache_directory):
+    global CACHE_DIRECTORY
+    CACHE_DIRECTORY = cache_directory
+
+
+def __get_cache_directory():
+    global CACHE_DIRECTORY
+    return CACHE_DIRECTORY
+
+
+def __get_export_directory():
+    return os.path.join(CACHE_DIRECTORY, "export")
+
+
+def __get_mesh_directory(object_name):
+    return os.path.join(__get_export_directory(), object_name)
+
+
+def __get_mesh_info_filepath(object_name):
+    return os.path.join(__get_export_directory(), object_name, "mesh.info")
+
+
+def __get_static_mesh_filepath(object_name):
+    return os.path.join(__get_mesh_directory(object_name), "mesh.bobj")
+
+
+def __get_keyframed_mesh_filepath(object_name):
+    return os.path.join(__get_mesh_directory(object_name), "mesh.bobj")
+
+
+def __get_keyframed_transform_filepath(object_name):
+    return os.path.join(__get_mesh_directory(object_name), "transforms.data")
+
+
+def __get_animated_mesh_filepath(object_name, frameno):
+    mesh_name = "mesh" + str(frameno).zfill(6) + ".bobj"
+    return os.path.join(__get_mesh_directory(object_name), mesh_name)
+
+
+def __is_object_static(object_name):
+    info = __extract_mesh_info(object_name)
+    return info['mesh_type'] == 'STATIC'
+
+
+def __is_object_keyframed(object_name):
+    info = __extract_mesh_info(object_name)
+    return info['mesh_type'] == 'KEYFRAMED'
+
+
+def __is_object_animated(object_name):
+    info = __extract_mesh_info(object_name)
+    return info['mesh_type'] == 'ANIMATED'
+
+
+def __is_object_dynamic(object_name):
+    info = __extract_mesh_info(object_name)
+    return info['mesh_type'] == 'KEYFRAMED' or info['mesh_type'] == 'ANIMATED'
+
+
+def __get_timeline_frame():
+    fluidsim = __get_simulation_object()
+    data = __get_simulation_data()
+    frame_start = data.domain_data.initialize.frame_start
+    return fluidsim.get_current_frame() + frame_start
+
+
+def __get_frame_id():
+    fluidsim = __get_simulation_object()
+    return fluidsim.get_current_frame()
+
+
+def __extract_mesh_info(object_name):
+    mesh_directory = __get_mesh_directory(object_name)
+    if not os.path.isdir(mesh_directory):
+        msg = "Error extracting mesh data. Exported object not found: <" + object_name + ">"
+        raise Exception(msg)
+
+    info_filepath = __get_mesh_info_filepath(object_name)
+    if not os.path.isfile(info_filepath):
+        msg = "Error extracting mesh info. Exported object info not found: <" 
+        msg += info_filepath + ">"
+        raise Exception(msg)
+
+    with open(info_filepath, 'r') as f:
+        json_data = json.loads(f.read())
+
+    return json_data
+
+
+def __extract_static_mesh(object_name):
+    mesh_directory = __get_mesh_directory(object_name)
+    if not os.path.isdir(mesh_directory):
+        msg = "Error extracting mesh data. Exported object not found: <" + object_name + ">"
+        raise Exception(msg)
+
+    filepath_static = __get_static_mesh_filepath(object_name)
+    if not os.path.isfile(filepath_static):
+        msg = "Error extracting mesh data. Exported object frame not found: <" 
+        msg += object_name + ">"
+        raise Exception(msg)
+
+    with open(filepath_static, 'rb') as f:
+        bobj_data = f.read()
+
+    data = __get_simulation_data()
+    scale = data.domain_data.initialize.scale
+    bbox = data.domain_data.initialize.bbox
+    tmesh = TriangleMesh.from_bobj(bobj_data)
+    tmesh.translate(-bbox.x, -bbox.y, -bbox.z)
+    tmesh.scale(scale)
+
+    return tmesh
+
+
+def __extract_transform_data(object_name, frameno):
+    transform_filepath = __get_keyframed_transform_filepath(object_name)
+    if not os.path.isfile(transform_filepath):
+        msg = "Error extracting mesh transforms. Exported object not found: <" + object_name + ">"
+        raise Exception(msg)
+
+    with open(transform_filepath, 'r') as f:
+        matrix_data = json.loads(f.read())
+
+    key = str(frameno)
+    if not key in matrix_data:
+        msg = "Error extracting mesh transforms. Exported transform frame not found: <" 
+        msg += object_name + ", " + str(frameno) + ">"
+        raise Exception(msg)
+
+    return matrix_data[key]
+
+
+def __extract_keyframed_mesh(object_name, frameno):
+    mesh_directory = __get_mesh_directory(object_name)
+    filepath_keyframed = __get_keyframed_mesh_filepath(object_name)
+    if not os.path.isdir(mesh_directory) or not os.path.isfile(filepath_keyframed):
+        msg = "Error extracting mesh data. Exported object not found: <" + object_name + ">"
+        raise Exception(msg)
+
+    with open(filepath_keyframed, 'rb') as f:
+        bobj_data = f.read()
+
+    tmesh = TriangleMesh.from_bobj(bobj_data)
+    tmesh.apply_transform(__extract_transform_data(object_name, frameno))
+
+    data = __get_simulation_data()
+    scale = data.domain_data.initialize.scale
+    bbox = data.domain_data.initialize.bbox
+    tmesh.translate(-bbox.x, -bbox.y, -bbox.z)
+    tmesh.scale(scale)
+
+    return tmesh
+
+
+def __extract_animated_mesh(object_name, frameno):
+    mesh_directory = __get_mesh_directory(object_name)
+    if not os.path.isdir(mesh_directory):
+        msg = "Error extracting mesh data. Exported object not found: <" + object_name + ">"
+        raise Exception(msg)
+
+    filepath_animated = __get_animated_mesh_filepath(object_name, frameno)
+    if not os.path.isfile(filepath_animated):
+        msg = "Error extracting mesh data. Exported object frame not found: <" 
+        msg += object_name + ", " + str(frameno) + ">"
+        raise Exception(msg)
+
+    with open(filepath_animated, 'rb') as f:
+        bobj_data = f.read()
+
+    data = __get_simulation_data()
+    scale = data.domain_data.initialize.scale
+    bbox = data.domain_data.initialize.bbox
+    tmesh = TriangleMesh.from_bobj(bobj_data)
+    tmesh.translate(-bbox.x, -bbox.y, -bbox.z)
+    tmesh.scale(scale)
+
+    return tmesh
+
+
+def __extract_mesh(object_name, frameno):
+    info = __extract_mesh_info(object_name)
+    if info['mesh_type'] == 'STATIC':
+        return __extract_static_mesh(object_name)
+    elif info['mesh_type'] == 'KEYFRAMED': 
+        return __extract_keyframed_mesh(object_name, frameno)
+    elif info['mesh_type'] == 'ANIMATED':
+        return __extract_animated_mesh(object_name, frameno)
+
+
+def __extract_static_frame_mesh(object_name):
+    return __extract_static_mesh(object_name)
+
+
+def __extract_keyframed_frame_meshes(object_name, frameno):
+    mesh_current = __extract_keyframed_mesh(object_name, frameno)
+    if frameno - 1 < 0 or not __keyframed_mesh_exists(object_name, frameno - 1):
+        mesh_previous = mesh_current
+    else:
+        mesh_previous = __extract_keyframed_mesh(object_name, frameno - 1)
+
+    if not __keyframed_mesh_exists(object_name, frameno + 1):
+        mesh_next = mesh_current
+    else:
+        mesh_next = __extract_keyframed_mesh(object_name, frameno + 1)
+    return mesh_previous, mesh_current, mesh_next
+
+
+def __extract_animated_frame_meshes(object_name, frameno):
+    mesh_current = __extract_animated_mesh(object_name, frameno)
+    if frameno - 1 < 0 or not __animated_mesh_exists(object_name, frameno - 1):
+        mesh_previous = mesh_current
+    else:
+        mesh_previous = __extract_animated_mesh(object_name, frameno - 1)
+        
+    if not __animated_mesh_exists(object_name, frameno + 1):
+        mesh_next = mesh_current
+    else:
+        mesh_next = __extract_animated_mesh(object_name, frameno + 1)
+    return mesh_previous, mesh_current, mesh_next
+
+
+def __extract_dynamic_frame_meshes(object_name, frameno):
+    info = __extract_mesh_info(object_name)
+    if info['mesh_type'] == 'KEYFRAMED': 
+        return __extract_keyframed_frame_meshes(object_name, frameno)
+    elif info['mesh_type'] == 'ANIMATED':
+        return __extract_animated_frame_meshes(object_name, frameno)
+
+
+def __static_mesh_exists(object_name):
+    mesh_directory = __get_mesh_directory(object_name)
+    if not os.path.isdir(mesh_directory):
+        return False
+    filepath_static = __get_static_mesh_filepath(object_name)
+    return os.path.isfile(filepath_static)
+
+
+def __keyframed_mesh_exists(object_name, frameno):
+    mesh_directory = __get_mesh_directory(object_name)
+    if not os.path.isdir(mesh_directory):
+        return False
+    info = __extract_mesh_info(object_name)
+    return frameno >= info['frame_start'] and frameno <= info['frame_end']
+
+
+def __animated_mesh_exists(object_name, frameno):
+    return __keyframed_mesh_exists(object_name, frameno)
+
+
+def __extract_data(data_filepath):
+    with open(data_filepath, 'r') as f:
+        json_data = json.loads(f.read())
     data = flip_fluid_map.Map(json_data)
-
-    for obj in data.obstacle_data + data.inflow_data + data.outflow_data + data.fluid_data:
-        if obj.is_animated:
-            meshes = []
-            for path in obj.mesh_data_file:
-                meshes.append(__extract_mesh(zfile, path))
-
-            translation_data = []
-            for path in obj.translation_data_file:
-                translation_data.append(__extract_mesh(zfile, path))
-
-            obj.mesh = meshes
-            obj.translation_data = translation_data
-        else:
-            obj.mesh = __extract_mesh(zfile, obj.mesh_data_file)
-
     return data
 
 
@@ -78,7 +329,7 @@ def __set_output_directories(cache_dir):
 
 
 def __check_bake_cancelled(bakedata):
-    if bakedata.is_cancelled:
+    if bakedata.is_cancelled or not bake_operators.is_bake_operator_running():
         bakedata.is_finished = True
         return True
     return False
@@ -119,6 +370,23 @@ def __get_emission_boundary(settings, fluidsim):
         bounds.expand(-2*pad)
 
     return bounds
+
+
+def __get_obstacle_meshing_offset(obstacle_meshing_mode):
+    if type(obstacle_meshing_mode) == float:
+        if obstacle_meshing_mode == 0.0:
+            obstacle_meshing_mode = 'MESHING_MODE_INSIDE_SURFACE'
+        elif obstacle_meshing_mode == 1.0:
+            obstacle_meshing_mode = 'MESHING_MODE_ON_SURFACE'
+        elif obstacle_meshing_mode == 2.0:
+            obstacle_meshing_mode = 'MESHING_MODE_OUTSIDE_SURFACE'
+
+    if obstacle_meshing_mode == 'MESHING_MODE_INSIDE_SURFACE':
+        return 0.25
+    elif obstacle_meshing_mode == 'MESHING_MODE_ON_SURFACE':
+        return 0.0
+    elif obstacle_meshing_mode == 'MESHING_MODE_OUTSIDE_SURFACE':
+        return -0.5
 
 
 def __read_save_state_file_data(file_data_path):
@@ -174,8 +442,56 @@ def __load_save_state_simulator_data(fluidsim, autosave_info):
     fluidsim.set_current_frame(next_frame)
 
 
-def __load_save_state_data(fluidsim, data, cache_directory):
-    autosave_directory = os.path.join(cache_directory, "savestates", "autosave")
+def __delete_outdated_savestates(cache_directory, savestate_id):
+    savestate_directory = os.path.join(cache_directory, "savestates")
+    subdirs = os.listdir(savestate_directory)
+    if "autosave" in subdirs:
+        subdirs.remove("autosave")
+
+    for d in subdirs:
+        if int(d[-6:]) > savestate_id:
+            path = os.path.join(savestate_directory, d)
+            try:
+                shutil.rmtree(path)
+            except:
+                print("Error: unable to delete directory <" + path + "> (skipping)")
+
+
+def __delete_outdated_meshes(cache_directory, savestate_id):
+    bakefiles_directory = os.path.join(cache_directory, "bakefiles")
+    files = os.listdir(bakefiles_directory)
+    for f in files:
+        filename = f.split(".")[0]
+        filenum = int(filename[-6:])
+        if filenum > savestate_id:
+            path = os.path.join(bakefiles_directory, f)
+            try:
+                os.remove(path)
+            except:
+                print("Error: unable to delete file <" + path + "> (skipping)")
+
+    stats_filepath = os.path.join(cache_directory, "flipstats.data")
+    with open(stats_filepath, 'r') as f:
+        stats_info = json.loads(f.read())
+
+    for key in stats_info.copy().keys():
+        if int(key) > savestate_id:
+            del stats_info[key]
+
+    stats_json = json.dumps(stats_info, sort_keys=True, indent=4)
+    with open(stats_filepath, 'w') as f:
+        f.write(stats_json)
+
+
+def __load_save_state_data(fluidsim, data, cache_directory, savestate_id):
+    if savestate_id is None:
+        return
+
+    savestate_directory = os.path.join(cache_directory, "savestates")
+    savestate_name = "autosave" + str(savestate_id).zfill(6)
+    autosave_directory = os.path.join(savestate_directory, savestate_name)
+    if not os.path.isdir(autosave_directory):
+        autosave_directory = os.path.join(savestate_directory, "autosave")
 
     if not os.path.isdir(autosave_directory):
         return
@@ -185,11 +501,17 @@ def __load_save_state_data(fluidsim, data, cache_directory):
         return
 
     with open(autosave_info_file, 'r') as f:
-            autosave_info = json.loads(f.read())
+        autosave_info = json.loads(f.read())
 
     __load_save_state_marker_particle_data(fluidsim, autosave_directory, autosave_info)
     __load_save_state_diffuse_particle_data(fluidsim, autosave_directory, autosave_info)
     __load_save_state_simulator_data(fluidsim, autosave_info)
+
+    init_data = data.domain_data.initialize
+    if init_data.delete_outdated_savestates:
+        __delete_outdated_savestates(cache_directory, savestate_id)
+    if init_data.delete_outdated_meshes:
+        __delete_outdated_meshes(cache_directory, savestate_id)
 
 
 def __initialize_fluid_simulation_settings(fluidsim, data):
@@ -217,6 +539,9 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
         fluidsim.enable_diffuse_foam = is_foam_enabled
         fluidsim.enable_diffuse_bubbles = is_bubbles_enabled
         fluidsim.enable_diffuse_spray = is_spray_enabled
+
+        fluidsim.enable_whitewater_motion_blur = \
+            __get_parameter_data(whitewater.generate_whitewater_motion_blur_data, frameno)
 
         is_generating_whitewater = __get_parameter_data(whitewater.enable_whitewater_emission, frameno)
         fluidsim.enable_diffuse_particle_emission = is_generating_whitewater
@@ -300,6 +625,12 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
         drag = __get_parameter_data(whitewater.spray_drag_coefficient, frameno)
         fluidsim.diffuse_spray_drag_coefficient = drag
 
+        base_level = __get_parameter_data(whitewater.obstacle_influence_base_level, frameno)
+        fluidsim.diffuse_obstacle_influence_base_level = base_level
+
+        decay_rate = __get_parameter_data(whitewater.obstacle_influence_decay_rate, frameno)
+        fluidsim.diffuse_obstacle_influence_decay_rate = decay_rate
+
     # World Settings
     world = dprops.world
     fluidsim.add_body_force(__get_parameter_data(world.gravity, frameno))
@@ -307,6 +638,24 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
     is_viscosity_enabled = __get_parameter_data(world.enable_viscosity, frameno)
     if is_viscosity_enabled:
         fluidsim.viscosity = __get_parameter_data(world.viscosity, frameno)
+
+    is_surface_tension_enabled = __get_parameter_data(world.enable_surface_tension, frameno)
+    if is_surface_tension_enabled:
+        surface_tension = __get_parameter_data(world.surface_tension, frameno)
+        surface_tension *= world.native_surface_tension_scale
+        fluidsim.surface_tension = surface_tension
+
+        mincfl, maxcfl = world.minimum_surface_tension_cfl, world.maximum_surface_tension_cfl
+        accuracy_pct = __get_parameter_data(world.surface_tension_accuracy, frameno) / 100.0
+        surface_tension_number = mincfl + (1.0 - accuracy_pct) * (maxcfl - mincfl)
+        fluidsim.surface_tension_condition_number = surface_tension_number
+
+    is_sheet_seeding_enabled = __get_parameter_data(world.enable_sheet_seeding, frameno)
+    if is_sheet_seeding_enabled:
+        fluidsim.enable_sheet_seeding = is_sheet_seeding_enabled
+        fluidsim.sheet_fill_rate = __get_parameter_data(world.sheet_fill_rate, frameno)
+        threshold = __get_parameter_data(world.sheet_fill_threshold, frameno)
+        fluidsim.sheet_fill_threshold = threshold - 1
 
     friction = __get_parameter_data(world.boundary_friction, frameno)
     fluidsim.boundary_friction = friction
@@ -333,10 +682,24 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
     fluidsim.surface_smoothing_iterations = \
         __get_parameter_data(surface.smoothing_iterations, frameno)
 
-    fluidsim.enable_smooth_interface_meshing = \
-        __get_parameter_data(surface.enable_smooth_interface_meshing, frameno)
+    enable_meshing_offset = __get_parameter_data(surface.enable_meshing_offset, frameno)
+    fluidsim.enable_obstacle_meshing_offset = enable_meshing_offset
+
+    meshing_mode = __get_parameter_data(surface.obstacle_meshing_mode, frameno)
+    meshing_offset = __get_obstacle_meshing_offset(meshing_mode)
+    fluidsim.obstacle_meshing_offset = meshing_offset
+
+    fluidsim.enable_remove_surface_near_domain = \
+        __get_parameter_data(surface.remove_mesh_near_domain, frameno)
+    fluidsim.remove_surface_near_domain_distance = \
+        __get_parameter_data(surface.remove_mesh_near_domain_distance, frameno) - 1
+
     fluidsim.enable_inverted_contact_normals = \
         __get_parameter_data(surface.invert_contact_normals, frameno)
+    fluidsim.enable_surface_motion_blur = \
+        __get_parameter_data(surface.generate_motion_blur_data, frameno)
+
+    __set_meshing_volume_object(fluidsim, data, frameno)
 
     # Advanced Settings
 
@@ -350,6 +713,8 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
 
     fluidsim.marker_particle_jitter_factor = \
         __get_parameter_data(advanced.particle_jitter_factor, frameno)
+    fluidsim.jitter_surface_marker_particles = \
+        __get_parameter_data(advanced.jitter_surface_particles, frameno)
 
     fluidsim.PICFLIP_ratio = __get_parameter_data(advanced.PICFLIP_ratio, frameno)
 
@@ -382,9 +747,6 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
     fluidsim.enable_temporary_mesh_levelset = \
         __get_parameter_data(advanced.reserve_temporary_grids, frameno)
 
-    fluidsim.enable_experimental_optimization_features = \
-        __get_parameter_data(advanced.experimental_optimization_features, frameno)
-
     # Debug Settings
 
     fluidsim.enable_fluid_particle_output = \
@@ -400,7 +762,81 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
         fluidsim.output_diffuse_material_as_separate_files = True
 
 
-def __add_fluid_objects(fluidsim, data, bakedata, frameno = 0):
+def __get_mesh_centroid(tmesh):
+    vsum = [0.0, 0.0, 0.0]
+    for i in range(0, len(tmesh.vertices), 3):
+        vsum[0] += tmesh.vertices[i]
+        vsum[1] += tmesh.vertices[i + 1]
+        vsum[2] += tmesh.vertices[i + 2]
+    vsum[0] /= (len(tmesh.vertices) / 3)
+    vsum[1] /= (len(tmesh.vertices) / 3)
+    vsum[2] /= (len(tmesh.vertices) / 3)
+    return vsum
+
+
+def __get_fluid_object_velocity(fluid_object, frameid):
+    if fluid_object.fluid_velocity_mode.data == 'FLUID_VELOCITY_MANUAL':
+        return __get_parameter_data(fluid_object.initial_velocity, frameid)
+    if not fluid_object.target_object:
+        return [0, 0, 0]
+
+    target_object_name = fluid_object.target_object
+    initial_speed = __get_parameter_data(fluid_object.initial_speed, frameid)
+    timeline_frame = __get_timeline_frame()
+
+    mesh1 = __extract_mesh(fluid_object.name, timeline_frame)
+    mesh2 = __extract_mesh(target_object_name, timeline_frame)
+
+    c1 = __get_mesh_centroid(mesh1)
+    c2 = __get_mesh_centroid(mesh2)
+    vdir = [c2[0] - c1[0], c2[1] - c1[1], c2[2] - c1[2]]
+    vlen = math.sqrt(vdir[0] * vdir[0] + vdir[1] * vdir[1] + vdir[2] * vdir[2])
+    eps = 1e-6
+    if vlen < eps:
+        return [0, 0, 0]
+
+    vdir[0] /= vlen
+    vdir[1] /= vlen
+    vdir[2] /= vlen
+    vdir[0] *= initial_speed
+    vdir[1] *= initial_speed
+    vdir[2] *= initial_speed
+
+    return vdir
+
+
+def __get_inflow_object_velocity(inflow_object, frameid):
+    if inflow_object.inflow_velocity_mode.data == 'INFLOW_VELOCITY_MANUAL':
+        return __get_parameter_data(inflow_object.inflow_velocity, frameid)
+    if not inflow_object.target_object:
+        return [0, 0, 0]
+
+    target_object_name = inflow_object.target_object
+    inflow_speed = __get_parameter_data(inflow_object.inflow_speed, frameid)
+    timeline_frame = __get_timeline_frame()
+
+    mesh1 = __extract_mesh(inflow_object.name, timeline_frame)
+    mesh2 = __extract_mesh(target_object_name, timeline_frame)
+
+    c1 = __get_mesh_centroid(mesh1)
+    c2 = __get_mesh_centroid(mesh2)
+    vdir = [c2[0] - c1[0], c2[1] - c1[1], c2[2] - c1[2]]
+    vlen = math.sqrt(vdir[0] * vdir[0] + vdir[1] * vdir[1] + vdir[2] * vdir[2])
+    eps = 1e-6
+    if vlen < eps:
+        return [0, 0, 0]
+
+    vdir[0] /= vlen
+    vdir[1] /= vlen
+    vdir[2] /= vlen
+    vdir[0] *= inflow_speed
+    vdir[1] *= inflow_speed
+    vdir[2] *= inflow_speed
+
+    return vdir
+
+
+def __add_fluid_objects(fluidsim, data, bakedata, frameid=0):
     init_data = data.domain_data.initialize
     bbox = init_data.bbox
     isize, jsize, ksize = init_data.isize, init_data.jsize, init_data.ksize
@@ -408,37 +844,30 @@ def __add_fluid_objects(fluidsim, data, bakedata, frameno = 0):
     
     for obj in list(data.fluid_data):
         if obj.frame_offset_type.data == 'OFFSET_TYPE_FRAME':
-            frame_offset = __get_parameter_data(obj.frame_offset, frameno)
+            frame_offset = __get_parameter_data(obj.frame_offset, frameid)
+            if frame_offset != frameid:
+                continue
         elif obj.frame_offset_type.data == 'OFFSET_TYPE_TIMELINE':
-            timeline_frame = __get_parameter_data(obj.timeline_offset, frameno)
-            frame_offset = timeline_frame - init_data.frame_start
+            frame_offset = __get_parameter_data(obj.timeline_offset, frameid)
+            if frame_offset != __get_timeline_frame():
+                continue
 
-        if frame_offset != frameno:
-            continue
+        velocity = __get_fluid_object_velocity(obj, frameid)
 
-        velocity = __get_parameter_data(obj.initial_velocity, frameno)
+        if __is_object_dynamic(obj.name):
+            timeline_frame = __get_timeline_frame()
+            previous_mesh, current_mesh, next_mesh = __extract_dynamic_frame_meshes(obj.name, timeline_frame)
 
-        if obj.is_animated:
-            meshes = obj.mesh
-            translations = obj.translation_data
-            for m in meshes:
-                m.translate(-bbox.x, -bbox.y, -bbox.z)
-                m.scale(init_data.scale)
-            for m in translations:
-                m.scale(init_data.scale)
-
-            fluid_object = MeshObject(isize, jsize, ksize, dx, meshes, translations)
-            fluid_object.enable_append_object_velocity = \
-                __get_parameter_data(obj.append_object_velocity, frameno)
-            fluid_object.object_velocity_influence = \
-                __get_parameter_data(obj.append_object_velocity_influence, frameno)
+            fluid_object = MeshObject(isize, jsize, ksize, dx)
+            fluid_object.update_mesh_animated(previous_mesh, current_mesh, next_mesh)
+            fluid_object.enable_append_object_velocity = __get_parameter_data(obj.append_object_velocity, frameid)
+            fluid_object.object_velocity_influence = __get_parameter_data(obj.append_object_velocity_influence, frameid)
             fluidsim.add_mesh_fluid(fluid_object, velocity[0], velocity[1], velocity[2])
         else:
-            mesh = obj.mesh
-            mesh.translate(-bbox.x, -bbox.y, -bbox.z)
-            mesh.scale(init_data.scale)
+            mesh = __extract_static_frame_mesh(obj.name)
 
-            fluid_object = MeshObject(isize, jsize, ksize, dx, mesh)
+            fluid_object = MeshObject(isize, jsize, ksize, dx)
+            fluid_object.update_mesh_static(mesh)
             fluidsim.add_mesh_fluid(fluid_object, velocity[0], velocity[1], velocity[2])
 
         data.fluid_data.remove(obj)
@@ -454,31 +883,15 @@ def __add_obstacle_objects(fluidsim, data, bakedata):
 
     obstacle_objects = []
     for obj in data.obstacle_data:
-        if obj.is_animated:
-            meshes = obj.mesh
-            translations = obj.translation_data
-            for m in meshes:
-                m.translate(-bbox.x, -bbox.y, -bbox.z)
-                m.scale(init_data.scale)
-            for m in translations:
-                m.scale(init_data.scale)
+        obstacle = MeshObject(isize, jsize, ksize, dx)
+        obstacle.inverse = __get_parameter_data(obj.is_inversed)
 
-            obstacle = MeshObject(isize, jsize, ksize, dx, meshes, translations)
-            obstacle.inverse = __get_parameter_data(obj.is_inversed)
+        if not __is_object_dynamic(obj.name):
+            mesh = __extract_static_frame_mesh(obj.name)
+            obstacle.update_mesh_static(mesh)
 
-            obstacle_objects.append(obstacle)
-            fluidsim.add_mesh_obstacle(obstacle)
-
-        else:
-            mesh = obj.mesh
-            mesh.translate(-bbox.x, -bbox.y, -bbox.z)
-            mesh.scale(init_data.scale)
-
-            obstacle = MeshObject(isize, jsize, ksize, dx, mesh)
-            obstacle.inverse = __get_parameter_data(obj.is_inversed)
-
-            obstacle_objects.append(obstacle)
-            fluidsim.add_mesh_obstacle(obstacle)
+        obstacle_objects.append(obstacle)
+        fluidsim.add_mesh_obstacle(obstacle)
 
         if __check_bake_cancelled(bakedata):
             return
@@ -494,27 +907,14 @@ def __add_inflow_objects(fluidsim, data, bakedata):
 
     inflow_objects = []
     for obj in data.inflow_data:
-        if obj.is_animated:
-            meshes = obj.mesh
-            translations = obj.translation_data
-            for m in meshes:
-                m.translate(-bbox.x, -bbox.y, -bbox.z)
-                m.scale(init_data.scale)
-            for m in translations:
-                m.scale(init_data.scale)
+        source = MeshFluidSource(isize, jsize, ksize, dx)
 
-            source = MeshFluidSource(isize, jsize, ksize, dx, meshes, translations)
-            fluidsim.add_mesh_fluid_source(source)
-            inflow_objects.append(source)
+        if not __is_object_dynamic(obj.name):
+            mesh = __extract_static_frame_mesh(obj.name)
+            source.update_mesh_static(mesh)
 
-        else:
-            mesh = obj.mesh
-            mesh.translate(-bbox.x, -bbox.y, -bbox.z)
-            mesh.scale(init_data.scale)
-
-            source = MeshFluidSource(isize, jsize, ksize, dx, mesh)
-            fluidsim.add_mesh_fluid_source(source)
-            inflow_objects.append(source)
+        fluidsim.add_mesh_fluid_source(source)
+        inflow_objects.append(source)
 
         if __check_bake_cancelled(bakedata):
             return
@@ -530,30 +930,16 @@ def __add_outflow_objects(fluidsim, data, bakedata):
 
     outflow_objects = []
     for obj in data.outflow_data:
-        if obj.is_animated:
-            meshes = obj.mesh
-            for m in meshes:
-                m.translate(-bbox.x, -bbox.y, -bbox.z)
-                m.scale(init_data.scale)
+        source = MeshFluidSource(isize, jsize, ksize, dx)
+        source.outflow = True
+        source.outflow_inverse = __get_parameter_data(obj.is_inversed)
 
-            source = MeshFluidSource(isize, jsize, ksize, dx, meshes)
-            source.outflow = True
-            source.outflow_inverse = __get_parameter_data(obj.is_inversed)
+        if not __is_object_dynamic(obj.name):
+            mesh = __extract_static_frame_mesh(obj.name)
+            source.update_mesh_static(mesh)
 
-            fluidsim.add_mesh_fluid_source(source)
-            outflow_objects.append(source)
-
-        else:
-            mesh = obj.mesh
-            mesh.translate(-bbox.x, -bbox.y, -bbox.z)
-            mesh.scale(init_data.scale)
-
-            source = MeshFluidSource(isize, jsize, ksize, dx, mesh)
-            source.outflow = True
-            source.outflow_inverse = __get_parameter_data(obj.is_inversed)
-            
-            fluidsim.add_mesh_fluid_source(source)
-            outflow_objects.append(source)
+        fluidsim.add_mesh_fluid_source(source)
+        outflow_objects.append(source)
 
         if __check_bake_cancelled(bakedata):
             return
@@ -561,10 +947,10 @@ def __add_outflow_objects(fluidsim, data, bakedata):
     return outflow_objects
 
 
-def __initialize_fluid_simulation(fluidsim, data, cache_directory, bakedata):
+def __initialize_fluid_simulation(fluidsim, data, cache_directory, bakedata, savestate_id):
     set_console_output(bakedata.is_console_output_enabled)
     
-    __load_save_state_data(fluidsim, data, cache_directory)
+    __load_save_state_data(fluidsim, data, cache_directory, savestate_id)
 
     init_data = data.domain_data.initialize
     num_frames = init_data.frame_end - init_data.frame_start + 1
@@ -583,44 +969,87 @@ def __initialize_fluid_simulation(fluidsim, data, cache_directory, bakedata):
     bakedata.is_initialized = True
 
 
-def __update_animatable_inflow_properties(data, frameno):
+def __update_dynamic_object_mesh(animated_object, object_data):
+    data = __get_simulation_data()
+    scale = data.domain_data.initialize.scale
+    bbox = data.domain_data.initialize.bbox
+
+    timeline_frame = __get_timeline_frame()
+    mesh_previous, mesh_current, mesh_next = __extract_dynamic_frame_meshes(object_data.name, timeline_frame)
+    animated_object.update_mesh_animated(mesh_previous, mesh_current, mesh_next)
+
+
+def __update_animatable_inflow_properties(data, frameid):
     inflow_objects = data.inflow_objects
     inflow_data = data.inflow_data
 
     for idx, inflow in enumerate(inflow_objects):
         data = inflow_data[idx]
-        inflow.enable = __get_parameter_data(data.is_enabled, frameno)
-        inflow.set_velocity(__get_parameter_data(data.inflow_velocity, frameno))
-        inflow.enable_append_object_velocity = \
-            __get_parameter_data(data.append_object_velocity, frameno)
-        inflow.object_velocity_influence = \
-            __get_parameter_data(data.append_object_velocity_influence, frameno)
-        inflow.substep_emissions = __get_parameter_data(data.substep_emissions, frameno)
 
-        is_rigid = __get_parameter_data(data.inflow_mesh_type, frameno) == 'MESH_TYPE_RIGID'
+        if __is_object_dynamic(data.name):
+            __update_dynamic_object_mesh(inflow, data)
+        
+        inflow.enable = __get_parameter_data(data.is_enabled, frameid)
+        inflow.set_velocity(__get_inflow_object_velocity(data, frameid))
+        inflow.enable_append_object_velocity = \
+            __get_parameter_data(data.append_object_velocity, frameid)
+        inflow.object_velocity_influence = \
+            __get_parameter_data(data.append_object_velocity_influence, frameid)
+        inflow.substep_emissions = __get_parameter_data(data.substep_emissions, frameid)
+
+        is_rigid = __get_parameter_data(data.inflow_mesh_type, frameid) == 'MESH_TYPE_RIGID'
         inflow.enable_rigid_mesh = is_rigid
 
+        is_constrained = __get_parameter_data(data.constrain_fluid_velocity, frameid)
+        inflow.enable_constrained_fluid_velocity = is_constrained
 
-def __update_animatable_outflow_properties(data, frameno):
+
+def __update_animatable_outflow_properties(data, frameid):
     outflow_objects = data.outflow_objects
     outflow_data = data.outflow_data
 
     for idx, outflow in enumerate(outflow_objects):
         data = outflow_data[idx]
-        outflow.enable = __get_parameter_data(data.is_enabled, frameno)
-        outflow.fluid_outflow =  __get_parameter_data(data.remove_fluid, frameno)
-        outflow.diffuse_outflow =  __get_parameter_data(data.remove_whitewater, frameno)
+
+        if __is_object_dynamic(data.name):
+            __update_dynamic_object_mesh(outflow, data)
+
+        outflow.enable = __get_parameter_data(data.is_enabled, frameid)
+        outflow.fluid_outflow =  __get_parameter_data(data.remove_fluid, frameid)
+        outflow.diffuse_outflow =  __get_parameter_data(data.remove_whitewater, frameid)
 
 
-def __update_animatable_obstacle_properties(data, frameno):
+def __update_animatable_obstacle_properties(data, frameid):
     obstacle_objects = data.obstacle_objects
     obstacle_data = data.obstacle_data
 
     for idx, mesh_object in enumerate(obstacle_objects):
         data = obstacle_data[idx]
-        mesh_object.enable = __get_parameter_data(data.is_enabled, frameno)
-        mesh_object.friction = __get_parameter_data(data.friction, frameno)
-        mesh_object.mesh_expansion = __get_parameter_data(data.mesh_expansion, frameno)
+
+        if __is_object_dynamic(data.name):
+            __update_dynamic_object_mesh(mesh_object, data)
+
+        mesh_object.enable = __get_parameter_data(data.is_enabled, frameid)
+        mesh_object.friction = __get_parameter_data(data.friction, frameid)
+        mesh_object.whitewater_influence = __get_parameter_data(data.whitewater_influence, frameid)
+        mesh_object.sheeting_strength = __get_parameter_data(data.sheeting_strength, frameid)
+        mesh_object.mesh_expansion = __get_parameter_data(data.mesh_expansion, frameid)
+
+
+def __update_animatable_meshing_volume_properties(data, frameid):
+    surface_data = data.domain_data.surface
+    meshing_volume_mode = __get_parameter_data(surface_data.meshing_volume_mode, frameid)
+    if meshing_volume_mode != 'MESHING_VOLUME_MODE_OBJECT':
+        return
+    if not surface_data.meshing_volume_object:
+        return
+
+    volume_object = surface_data.meshing_volume_object_class
+    volume_name = surface_data.meshing_volume_object
+    if __is_object_dynamic(surface_data.meshing_volume_object):
+        timeline_frame = __get_timeline_frame()
+        mesh_previous, mesh_current, mesh_next = __extract_dynamic_frame_meshes(volume_name, timeline_frame)
+        volume_object.update_mesh_animated(mesh_previous, mesh_current, mesh_next)
 
 
 def __set_property(obj, pname, value):
@@ -654,6 +1083,34 @@ def __set_whitewater_emission_boundary_property(fluidsim, bounds):
         fluidsim.diffuse_emitter_generation_bounds = bounds
 
 
+def __set_meshing_volume_object(fluidsim, data, frameid=0):
+    init_data = data.domain_data.initialize
+    surface_data = data.domain_data.surface
+    bbox = init_data.bbox
+    isize, jsize, ksize = init_data.isize, init_data.jsize, init_data.ksize
+    dx = init_data.dx
+
+    meshing_volume_mode = __get_parameter_data(surface_data.meshing_volume_mode, frameid)
+    if meshing_volume_mode != 'MESHING_VOLUME_MODE_OBJECT':
+        return
+    if not surface_data.meshing_volume_object:
+        return
+
+    object_name = surface_data.meshing_volume_object
+    if __is_object_dynamic(object_name):
+        timeline_frame = __get_timeline_frame()
+        previous_mesh, current_mesh, next_mesh = __extract_dynamic_frame_meshes(object_name, timeline_frame)
+        volume_object = MeshObject(isize, jsize, ksize, dx)
+        volume_object.update_mesh_animated(previous_mesh, current_mesh, next_mesh)
+    else:
+        mesh = __extract_static_frame_mesh(object_name)
+        volume_object = MeshObject(isize, jsize, ksize, dx)
+        volume_object.update_mesh_static(mesh)
+
+    fluidsim.set_meshing_volume(volume_object)
+    surface_data.meshing_volume_object_class = volume_object
+
+
 def __update_animatable_domain_properties(fluidsim, data, frameno):
     dprops = data.domain_data
 
@@ -669,6 +1126,9 @@ def __update_animatable_domain_properties(fluidsim, data, frameno):
         __set_property(fluidsim, 'enable_diffuse_foam', is_foam_enabled)
         __set_property(fluidsim, 'enable_diffuse_bubbles', is_bubbles_enabled)
         __set_property(fluidsim, 'enable_diffuse_spray', is_spray_enabled)
+
+        whitewater_motion_blur = __get_parameter_data(whitewater.generate_whitewater_motion_blur_data, frameno)
+        __set_property(fluidsim, 'enable_whitewater_motion_blur', whitewater_motion_blur)
 
         emitter_pct = __get_parameter_data(whitewater.whitewater_emitter_generation_rate, frameno)
         __set_property(fluidsim, 'diffuse_emitter_generation_rate', emitter_pct / 100)
@@ -749,6 +1209,12 @@ def __update_animatable_domain_properties(fluidsim, data, frameno):
         drag = __get_parameter_data(whitewater.spray_drag_coefficient, frameno)
         __set_property(fluidsim, 'diffuse_spray_drag_coefficient', drag)
 
+        base_level = __get_parameter_data(whitewater.obstacle_influence_base_level, frameno)
+        __set_property(fluidsim, 'diffuse_obstacle_influence_base_level', base_level)
+
+        decay_rate = __get_parameter_data(whitewater.obstacle_influence_decay_rate, frameno)
+        __set_property(fluidsim, 'diffuse_obstacle_influence_decay_rate', decay_rate)
+
     # World Settings
 
     world = dprops.world
@@ -761,6 +1227,28 @@ def __update_animatable_domain_properties(fluidsim, data, frameno):
         __set_property(fluidsim, 'viscosity', viscosity)
     elif fluidsim.viscosity > 0.0:
         __set_property(fluidsim, 'viscosity', 0.0)
+
+    is_surface_tension_enabled = __get_parameter_data(world.enable_surface_tension, frameno)
+    if is_surface_tension_enabled:
+        surface_tension = __get_parameter_data(world.surface_tension, frameno)
+        surface_tension *= world.native_surface_tension_scale
+        __set_property(fluidsim, 'surface_tension', surface_tension)
+
+        mincfl, maxcfl = world.minimum_surface_tension_cfl, world.maximum_surface_tension_cfl
+        accuracy_pct = __get_parameter_data(world.surface_tension_accuracy, frameno) / 100.0
+        surface_tension_number = mincfl + (1.0 - accuracy_pct) * (maxcfl - mincfl)
+        __set_property(fluidsim, 'surface_tension_condition_number', surface_tension_number)
+
+    elif fluidsim.surface_tension > 0.0:
+        __set_property(fluidsim, 'surface_tension', 0.0)
+
+    is_sheet_seeding_enabled = __get_parameter_data(world.enable_sheet_seeding, frameno)
+    if is_sheet_seeding_enabled:
+        sheet_fill_rate = __get_parameter_data(world.sheet_fill_rate, frameno)
+        threshold = __get_parameter_data(world.sheet_fill_threshold, frameno)
+        __set_property(fluidsim, 'enable_sheet_seeding', is_sheet_seeding_enabled)
+        __set_property(fluidsim, 'sheet_fill_rate', sheet_fill_rate)
+        __set_property(fluidsim, 'sheet_fill_threshold', threshold - 1)
 
     friction = __get_parameter_data(world.boundary_friction, frameno)
     __set_property(fluidsim, 'boundary_friction', friction)
@@ -787,11 +1275,23 @@ def __update_animatable_domain_properties(fluidsim, data, frameno):
     __set_property(fluidsim, 'surface_smoothing_value', smoothing_value)
     __set_property(fluidsim, 'surface_smoothing_iterations', smoothing_iterations)
 
-    is_smooth_interface = __get_parameter_data(surface.enable_smooth_interface_meshing, frameno)
-    __set_property(fluidsim, 'enable_smooth_interface_meshing', is_smooth_interface)
+    enable_meshing_offset = __get_parameter_data(surface.enable_meshing_offset, frameno)
+    __set_property(fluidsim, 'enable_obstacle_meshing_offset', enable_meshing_offset)
+
+    meshing_mode = __get_parameter_data(surface.obstacle_meshing_mode, frameno)
+    meshing_offset = __get_obstacle_meshing_offset(meshing_mode)
+    __set_property(fluidsim, 'obstacle_meshing_offset', meshing_offset)
+
+    remove_near_domain = __get_parameter_data(surface.remove_mesh_near_domain, frameno)
+    near_domain_distance = __get_parameter_data(surface.remove_mesh_near_domain_distance, frameno) - 1
+    __set_property(fluidsim, 'enable_remove_surface_near_domain', remove_near_domain)
+    __set_property(fluidsim, 'remove_surface_near_domain_distance', near_domain_distance)
 
     invert_contact = __get_parameter_data(surface.invert_contact_normals, frameno)
     __set_property(fluidsim, 'enable_inverted_contact_normals', invert_contact)
+
+    motion_blur = __get_parameter_data(surface.generate_motion_blur_data, frameno)
+    __set_property(fluidsim, 'enable_surface_motion_blur', motion_blur)
 
     # Advanced Settings
 
@@ -806,6 +1306,9 @@ def __update_animatable_domain_properties(fluidsim, data, frameno):
 
     jitter_factor = __get_parameter_data(advanced.particle_jitter_factor, frameno)
     __set_property(fluidsim, 'marker_particle_jitter_factor', jitter_factor)
+
+    jitter_surface = __get_parameter_data(advanced.jitter_surface_particles, frameno)
+    __set_property(fluidsim, 'jitter_surface_marker_particles', jitter_surface)
 
     PICFLIP_ratio = __get_parameter_data(advanced.PICFLIP_ratio, frameno)
     __set_property(fluidsim, 'PICFLIP_ratio', PICFLIP_ratio)
@@ -837,9 +1340,6 @@ def __update_animatable_domain_properties(fluidsim, data, frameno):
     reserve_temp_grids = __get_parameter_data(advanced.reserve_temporary_grids, frameno)
     __set_property(fluidsim, 'enable_temporary_mesh_levelset', reserve_temp_grids)
 
-    exp_optimization = __get_parameter_data(advanced.experimental_optimization_features, frameno)
-    __set_property(fluidsim, 'enable_experimental_optimization_features', exp_optimization)
-
     # Debug Settings
 
     debug = dprops.debug
@@ -851,6 +1351,7 @@ def __update_animatable_properties(fluidsim, data, frameno):
     __update_animatable_inflow_properties(data, frameno)
     __update_animatable_outflow_properties(data, frameno)
     __update_animatable_obstacle_properties(data, frameno)
+    __update_animatable_meshing_volume_properties(data, frameno)
     __update_animatable_domain_properties(fluidsim, data, frameno)
 
 
@@ -862,13 +1363,17 @@ def __write_bounds_data(cache_directory, fluidsim, frameno):
     offset = fluidsim.get_domain_offset()
     scale = fluidsim.get_domain_scale()
     dims = fluidsim.get_simulation_dimensions()
+    grid_dims = fluidsim.get_grid_dimensions()
     dx = fluidsim.get_cell_size()
     bounds = {
         "x": offset.x, "y": offset.y, "z": offset.z,
         "width": dims.x * scale,
         "height": dims.y * scale,
         "depth": dims.z * scale,
-        "dx": dx
+        "dx": dx * scale,
+        "isize": grid_dims.i,
+        "jsize": grid_dims.j,
+        "ksize": grid_dims.k
     }
     fstring = __frame_number_to_string(frameno)
     bounds_filename = "bounds" + fstring + ".bbox"
@@ -886,6 +1391,13 @@ def __write_surface_data(cache_directory, fluidsim, frameno):
     filedata = fluidsim.get_surface_data()
     with open(surface_filepath, 'wb') as f:
         f.write(filedata)
+
+    if fluidsim.enable_surface_motion_blur:
+        blur_filename = "blur" + fstring + ".bobj"
+        blur_filepath = os.path.join(cache_directory, "bakefiles", blur_filename)
+        filedata = fluidsim.get_surface_blur_data()
+        with open(blur_filepath, 'wb') as f:
+            f.write(filedata)
 
     preview_filename = "preview" + fstring + ".bobj"
     preview_filepath = os.path.join(cache_directory, "bakefiles", preview_filename)
@@ -914,6 +1426,25 @@ def __write_whitewater_data(cache_directory, fluidsim, frameno):
     filedata = fluidsim.get_diffuse_spray_data()
     with open(spray_filepath, 'wb') as f:
         f.write(filedata)
+
+    if fluidsim.enable_whitewater_motion_blur:
+        foam_blur_filename = "blurfoam" + fstring + ".wwp"
+        foam_blur_filepath = os.path.join(cache_directory, "bakefiles", foam_blur_filename)
+        filedata = fluidsim.get_diffuse_foam_blur_data()
+        with open(foam_blur_filepath, 'wb') as f:
+            f.write(filedata)
+
+        bubble_blur_filename = "blurbubble" + fstring + ".wwp"
+        bubble_blur_filepath = os.path.join(cache_directory, "bakefiles", bubble_blur_filename)
+        filedata = fluidsim.get_diffuse_bubble_blur_data()
+        with open(bubble_blur_filepath, 'wb') as f:
+            f.write(filedata)
+
+        spray_blur_filename = "blurspray" + fstring + ".wwp"
+        spray_blur_filepath = os.path.join(cache_directory, "bakefiles", spray_blur_filename)
+        filedata = fluidsim.get_diffuse_spray_blur_data()
+        with open(spray_blur_filepath, 'wb') as f:
+            f.write(filedata)
 
 
 def __write_fluid_particle_data(cache_directory, fluidsim, frameno):
@@ -975,9 +1506,13 @@ def __get_frame_stats_dict(cstats):
     stats["substeps"] = cstats.substeps
     stats["surface"] = __get_mesh_stats_dict(cstats.surface)
     stats["preview"] = __get_mesh_stats_dict(cstats.preview)
+    stats["surfaceblur"] = __get_mesh_stats_dict(cstats.surfaceblur)
     stats["foam"] = __get_mesh_stats_dict(cstats.foam)
     stats["bubble"] = __get_mesh_stats_dict(cstats.bubble)
     stats["spray"] = __get_mesh_stats_dict(cstats.spray)
+    stats["foamblur"] = __get_mesh_stats_dict(cstats.foamblur)
+    stats["bubbleblur"] = __get_mesh_stats_dict(cstats.bubbleblur)
+    stats["sprayblur"] = __get_mesh_stats_dict(cstats.sprayblur)
     stats["particles"] = __get_mesh_stats_dict(cstats.particles)
     stats["obstacle"] = __get_mesh_stats_dict(cstats.obstacle)
     stats["timing"] = __get_timing_stats_dict(cstats.timing)
@@ -1037,6 +1572,8 @@ def __write_autosave_data(domain_data, cache_directory, fluidsim, frameno):
     frame_start, frame_end = domain_data.initialize.frame_start, domain_data.initialize.frame_end
     autosave_info = {}
     autosave_info['frame'] = frameno
+    autosave_info['frame_start'] = frame_start
+    autosave_info['frame_end'] = frame_end
     autosave_info['frame_id'] = fluidsim.get_current_frame() - 1
     autosave_info['last_frame_id'] = frame_end - frame_start
     autosave_info['num_marker_particles'] = fluidsim.get_num_marker_particles()
@@ -1061,6 +1598,16 @@ def __write_autosave_data(domain_data, cache_directory, fluidsim, frameno):
     autosave_info_path = os.path.join(autosave_dir, "autosave.state")
     with open(autosave_info_path, 'w') as f:
         f.write(autosave_json)
+
+    init_data = domain_data.initialize
+    if init_data.enable_savestates:
+        interval = init_data.savestate_interval
+        if (frameno + 1 - frame_start) % interval == 0:
+            numstr = str(frameno).zfill(6)
+            savestate_dir = os.path.join(cache_directory, "savestates", "autosave" + numstr)
+            if os.path.isdir(savestate_dir):
+                shutil.rmtree(savestate_dir)
+            shutil.copytree(autosave_dir, savestate_dir)
 
 
 def __write_simulation_output(domain_data, fluidsim, frameno, cache_directory):
@@ -1128,15 +1675,15 @@ def __run_simulation(fluidsim, data, cache_directory, bakedata):
 
 
 def set_console_output(boolval):
-    global FLUIDSIM_OBJECT
-    if FLUIDSIM_OBJECT is None or FLUIDSIM_OBJECT._obj is None:
+    fluidsim_object = __get_simulation_object()
+    if fluidsim_object is None or fluidsim_object._obj is None:
         return
 
-    old_value = FLUIDSIM_OBJECT.enable_console_output
-    if FLUIDSIM_OBJECT.enable_console_output == boolval:
+    old_value = fluidsim_object.enable_console_output
+    if fluidsim_object.enable_console_output == boolval:
         return
 
-    FLUIDSIM_OBJECT.enable_console_output = boolval
+    fluidsim_object.enable_console_output = boolval
 
 
 def __get_addon_version():
@@ -1150,12 +1697,12 @@ def __get_engine_version(fluidsim):
     return str(engine_major) + "." + str(engine_minor) + "." + str(engine_revision)
 
 
-def bake(datafile, cache_directory, bakedata):
-    global FLUIDSIM_OBJECT
-
+def bake(datafile, cache_directory, bakedata, savestate_id=None):
     try:
-        with open(datafile, 'rb') as f, zipfile.ZipFile(f, 'r') as zfile:
-            data = __extract_data(zfile)
+        __set_cache_directory(cache_directory)
+
+        data = __extract_data(datafile)
+        __set_simulation_data(data)
 
         if __check_bake_cancelled(bakedata):
             return
@@ -1164,7 +1711,7 @@ def bake(datafile, cache_directory, bakedata):
 
         init_data = data.domain_data.initialize
         fluidsim = FluidSimulation(init_data.isize, init_data.jsize, init_data.ksize, init_data.dx)
-        FLUIDSIM_OBJECT = fluidsim
+        __set_simulation_object(fluidsim)
 
         if __get_addon_version() != __get_engine_version(fluidsim):
             errmsg = ("The fluid engine version <" + __get_engine_version(fluidsim) + 
@@ -1175,7 +1722,7 @@ def bake(datafile, cache_directory, bakedata):
         if __check_bake_cancelled(bakedata):
             return
 
-        __initialize_fluid_simulation(fluidsim, data, cache_directory, bakedata)
+        __initialize_fluid_simulation(fluidsim, data, cache_directory, bakedata, savestate_id)
         if __check_bake_cancelled(bakedata):
             return
 
@@ -1193,5 +1740,9 @@ def bake(datafile, cache_directory, bakedata):
         bakedata.error_message = errmsg
         traceback.print_exc()
 
-    FLUIDSIM_OBJECT = None
+    print("------------------------------------------------------------")
+    print("Simulation Ended.\nThank you for using FLIP Fluids!")
+    print("------------------------------------------------------------")
+
+    __set_simulation_object(None)
     bakedata.is_finished = True

@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,50 +22,50 @@ from bpy.props import (
         )
 
 from ..materials import material_library
+from ..utils import version_compatibility_utils as vcu
 
 
 class DomainMaterialsProperties(bpy.types.PropertyGroup):
-    @classmethod
-    def register(cls):
-        cls.surface_material = EnumProperty(
-                name="Surface",
-                description="Surface Material",
-                items=material_library.get_surface_material_enums_ui,
-                update=lambda self, context: self._update_surface_material(context),
-                )
-        cls.whitewater_foam_material = EnumProperty(
-                name="Whitewater Foam",
-                description="Whitewater Foam Material",
-                items=material_library.get_whitewater_material_enums_ui,
-                update=lambda self, context: self._update_whitewater_foam_material(context),
-                )
-        cls.whitewater_bubble_material = EnumProperty(
-                name="Whitewater Bubble",
-                description="Whitewater Bubble Material",
-                items=material_library.get_whitewater_material_enums_ui,
-                update=lambda self, context: self._update_whitewater_bubble_material(context),
-                )
-        cls.whitewater_spray_material = EnumProperty(
-                name="Whitewater Spray",
-                description="Whitewater Spray Material",
-                items=material_library.get_whitewater_material_enums_ui,
-                update=lambda self, context: self._update_whitewater_spray_material(context),
-                )
-        cls.material_import = EnumProperty(
-                name="Import",
-                description="Import materials into this scene",
-                items=material_library.get_material_import_enums_ui,
-                )
+    conv = vcu.convert_attribute_to_28
+    
+    surface_material = EnumProperty(
+            name="Surface",
+            description="Surface Material",
+            items=material_library.get_surface_material_enums_ui,
+            update=lambda self, context: self._update_surface_material(context),
+            ); exec(conv("surface_material"))
+    whitewater_foam_material = EnumProperty(
+            name="Whitewater Foam",
+            description="Whitewater Foam Material",
+            items=material_library.get_whitewater_material_enums_ui,
+            update=lambda self, context: self._update_whitewater_foam_material(context),
+            ); exec(conv("whitewater_foam_material"))
+    whitewater_bubble_material = EnumProperty(
+            name="Whitewater Bubble",
+            description="Whitewater Bubble Material",
+            items=material_library.get_whitewater_material_enums_ui,
+            update=lambda self, context: self._update_whitewater_bubble_material(context),
+            ); exec(conv("whitewater_bubble_material"))
+    whitewater_spray_material = EnumProperty(
+            name="Whitewater Spray",
+            description="Whitewater Spray Material",
+            items=material_library.get_whitewater_material_enums_ui,
+            update=lambda self, context: self._update_whitewater_spray_material(context),
+            ); exec(conv("whitewater_spray_material"))
+    material_import = EnumProperty(
+            name="Import",
+            description="Import materials into this scene",
+            items=material_library.get_material_import_enums_ui,
+            ); exec(conv("material_import"))
 
-        cls.last_surface_material = StringProperty(default = "")
-        cls.last_whitewater_foam_material = StringProperty(default = "")
-        cls.last_whitewater_bubble_material = StringProperty(default = "")
-        cls.last_whitewater_spray_material = StringProperty(default = "")
+    last_surface_material = StringProperty(default = ""); exec(conv("last_surface_material"))
+    last_whitewater_foam_material = StringProperty(default = ""); exec(conv("last_whitewater_foam_material"))
+    last_whitewater_bubble_material = StringProperty(default = ""); exec(conv("last_whitewater_bubble_material"))
+    last_whitewater_spray_material = StringProperty(default = ""); exec(conv("last_whitewater_spray_material"))
 
 
-    @classmethod
-    def unregister(cls):
-        pass
+    def load_post(self):
+        self._check_material_properties_valid()
 
 
     def register_preset_properties(self, registry, path):
@@ -156,7 +156,7 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
             return
         mesh = cache_object.data
         for i in range(len(mesh.materials)):
-            mesh.materials.pop(0)
+            mesh.materials.pop(index=0)
 
 
     def _add_cache_object_material(self, cache_object, enum_ident):
@@ -164,11 +164,12 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
             return
 
         mesh = cache_object.data
-        material = material_library.import_material(enum_ident)
+        material_name = material_library.import_material(enum_ident)
+        material_object = bpy.data.materials.get(material_name)
         for i in range(len(mesh.materials)):
-            mesh.materials.pop(0)
+            mesh.materials.pop(index=0)
 
-        mesh.materials.append(material)
+        mesh.materials.append(material_object)
         cache_object.active_material_index = 0
 
 
@@ -179,6 +180,7 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
 
         oldval = getattr(self, last_material_prop)
         newval = getattr(self, material_prop)
+
         if newval == 'MATERIAL_NONE':
             self._remove_cache_object_material(cache_object, oldval)
         elif oldval == 'MATERIAL_NONE':
@@ -195,6 +197,33 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
             if e[1] == material_name:
                 return e[0]
         return None
+
+
+    def _check_material_properties_valid(self):
+        try:
+            self.surface_material = self.surface_material
+        except:
+            self.surface_material = 'MATERIAL_NONE'
+
+        try:
+            self.whitewater_foam_material = self.whitewater_foam_material
+        except:
+            self.whitewater_foam_material = 'MATERIAL_NONE'
+
+        try:
+            self.whitewater_bubble_material = self.whitewater_bubble_material
+        except:
+            self.whitewater_bubble_material = 'MATERIAL_NONE'
+
+        try:
+            self.whitewater_spray_material = self.whitewater_spray_material
+        except:
+            self.whitewater_spray_material = 'MATERIAL_NONE'
+
+        try:
+            self.material_import = self.material_import
+        except:
+            self.material_import = 'ALL_MATERIALS'
 
 
     def _check_material_properties(self):
@@ -280,7 +309,7 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
             return
 
         if new_duplivert_material is None:
-            if getattr(self, material_prop) != new_object_material:
+            if new_object_material is not None and getattr(self, material_prop) != new_object_material:
                 setattr(self, material_prop, new_object_material)
             return
 
@@ -299,6 +328,9 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
 
 
     def _save_unused_materials_with_fake_user(self):
+        """
+        TODO: Remove
+
         material_ids = [
             self.surface_material,
             self.whitewater_foam_material,
@@ -315,6 +347,7 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
                     m.use_fake_user = True
                     m.flip_fluid.is_fake_use_set_by_addon = True
                     break
+        """
 
 
 def register():

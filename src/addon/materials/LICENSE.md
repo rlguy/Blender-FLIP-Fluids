@@ -1,5 +1,5 @@
-The 'material_library.blend' Blend file and containing materials are licensed
-under the Standard Royalty Free License:
+The FLIP Fluids Material Library Blend files and containing materials in this directory
+and subdirectories are licensed under the Standard Royalty Free License:
 
 --------------------------------------------------------------------------------
 

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,8 @@ SOFTWARE.
 #include "grid3d.h"
 #include "meshlevelset.h"
 #include "scalarfield.h"
+#include "levelsetsolver.h"
+
 
 ParticleLevelSet::ParticleLevelSet() {
 }
@@ -158,84 +160,132 @@ float ParticleLevelSet::getDistanceAtNode(GridIndex g) {
 
 void ParticleLevelSet::calculateSignedDistanceField(FragmentedVector<MarkerParticle> &particles, 
                                                     double radius) {
-    _computeSignedDistanceFromParticles(particles, radius);
+    std::vector<vmath::vec3> points;
+    points.reserve(particles.size());
+    for (size_t i = 0; i < particles.size(); i++) {
+        points.push_back(particles[i].position);
+    }
+
+    _computeSignedDistanceFromParticles(points, radius);
 }
 
-void ParticleLevelSet::extrapolateSignedDistanceIntoSolids(MeshLevelSet &solidPhi) {
+void ParticleLevelSet::postProcessSignedDistanceField(MeshLevelSet &solidPhi) {
+    // Extrapolate SDF into solids and enforce that distance values at nodes are not too small
+
     int si, sj, sk;
     solidPhi.getGridDimensions(&si, &sj, &sk);
     FLUIDSIM_ASSERT(si == _isize && sj == _jsize && sk == _ksize);
 
+    float eps = 0.005 * _dx;
     for(int k = 0; k < _ksize; k++) {
         for(int j = 0; j < _jsize; j++) {
             for(int i = 0; i < _isize; i++) {
                 if(_phi(i, j, k) < 0.5 * _dx) {
-                    if(solidPhi.getDistanceAtCellCenter(i, j, k) < 0) {
+                    if (solidPhi.getDistanceAtCellCenter(i, j, k) < 0) {
                         _phi.set(i, j, k, -0.5f * _dx);
                     }
+                }
+
+                float val = _phi(i, j, k);
+                if (std::abs(val) < eps) {
+                    _phi.set(i, j, k, val > 0 ? eps : -eps);
                 }
             }
         }
     }
 }
 
-void ParticleLevelSet::calculateCurvatureGrid(MeshLevelSet &surfacePhi, 
+void ParticleLevelSet::calculateCurvatureGrid(Array3d<float> &surfacePhi, 
                                               Array3d<float> &kgrid) {
 
-    int si, sj, sk;
-    surfacePhi.getGridDimensions(&si, &sj, &sk);
-    FLUIDSIM_ASSERT(si == _isize && sj == _jsize && sk == _ksize);
-    FLUIDSIM_ASSERT(kgrid.width == _isize + 1 && 
-                    kgrid.height == _jsize + 1 && 
-                    kgrid.depth == _ksize + 1);
+    FLUIDSIM_ASSERT(surfacePhi.width == _isize && 
+                    surfacePhi.height == _jsize && 
+                    surfacePhi.depth == _ksize);
+    FLUIDSIM_ASSERT(kgrid.width == _isize && 
+                    kgrid.height == _jsize && 
+                    kgrid.depth == _ksize);
 
-
-    ScalarField field = ScalarField(_isize + 1, _jsize + 1, _ksize + 1, _dx);
-    field.setSurfaceThreshold(0.0f);
-    _initializeCurvatureGridScalarField(field);
-
-    Polygonizer3d polygonizer(&field);
-    TriangleMesh surfaceMesh = polygonizer.polygonizeSurface();
-    surfaceMesh.smooth(_curvatureGridSmoothingValue, _curvatureGridSmoothingIterations);
-
-    surfacePhi.disableVelocityData();
-    surfacePhi.disableSignCalculation();
-    surfacePhi.fastCalculateSignedDistanceField(surfaceMesh, _curvatureGridExactBand);
-
-    // Signs are already computed and are stored on the scalar field. Note:
-    // field signs are reversed, so values > 0 are inside.
-    for (int k = 0; k < _ksize + 1; k++) {
-        for (int j = 0; j < _jsize + 1; j++) {
-            for (int i = 0; i < _isize + 1; i++) {
-                if (field.getRawScalarFieldValue(i, j, k) > 0) {
-                    surfacePhi.set(i, j, k, -surfacePhi(i, j, k));
+    float maxSurfaceCellDist = 2.0f * _dx;
+    Array3d<bool> validNodes(_isize, _jsize, _ksize, false);
+    for (int k = 0; k < _ksize; k++) {
+        for (int j = 0; j < _jsize; j++) {
+            for (int i = 0; i < _isize; i++) {
+                if (std::abs(_phi(i, j, k)) < maxSurfaceCellDist) {
+                    validNodes.set(i, j, k, true);
                 }
             }
         }
     }
 
-    Array3d<bool> validCurvatureNodes(_isize + 1, _jsize + 1, _ksize + 1);
-    _getValidCurvatureNodes(surfacePhi, validCurvatureNodes);
+    int blockWidth = 2 * _curvatureGridExactBand;
+    int bisize = (_isize + blockWidth - 1) / blockWidth;
+    int bjsize = (_jsize + blockWidth - 1) / blockWidth;
+    int bksize = (_ksize + blockWidth - 1) / blockWidth;
+    Array3d<bool> validBlocks(bisize, bjsize, bksize, false);
+
+    for (int k = 0; k < _ksize; k++) {
+        for (int j = 0; j < _jsize; j++) {
+            for (int i = 0; i < _isize; i++) {
+                if (validNodes(i, j, k)) {
+                    validBlocks.set(i / blockWidth, j / blockWidth, k / blockWidth, true);
+                }
+            }
+        }
+    }
+    GridUtils::featherGrid6(&validBlocks, ThreadUtils::getMaxThreadCount());
+
+    int numValid = 0;
+    for (int k = 0; k < _ksize; k++) {
+        for (int j = 0; j < _jsize; j++) {
+            for (int i = 0; i < _isize; i++) {
+                int bi = i / blockWidth;
+                int bj = j / blockWidth;
+                int bk = k / blockWidth;
+                if (validBlocks(bi, bj, bk)) {
+                    validNodes.set(i, j, k, true);
+                    numValid++;
+                }
+            }
+        }
+    }
+
+    std::vector<GridIndex> solverGridCells(numValid);
+    for (int k = 0; k < _ksize; k++) {
+        for (int j = 0; j < _jsize; j++) {
+            for (int i = 0; i < _isize; i++) {
+                if (validNodes(i, j, k)) {
+                    solverGridCells.push_back(GridIndex(i, j, k));
+                }
+            }
+        }
+    }
+
+    float width = _curvatureGridExactBand * _dx;
+    LevelSetSolver solver;
+    solver.reinitialize(_phi, _dx, width, solverGridCells, surfacePhi);
+
+    validNodes.fill(false);
+    _getValidCurvatureNodes(surfacePhi, validNodes);
 
     kgrid.fill(0.0f);
-    for (int k = 0; k < _ksize + 1; k++) {
-        for (int j = 0; j < _jsize + 1; j++) {
-            for (int i = 0; i < _isize + 1; i++) {
-                if (validCurvatureNodes(i, j, k)) {
-                    kgrid.set(i, j, k, surfacePhi.getCurvature(i, j, k));
+    for (int k = 0; k < _ksize; k++) {
+        for (int j = 0; j < _jsize; j++) {
+            for (int i = 0; i < _isize; i++) {
+                if (validNodes(i, j, k)) {
+                    kgrid.set(i, j, k, _getCurvature(i, j, k, surfacePhi));
                 }
             }
         }
     }
 
-    GridUtils::extrapolateGrid(&kgrid, &validCurvatureNodes, _curvatureGridExtrapolationLayers);
+    GridUtils::extrapolateGrid(&kgrid, &validNodes, _curvatureGridExtrapolationLayers);
 }
 
 float ParticleLevelSet::_getMaxDistance() {
     return 3.0 * _dx;
 }
 
-void ParticleLevelSet::_computeSignedDistanceFromParticles(FragmentedVector<MarkerParticle> &particles, 
+void ParticleLevelSet::_computeSignedDistanceFromParticles(std::vector<vmath::vec3> &particles, 
                                                            double radius) {
     _phi.fill(_getMaxDistance());
 
@@ -243,125 +293,328 @@ void ParticleLevelSet::_computeSignedDistanceFromParticles(FragmentedVector<Mark
         return;
     }
 
-    int U = 0; int V = 1; int W = 2;
+    BlockArray3d<float> blockphi;
+    _initializeBlockGrid(particles, blockphi);
 
-    vmath::vec3 minp = particles[0].position;
-    vmath::vec3 maxp = particles[0].position;
-    for (size_t i = 0; i < particles.size(); i++) {
-        vmath::vec3 p = particles[i].position;
-        minp.x = fmin(minp.x, p.x);
-        minp.y = fmin(minp.y, p.y);
-        minp.z = fmin(minp.z, p.z);
-        maxp.x = fmax(maxp.x, p.x);
-        maxp.y = fmax(maxp.y, p.y);
-        maxp.z = fmax(maxp.z, p.z);
-    }
-    vmath::vec3 rvect(radius, radius, radius);
-    minp -= rvect;
-    maxp += rvect;
-    vmath::vec3 diff = maxp - minp;
+    ParticleGridCountData gridCountData;
+    _computeGridCountData(particles, radius, blockphi, gridCountData);
 
-    int splitdir = U;
-    if (diff.x > diff.y) {
-        if (diff.x > diff.z) {
-            splitdir = U;
-        } else {
-            splitdir = W;
+    std::vector<vmath::vec3> sortedParticleData;
+    std::vector<int> blockToParticleDataIndex;
+    _sortParticlesIntoBlocks(particles, gridCountData, sortedParticleData, blockToParticleDataIndex);
+
+    std::vector<GridBlock<float> > gridBlocks;
+    blockphi.getActiveGridBlocks(gridBlocks);
+    BoundedBuffer<ComputeBlock> computeBlockQueue(gridBlocks.size());
+    BoundedBuffer<ComputeBlock> finishedComputeBlockQueue(gridBlocks.size());
+    int numComputeBlocks = 0;
+    for (size_t bidx = 0; bidx < gridBlocks.size(); bidx++) {
+        GridBlock<float> b = gridBlocks[bidx];
+        if (gridCountData.totalGridCount[b.id] == 0) {
+            continue;
         }
-    } else {
-        if (diff.y > diff.z) {
-            splitdir = V;
-        } else {
-            splitdir = W;
-        }
-    }
 
-    int i1 = 0;
-    int i2 = 0;
-    GridIndex gmin = Grid3d::positionToGridIndex(minp, _dx);
-    GridIndex gmax = Grid3d::positionToGridIndex(maxp, _dx);
-    int buffersize = 1;
-    if (splitdir == U) {
-        i1 = fmax(gmin.i - buffersize, 0);
-        i2 = fmin(gmax.i + buffersize, _isize);
-    } else if (splitdir == V) {
-        i1 = fmax(gmin.j - buffersize, 0);
-        i2 = fmin(gmax.j + buffersize, _jsize);
-    } else if (splitdir == W) {
-        i1 = fmax(gmin.k - buffersize, 0);
-        i2 = fmin(gmax.k + buffersize, _ksize);
+        ComputeBlock computeBlock;
+        computeBlock.gridBlock = b;
+        computeBlock.particleData = &(sortedParticleData[blockToParticleDataIndex[b.id]]);
+        computeBlock.numParticles = gridCountData.totalGridCount[b.id];
+        computeBlock.radius = radius;
+        computeBlockQueue.push(computeBlock);
+        numComputeBlocks++;
     }
 
     int numCPU = ThreadUtils::getMaxThreadCount();
-    int numthreads = (int)fmin(numCPU, i2 - i1);
-    std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(i1, i2, numthreads);
+    int numthreads = (int)fmin(numCPU, computeBlockQueue.size());
+    std::vector<std::thread> producerThreads(numthreads);
     for (int i = 0; i < numthreads; i++) {
-        threads[i] = std::thread(&ParticleLevelSet::_computeSignedDistanceFromParticlesThread, this,
-                                 intervals[i], intervals[i + 1], &particles, radius, splitdir);
+        producerThreads[i] = std::thread(&ParticleLevelSet::_computeExactBandProducerThread, this,
+                                         &computeBlockQueue, &finishedComputeBlockQueue);
+    }
+
+    int numComputeBlocksProcessed = 0;
+    while (numComputeBlocksProcessed < numComputeBlocks) {
+        std::vector<ComputeBlock> finishedBlocks;
+        finishedComputeBlockQueue.popAll(finishedBlocks);
+        for (size_t i = 0; i < finishedBlocks.size(); i++) {
+            ComputeBlock block = finishedBlocks[i];
+            GridIndex gridOffset(block.gridBlock.index.i * _blockwidth,
+                                 block.gridBlock.index.j * _blockwidth,
+                                 block.gridBlock.index.k * _blockwidth);
+
+            int datasize = _blockwidth * _blockwidth * _blockwidth;
+            for (int vidx = 0; vidx < datasize; vidx++) {
+                GridIndex localidx = Grid3d::getUnflattenedIndex(vidx, _blockwidth, _blockwidth);
+                GridIndex phiidx = GridIndex(localidx.i + gridOffset.i,
+                                             localidx.j + gridOffset.j,
+                                             localidx.k + gridOffset.k);
+                if (_phi.isIndexInRange(phiidx)) {
+                    _phi.set(phiidx, block.gridBlock.data[vidx]);
+                }
+            }
+        }
+
+        numComputeBlocksProcessed += finishedBlocks.size();
+    }
+
+    computeBlockQueue.notifyFinished();
+    for (size_t i = 0; i < producerThreads.size(); i++) {
+        computeBlockQueue.notifyFinished();
+        producerThreads[i].join();
+    }
+}
+
+void ParticleLevelSet::_initializeBlockGrid(std::vector<vmath::vec3> &particles,
+                                            BlockArray3d<float> &blockphi) {
+    BlockArray3dParameters params;
+    params.isize = _isize;
+    params.jsize = _jsize;
+    params.ksize = _ksize;
+    params.blockwidth = _blockwidth;
+    Dims3d dims = BlockArray3d<float>::getBlockDimensions(params);
+
+    Array3d<bool> activeBlocks(dims.i, dims.j, dims.k, false);
+
+    int numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)fmin(numCPU, particles.size());
+    std::vector<std::thread> threads(numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, particles.size(), numthreads);
+    for (int i = 0; i < numthreads; i++) {
+        threads[i] = std::thread(&ParticleLevelSet::_initializeActiveBlocksThread, this,
+                                 intervals[i], intervals[i + 1], 
+                                 &particles, &activeBlocks);
     }
 
     for (int i = 0; i < numthreads; i++) {
         threads[i].join();
     }
-}
 
-void ParticleLevelSet::_computeSignedDistanceFromParticlesThread(int startidx, int endidx, 
-                                                                 FragmentedVector<MarkerParticle> *particles, 
-                                                                 double radius, int splitdir) {
-    int U = 0; int V = 1; int W = 2;
+    GridUtils::featherGrid26(&activeBlocks, numthreads);
 
-    vmath::vec3 minp, maxp;
-    if (splitdir == U) {
-        minp = vmath::vec3(startidx * _dx, 0.0, 0.0);
-        maxp = vmath::vec3((endidx - 1) * _dx, _jsize * _dx, _ksize * _dx);
-    } else if (splitdir == V) {
-        minp = vmath::vec3(0.0, startidx * _dx, 0.0);
-        maxp = vmath::vec3(_isize * _dx, (endidx - 1) * _dx, _ksize * _dx);
-    } else if (splitdir == W) {
-        minp = vmath::vec3(0.0, 0.0, startidx * _dx);
-        maxp = vmath::vec3(_isize * _dx, _jsize * _dx, (endidx - 1) * _dx);
-    }
-    AABB bbox(minp, maxp);
-    bbox.expand(2 * radius);
-
-    GridIndex g, gmin, gmax;
-    for (size_t pidx = 0; pidx < particles->size(); pidx++) {
-        vmath::vec3 p = particles->at(pidx).position;
-
-        if (!bbox.isPointInside(p)) {
-            continue;
-        }
-
-        g = Grid3d::positionToGridIndex(p, _dx);
-        gmin = GridIndex(fmax(0, g.i - 1), fmax(0, g.j - 1), fmax(0, g.k - 1));
-        gmax = GridIndex(fmin(g.i + 1, _isize - 1), 
-                         fmin(g.j + 1, _jsize - 1), 
-                         fmin(g.k + 1, _ksize - 1));
-
-        if (splitdir == U) {
-            gmin.i = fmax(gmin.i, startidx);
-            gmax.i = fmin(gmax.i, endidx - 1);
-        } else if (splitdir == V) {
-            gmin.j = fmax(gmin.j, startidx);
-            gmax.j = fmin(gmax.j, endidx - 1);
-        } else if (splitdir == W) {
-            gmin.k = fmax(gmin.k, startidx);
-            gmax.k = fmin(gmax.k, endidx - 1);
-        }
-
-        for(int k = gmin.k; k <= gmax.k; k++) {
-            for(int j = gmin.j; j <= gmax.j; j++) {
-                for(int i = gmin.i; i <= gmax.i; i++) {
-                    vmath::vec3 cpos = Grid3d::GridIndexToCellCenter(i, j, k, _dx);
-                    float dist = vmath::length(cpos - p) - radius;
-                    if(dist < _phi(i, j, k)) {
-                        _phi.set(i, j, k, dist);
-                    }
+    for (int k = 0; k < dims.k; k++) {
+        for (int j = 0; j < dims.j; j++) {
+            for (int i = 0; i < dims.i; i++) {
+                if (activeBlocks(i, j, k)) {
+                    params.activeblocks.push_back(GridIndex(i, j, k));
                 }
             }
         }
+    }
 
+    blockphi = BlockArray3d<float>(params);
+    blockphi.fill(_getMaxDistance());
+}
+
+void ParticleLevelSet::_initializeActiveBlocksThread(int startidx, int endidx, 
+                                                     std::vector<vmath::vec3> *particles,
+                                                     Array3d<bool> *activeBlocks) {
+    float blockdx = _blockwidth * _dx;
+    for (int i = startidx; i < endidx; i++) {
+        vmath::vec3 p = particles->at(i);
+        GridIndex g = Grid3d::positionToGridIndex(p, blockdx);
+        if (activeBlocks->isIndexInRange(g)) {
+            activeBlocks->set(g, true);
+        }
+    }
+}
+
+void ParticleLevelSet::_computeGridCountData(std::vector<vmath::vec3> &particles,
+                                             double radius,
+                                             BlockArray3d<float> &blockphi, 
+                                             ParticleGridCountData &countdata) {
+
+    _initializeGridCountData(particles, blockphi, countdata);
+
+    int numthreads = countdata.numthreads;
+    std::vector<std::thread> threads(numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, particles.size(), numthreads);
+    for (int i = 0; i < numthreads; i++) {
+        threads[i] = std::thread(&ParticleLevelSet::_computeGridCountDataThread, this,
+                                 intervals[i], intervals[i + 1], 
+                                 &particles,
+                                 radius, 
+                                 &blockphi, 
+                                 &(countdata.threadGridCountData[i]));
+    }
+
+    for (int i = 0; i < numthreads; i++) {
+        threads[i].join();
+    }
+
+    for (int tidx = 0; tidx < countdata.numthreads; tidx++) {
+        std::vector<int> *threadGridCount = &(countdata.threadGridCountData[tidx].gridCount);
+        for (size_t i = 0; i < countdata.totalGridCount.size(); i++) {
+            countdata.totalGridCount[i] += threadGridCount->at(i);
+        }
+    }
+}
+
+void ParticleLevelSet::_initializeGridCountData(std::vector<vmath::vec3> &particles,
+                                                BlockArray3d<float> &blockphi, 
+                                                ParticleGridCountData &countdata) {
+    int numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)fmin(numCPU, particles.size());
+    int numblocks = blockphi.getNumActiveGridBlocks();
+    countdata.numthreads = numthreads;
+    countdata.gridsize = numblocks;
+    countdata.threadGridCountData = std::vector<GridCountData>(numthreads);
+    for (int i = 0; i < numthreads; i++) {
+        countdata.threadGridCountData[i].gridCount = std::vector<int>(numblocks, 0);
+    }
+    countdata.totalGridCount = std::vector<int>(numblocks, 0);
+}
+
+void ParticleLevelSet::_computeGridCountDataThread(int startidx, int endidx, 
+                                                   std::vector<vmath::vec3> *particles,
+                                                   double radius,
+                                                   BlockArray3d<float> *blockphi, 
+                                                   GridCountData *countdata) {
+    
+    countdata->simpleGridIndices = std::vector<int>(endidx - startidx, -1);
+    countdata->invalidPoints = std::vector<bool>(endidx - startidx, false);
+    countdata->startidx = startidx;
+    countdata->endidx = endidx;
+
+    float sr = _searchRadiusFactor * (float)radius;
+    float blockdx = _blockwidth * _dx;
+    for (int i = startidx; i < endidx; i++) {
+        vmath::vec3 p = particles->at(i);
+        GridIndex blockIndex = Grid3d::positionToGridIndex(p, blockdx);
+        vmath::vec3 blockPosition = Grid3d::GridIndexToPosition(blockIndex, blockdx);
+
+        if (p.x - sr > blockPosition.x && 
+                p.y - sr > blockPosition.y && 
+                p.z - sr > blockPosition.z && 
+                p.x + sr < blockPosition.x + blockdx && 
+                p.y + sr < blockPosition.y + blockdx && 
+                p.z + sr < blockPosition.z + blockdx) {
+            int blockid = blockphi->getBlockID(blockIndex);
+            countdata->simpleGridIndices[i - startidx] = blockid;
+
+            if (blockid != -1) {
+                countdata->gridCount[blockid]++;
+            } else {
+                countdata->invalidPoints[i - startidx] = true;
+            }
+        } else {
+            GridIndex gmin = Grid3d::positionToGridIndex(p.x - sr, p.y - sr, p.z - sr, blockdx);
+            GridIndex gmax = Grid3d::positionToGridIndex(p.x + sr, p.y + sr, p.z + sr, blockdx);
+
+            int overlapCount = 0;
+            for (int gk = gmin.k; gk <= gmax.k; gk++) {
+                for (int gj = gmin.j; gj <= gmax.j; gj++) {
+                    for (int gi = gmin.i; gi <= gmax.i; gi++) {
+                        int blockid = blockphi->getBlockID(gi, gj, gk);
+                        if (blockid != -1) {
+                            countdata->gridCount[blockid]++;
+                            countdata->overlappingGridIndices.push_back(blockid);
+                            overlapCount++;
+                        }
+                    }
+                }
+            }
+
+            if (overlapCount == 0) {
+                countdata->invalidPoints[i - startidx] = true;
+            }
+            countdata->simpleGridIndices[i - startidx] = -overlapCount;
+        }
+    }
+}
+
+void ParticleLevelSet::_sortParticlesIntoBlocks(std::vector<vmath::vec3> &particles,
+                                                ParticleGridCountData &countdata, 
+                                                std::vector<vmath::vec3> &sortedParticleData, 
+                                                std::vector<int> &blockToParticleIndex) {
+
+    blockToParticleIndex = std::vector<int>(countdata.gridsize, 0);
+    int currentIndex = 0;
+    for (size_t i = 0; i < blockToParticleIndex.size(); i++) {
+        blockToParticleIndex[i] = currentIndex;
+        currentIndex += countdata.totalGridCount[i];
+    }
+    std::vector<int> blockToParticleIndexCurrent = blockToParticleIndex;
+    int totalParticleCount = currentIndex;
+
+    sortedParticleData = std::vector<vmath::vec3>(totalParticleCount);
+    for (int tidx = 0; tidx < countdata.numthreads; tidx++) {
+        GridCountData *countData = &(countdata.threadGridCountData[tidx]);
+
+        int indexOffset = countData->startidx;
+        int currentOverlappingIndex = 0;
+        for (size_t i = 0; i < countData->simpleGridIndices.size(); i++) {
+            if (countData->invalidPoints[i]) {
+                continue;
+            }
+
+            vmath::vec3 p = particles[i + indexOffset];
+            if (countData->simpleGridIndices[i] >= 0) {
+                int blockid = countData->simpleGridIndices[i];
+                int sortedIndex = blockToParticleIndexCurrent[blockid];
+                sortedParticleData[sortedIndex] = p;
+                blockToParticleIndexCurrent[blockid]++;
+            } else {
+                int numblocks = -(countData->simpleGridIndices[i]);
+                for (int blockidx = 0; blockidx < numblocks; blockidx++) {
+                    int blockid = countData->overlappingGridIndices[currentOverlappingIndex];
+                    currentOverlappingIndex++;
+
+                    int sortedIndex = blockToParticleIndexCurrent[blockid];
+                    sortedParticleData[sortedIndex] = p;
+                    blockToParticleIndexCurrent[blockid]++;
+                }
+            }
+        }
+    }
+
+}
+
+void ParticleLevelSet::_computeExactBandProducerThread(BoundedBuffer<ComputeBlock> *computeBlockQueue,
+                                                       BoundedBuffer<ComputeBlock> *finishedComputeBlockQueue) {
+    while (computeBlockQueue->size() > 0) {
+        std::vector<ComputeBlock> computeBlocks;
+        int numBlocks = computeBlockQueue->pop(_numComputeBlocksPerJob, computeBlocks);
+        if (numBlocks == 0) {
+            continue;
+        }
+
+        for (size_t bidx = 0; bidx < computeBlocks.size(); bidx++) {
+            ComputeBlock block = computeBlocks[bidx];
+            float r = block.radius;
+            float sr = _searchRadiusFactor * r;
+            GridIndex blockIndex = block.gridBlock.index;
+            vmath::vec3 blockPositionOffset = Grid3d::GridIndexToPosition(blockIndex, _blockwidth * _dx);
+
+            for (int pidx = 0; pidx < block.numParticles; pidx++) {
+                vmath::vec3 p = block.particleData[pidx];
+                p -= blockPositionOffset;
+
+                vmath::vec3 pmin(p.x - sr, p.y - sr, p.z - sr);
+                vmath::vec3 pmax(p.x + sr, p.y + sr, p.z + sr);
+                GridIndex gmin = Grid3d::positionToGridIndex(pmin, _dx);
+                GridIndex gmax = Grid3d::positionToGridIndex(pmax, _dx);
+                gmin.i = std::max(gmin.i, 0);
+                gmin.j = std::max(gmin.j, 0);
+                gmin.k = std::max(gmin.k, 0);
+                gmax.i = std::min(gmax.i, _blockwidth - 1);
+                gmax.j = std::min(gmax.j, _blockwidth - 1);
+                gmax.k = std::min(gmax.k, _blockwidth - 1);
+
+                for (int k = gmin.k; k <= gmax.k; k++) {
+                    for (int j = gmin.j; j <= gmax.j; j++) {
+                        for (int i = gmin.i; i <= gmax.i; i++) {
+                            vmath::vec3 gpos = Grid3d::GridIndexToCellCenter(i, j, k, _dx);
+                            float dist = vmath::length(gpos - p) - r;
+                            int flatidx = Grid3d::getFlatIndex(i, j, k, _blockwidth, _blockwidth);
+                            if (dist < block.gridBlock.data[flatidx]) {
+                                 block.gridBlock.data[flatidx] = dist;
+                            }
+                        }
+                    }
+                }
+            }
+
+            finishedComputeBlockQueue->push(block);
+        }
     }
 }
 
@@ -389,24 +642,24 @@ void ParticleLevelSet::_initializeCurvatureGridScalarFieldThread(int startidx, i
     }
 }
 
-void ParticleLevelSet::_getValidCurvatureNodes(MeshLevelSet &surfacePhi, 
+void ParticleLevelSet::_getValidCurvatureNodes(Array3d<float> &surfacePhi, 
                                                Array3d<bool> &validNodes) {
 
-    float distUpperBound = surfacePhi.getDistanceUpperBound();
-    Array3d<bool> tempValid(_isize + 1, _jsize + 1, _ksize + 1, false);
-    for (int k = 0; k < _ksize + 1; k++) {
-        for (int j = 0; j < _jsize + 1; j++) {
-            for (int i = 0; i < _isize + 1; i++) {
-                float d = fabs(surfacePhi(i, j, k));
-                tempValid.set(i, j, k, d < distUpperBound);
-            }
+    float distUpperBound = (_curvatureGridExactBand - 1) * _dx;
+    Array3d<bool> tempValid(_isize, _jsize, _ksize, false);
+
+    float *rawphi = surfacePhi.getRawArray();
+    int size = surfacePhi.getNumElements();
+    for (int i = 0; i < size; i++) {
+        if (std::abs(rawphi[i]) < distUpperBound) {
+            tempValid.set(i, true);
         }
     }
 
     validNodes.fill(false);
-    for (int k = 1; k < _ksize; k++) {
-        for (int j = 1; j < _jsize; j++) {
-            for (int i = 1; i < _isize; i++) {
+    for (int k = 1; k < _ksize - 1; k++) {
+        for (int j = 1; j < _jsize - 1; j++) {
+            for (int i = 1; i < _isize - 1; i++) {
                 if (!tempValid(i, j, k)) {
                     continue;
                 }
@@ -417,8 +670,111 @@ void ParticleLevelSet::_getValidCurvatureNodes(MeshLevelSet &surfacePhi,
                                tempValid(i, j - 1, k) &&
                                tempValid(i, j, k + 1) &&
                                tempValid(i, j, k - 1);
-                validNodes.set(i, j, k, isValid);
+                if (isValid) {
+                    validNodes.set(i, j, k, true);
+                }
             }
         }
     }
+}
+
+float ParticleLevelSet::_getCurvature(int i, int j, int k, Array3d<float> &phi) {
+    FLUIDSIM_ASSERT(Grid3d::isGridIndexInRange(i, j, k, _isize + 1, _jsize + 1, _ksize + 1));
+    
+    // Alternate method for calculating curvature
+    /*
+    float center = phi(i, j, k);
+    float left = 0.0f;
+    float right = 0.0f;
+    float down = 0.0f;
+    float up = 0.0f;
+    float back = 0.0f;
+    float front = 0.0f;
+
+    if (i > 0) {
+        left = center - phi(i - 1, j, k);
+    }
+    if (i + 1 < _isize) {
+        right = phi(i + 1, j, k) - center;
+    }
+
+    if (j > 0) {
+        down = center - phi(i, j - 1, k);
+    }
+    if (j + 1 < _jsize) {
+        up = phi(i, j + 1, k) - center;
+    }
+
+    if (k > 0) {
+        back = center - phi(i, j, k - 1);
+    }
+    if (k + 1 < _ksize) {
+        front = phi(i, j, k + 1) - center;
+    }
+
+    float numerator = (right - left + up - down + front - back) / (_dx * _dx);
+
+    left = phi((i > 0) ? i - 1 : i, j, k);
+    right = phi((i + 1 < _isize) ? i + 1 : i, j, k);
+    down = phi(i, (j > 0) ? j - 1 : j, k);
+    up = phi(i, (j + 1 < _jsize) ? j + 1 : j, k);
+    back = phi(i, j, (k > 0) ? k - 1 : k);
+    front = phi(i, j, (k + 1 < _ksize) ? k + 1 : k);
+
+    float gradx = (right - left) / (2 * _dx);
+    float grady = (up - down) / (2 * _dx);
+    float gradz = (front - back) / (2 * _dx);
+
+    float denominator = sqrt(gradx*gradx + grady*grady + gradz*gradz);
+    float eps = 1e-9f;
+    if (denominator < eps) {
+        return 0.0f;
+    }
+
+    float curvature = (numerator / denominator);
+    curvature = std::min(curvature, 1.0f / (float)_dx);
+    curvature = std::max(curvature, -1.0f / (float)_dx);
+    */
+    
+    if (Grid3d::isGridIndexOnBorder(i, j, k, _isize, _jsize, _ksize)) {
+        return 0.0f;
+    }
+
+    float x = 0.5f * (phi(i + 1, j, k) - phi(i - 1, j, k));
+    float y = 0.5f * (phi(i, j + 1, k) - phi(i, j - 1, k));
+    float z = 0.5f * (phi(i, j, k + 1) - phi(i, j, k - 1));
+
+    float xx = phi(i + 1, j, k) - 2.0f * phi(i, j, k) + phi(i - 1, j, k);
+    float yy = phi(i, j + 1, k) - 2.0f * phi(i, j, k) + phi(i, j - 1, k);
+    float zz = phi(i, j, k + 1) - 2.0f * phi(i, j, k) + phi(i, j, k - 1);
+
+    float xy = 0.25f * (phi(i + 1, j + 1, k) - 
+                        phi(i - 1, j + 1, k) - 
+                        phi(i + 1, j - 1, k) + 
+                        phi(i - 1, j - 1, k));
+
+    float xz = 0.25f * (phi(i + 1, j, k + 1) - 
+                        phi(i - 1, j, k + 1) - 
+                        phi(i + 1, j, k - 1) + 
+                        phi(i - 1, j, k - 1));
+
+    float yz = 0.25f * (phi(i, j + 1, k + 1) - 
+                        phi(i, j - 1, k + 1) - 
+                        phi(i, j + 1, k - 1) + 
+                        phi(i, j - 1, k - 1));
+
+    float denominator = x*x + y*y + z*z;
+    denominator = sqrt(denominator * denominator * denominator);
+
+    float eps = 1e-9f;
+    if (denominator < eps) {
+        return 0.0f;
+    }
+
+    float curvature = ((xx * (y*y + z*z) + yy * (x*x + z*z) + zz * (x*x + y*y) -
+                       2*xy*x*y - 2*xz*x*z - 2*yz*y*z) / denominator) / _dx;
+    curvature = std::min(curvature, 1.0f / (float)_dx);
+    curvature = std::max(curvature, -1.0f / (float)_dx);
+    
+    return curvature;
 }

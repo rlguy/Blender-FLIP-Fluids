@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -57,6 +57,9 @@ extern "C" {
     EXPORTDLL void OpenCLUtils_get_gpu_devices(GPUDevice_t *devices, int num_devices, int *err) {
         *err = CBindings::SUCCESS;
         try {
+
+#if WITH_OPENCL
+
             std::vector<clcpp::DeviceInfo> info = OpenCLUtils::getGPUDevices();
             num_devices = std::min((int)info.size(), num_devices);
             for (int i = 0; i < num_devices; i++) {
@@ -68,6 +71,10 @@ extern "C" {
                 description.copy(devices[i].description, DEVICE_STRING_LEN);
                 devices[i].score = score;
             }
+
+#endif
+// ENDIF WITH_OPENCL
+            
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;

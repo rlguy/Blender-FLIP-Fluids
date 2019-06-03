@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,6 +32,10 @@ from . import (
 
 def load_post():
 	material_library.load_post()
+
+
+def scene_update_post(scene):
+    material_library.scene_update_post(scene)
 
 
 def register():

@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,19 +25,14 @@ from bpy.props import (
 
 from ..presets import preset_library
 from ..utils import preset_utils
+from ..utils import version_compatibility_utils as vcu
 
 
 class PresetStackProperty(bpy.types.PropertyGroup):
-    @classmethod
-    def register(cls):
-        cls.path = StringProperty()
-        cls.value = StringProperty()
-        cls.is_value_set = BoolProperty(default=False)
-
-
-    @classmethod
-    def unregister(cls):
-        pass
+    conv = vcu.convert_attribute_to_28
+    path = StringProperty(); exec(conv("path"))
+    value = StringProperty(); exec(conv("value"))
+    is_value_set = BoolProperty(default=False); exec(conv("is_value_set"))
 
 
     def get_value(self):
@@ -56,38 +51,27 @@ class PresetStackProperty(bpy.types.PropertyGroup):
 
 
 class PresetStackMaterialInfo(bpy.types.PropertyGroup):
-    @classmethod
-    def register(cls):
-        cls.preset_id = StringProperty()
-        cls.loaded_id = StringProperty()
-
-
-    @classmethod
-    def unregister(cls):
-        pass
+    conv = vcu.convert_attribute_to_28
+    preset_id = StringProperty(); exec(conv("preset_id"))
+    loaded_id = StringProperty(); exec(conv("loaded_id"))
 
 
 class PresetStackElement(bpy.types.PropertyGroup):
-    @classmethod
-    def register(cls):
-        cls.is_enabled = BoolProperty(
-                name="Enabled",
-                description="Enable effects of preset in the stack",
-                default=True,
-                update=lambda self, context: self._update_is_enabled(context),
-                )
+    conv = vcu.convert_attribute_to_28
 
-        cls.is_applied = BoolProperty(default=False)
-        cls.is_active = BoolProperty(default=True)
-        cls.identifier = StringProperty()
-        cls.stack_uid = IntProperty(default=-1)
-        cls.saved_properties = CollectionProperty(type=PresetStackProperty)
-        cls.loaded_materials = CollectionProperty(type=PresetStackMaterialInfo)
+    is_enabled = BoolProperty(
+            name="Enabled",
+            description="Enable effects of preset in the stack",
+            default=True,
+            update=lambda self, context: self._update_is_enabled(context),
+            ); exec(conv("is_enabled"))
 
-
-    @classmethod
-    def unregister(cls):
-        pass
+    is_applied = BoolProperty(default=False); exec(conv("is_applied"))
+    is_active = BoolProperty(default=True); exec(conv("is_active"))
+    identifier = StringProperty(); exec(conv("identifier"))
+    stack_uid = IntProperty(default=-1); exec(conv("stack_uid"))
+    saved_properties = CollectionProperty(type=PresetStackProperty); exec(conv("saved_properties"))
+    loaded_materials = CollectionProperty(type=PresetStackMaterialInfo); exec(conv("loaded_materials"))
 
 
     def clear(self):
@@ -181,17 +165,11 @@ class PresetStackElement(bpy.types.PropertyGroup):
 
 
 class FlipFluidPresetStack(bpy.types.PropertyGroup):
-    @classmethod
-    def register(cls):
-        cls.is_enabled = BoolProperty(default=False)
-        cls.staged_preset = PointerProperty(type=PresetStackElement)
-        cls.is_preset_staged = BoolProperty(default=False)
-        cls.preset_stack = CollectionProperty(type=PresetStackElement)
-
-
-    @classmethod
-    def unregister(cls):
-        pass
+    conv = vcu.convert_attribute_to_28
+    is_enabled = BoolProperty(default=False); exec(conv("is_enabled"))
+    staged_preset = PointerProperty(type=PresetStackElement); exec(conv("staged_preset"))
+    is_preset_staged = BoolProperty(default=False); exec(conv("is_preset_staged"))
+    preset_stack = CollectionProperty(type=PresetStackElement); exec(conv("preset_stack"))
 
 
     def enable(self):

@@ -1,6 +1,6 @@
 # MIT License
 # 
-# Copyright (c) 2018 Ryan L. Guy
+# Copyright (c) 2019 Ryan L. Guy
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -91,6 +91,14 @@ class TriangleMesh(object):
         struct.num_triangles = num_triangles
 
         return struct
+
+    def apply_transform(self, matrix_world):
+        m = matrix_world
+        for i in range(0, len(self.vertices), 3):
+            v = [self.vertices[i + 0], self.vertices[i + 1], self.vertices[i + 2], 1]
+            self.vertices[i + 0] = v[0]*m[0] + v[1]*m[1] + v[2]*m[2] + v[3]*m[3]
+            self.vertices[i + 1] = v[0]*m[4] + v[1]*m[5] + v[2]*m[6] + v[3]*m[7]
+            self.vertices[i + 2] = v[0]*m[8] + v[1]*m[9] + v[2]*m[10] + v[3]*m[11]
 
     def translate(self, tx, ty, tz):
         for i in range(0, len(self.vertices), 3):

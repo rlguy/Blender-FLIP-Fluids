@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,14 +25,18 @@ SOFTWARE.
 #ifndef FLUIDENGINE_VERSIONUTILS_H
 #define FLUIDENGINE_VERSIONUTILS_H
 
+#include <string>
+
 namespace VersionUtils {
     extern int _major;
     extern int _minor;
     extern int _revision;
+    extern std::string _label;
     extern void getVersion(int *major, int *minor, int *revision);
     extern int getMajor();
     extern int getMinor();
     extern int getRevision();
+    extern std::string getLabel();
 }
 
 #endif

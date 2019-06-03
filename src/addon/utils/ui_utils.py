@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,6 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import bpy
+
+from . import version_compatibility_utils as vcu
 
 def partition_chunks_column3(chunks):
     """
@@ -156,7 +158,7 @@ def force_ui_redraw():
     mesh_data = bpy.data.meshes.new("test_mesh_data")
     mesh_data.from_pydata([], [], [])
     obj = bpy.data.objects.new("test_object", mesh_data)
-    bpy.context.scene.objects.link(obj)
-    bpy.data.objects.remove(obj, True)
+    vcu.link_object(obj, bpy.context)
+    bpy.data.objects.remove(obj, do_unlink=True)
     mesh_data.user_clear()
     bpy.data.meshes.remove(mesh_data)

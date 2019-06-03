@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,8 +16,10 @@
 
 import bpy
 
+from ..utils import version_compatibility_utils as vcu
+
     
-class FlipFluidDomainTypeFluidSurfacePanel(bpy.types.Panel):
+class FLIPFLUID_PT_DomainTypeFluidSurfacePanel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "physics"
@@ -27,25 +29,34 @@ class FlipFluidDomainTypeFluidSurfacePanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        obj_props = context.scene.objects.active.flip_fluid
+        obj_props = vcu.get_active_object(context).flip_fluid
         return obj_props.is_active and obj_props.object_type == "TYPE_DOMAIN"
 
     def draw(self, context):
-        obj = context.scene.objects.active
+        obj = vcu.get_active_object(context)
         sprops = obj.flip_fluid.domain.surface
+        show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
 
-        column = self.layout.column(align=True)
+        box = self.layout.box()
+        column = box.column(align=True)
+
+        if not show_advanced:
+            column.label(text="Surface Mesh:")
+            column.prop(sprops, "subdivisions")
+            column.prop(sprops, "particle_scale")
+            return
+
         split = column.split()
         column_surface = split.column(align=True)
         column_chunks = split.column(align=True)
 
-        column_surface.label("Surface Mesh:")
+        column_surface.label(text="Surface Mesh:")
         column_surface.prop(sprops, "subdivisions")
         column_surface.prop(sprops, "particle_scale")
 
         split = column_chunks.split(align=True)
         column_left = split.column(align=True)
-        column_left.label("Compute Chunks:")
+        column_left.label(text="Compute Chunks:")
         row = column_left.row(align=True)
         row.prop(sprops, "compute_chunk_mode", expand=True)
         row = column_left.row(align=True)
@@ -55,21 +66,56 @@ class FlipFluidDomainTypeFluidSurfacePanel(bpy.types.Panel):
         elif sprops.compute_chunk_mode == 'COMPUTE_CHUNK_MODE_FIXED':
             row.prop(sprops, "compute_chunks_fixed")
 
-        column = self.layout.column(align=True)
-        column.label("Smoothing:")
-        row = self.layout.row(align=True)
+        object_collection = vcu.get_scene_collection()
+        if vcu.is_blender_28():
+            search_group = "all_objects"
+        else:
+            search_group = "objects"
+
+        box = self.layout.box()
+        box.label(text="Meshing Volume:")
+        row = box.row(align=True)
+        row.prop(sprops, "meshing_volume_mode", expand=True)
+        column = box.column(align=True)
+        split = column.split(align=True)
+        column_left = split.column(align=True)
+        column_right = split.column(align=True)
+        column_right.enabled = sprops.meshing_volume_mode == "MESHING_VOLUME_MODE_OBJECT"
+        column_right.prop_search(sprops, "meshing_volume_object", object_collection, search_group, text="Object")
+        column_right.prop(sprops, "export_animated_meshing_volume_object")
+
+        box = self.layout.box()
+        box.label(text="Meshing Against Boundary:")
+        column = box.column(align=True)
+        split = column.split(align=True)
+        column_left = split.column()
+        column_left.prop(sprops, "remove_mesh_near_domain")
+        column_right = split.column()
+        column_right.enabled = sprops.remove_mesh_near_domain
+        column_right.prop(sprops, "remove_mesh_near_domain_distance")
+
+        box = self.layout.box()
+        box.label(text="Meshing Against Obstacles:")
+        column = box.column(align=True)
+        column.prop(sprops, "enable_meshing_offset")
+        row = box.row(align=True)
+        row.enabled = sprops.enable_meshing_offset
+        row.prop(sprops, "obstacle_meshing_mode", expand=True)
+
+        box = self.layout.box()
+        box.label(text="Smoothing:")
+        row = box.row(align=True)
         row.prop(sprops, "smoothing_value")
         row.prop(sprops, "smoothing_iterations")
 
         column = self.layout.column(align=True)
         column.separator()
-        column.prop(sprops, "enable_smooth_interface_meshing")
-        column.prop(sprops, "invert_contact_normals")
+        column.prop(sprops, "generate_motion_blur_data")
 
 
 def register():
-    bpy.utils.register_class(FlipFluidDomainTypeFluidSurfacePanel)
+    bpy.utils.register_class(FLIPFLUID_PT_DomainTypeFluidSurfacePanel)
 
 
 def unregister():
-    bpy.utils.unregister_class(FlipFluidDomainTypeFluidSurfacePanel)
+    bpy.utils.unregister_class(FLIPFLUID_PT_DomainTypeFluidSurfacePanel)

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -365,7 +365,68 @@ float MeshLevelSet::getFaceWeightW(GridIndex g) {
 */
 float MeshLevelSet::getCurvature(int i, int j, int k) {
     FLUIDSIM_ASSERT(Grid3d::isGridIndexInRange(i, j, k, _isize + 1, _jsize + 1, _ksize + 1));
+    
+    /*
+    // Alternate method for calculating curvature
 
+    int isize = _isize + 1;
+    int jsize = _jsize + 1;
+    int ksize = _ksize + 1;
+    float dx = (float)_dx;
+
+    float center = _phi(i, j, k);
+    float left = 0.0f;
+    float right = 0.0f;
+    float down = 0.0f;
+    float up = 0.0f;
+    float back = 0.0f;
+    float front = 0.0f;
+
+    if (i > 0) {
+        left = center - _phi(i - 1, j, k);
+    }
+    if (i + 1 < isize) {
+        right = _phi(i + 1, j, k) - center;
+    }
+
+    if (j > 0) {
+        down = center - _phi(i, j - 1, k);
+    }
+    if (j + 1 < jsize) {
+        up = _phi(i, j + 1, k) - center;
+    }
+
+    if (k > 0) {
+        back = center - _phi(i, j, k - 1);
+    }
+    if (k + 1 < ksize) {
+        front = _phi(i, j, k + 1) - center;
+    }
+
+    float numerator = (right - left + up - down + front - back) / (dx * dx);
+
+    left = _phi((i > 0) ? i - 1 : i, j, k);
+    right = _phi((i + 1 < isize) ? i + 1 : i, j, k);
+    down = _phi(i, (j > 0) ? j - 1 : j, k);
+    up = _phi(i, (j + 1 < jsize) ? j + 1 : j, k);
+    back = _phi(i, j, (k > 0) ? k - 1 : k);
+    front = _phi(i, j, (k + 1 < ksize) ? k + 1 : k);
+
+    float gradx = (right - left) / (2 * dx);
+    float grady = (up - down) / (2 * dx);
+    float gradz = (front - back) / (2 * dx);
+
+    float denominator = sqrt(gradx*gradx + grady*grady + gradz*gradz);
+    float eps = 1e-9f;
+    if (denominator < eps) {
+        return 0.0f;
+    }
+
+    float curvature = (numerator / denominator);
+    curvature = std::min(curvature, 1.0f / dx);
+    curvature = std::max(curvature, -1.0f / dx);
+    */
+    
     if (Grid3d::isGridIndexOnBorder(i, j, k, _isize + 1, _jsize + 1, _ksize + 1)) {
         return 0.0f;
     }
@@ -401,9 +462,11 @@ float MeshLevelSet::getCurvature(int i, int j, int k) {
         return 0.0f;
     }
 
-    float curvature = (xx * (y*y + z*z) + yy * (x*x + z*z) + zz * (x*x + y*y) -
-                       2*xy*x*y - 2*xz*x*z - 2*yz*y*z) / denominator;
-
+    float curvature = ((xx * (y*y + z*z) + yy * (x*x + z*z) + zz * (x*x + y*y) -
+                       2*xy*x*y - 2*xz*x*z - 2*yz*y*z) / denominator) / _dx;
+    curvature = std::min(curvature, 1.0f / (float)_dx);
+    curvature = std::max(curvature, -1.0f / (float)_dx);
+    
     return curvature;
 }
 
@@ -435,6 +498,10 @@ std::vector<vmath::vec3> MeshLevelSet::getVertexVelocities() {
 
 VelocityDataGrid* MeshLevelSet::getVelocityDataGrid() {
     return &_velocityData;
+}
+
+Array3d<float>* MeshLevelSet::getPhiArray3d() {
+    return &_phi;
 }
 
 void MeshLevelSet::pushMeshObject(MeshObject *object) {
@@ -503,10 +570,6 @@ void MeshLevelSet::fastCalculateSignedDistanceField(TriangleMesh &m,
 }
 
 void MeshLevelSet::calculateUnion(MeshLevelSet &levelset) {
-    int isizeOther, jsizeOther, ksizeOther;
-    levelset.getGridDimensions(&isizeOther, &jsizeOther, &ksizeOther);
-    GridIndex gridOffsetOther = levelset.getGridOffset();
-
     // Merge mesh data
     TriangleMesh *meshOther = levelset.getTriangleMesh();
     int triIndexOffset = (int)_mesh.triangles.size();
@@ -517,76 +580,29 @@ void MeshLevelSet::calculateUnion(MeshLevelSet &levelset) {
     _vertexVelocities.insert(_vertexVelocities.end(), 
                              vertexVelocitiesOther.begin(), vertexVelocitiesOther.end());
 
-    // Merge phi, closest triangle data, and mesh object data
     std::vector<MeshObject*> meshObjectsOther = levelset.getMeshObjects();
     int meshObjectIndexOffset = (int)_meshObjects.size();
     _meshObjects.insert(_meshObjects.end(), meshObjectsOther.begin(), 
                                             meshObjectsOther.end());
 
-    VelocityDataGrid *otherData = levelset.getVelocityDataGrid();
-    for(int k = 0; k < ksizeOther + 1; k++) {
-        for(int j = 0; j < jsizeOther + 1; j++) {
-            for(int i = 0; i < isizeOther + 1; i++) {
-                GridIndex thisIndex(i + gridOffsetOther.i - _gridOffset.i,
-                                    j + gridOffsetOther.j - _gridOffset.j,
-                                    k + gridOffsetOther.k - _gridOffset.k);
+    // Merge phi, closest triangle data, and mesh object data
+    int isizeOther, jsizeOther, ksizeOther;
+    levelset.getGridDimensions(&isizeOther, &jsizeOther, &ksizeOther);
 
-                if (!Grid3d::isGridIndexInRange(thisIndex, _isize + 1, _jsize + 1, _ksize + 1)) {
-                    continue;
-                }
+    int gridsize = (isizeOther + 1) * (jsizeOther + 1) * (ksizeOther + 1);
+    int numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)fmin(numCPU, gridsize);
+    std::vector<std::thread> threads(numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
+    for (int i = 0; i < numthreads; i++) {
+        threads[i] = std::thread(&MeshLevelSet::_calculateUnionThread, this,
+                                 intervals[i], intervals[i + 1], 
+                                 triIndexOffset, meshObjectIndexOffset, 
+                                 &levelset);
+    }
 
-                if (levelset(i, j, k) < _phi(thisIndex)) {
-                    if (fabs(levelset(i, j, k)) < fabs(_phi(thisIndex))) {
-                        int tidx = levelset.getClosestTriangleIndex(i, j, k);
-                        int midx = levelset.getClosestMeshObjectIndex(i, j, k);
-                        if (tidx != -1) {
-                            _closestTriangles.set(thisIndex, tidx + triIndexOffset);
-
-                            if (midx != -1) {
-                                _closestMeshObjects.set(thisIndex, midx + meshObjectIndexOffset);
-                            }
-                        }
-                    }
-
-                    _phi.set(thisIndex, levelset(i, j, k));
-                }
-
-                if (!isVelocityDataEnabled()) {
-                    continue;
-                }
-
-                bool isBorder = Grid3d::isGridIndexOnBorder(thisIndex, _isize + 1, _jsize + 1, _ksize + 1) ||
-                                Grid3d::isGridIndexOnBorder(i, j, k, isizeOther + 1, jsizeOther + 1, ksizeOther + 1);
-
-                if (isBorder) {
-                    if (Grid3d::isGridIndexInRange(thisIndex, _isize + 1, _jsize, _ksize) &&
-                            Grid3d::isGridIndexInRange(i, j, k, isizeOther + 1, jsizeOther, ksizeOther)) {
-                        _velocityData.field.addU(thisIndex, otherData->field.U(i, j, k));
-                        _velocityData.weightU.add(thisIndex, otherData->weightU(i, j, k));
-                    }
-
-                    if (Grid3d::isGridIndexInRange(thisIndex, _isize, _jsize + 1, _ksize) &&
-                            Grid3d::isGridIndexInRange(i, j, k, isizeOther, jsizeOther + 1, ksizeOther)) {
-                        _velocityData.field.addV(thisIndex, otherData->field.V(i, j, k));
-                        _velocityData.weightV.add(thisIndex, otherData->weightV(i, j, k));
-                    }
-
-                    if (Grid3d::isGridIndexInRange(thisIndex, _isize, _jsize, _ksize + 1) &&
-                            Grid3d::isGridIndexInRange(i, j, k, isizeOther, jsizeOther, ksizeOther + 1)) {
-                        _velocityData.field.addW(thisIndex, otherData->field.W(i, j, k));
-                        _velocityData.weightW.add(thisIndex, otherData->weightW(i, j, k));
-                    }
-                } else {
-                    _velocityData.field.addU(thisIndex, otherData->field.U(i, j, k));
-                    _velocityData.weightU.add(thisIndex, otherData->weightU(i, j, k));
-                    _velocityData.field.addV(thisIndex, otherData->field.V(i, j, k));
-                    _velocityData.weightV.add(thisIndex, otherData->weightV(i, j, k));
-                    _velocityData.field.addW(thisIndex, otherData->field.W(i, j, k));
-                    _velocityData.weightW.add(thisIndex, otherData->weightW(i, j, k));
-                }
-
-            }
-        }
+    for (int i = 0; i < numthreads; i++) {
+        threads[i].join();
     }
 }
 
@@ -595,53 +611,56 @@ void MeshLevelSet::normalizeVelocityGrid() {
 
     ValidVelocityComponentGrid validVelocities(_isize, _jsize, _ksize);
 
-    float eps = 1e-6f;
-    for(int k = 0; k < _ksize; k++) {
-        for(int j = 0; j < _jsize; j++) {
-            for(int i = 0; i < _isize + 1; i++) {
-                float u = 0.0f;
-                float uweight = _velocityData.weightU(i, j, k);
-                if (uweight > eps) {
-                    u = _velocityData.field.U(i, j, k) / uweight;
-                    validVelocities.validU.set(i, j, k, true);
-                }
-
-                _velocityData.field.setU(i, j, k, u);
-                _velocityData.weightU.set(i, j, k, 1.0f);
-            }
-        }
+    int gridsize = (_isize + 1) * _jsize * _ksize;
+    int numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)fmin(numCPU, gridsize);
+    std::vector<std::thread> threads(numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
+    for (int i = 0; i < numthreads; i++) {
+        threads[i] = std::thread(&MeshLevelSet::_normalizeVelocityGridThread, this,
+                                 intervals[i], intervals[i + 1], 
+                                 _velocityData.field.getArray3dU(), 
+                                 &(_velocityData.weightU),
+                                 &(validVelocities.validU)
+                                 );
     }
 
-    for(int k = 0; k < _ksize; k++) {
-        for(int j = 0; j < _jsize + 1; j++) {
-            for(int i = 0; i < _isize; i++) {
-                float v = 0.0f;
-                float vweight = _velocityData.weightV(i, j, k);
-                if (vweight > eps) {
-                    v = _velocityData.field.V(i, j, k) / vweight;
-                    validVelocities.validV.set(i, j, k, true);
-                }
-
-                _velocityData.field.setV(i, j, k, v);
-                _velocityData.weightV.set(i, j, k, 1.0f);
-            }
-        }
+    for (int i = 0; i < numthreads; i++) {
+        threads[i].join();
     }
 
-    for(int k = 0; k < _ksize + 1; k++) {
-        for(int j = 0; j < _jsize; j++) {
-            for(int i = 0; i < _isize; i++) {
-                float w = 0.0f;
-                float wweight = _velocityData.weightW(i, j, k);
-                if (wweight > eps) {
-                    w = _velocityData.field.W(i, j, k) / wweight;
-                    validVelocities.validW.set(i, j, k, true);
-                }
+    gridsize = _isize * (_jsize + 1) * _ksize;
+    numthreads = (int)fmin(numCPU, gridsize);
+    threads = std::vector<std::thread>(numthreads);
+    intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
+    for (int i = 0; i < numthreads; i++) {
+        threads[i] = std::thread(&MeshLevelSet::_normalizeVelocityGridThread, this,
+                                 intervals[i], intervals[i + 1], 
+                                 _velocityData.field.getArray3dV(), 
+                                 &(_velocityData.weightV),
+                                 &(validVelocities.validV)
+                                 );
+    }
 
-                _velocityData.field.setW(i, j, k, w);
-                _velocityData.weightW.set(i, j, k, 1.0f);
-            }
-        }
+    for (int i = 0; i < numthreads; i++) {
+        threads[i].join();
+    }
+
+    gridsize = _isize * _jsize * (_ksize + 1);
+    numthreads = (int)fmin(numCPU, gridsize);
+    threads = std::vector<std::thread>(numthreads);
+    intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
+    for (int i = 0; i < numthreads; i++) {
+        threads[i] = std::thread(&MeshLevelSet::_normalizeVelocityGridThread, this,
+                                 intervals[i], intervals[i + 1], 
+                                 _velocityData.field.getArray3dW(), 
+                                 &(_velocityData.weightW),
+                                 &(validVelocities.validW)
+                                 );
+    }
+
+    for (int i = 0; i < numthreads; i++) {
+        threads[i].join();
     }
 
     _velocityData.field.extrapolateVelocityField(
@@ -650,13 +669,7 @@ void MeshLevelSet::normalizeVelocityGrid() {
 }
 
 void MeshLevelSet::negate() {
-    for(int k = 0; k < _phi.depth; k++) {
-        for(int j = 0; j < _phi.height; j++) {
-            for(int i = 0; i < _phi.width; i++) {
-                _phi.set(i, j, k, -_phi(i, j, k));
-            }
-        }
-    }
+    _phi.negate();
 
     if (_isVelocityDataEnabled) {
         _computeVelocityGrids();
@@ -726,106 +739,6 @@ float MeshLevelSet::getDistanceUpperBound() {
     return (_phi.width + _phi.height + _phi.depth) * _dx;
 }
 
-void MeshLevelSet::_computeExactBandDistanceFieldThread(int startidx, int endidx, 
-                                                        int bandwidth, int splitdir) {
-
-    int isize = _phi.width;
-    int jsize = _phi.height;
-    int ksize = _phi.depth;
-
-    int U = 0; int V = 1; int W = 2;
-
-    vmath::vec3 minp, maxp;
-    if (splitdir == U) {
-        minp = vmath::vec3(startidx * _dx, 0.0, 0.0);
-        maxp = vmath::vec3((endidx - 1) * _dx, jsize * _dx, ksize * _dx);
-    } else if (splitdir == V) {
-        minp = vmath::vec3(0.0, startidx * _dx, 0.0);
-        maxp = vmath::vec3(isize * _dx, (endidx - 1) * _dx, ksize * _dx);
-    } else if (splitdir == W) {
-        minp = vmath::vec3(0.0, 0.0, startidx * _dx);
-        maxp = vmath::vec3(isize * _dx, jsize * _dx, (endidx - 1) * _dx);
-    }
-    float eps = 1e-6;
-    AABB bbox(minp, maxp);
-    bbox.expand(2 * (bandwidth * _dx + eps));
-    minp = bbox.getMinPoint();
-    maxp = bbox.getMaxPoint();
-
-    Triangle t;
-    double invdx = 1.0 / _dx;
-    for(size_t tidx = 0; tidx < _mesh.triangles.size(); tidx++) {
-        t = _mesh.triangles[tidx];
-        vmath::vec3 p = _mesh.vertices[t.tri[0]] - _positionOffset;
-        vmath::vec3 q = _mesh.vertices[t.tri[1]] - _positionOffset;
-        vmath::vec3 r = _mesh.vertices[t.tri[2]] - _positionOffset;
-
-        if (splitdir == U) {
-            if ((p.x < minp.x && q.x < minp.x && r.x < minp.x) || 
-                    (p.x > maxp.x && q.x > maxp.x && r.x > maxp.x)) {
-                continue;
-            }
-        } else if (splitdir == V) {
-            if ((p.y < minp.z && q.z < minp.z && r.z < minp.z) || 
-                    (p.z > maxp.z && q.z > maxp.z && r.z > maxp.z)) {
-                continue;
-            }
-        } else if (splitdir == W) {
-            if ((p.x < minp.x && q.x < minp.x && r.x < minp.x) || 
-                    (p.x > maxp.x && q.x > maxp.x && r.x > maxp.x)) {
-                continue;
-            }
-        }
-
-        double fip = (double)p.x * invdx;
-        double fjp = (double)p.y * invdx; 
-        double fkp = (double)p.z * invdx;
-
-        double fiq = (double)q.x * invdx;
-        double fjq = (double)q.y * invdx;
-        double fkq = (double)q.z * invdx;
-
-        double fir = (double)r.x * invdx;
-        double fjr = (double)r.y * invdx;
-        double fkr = (double)r.z * invdx;
-
-        int i0 = _clamp(int(fmin(fip, fmin(fiq, fir))) - bandwidth, 0, isize - 1);
-        int j0 = _clamp(int(fmin(fjp, fmin(fjq, fjr))) - bandwidth, 0, jsize - 1);
-        int k0 = _clamp(int(fmin(fkp, fmin(fkq, fkr))) - bandwidth, 0, ksize - 1);
-
-        int i1 = _clamp(int(fmax(fip, fmax(fiq, fir))) + bandwidth + 1, 0, isize - 1);
-        int j1 = _clamp(int(fmax(fjp, fmax(fjq, fjr))) + bandwidth + 1, 0, jsize - 1);
-        int k1 = _clamp(int(fmax(fkp, fmax(fkq, fkr))) + bandwidth + 1, 0, ksize - 1);
-
-        if (splitdir == U) {
-            i0 = fmax(i0, startidx);
-            i1 = fmin(i1, endidx - 1);
-        } else if (splitdir == V) {
-            j0 = fmax(j0, startidx);
-            j1 = fmin(j1, endidx - 1);
-        } else if (splitdir == W) {
-            k0 = fmax(k0, startidx);
-            k1 = fmin(k1, endidx - 1);
-        }
-
-        for(int k = k0; k <= k1; k++) {
-            for(int j = j0; j <= j1; j++) { 
-                for(int i = i0; i <= i1; i++){
-                    vmath::vec3 gpos = Grid3d::GridIndexToPosition(i, j, k, _dx);
-                    float d = _pointToTriangleDistance(gpos, p, q, r);
-                    if (d < _phi(i, j, k)) {
-                        if (!_isMinimalLevelSet && fabs(d) < fabs(_phi(i, j, k))) {
-                            _closestTriangles.set(i, j, k, (int)tidx);
-                        }
-                        _phi.set(i, j, k, d);
-                    }
-                }
-            }
-        }
-    }
-
-}
-
 void MeshLevelSet::_computeExactBandDistanceField(int bandwidth) {
     if (_isMultiThreadingEnabled) {
         _computeExactBandDistanceFieldMultiThreaded(bandwidth);
@@ -843,77 +756,377 @@ void MeshLevelSet::_computeExactBandDistanceFieldMultiThreaded(int bandwidth) {
         return;
     }
 
-    int isize = _phi.width;
-    int jsize = _phi.height;
-    int ksize = _phi.depth;
-    int meshObjectIdx = (int)_meshObjects.size() - 1;
+    std::vector<TriangleData> triangleData;
+    _initializeTriangleData(bandwidth, triangleData);
 
-    vmath::vec3 minp = _mesh.vertices[0] - _positionOffset;
-    vmath::vec3 maxp = _mesh.vertices[0] - _positionOffset;
-    for (size_t i = 0; i < _mesh.vertices.size(); i++) {
-        vmath::vec3 p = _mesh.vertices[i] - _positionOffset;
-        minp.x = fmin(minp.x, p.x);
-        minp.y = fmin(minp.y, p.y);
-        minp.z = fmin(minp.z, p.z);
-        maxp.x = fmax(maxp.x, p.x);
-        maxp.y = fmax(maxp.y, p.y);
-        maxp.z = fmax(maxp.z, p.z);
-    }
-    vmath::vec3 diff = maxp - minp;
+    BlockArray3d<SDFData> blockphi;
+    _initializeBlockGrid(triangleData, bandwidth, blockphi);
 
-    int U = 0; int V = 1; int W = 2;
-    int splitdir = U;
-    if (diff.x > diff.y) {
-        if (diff.x > diff.z) {
-            splitdir = U;
-        } else {
-            splitdir = W;
+    TriangleGridCountData gridCountData;
+    _computeGridCountData(triangleData, blockphi, gridCountData);
+
+    std::vector<TriangleData> sortedTriangleData;
+    std::vector<int> blockToTriangleDataIndex;
+    _sortTrianglesIntoBlocks(triangleData, gridCountData, sortedTriangleData, blockToTriangleDataIndex);
+
+    std::vector<GridBlock<SDFData> > gridBlocks;
+    blockphi.getActiveGridBlocks(gridBlocks);
+    BoundedBuffer<ComputeBlock> computeBlockQueue(gridBlocks.size());
+    BoundedBuffer<ComputeBlock> finishedComputeBlockQueue(gridBlocks.size());
+    int numComputeBlocks = 0;
+    for (size_t bidx = 0; bidx < gridBlocks.size(); bidx++) {
+        GridBlock<SDFData> b = gridBlocks[bidx];
+        if (gridCountData.totalGridCount[b.id] == 0) {
+            continue;
         }
-    } else {
-        if (diff.y > diff.z) {
-            splitdir = V;
-        } else {
-            splitdir = W;
-        }
-    }
 
-    int i1 = 0;
-    int i2 = 0;
-    GridIndex gmin = Grid3d::positionToGridIndex(minp, _dx);
-    GridIndex gmax = Grid3d::positionToGridIndex(maxp, _dx);
-    if (splitdir == U) {
-        i1 = fmax(gmin.i - bandwidth, 0);
-        i2 = fmin(gmax.i + 1 + bandwidth, _phi.width);
-    } else if (splitdir == V) {
-        i1 = fmax(gmin.j - bandwidth, 0);
-        i2 = fmin(gmax.j + 1 + bandwidth, _phi.height);
-    } else if (splitdir == W) {
-        i1 = fmax(gmin.k - bandwidth, 0);
-        i2 = fmin(gmax.k + 1 + bandwidth, _phi.depth);
+        ComputeBlock computeBlock;
+        computeBlock.gridBlock = b;
+        computeBlock.triangleData = &(sortedTriangleData[blockToTriangleDataIndex[b.id]]);
+        computeBlock.numTriangles = gridCountData.totalGridCount[b.id];
+        computeBlockQueue.push(computeBlock);
+        numComputeBlocks++;
     }
 
     int numCPU = ThreadUtils::getMaxThreadCount();
-    int numthreads = (int)fmin(numCPU, i2 - i1);
-    std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(i1, i2, numthreads);
+    int numthreads = (int)fmin(numCPU, computeBlockQueue.size());
+    std::vector<std::thread> producerThreads(numthreads);
     for (int i = 0; i < numthreads; i++) {
-        threads[i] = std::thread(&MeshLevelSet::_computeExactBandDistanceFieldThread, this,
-                                 intervals[i], intervals[i + 1], bandwidth, splitdir);
+        producerThreads[i] = std::thread(&MeshLevelSet::_computeExactBandProducerThread, this,
+                                         &computeBlockQueue, &finishedComputeBlockQueue);
+    }
+
+    int numComputeBlocksProcessed = 0;
+    while (numComputeBlocksProcessed < numComputeBlocks) {
+        std::vector<ComputeBlock> finishedBlocks;
+        finishedComputeBlockQueue.popAll(finishedBlocks);
+        for (size_t i = 0; i < finishedBlocks.size(); i++) {
+            ComputeBlock block = finishedBlocks[i];
+            GridIndex gridOffset(block.gridBlock.index.i * _blockwidth,
+                                 block.gridBlock.index.j * _blockwidth,
+                                 block.gridBlock.index.k * _blockwidth);
+
+            int datasize = _blockwidth * _blockwidth * _blockwidth;
+            for (int vidx = 0; vidx < datasize; vidx++) {
+                GridIndex localidx = Grid3d::getUnflattenedIndex(vidx, _blockwidth, _blockwidth);
+                GridIndex phiidx = GridIndex(localidx.i + gridOffset.i,
+                                             localidx.j + gridOffset.j,
+                                             localidx.k + gridOffset.k);
+                if (_phi.isIndexInRange(phiidx)) {
+                    SDFData d = block.gridBlock.data[vidx];
+                    _phi.set(phiidx, d.phi);
+                    if (!_isMinimalLevelSet) {
+                        _closestTriangles.set(phiidx, d.triangle);
+                    }
+                }
+            }
+        }
+
+        numComputeBlocksProcessed += finishedBlocks.size();
+    }
+
+    if (!_isMinimalLevelSet) { 
+        int meshObjectIdx = (int)_meshObjects.size() - 1;
+        int size = _closestTriangles.getNumElements();
+        int *closestTrianglesArray = _closestTriangles.getRawArray();
+        int *closestMeshObjectsArray = _closestMeshObjects.getRawArray();
+        for (int i = 0; i < size; i++) {
+            if (closestTrianglesArray[i] != -1) {
+                closestMeshObjectsArray[i] = meshObjectIdx;
+            }
+        }
+    }
+
+    computeBlockQueue.notifyFinished();
+    for (size_t i = 0; i < producerThreads.size(); i++) {
+        computeBlockQueue.notifyFinished();
+        producerThreads[i].join();
+    }
+}
+
+void MeshLevelSet::_initializeTriangleData(int bandwidth, std::vector<TriangleData> &data) {
+    data.reserve(_mesh.triangles.size());
+    for (size_t tidx = 0; tidx < _mesh.triangles.size(); tidx++) {
+        Triangle t = _mesh.triangles[tidx];
+
+        AABB bbox(t, _mesh.vertices);
+        bbox.position -= _positionOffset;
+        vmath::vec3 pmax = bbox.getMaxPoint();
+        GridIndex gmin = Grid3d::positionToGridIndex(bbox.position, _dx);
+        GridIndex gmax = Grid3d::positionToGridIndex(pmax, _dx);
+        gmin.i -= bandwidth;
+        gmin.j -= bandwidth;
+        gmin.k -= bandwidth;
+        gmax.i += bandwidth + 1;
+        gmax.j += bandwidth + 1;
+        gmax.k += bandwidth + 1;
+
+        if (gmax.i < 0 || gmin.i >= _isize + 1 || 
+                gmax.j < 0 || gmin.j >= _jsize + 1 || 
+                gmax.k < 0 || gmin.k >= _ksize + 1) {
+            continue;
+        }
+
+        gmin.i = std::max(gmin.i, 0);
+        gmin.j = std::max(gmin.j, 0);
+        gmin.k = std::max(gmin.k, 0);
+        gmax.i = std::min(gmax.i, _isize);
+        gmax.j = std::min(gmax.j, _jsize);
+        gmax.k = std::min(gmax.k, _ksize);
+
+        TriangleData d;
+        d.id = tidx;
+        d.gmin = gmin;
+        d.gmax = gmax;
+        d.vertices[0] = _mesh.vertices[t.tri[0]] - _positionOffset;
+        d.vertices[1] = _mesh.vertices[t.tri[1]] - _positionOffset;
+        d.vertices[2] = _mesh.vertices[t.tri[2]] - _positionOffset;
+
+        data.push_back(d);
+    }
+}
+
+void MeshLevelSet::_initializeBlockGrid(std::vector<TriangleData> &triangleData, 
+                                        int bandwidth,
+                                        BlockArray3d<SDFData> &blockphi) {
+    BlockArray3dParameters params;
+    params.isize = _isize + 1;
+    params.jsize = _jsize + 1;
+    params.ksize = _ksize + 1;
+    params.blockwidth = _blockwidth;
+    Dims3d dims = BlockArray3d<SDFData>::getBlockDimensions(params);
+
+    Array3d<bool> activeBlocks(dims.i, dims.j, dims.k, false);
+
+    int numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)fmin(numCPU, triangleData.size());
+    std::vector<std::thread> threads(numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, triangleData.size(), numthreads);
+    for (int i = 0; i < numthreads; i++) {
+        threads[i] = std::thread(&MeshLevelSet::_initializeActiveBlocksThread, this,
+                                 intervals[i], intervals[i + 1], 
+                                 &triangleData, bandwidth, &activeBlocks);
     }
 
     for (int i = 0; i < numthreads; i++) {
         threads[i].join();
     }
 
-    if (!_isMinimalLevelSet) { 
-        for(int k = 0; k < ksize; k++) {
-            for(int j = 0; j < jsize; j++) {
-                for(int i = 0; i < isize; i++) {
-                    if (_closestTriangles(i, j, k) != -1) {
-                        _closestMeshObjects.set(i, j, k, meshObjectIdx);
+    for (int k = 0; k < dims.k; k++) {
+        for (int j = 0; j < dims.j; j++) {
+            for (int i = 0; i < dims.i; i++) {
+                if (activeBlocks(i, j, k)) {
+                    params.activeblocks.push_back(GridIndex(i, j, k));
+                }
+            }
+        }
+    }
+
+    SDFData defaultValue;
+    defaultValue.phi = getDistanceUpperBound();
+    defaultValue.triangle = -1;
+
+    blockphi = BlockArray3d<SDFData>(params);
+    blockphi.fill(defaultValue);
+}
+
+void MeshLevelSet::_initializeActiveBlocksThread(int startidx, int endidx,
+                                                 std::vector<TriangleData> *triangleData, 
+                                                 int bandwidth,
+                                                 Array3d<bool> *activeBlocks) {
+    
+    for (int tidx = startidx; tidx < endidx; tidx++) {
+        TriangleData t = triangleData->at(tidx);
+        GridIndex bmin(t.gmin.i / _blockwidth, 
+                       t.gmin.j / _blockwidth, 
+                       t.gmin.k / _blockwidth);
+        GridIndex bmax(t.gmax.i / _blockwidth, 
+                       t.gmax.j / _blockwidth, 
+                       t.gmax.k / _blockwidth);
+
+        for (int k = bmin.k; k <= bmax.k; k++) {
+            for (int j = bmin.j; j <= bmax.j; j++) {
+                for (int i = bmin.i; i <= bmax.i; i++) {
+                    activeBlocks->set(i, j, k, true);
+                }
+            }
+        }
+    }
+}
+
+void MeshLevelSet::_computeGridCountData(std::vector<TriangleData> &triangledata, 
+                                         BlockArray3d<SDFData> &blockphi,
+                                         TriangleGridCountData &countdata) {
+    _initializeGridCountData(triangledata, blockphi, countdata);
+
+    int numthreads = countdata.numthreads;
+    std::vector<std::thread> threads(numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, triangledata.size(), numthreads);
+    for (int i = 0; i < numthreads; i++) {
+        threads[i] = std::thread(&MeshLevelSet::_computeGridCountDataThread, this,
+                                 intervals[i], intervals[i + 1], 
+                                 &triangledata, 
+                                 &blockphi, 
+                                 &(countdata.threadGridCountData[i]));
+    }
+
+    for (int i = 0; i < numthreads; i++) {
+        threads[i].join();
+    }
+
+    for (int tidx = 0; tidx < countdata.numthreads; tidx++) {
+        std::vector<int> *threadGridCount = &(countdata.threadGridCountData[tidx].gridCount);
+        for (size_t i = 0; i < countdata.totalGridCount.size(); i++) {
+            countdata.totalGridCount[i] += threadGridCount->at(i);
+        }
+    }
+}
+
+void MeshLevelSet::_initializeGridCountData(std::vector<TriangleData> &triangledata,
+                                            BlockArray3d<SDFData> &blockphi, 
+                                            TriangleGridCountData &countdata) {
+    int numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)fmin(numCPU, triangledata.size());
+    int numblocks = blockphi.getNumActiveGridBlocks();
+    countdata.numthreads = numthreads;
+    countdata.gridsize = numblocks;
+    countdata.threadGridCountData = std::vector<GridCountData>(numthreads);
+    for (int i = 0; i < numthreads; i++) {
+        countdata.threadGridCountData[i].gridCount = std::vector<int>(numblocks, 0);
+    }
+    countdata.totalGridCount = std::vector<int>(numblocks, 0);
+}
+
+void MeshLevelSet::_computeGridCountDataThread(int startidx, int endidx,
+                                               std::vector<TriangleData> *triangledata,
+                                               BlockArray3d<SDFData> *blockphi,
+                                               GridCountData *countdata) {
+
+    countdata->simpleGridIndices = std::vector<int>(endidx - startidx, -1);
+    countdata->startidx = startidx;
+    countdata->endidx = endidx;
+
+    for (int i = startidx; i < endidx; i++) {
+        TriangleData td = triangledata->at(i);
+        GridIndex bmin(td.gmin.i / _blockwidth, 
+                       td.gmin.j / _blockwidth, 
+                       td.gmin.k / _blockwidth);
+        GridIndex bmax(td.gmax.i / _blockwidth, 
+                       td.gmax.j / _blockwidth, 
+                       td.gmax.k / _blockwidth);
+
+        if (bmax.i - bmin.i == 0 && bmax.j - bmin.j == 0 && bmax.k - bmin.k == 0) {
+            int blockid = blockphi->getBlockID(bmin);
+            countdata->simpleGridIndices[i - startidx] = blockid;
+            countdata->gridCount[blockid]++;
+        } else {
+            int overlapCount = 0;
+            for (int gk = bmin.k; gk <= bmax.k; gk++) {
+                for (int gj = bmin.j; gj <= bmax.j; gj++) {
+                    for (int gi = bmin.i; gi <= bmax.i; gi++) {
+                        int blockid = blockphi->getBlockID(gi, gj, gk);
+                        if (blockid != -1) {
+                            countdata->gridCount[blockid]++;
+                            countdata->overlappingGridIndices.push_back(blockid);
+                            overlapCount++;
+                        }
                     }
                 }
             }
+
+            countdata->simpleGridIndices[i - startidx] = -overlapCount;
+        }
+    }
+}
+
+void MeshLevelSet::_sortTrianglesIntoBlocks(std::vector<TriangleData> &triangleData, 
+                                            TriangleGridCountData &gridCountData, 
+                                            std::vector<TriangleData> &sortedTriangleData, 
+                                            std::vector<int> &blockToTriangleDataIndex) {
+
+    blockToTriangleDataIndex = std::vector<int>(gridCountData.gridsize, 0);
+    int currentIndex = 0;
+    for (size_t i = 0; i < blockToTriangleDataIndex.size(); i++) {
+        blockToTriangleDataIndex[i] = currentIndex;
+        currentIndex += gridCountData.totalGridCount[i];
+    }
+    std::vector<int> blockToTriangleDataIndexCurrent = blockToTriangleDataIndex;
+    int totalTriangleCount = currentIndex;
+
+    sortedTriangleData = std::vector<TriangleData>(totalTriangleCount);
+    for (int tidx = 0; tidx < gridCountData.numthreads; tidx++) {
+        GridCountData *countData = &(gridCountData.threadGridCountData[tidx]);
+
+        int indexOffset = countData->startidx;
+        int currentOverlappingIndex = 0;
+        for (size_t i = 0; i < countData->simpleGridIndices.size(); i++) {
+            TriangleData t = triangleData[i + indexOffset];
+            if (countData->simpleGridIndices[i] >= 0) {
+                int blockid = countData->simpleGridIndices[i];
+                int sortedIndex = blockToTriangleDataIndexCurrent[blockid];
+                sortedTriangleData[sortedIndex] = t;
+                blockToTriangleDataIndexCurrent[blockid]++;
+            } else {
+                int numblocks = -(countData->simpleGridIndices[i]);
+                for (int blockidx = 0; blockidx < numblocks; blockidx++) {
+                    int blockid = countData->overlappingGridIndices[currentOverlappingIndex];
+                    currentOverlappingIndex++;
+
+                    int sortedIndex = blockToTriangleDataIndexCurrent[blockid];
+                    sortedTriangleData[sortedIndex] = t;
+                    blockToTriangleDataIndexCurrent[blockid]++;
+                }
+            }
+        }
+    }
+}
+
+void MeshLevelSet::_computeExactBandProducerThread(BoundedBuffer<ComputeBlock> *computeBlockQueue,
+                                                   BoundedBuffer<ComputeBlock> *finishedComputeBlockQueue) {
+    
+    while (computeBlockQueue->size() > 0) {
+        std::vector<ComputeBlock> computeBlocks;
+        int numBlocks = computeBlockQueue->pop(_numComputeBlocksPerJob, computeBlocks);
+        if (numBlocks == 0) {
+            continue;
+        }
+
+        for (size_t bidx = 0; bidx < computeBlocks.size(); bidx++) {
+            ComputeBlock block = computeBlocks[bidx];
+            GridIndex blockIndex = block.gridBlock.index;
+            vmath::vec3 blockPositionOffset = Grid3d::GridIndexToPosition(blockIndex, _blockwidth * _dx);
+            GridIndex blockGridIndexOffset(_blockwidth * blockIndex.i,
+                                           _blockwidth * blockIndex.j,
+                                           _blockwidth * blockIndex.k);
+
+            for (int tidx = 0; tidx < block.numTriangles; tidx++) {
+                TriangleData t = block.triangleData[tidx];
+                vmath::vec3 p = t.vertices[0] - blockPositionOffset;
+                vmath::vec3 q = t.vertices[1] - blockPositionOffset;
+                vmath::vec3 r = t.vertices[2] - blockPositionOffset;
+                GridIndex gmin(std::max(t.gmin.i - blockGridIndexOffset.i, 0),
+                               std::max(t.gmin.j - blockGridIndexOffset.j, 0),
+                               std::max(t.gmin.k - blockGridIndexOffset.k, 0));
+                GridIndex gmax(std::min(t.gmax.i - blockGridIndexOffset.i, _blockwidth - 1),
+                               std::min(t.gmax.j - blockGridIndexOffset.j, _blockwidth - 1),
+                               std::min(t.gmax.k - blockGridIndexOffset.k, _blockwidth - 1));
+
+                for (int k = gmin.k; k <= gmax.k; k++) {
+                    for (int j = gmin.j; j <= gmax.j; j++) {
+                        for (int i = gmin.i; i <= gmax.i; i++) {
+                            vmath::vec3 gpos = Grid3d::GridIndexToPosition(i, j, k, _dx);
+                            float dist = _pointToTriangleDistance(gpos, p, q, r);
+                            int flatidx = Grid3d::getFlatIndex(i, j, k, _blockwidth, _blockwidth);
+                            if (dist < block.gridBlock.data[flatidx].phi) {
+                                 block.gridBlock.data[flatidx].phi = dist;
+                                 block.gridBlock.data[flatidx].triangle = t.id;
+                            }
+                        }
+                    }
+                }
+            }
+
+            finishedComputeBlockQueue->push(block);
         }
     }
 }
@@ -1059,15 +1272,15 @@ void MeshLevelSet::_computeDistanceFieldSigns() {
 
     TriangleMesh tempMesh = _mesh;
     tempMesh.translate(-_positionOffset);
+
     MeshUtils::getGridNodesInsideTriangleMesh(tempMesh, _dx, nodes);
 
-    for(int k = 0; k < ksize; k++) {
-        for(int j = 0; j < jsize; j++) {
-            for(int i = 0; i < isize; i++) {
-                if (nodes(i, j, k)) {
-                    _phi.set(i, j, k, -_phi(i, j, k));
-                }
-            }
+    int size = _phi.getNumElements();
+    bool *nodesArray = nodes.getRawArray();
+    float *phiArray = _phi.getRawArray();
+    for (int i = 0; i < size; i++) {
+        if (nodesArray[i]) {
+            phiArray[i] = -phiArray[i];
         }
     }
 }
@@ -1479,5 +1692,100 @@ int MeshLevelSet::_orientation(double x1, double y1, double x2, double y2,
         return -1; 
     } else { 
         return 0; // only true when x1==x2 and y1==y2
+    }
+}
+
+void MeshLevelSet::_normalizeVelocityGridThread(int startidx, int endidx, 
+                                                Array3d<float> *vfield,
+                                                Array3d<float> *vweight,
+                                                Array3d<bool> *valid){
+    float eps = 1e-6;
+    for (int idx = startidx; idx < endidx; idx++) {
+        GridIndex g = Grid3d::getUnflattenedIndex(idx, vfield->width, vfield->height);
+
+        float u = 0.0f;
+        float uw = vweight->get(g);
+        if (uw > eps) {
+            u = vfield->get(g) / uw;
+            valid->set(g, true);
+        }
+
+        vfield->set(g, u);
+        vweight->set(g, 1.0f);
+    }
+}
+
+void MeshLevelSet::_calculateUnionThread(int startidx, int endidx, 
+                                         int triIndexOffset, 
+                                         int meshObjectIndexOffset,
+                                         MeshLevelSet *levelset) {
+    int isizeOther, jsizeOther, ksizeOther;
+    levelset->getGridDimensions(&isizeOther, &jsizeOther, &ksizeOther);
+    GridIndex gridOffsetOther = levelset->getGridOffset();
+
+    VelocityDataGrid *otherData = levelset->getVelocityDataGrid();
+    for (int idx = startidx; idx < endidx; idx++) {
+        GridIndex g = Grid3d::getUnflattenedIndex(idx, isizeOther + 1, jsizeOther + 1);
+        int i = g.i;
+        int j = g.j;
+        int k = g.k;
+
+        GridIndex thisIndex(i + gridOffsetOther.i - _gridOffset.i,
+                            j + gridOffsetOther.j - _gridOffset.j,
+                            k + gridOffsetOther.k - _gridOffset.k);
+
+        if (!Grid3d::isGridIndexInRange(thisIndex, _isize + 1, _jsize + 1, _ksize + 1)) {
+            continue;
+        }
+
+        if (levelset->get(i, j, k) < _phi(thisIndex)) {
+            if (fabs(levelset->get(i, j, k)) < fabs(_phi(thisIndex))) {
+                int tidx = levelset->getClosestTriangleIndex(i, j, k);
+                int midx = levelset->getClosestMeshObjectIndex(i, j, k);
+                if (tidx != -1) {
+                    _closestTriangles.set(thisIndex, tidx + triIndexOffset);
+
+                    if (midx != -1) {
+                        _closestMeshObjects.set(thisIndex, midx + meshObjectIndexOffset);
+                    }
+                }
+            }
+
+            _phi.set(thisIndex, levelset->get(i, j, k));
+        }
+
+        if (!isVelocityDataEnabled()) {
+            continue;
+        }
+
+        bool isBorder = Grid3d::isGridIndexOnBorder(thisIndex, _isize + 1, _jsize + 1, _ksize + 1) ||
+                        Grid3d::isGridIndexOnBorder(i, j, k, isizeOther + 1, jsizeOther + 1, ksizeOther + 1);
+
+        if (isBorder) {
+            if (Grid3d::isGridIndexInRange(thisIndex, _isize + 1, _jsize, _ksize) &&
+                    Grid3d::isGridIndexInRange(i, j, k, isizeOther + 1, jsizeOther, ksizeOther)) {
+                _velocityData.field.addU(thisIndex, otherData->field.U(i, j, k));
+                _velocityData.weightU.add(thisIndex, otherData->weightU(i, j, k));
+            }
+
+            if (Grid3d::isGridIndexInRange(thisIndex, _isize, _jsize + 1, _ksize) &&
+                    Grid3d::isGridIndexInRange(i, j, k, isizeOther, jsizeOther + 1, ksizeOther)) {
+                _velocityData.field.addV(thisIndex, otherData->field.V(i, j, k));
+                _velocityData.weightV.add(thisIndex, otherData->weightV(i, j, k));
+            }
+
+            if (Grid3d::isGridIndexInRange(thisIndex, _isize, _jsize, _ksize + 1) &&
+                    Grid3d::isGridIndexInRange(i, j, k, isizeOther, jsizeOther, ksizeOther + 1)) {
+                _velocityData.field.addW(thisIndex, otherData->field.W(i, j, k));
+                _velocityData.weightW.add(thisIndex, otherData->weightW(i, j, k));
+            }
+        } else {
+            _velocityData.field.addU(thisIndex, otherData->field.U(i, j, k));
+            _velocityData.weightU.add(thisIndex, otherData->weightU(i, j, k));
+            _velocityData.field.addV(thisIndex, otherData->field.V(i, j, k));
+            _velocityData.weightV.add(thisIndex, otherData->weightV(i, j, k));
+            _velocityData.field.addW(thisIndex, otherData->field.W(i, j, k));
+            _velocityData.weightW.add(thisIndex, otherData->weightW(i, j, k));
+        }
     }
 }

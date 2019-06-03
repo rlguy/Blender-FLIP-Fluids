@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -290,6 +290,12 @@ public:
         }
 
         _grid[flatidx] += value;
+    }
+
+    void negate() {
+        for (int i = 0; i < _numElements; i++) {
+            _grid[i] = -_grid[i];
+        }
     }
 
     T *getPointer(int i, int j, int k) {

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -104,11 +104,9 @@ public:
 
     T pop() {
         std::unique_lock<std::mutex> lock(_mutex);
-        while (_buffer.size() == 0) {
-            _notEmpty.wait(lock);
-            if (_buffer.size() == 0) {
-                return T();
-            }
+        _notEmpty.wait(lock, [&](){ return !_buffer.empty() || isFinished(); });
+        if (_buffer.empty() || isFinished()){
+            return T();
         }
         
         FLUIDSIM_ASSERT(_buffer.size() != 0);
@@ -121,11 +119,9 @@ public:
 
     int pop(int numItems, std::vector<T> &items) {
         std::unique_lock<std::mutex> lock(_mutex);
-        while (_buffer.size() == 0) {
-            _notEmpty.wait(lock);
-            if (_buffer.size() == 0) {
-                return 0;
-            }
+        _notEmpty.wait(lock, [&](){ return !_buffer.empty() || isFinished(); });
+        if (_buffer.empty() || isFinished()){
+            return 0;
         }
         
         int numPopped = numItems <= (int)_buffer.size() ? numItems : (int)_buffer.size();
@@ -149,7 +145,15 @@ public:
         return _buffer.size();
     }
 
+    bool isFinished() {
+        std::unique_lock<std::mutex> lock(_isFinishedMutex);
+        bool result = _isFinished;
+        return result;
+    }
+
     void notifyFinished() {
+        std::unique_lock<std::mutex> lock(_isFinishedMutex);
+        _isFinished = true;
         _notEmpty.notify_all();
     }
 
@@ -158,6 +162,8 @@ private:
     std::vector<T> _buffer;
 
     std::mutex _mutex;
+    std::mutex _isFinishedMutex;
+    bool _isFinished = false;
     std::condition_variable _notFull;
     std::condition_variable _notEmpty;
 };

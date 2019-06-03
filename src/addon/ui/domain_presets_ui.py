@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,9 +17,10 @@
 import bpy
 
 from ..presets import preset_library
+from ..utils import version_compatibility_utils as vcu
 
 
-class FlipFluidDomainTypePresetsPanel(bpy.types.Panel):
+class FLIPFLUID_PT_DomainTypePresetsPanel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "physics"
@@ -30,12 +31,12 @@ class FlipFluidDomainTypePresetsPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        obj_props = context.scene.objects.active.flip_fluid
+        obj_props = vcu.get_active_object(context).flip_fluid
         return obj_props.is_active and obj_props.object_type == "TYPE_DOMAIN"
 
 
     def draw_preset_selector(self, context):
-        obj = context.scene.objects.active
+        obj = vcu.get_active_object(context)
         dprops = obj.flip_fluid.domain
         preprops = dprops.presets
 
@@ -44,14 +45,14 @@ class FlipFluidDomainTypePresetsPanel(bpy.types.Panel):
 
         column = self.layout.column()
         column.enabled = preprops.enable_presets
-        column.label("Preset Package:")
+        column.label(text="Preset Package:")
         column.prop(preprops, "current_package", text="")
 
         current_package_info = \
             preset_library.package_identifier_to_info(preprops.current_package)
 
         if current_package_info["use_custom_icons"]:
-            column.label("Preset:")
+            column.label(text="Preset:")
             row = column.row()
             row.prop(preprops, "current_preset", text="")
             if preprops.current_preset != "PRESET_NONE":
@@ -88,7 +89,7 @@ class FlipFluidDomainTypePresetsPanel(bpy.types.Panel):
             row_right = column_right.row()
 
             row_left.alignment = 'LEFT'
-            #row_left.prop(preprops, "preview_preset")
+            row_left.prop(preprops, "preview_preset", text="Auto Assign Preset")
 
             if preprops.current_preset != "PRESET_NONE":
                 is_on_stack = preprops.preset_stack.is_preset_in_stack(preprops.current_preset)
@@ -101,7 +102,7 @@ class FlipFluidDomainTypePresetsPanel(bpy.types.Panel):
                         text=op_text,
                         )
         else:
-            column.label("Preset:")
+            column.label(text="Preset:")
             row = column.row()
             row.prop(preprops, "current_preset", text="")
             if preprops.current_preset != "PRESET_NONE":
@@ -118,7 +119,7 @@ class FlipFluidDomainTypePresetsPanel(bpy.types.Panel):
             row_right = column_right.row()
 
             row_left.alignment = 'LEFT'
-            #row_left.prop(preprops, "preview_preset")
+            row_left.prop(preprops, "preview_preset", text="Auto Assign Preset")
 
             if preprops.current_preset != "PRESET_NONE":
                 is_on_stack = preprops.preset_stack.is_preset_in_stack(preprops.current_preset)
@@ -133,7 +134,7 @@ class FlipFluidDomainTypePresetsPanel(bpy.types.Panel):
 
 
     def draw_preset_stack(self, context):
-        obj = context.scene.objects.active
+        obj = vcu.get_active_object(context)
         preprops = obj.flip_fluid.domain.presets
 
         column = self.layout.column()
@@ -141,24 +142,24 @@ class FlipFluidDomainTypePresetsPanel(bpy.types.Panel):
         column.separator()
         column.separator()
         box = column.box()
-        box.label("Preset Stack:")
+        box.label(text="Preset Stack:")
         column = box.column(align=True)
         preset_icons = preset_library.get_custom_icons()
         if len(preprops.preset_stack.preset_stack) == 0:
-            column.label("No presets loaded...")
+            column.label(text="No presets loaded...")
         for pidx,p in enumerate(preprops.preset_stack.preset_stack):
             info = preset_library.preset_identifier_to_info(p.identifier)
             subbox = column.box()
-            split = subbox.split(percentage=0.5, align=True)
+            split = vcu.ui_split(subbox, factor=0.5, align=True)
             column_left = split.column(align=True)
             column_right = split.column(align=True)
             row_left = column_left.row(align=True)
             row_right = column_right.row()
 
             if "icon" in info and info['icon'] in preset_icons:
-                row_left.label(info['name'], icon_value=preset_icons.get(info['icon']).icon_id)
+                row_left.label(text=info['name'], icon_value=preset_icons.get(info['icon']).icon_id)
             else:
-                row_left.label(" "*5 + info['name'])
+                row_left.label(text=" "*5 + info['name'])
 
             row_right.alignment='RIGHT'
             row_right.operator(
@@ -192,7 +193,7 @@ class FlipFluidDomainTypePresetsPanel(bpy.types.Panel):
 
 
     def draw_preset_manager(self, context):
-        obj = context.scene.objects.active
+        obj = vcu.get_active_object(context)
         preprops = obj.flip_fluid.domain.presets
 
         self.layout.separator()
@@ -203,14 +204,16 @@ class FlipFluidDomainTypePresetsPanel(bpy.types.Panel):
             icon_only=True, 
             emboss=False
         )
-        row.label("Preset Manager")
+        row.label(text="Preset Manager")
         if preprops.preset_manager_expanded:
             column = box.column(align=True)
-            column.label("Package Operators:")
+            column.label(text="Package Operators:")
             column.operator("flip_fluid_operators.preset_create_new_package")
             column.operator("flip_fluid_operators.preset_delete_package")
             column.separator()
 
+            # These operators need to be reworked to support both 2.79 and 2.80
+            """
             split = column.split(align=True)
             split_column = split.column(align=True)
             split_column.enabled = bool(preprops.import_package_settings.package_filepath)
@@ -218,14 +221,15 @@ class FlipFluidDomainTypePresetsPanel(bpy.types.Panel):
             split_column = split.column(align=True)
             row = split_column.row(align=True)
             row.prop(preprops.import_package_settings, "package_filepath")
-            row.operator("flip_fluid_operators.select_package_zipfile", text="", icon="FILESEL")
+            row.operator("flip_fluid_operators.select_package_zipfile", text="", icon=vcu.get_file_folder_icon())
 
             row = column.row(align=True)
             row.operator("flip_fluid_operators.preset_export_package")
             row.prop(preprops.export_package_settings, "export_directory")
+            """
 
             column = box.column(align=True)
-            column.label("Preset Operators:")
+            column.label(text="Preset Operators:")
             column.operator("flip_fluid_operators.preset_create_new_preset")
             column.operator("flip_fluid_operators.preset_delete_preset")
             column.operator("flip_fluid_operators.preset_edit_preset")
@@ -235,8 +239,8 @@ class FlipFluidDomainTypePresetsPanel(bpy.types.Panel):
         self.layout.separator()
         box = self.layout.box()
         column = box.column(align=True)
-        column.label("Default Settings:")
-        split = column.split(align=True, percentage=0.66)
+        column.label(text="Default Settings:")
+        split = vcu.ui_split(column, align=True, factor=0.66)
         column = split.column(align=True)
         column.operator(
                 "flip_fluid_operators.preset_save_user_default_settings", 
@@ -246,25 +250,28 @@ class FlipFluidDomainTypePresetsPanel(bpy.types.Panel):
         column = split.column(align=True)
         column.operator(
                 "flip_fluid_operators.preset_restore_system_default_settings", 
-                text="Restore", 
-                icon='LOAD_FACTORY'
+                text="Restore",
                 )
 
 
     def draw(self, context):
-        if not preset_library.get_system_package_info_list():
-            self.layout.label("This feature is missing data and will be disabled.")
-            self.layout.label("Please contact the developers if you think this is an error.")
+        if not preset_library.get_user_package_info_list():
+            self.layout.label(text="This feature is not available in the GitHub release.")
             return
+
+        show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
+
         self.draw_preset_selector(context)
         self.draw_preset_stack(context)
-        self.draw_preset_manager(context)
-        self.draw_default_settings_operators(context)
+
+        if show_advanced:
+            self.draw_preset_manager(context)
+            self.draw_default_settings_operators(context)
 
 
 def register():
-    bpy.utils.register_class(FlipFluidDomainTypePresetsPanel)
+    bpy.utils.register_class(FLIPFLUID_PT_DomainTypePresetsPanel)
 
 
 def unregister():
-    bpy.utils.unregister_class(FlipFluidDomainTypePresetsPanel)
+    bpy.utils.unregister_class(FLIPFLUID_PT_DomainTypePresetsPanel)

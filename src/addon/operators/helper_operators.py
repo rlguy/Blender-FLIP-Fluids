@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,12 +19,14 @@ from bpy.props import (
         StringProperty
         )
 
+from ..utils import version_compatibility_utils as vcu
+
 
 def _select_make_active(context, active_object):
     for obj in context.selected_objects:
-        obj.select = False
-    active_object.select = True
-    context.scene.objects.active = active_object
+        vcu.select_set(obj, False)
+    vcu.select_set(active_object, True)
+    vcu.set_active_object(active_object, context)
 
 
 class FlipFluidHelperSelectDomain(bpy.types.Operator):
@@ -148,6 +150,8 @@ class FlipFluidHelperAddObjects(bpy.types.Operator):
     bl_description = "Add selected objects as FLIP Fluid objects"
 
     object_type = StringProperty("TYPE_NONE")
+    exec(vcu.convert_attribute_to_28("object_type"))
+
 
     @classmethod
     def poll(cls, context):
@@ -158,14 +162,14 @@ class FlipFluidHelperAddObjects(bpy.types.Operator):
 
 
     def execute(self, context):
-        original_active_object = bpy.context.scene.objects.active
+        original_active_object = vcu.get_active_object(context)
         for obj in context.selected_objects:
             if not obj.type == 'MESH':
                 continue
-            bpy.context.scene.objects.active = obj
+            vcu.set_active_object(obj, context)
             bpy.ops.flip_fluid_operators.flip_fluid_add()
             obj.flip_fluid.object_type = self.object_type
-        bpy.context.scene.objects.active = original_active_object
+        vcu.set_active_object(original_active_object, context)
         return {'FINISHED'}
 
 
@@ -183,13 +187,13 @@ class FlipFluidHelperRemoveObjects(bpy.types.Operator):
 
 
     def execute(self, context):
-        original_active_object = bpy.context.scene.objects.active
+        original_active_object = vcu.get_active_object(context)
         for obj in context.selected_objects:
             if not obj.type == 'MESH':
                 continue
-            bpy.context.scene.objects.active = obj
+            vcu.set_active_object(obj, context)
             bpy.ops.flip_fluid_operators.flip_fluid_remove()
-        bpy.context.scene.objects.active = original_active_object
+        vcu.set_active_object(original_active_object, context)
         return {'FINISHED'}
 
 
@@ -223,7 +227,7 @@ class FlipFluidHelperLoadLastFrame(bpy.types.Operator):
 
 class FlipFluidEnableWhitewaterMenu(bpy.types.Menu):
     bl_label = ""
-    bl_idname = "flip_fluid_menus.enable_whitewater_menu"
+    bl_idname = "FLIP_FLUID_MENUS_MT_enable_whitewater_menu"
 
     def draw(self, context):
         self.layout.operator("flip_fluid_operators.enable_whitewater_simulation")
@@ -257,7 +261,7 @@ class FlipFluidDisplayEnableWhitewaterTooltip(bpy.types.Operator):
 
 
     def execute(self, context):
-        bpy.ops.wm.call_menu(name="flip_fluid_menus.enable_whitewater_menu")
+        bpy.ops.wm.call_menu(name="FLIP_FLUID_MENUS_MT_enable_whitewater_menu")
         return {'FINISHED'}
 
 

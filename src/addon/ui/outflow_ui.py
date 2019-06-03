@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,8 +16,10 @@
 
 import bpy
 
+from ..utils import version_compatibility_utils as vcu
 
-class FlipFluidOutflowTypePanel(bpy.types.Panel):
+
+class FLIPFLUID_PT_OutflowTypePanel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "physics"
@@ -26,13 +28,14 @@ class FlipFluidOutflowTypePanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        obj_props = context.scene.objects.active.flip_fluid
+        obj_props = vcu.get_active_object(context).flip_fluid
         return obj_props.is_active and obj_props.object_type == "TYPE_OUTFLOW"
 
     def draw(self, context):
-        obj = context.scene.objects.active
-        obj_props = context.scene.objects.active.flip_fluid
+        obj = vcu.get_active_object(context)
+        obj_props = obj.flip_fluid
         outflow_props = obj_props.outflow
+        show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
 
         column = self.layout.column()
         column.prop(obj_props, "object_type")
@@ -40,22 +43,33 @@ class FlipFluidOutflowTypePanel(bpy.types.Panel):
         column = self.layout.column()
         column.prop(outflow_props, "is_enabled")
 
-        column = self.layout.column()
-        split = column.split()
-        column = split.column()
-        column.prop(outflow_props, "remove_fluid")
-        column = split.column()
-        column.prop(outflow_props, "remove_whitewater")
+        if show_advanced:
+            column = self.layout.column()
+            split = column.split()
+            column = split.column()
+            column.prop(outflow_props, "remove_fluid")
+            column = split.column()
+            column.prop(outflow_props, "remove_whitewater")
 
-        self.layout.separator()
+            self.layout.separator()
+            column = self.layout.column()
+            column.prop(outflow_props, "is_inversed")
+        
         column = self.layout.column()
-        column.prop(outflow_props, "is_inversed")
-        column.prop(outflow_props, "export_animated_mesh")
+        column.separator()
+        split = column.split()
+        column_left = split.column()
+        column_left.prop(outflow_props, "export_animated_mesh")
+        column_right = split.column()
+
+        if show_advanced:
+            column_right.enabled = outflow_props.export_animated_mesh
+            column_right.prop(outflow_props, "skip_animated_mesh_reexport")
     
 
 def register():
-    bpy.utils.register_class(FlipFluidOutflowTypePanel)
+    bpy.utils.register_class(FLIPFLUID_PT_OutflowTypePanel)
 
 
 def unregister():
-    bpy.utils.unregister_class(FlipFluidOutflowTypePanel)
+    bpy.utils.unregister_class(FLIPFLUID_PT_OutflowTypePanel)

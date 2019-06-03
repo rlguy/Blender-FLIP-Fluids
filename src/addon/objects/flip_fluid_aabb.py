@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from ..utils import version_compatibility_utils as vcu
 
 class AABB(object):
     def __init__(self, x=0, y=0, z=0, xdim=0, ydim=0, zdim=0):
@@ -30,7 +31,7 @@ class AABB(object):
         xmin, ymin, zmin = float('inf'), float('inf'), float('inf')
         xmax, ymax, zmax = -float('inf'), -float('inf'), -float('inf')
         for mv in obj.data.vertices:
-            v = obj.matrix_world * mv.co
+            v = vcu.element_multiply(obj.matrix_world, mv.co)
             xmin = min(v.x, xmin)
             ymin = min(v.y, ymin)
             zmin = min(v.z, zmin)

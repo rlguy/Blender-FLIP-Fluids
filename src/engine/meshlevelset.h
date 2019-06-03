@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -63,6 +63,8 @@ USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "fragmentedvector.h"
 #include "markerparticle.h"
 #include "threadutils.h"
+#include "blockarray3d.h"
+#include "boundedbuffer.h"
 
 struct VelocityDataGrid {
     MACVelocityField field;
@@ -148,6 +150,7 @@ public:
     std::vector<MeshObject*> getMeshObjects();
     std::vector<vmath::vec3> getVertexVelocities();
     VelocityDataGrid* getVelocityDataGrid();
+    Array3d<float>* getPhiArray3d();
 
     void calculateSignedDistanceField(TriangleMesh &m, int bandwidth = 1);
     void calculateSignedDistanceField(TriangleMesh &m, 
@@ -195,13 +198,90 @@ public:
             threads[i].join();
         }
     }
+
+    template<class T>
+    void trilinearInterpolateSolidPoints(std::vector<T> &points, 
+                                         std::vector<bool> &isSolid) {
+        isSolid = std::vector<bool>(points.size());
+        int numCPU = ThreadUtils::getMaxThreadCount();
+        int numthreads = (int)fmin(numCPU, points.size());
+        std::vector<std::thread> threads(numthreads);
+        std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, points.size(), numthreads);
+        for (int i = 0; i < numthreads; i++) {
+            threads[i] = std::thread(&MeshLevelSet::_trilinearInterpolateSolidPointsVectorThread<T>, this,
+                                     intervals[i], intervals[i + 1], &points, &isSolid);
+        }
+
+        for (int i = 0; i < numthreads; i++) {
+            threads[i].join();
+        }
+    }
     
 private:
+
+    struct TriangleData {
+        vmath::vec3 vertices[3];
+        GridIndex gmin;
+        GridIndex gmax;
+        int id = -1;
+    };
+
+    struct SDFData {
+        float phi = 0.0f;
+        float triangle = -1;
+    };
+
+    struct GridCountData {
+        std::vector<int> gridCount;
+        std::vector<int> simpleGridIndices;
+        std::vector<int> overlappingGridIndices;
+        int startidx = 0;
+        int endidx = 0;
+    };
+
+    struct TriangleGridCountData {
+        int numthreads = 1;
+        int gridsize = 1;
+        std::vector<int> totalGridCount;
+        std::vector<GridCountData> threadGridCountData;
+    };
+
+    struct ComputeBlock {
+        GridBlock<SDFData> gridBlock;
+        TriangleData *triangleData;
+        int numTriangles = 0;
+    };
+
     void _computeExactBandDistanceField(int bandwidth);
+
     void _computeExactBandDistanceFieldMultiThreaded(int bandwidth);
+    void _initializeTriangleData(int bandwidth, std::vector<TriangleData> &data);
+    void _initializeBlockGrid(std::vector<TriangleData> &triangleData, 
+                              int bandwidth,
+                              BlockArray3d<SDFData> &blockphi);
+    void _initializeActiveBlocksThread(int startidx, int endidx,
+                                       std::vector<TriangleData> *triangleData, 
+                                       int bandwidth,
+                                       Array3d<bool> *activeBlocks);
+    void _computeGridCountData(std::vector<TriangleData> &triangleData, 
+                               BlockArray3d<SDFData> &blockphi,
+                               TriangleGridCountData &countData);
+    void _initializeGridCountData(std::vector<TriangleData> &triangleData, 
+                                  BlockArray3d<SDFData> &blockphi, 
+                                  TriangleGridCountData &gridCountData);
+    void _computeGridCountDataThread(int startidx, int endidx,
+                                     std::vector<TriangleData> *triangledata,
+                                     BlockArray3d<SDFData> *blockphi,
+                                     GridCountData *countdata);
+    void _sortTrianglesIntoBlocks(std::vector<TriangleData> &triangleData, 
+                                  TriangleGridCountData &gridCountData, 
+                                  std::vector<TriangleData> &sortedTriangleData, 
+                                  std::vector<int> &blockToTriangleDataIndex);
+    void _computeExactBandProducerThread(BoundedBuffer<ComputeBlock> *computeBlockQueue,
+                                         BoundedBuffer<ComputeBlock> *finishedComputeBlockQueue);
+
     void _computeExactBandDistanceFieldSingleThreaded(int bandwidth);
-    void _computeExactBandDistanceFieldThread(int startidx, int endidx, 
-                                              int bandwidth, int splitdir);
+
     void _propagateDistanceField();
     void _computeDistanceFieldSigns();
     void _computeVelocityGrids();
@@ -226,6 +306,15 @@ private:
 
     void _trilinearInterpolateSolidGridPointsThread(int startidx, int endidx, vmath::vec3 offset, double dx, 
                                                     Array3d<bool> *grid);
+
+    void _normalizeVelocityGridThread(int startidx, int endidx, 
+                                      Array3d<float> *vfield,
+                                      Array3d<float> *vweight,
+                                      Array3d<bool> *valid);
+
+    void _calculateUnionThread(int startidx, int endidx, 
+                               int triIndexOffset, int meshObjectIndexOffset, 
+                               MeshLevelSet *levelset);
     
     template<class T>
     void _trilinearInterpolateSolidPointsThread(int startidx, int endidx, 
@@ -233,6 +322,15 @@ private:
                                                 std::vector<bool> *isSolid) {
         for (int i = startidx; i < endidx; i++) {
             (*isSolid)[i] = trilinearInterpolate((*points)[i].position) < 0.0f;
+        }
+    }
+
+    template<class T>
+    void _trilinearInterpolateSolidPointsVectorThread(int startidx, int endidx, 
+                                                      std::vector<T> *points, 
+                                                      std::vector<bool> *isSolid) {
+        for (int i = startidx; i < endidx; i++) {
+            (*isSolid)[i] = trilinearInterpolate((*points)[i]) < 0.0f;
         }
     }
 
@@ -263,6 +361,9 @@ private:
     bool _isMultiThreadingEnabled = true;
     bool _isSignCalculationEnabled = true;
     bool _isMinimalLevelSet = false;
+
+    int _blockwidth = 10;
+    int _numComputeBlocksPerJob = 10;
 };
 
 #endif

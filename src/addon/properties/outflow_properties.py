@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,55 +21,60 @@ from bpy.props import (
         )
 
 from . import preset_properties
+from ..utils import version_compatibility_utils as vcu
 
 
 class FlipFluidOutflowProperties(bpy.types.PropertyGroup):
-    @classmethod
-    def register(cls):
-        cls.is_enabled = BoolProperty(
-                name="Enabled",
-                description="Object contributes to the fluid simulation",
-                default=True,
-                )
-        cls.remove_fluid = BoolProperty(
-                name="Remove Fluid",
-                description="Enable removing fluid particles from the domain",
-                default=True,
-                )
-        cls.remove_whitewater = bpy.props.BoolProperty(
-                name="Remove Whitewater",
-                description="Enable removing whitewater particles from the domain",
-                default=True,
-                )
-        cls.is_inversed = BoolProperty(
-                name="Inverse",
-                description="Turn the outflow object 'inside-out'. If enabled,"
-                    " the outflow will remove fluid that is outside of the mesh"
-                    " instead of removing fluid that is inside of the mesh.",
-                default=False,
-                options={'HIDDEN'},
-                )
-        cls.export_animated_mesh = bpy.props.BoolProperty(
-                name="Export Animated Mesh",
-                description="Export this mesh as an animated one (slower, only"
-                    " use if really necessary [e.g. armatures or parented objects],"
-                    " animated pos/rot/scale F-curves do not require it",
-                default=False,
-                options={'HIDDEN'},
-                )
-        cls.property_registry = PointerProperty(
-                name="Outflow Property Registry",
-                description="",
-                type=preset_properties.PresetRegistry,
-                )
-
-
-    @classmethod
-    def unregister(cls):
-        pass
+    conv = vcu.convert_attribute_to_28
+    
+    is_enabled = BoolProperty(
+            name="Enabled",
+            description="Object contributes to the fluid simulation",
+            default=True,
+            ); exec(conv("is_enabled"))
+    remove_fluid = BoolProperty(
+            name="Remove Fluid",
+            description="Enable removing fluid particles from the domain",
+            default=True,
+            ); exec(conv("remove_fluid"))
+    remove_whitewater = bpy.props.BoolProperty(
+            name="Remove Whitewater",
+            description="Enable removing whitewater particles from the domain",
+            default=True,
+            ); exec(conv("remove_whitewater"))
+    is_inversed = BoolProperty(
+            name="Inverse",
+            description="Turn the outflow object 'inside-out'. If enabled,"
+                " the outflow will remove fluid that is outside of the mesh"
+                " instead of removing fluid that is inside of the mesh",
+            default=False,
+            options={'HIDDEN'},
+            ); exec(conv("is_inversed"))
+    export_animated_mesh = bpy.props.BoolProperty(
+            name="Export Animated Mesh",
+            description="Export this mesh as an animated one (slower, only"
+                " use if really necessary [e.g. armatures or parented objects],"
+                " animated pos/rot/scale F-curves do not require it",
+            default=False,
+            options={'HIDDEN'},
+            ); exec(conv("export_animated_mesh"))
+    skip_animated_mesh_reexport = BoolProperty(
+            name="Skip re-export",
+            description="Skip re-exporting this mesh when starting or resuming"
+                " a bake. If this mesh has not been exported or is missing files,"
+                " the addon will automatically export the required files",
+            default=False,
+            options={'HIDDEN'},
+            ); exec(conv("skip_animated_mesh_reexport"))
+    property_registry = PointerProperty(
+            name="Outflow Property Registry",
+            description="",
+            type=preset_properties.PresetRegistry,
+            ); exec(conv("property_registry"))
 
 
     def initialize(self):
+        self.property_registry.clear()
         add = self.property_registry.add_property
         add("outflow.is_enabled", "")
         add("outflow.remove_fluid", "")
@@ -86,6 +91,16 @@ class FlipFluidOutflowProperties(bpy.types.PropertyGroup):
             if not hasattr(self, identifier):
                 print("Property Registry Error: Unknown Identifier <" + 
                       identifier + ", " + path + ">")
+
+
+    def load_post(self):
+        self.initialize()
+
+
+def load_post():
+    outflow_objects = bpy.context.scene.flip_fluid.get_outflow_objects()
+    for outflow in outflow_objects:
+        outflow.flip_fluid.outflow.load_post()
 
 
 def register():

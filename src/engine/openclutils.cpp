@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -37,10 +37,13 @@ bool OpenCLUtils::isOpenCLEnabled() {
 }
 
 int OpenCLUtils::getNumGPUDevices() {
+    int numDevices = 0;
+
+#if WITH_OPENCL
+
     std::vector<clcpp::Platform> platforms;
     clcpp::Platform::get(CL_DEVICE_TYPE_GPU, platforms);
 
-    int numDevices = 0;
     for (size_t i = 0; i < platforms.size(); i++) {
         std::vector<clcpp::Device> devices;
         platforms[i].getDevices(CL_DEVICE_TYPE_GPU, devices);
@@ -48,10 +51,19 @@ int OpenCLUtils::getNumGPUDevices() {
     }
 
     return numDevices;
+
+#endif
+// ENDIF WITH_OPENCL
+
+    return numDevices;
+
 }
 
 std::vector<clcpp::DeviceInfo> OpenCLUtils::getGPUDevices() {
     std::vector<clcpp::DeviceInfo> info;
+
+#if WITH_OPENCL
+
     std::vector<clcpp::Platform> platforms;
     clcpp::Platform::get(CL_DEVICE_TYPE_GPU, platforms);
 
@@ -62,6 +74,9 @@ std::vector<clcpp::DeviceInfo> OpenCLUtils::getGPUDevices() {
             info.push_back(devices[j].getDeviceInfo());
         }
     }
+
+#endif
+// ENDIF WITH_OPENCL
 
     return info;
 }

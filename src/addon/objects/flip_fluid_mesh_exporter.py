@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ from . import (
         flip_fluid_aabb
         )
 from ..utils import export_utils as utils
+from ..utils import version_compatibility_utils as vcu
 from ..pyfluid import TriangleMesh
 
 
@@ -38,17 +39,20 @@ class MeshExporter():
         self._initialize_internal_mesh_data()
         self._initialize_mesh_data()
         self._initialize_target_mesh_data()
+        self._initialize_volume_meshing_mesh_data()
 
 
     def _initialize_internal_mesh_data(self):
-        scene = bpy.context.scene
-        num_frames = scene.frame_end - scene.frame_start + 1
+        dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+        frame_start, frame_end = dprops.simulation.get_frame_range()
+        num_frames = frame_end - frame_start + 1
 
         for name in self.mesh_data.keys():
             d = flip_fluid_map.Map({})
             d.name = name
             d.export_type = self._get_mesh_export_type(name)
-            d.next_frame = scene.frame_start
+            d.next_frame = self.mesh_data[name]['frame_start']
+            d.num_verts = -1
 
             if d.export_type == 'KEYFRAMED':
                 obj = bpy.data.objects[name]
@@ -59,10 +63,9 @@ class MeshExporter():
 
 
     def _initialize_mesh_data(self):
-        scene = bpy.context.scene
-        num_frames = scene.frame_end - scene.frame_start + 1
-
         for name in self.mesh_data.keys():
+            frame_start, frame_end = self.mesh_data[name]['frame_start'], self.mesh_data[name]['frame_end']
+            num_frames = max(frame_end - frame_start + 1, 0)
             internal_d = self.internal_mesh_data[name]
 
             d = flip_fluid_map.Map({})
@@ -70,20 +73,26 @@ class MeshExporter():
             if internal_d.export_type == 'STATIC':
                 d.num_remaining = 1
                 d.num_meshes = 1
-                d.data = {'is_animated' : False, 'data' : None}
-            else:
+                d.is_export_finished = False
+                d.data = {'mesh_type': internal_d.export_type, 'mesh_data': None, 'frame_data': None, 'matrix_data': None}
+            elif internal_d.export_type == 'KEYFRAMED':
+                d.num_remaining = 1
+                d.num_meshes = 1
+                d.is_export_finished = False
+                d.data = {'mesh_type': internal_d.export_type, 'mesh_data': None, 'frame_data': None, 'matrix_data': None}
+            elif internal_d.export_type == 'ANIMATED':
                 d.num_remaining = num_frames
                 d.num_meshes = num_frames
-                d.data = {'is_animated' : True, 
-                          'data' : [], 'translation_data' : []}
-            d.is_export_finished = False
+                d.is_export_finished = d.num_meshes <= 0
+                d.data = {'mesh_type': internal_d.export_type, 'mesh_data': [], 'frame_data': [], 'matrix_data': None}
 
             self.mesh_data[name] = d
 
 
     def _initialize_target_mesh_data(self):
-        scene = bpy.context.scene
-        num_frames = scene.frame_end - scene.frame_start + 1
+        dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+        frame_start, frame_end = dprops.simulation.get_frame_range()
+        num_frames = max(frame_end - frame_start + 1, 0)
 
         object_names = list(self.mesh_data.keys())
         for name in object_names:
@@ -95,13 +104,14 @@ class MeshExporter():
             if not props.is_target_valid():
                 continue
 
-            target_object = bpy.data.objects[props.target_object]
+            target_object = props.get_target_object()
             target_name = target_object.name
 
             internal_data = flip_fluid_map.Map({})
             internal_data.name = target_name
             internal_data.export_type = self._get_target_export_type(target_name, props)
-            internal_data.next_frame = scene.frame_start
+            internal_data.next_frame = frame_start
+            internal_data.num_verts = -1
             if internal_data.export_type == 'KEYFRAMED':
                 matdata = utils.get_object_world_matrix_data_dict(target_object)
                 internal_data.world_matrix_data = matdata['data']
@@ -111,12 +121,15 @@ class MeshExporter():
             if internal_data.export_type == 'STATIC':
                 data.num_remaining = 1
                 data.num_meshes = 1
-                data.data = {'is_animated' : False, 'data' : None}
-            else:
+                data.data = {'mesh_type': internal_data.export_type, 'mesh_data': None, 'frame_data': None, 'matrix_data': None}
+            elif internal_data.export_type == 'KEYFRAMED':
+                data.num_remaining = 1
+                data.num_meshes = 1
+                data.data = {'mesh_type': internal_data.export_type, 'mesh_data': None, 'frame_data': None, 'matrix_data': None}
+            elif internal_data.export_type == 'ANIMATED':
                 data.num_remaining = num_frames
                 data.num_meshes = num_frames
-                data.data = {'is_animated' : True, 
-                             'data' : [], 'translation_data' : []}
+                data.data = {'mesh_type': internal_data.export_type, 'mesh_data': [], 'frame_data': [], 'matrix_data': None}
             data.is_export_finished = False
 
             if not target_name in self.mesh_data:
@@ -129,6 +142,55 @@ class MeshExporter():
                 if target_rank > set_rank:
                     self.mesh_data[target_name] = data
                     self.internal_mesh_data[target_name] = internal_data
+
+
+    def _initialize_volume_meshing_mesh_data(self):
+        dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+        frame_start, frame_end = dprops.simulation.get_frame_range()
+        num_frames = max(frame_end - frame_start + 1, 0)
+
+        if not dprops.surface.is_meshing_volume_object_valid():
+            return
+
+        obj = dprops.surface.get_meshing_volume_object()
+        if obj is None:
+            return
+
+        internal_data = flip_fluid_map.Map({})
+        internal_data.name = obj.name
+        internal_data.export_type = self._get_meshing_volume_export_type(obj, dprops.surface)
+        internal_data.next_frame = frame_start
+        internal_data.num_verts = -1
+        if internal_data.export_type == 'KEYFRAMED':
+            matdata = utils.get_object_world_matrix_data_dict(obj)
+            internal_data.world_matrix_data = matdata['data']
+
+        data = flip_fluid_map.Map({})
+        data.name = obj.name
+        if internal_data.export_type == 'STATIC':
+            data.num_remaining = 1
+            data.num_meshes = 1
+            data.data = {'mesh_type': internal_data.export_type, 'mesh_data': None, 'frame_data': None, 'matrix_data': None}
+        elif internal_data.export_type == 'KEYFRAMED':
+            data.num_remaining = 1
+            data.num_meshes = 1
+            data.data = {'mesh_type': internal_data.export_type, 'mesh_data': None, 'frame_data': None, 'matrix_data': None}
+        elif internal_data.export_type == 'ANIMATED':
+            data.num_remaining = num_frames
+            data.num_meshes = num_frames
+            data.data = {'mesh_type': internal_data.export_type, 'mesh_data': [], 'frame_data': [], 'matrix_data': None}
+        data.is_export_finished = False
+
+        if not obj.name in self.mesh_data:
+            self.mesh_data[obj.name] = data
+            self.internal_mesh_data[obj.name] = internal_data
+        else:
+            set_internal_data = self.internal_mesh_data[obj.name]
+            set_rank = self._get_export_type_rank(set_internal_data.export_type)
+            obj_rank = self._get_export_type_rank(internal_data.export_type)
+            if obj_rank > set_rank:
+                self.mesh_data[obj.name] = data
+                self.internal_mesh_data[obj] = internal_data
 
 
     def _get_mesh_export_type(self, obj_name):
@@ -144,6 +206,14 @@ class MeshExporter():
     def _get_target_export_type(self, obj_name, props):
         obj = bpy.data.objects[obj_name]
         if hasattr(props, 'export_animated_target') and props.export_animated_target:
+            return 'ANIMATED'
+        if utils.is_object_keyframe_animated(obj):
+            return 'KEYFRAMED'
+        return 'STATIC'
+
+
+    def _get_meshing_volume_export_type(self, obj, surface_props):
+        if surface_props.export_animated_meshing_volume_object:
             return 'ANIMATED'
         if utils.is_object_keyframe_animated(obj):
             return 'KEYFRAMED'
@@ -207,7 +277,7 @@ class MeshExporter():
             internal_data.next_frame += 1
 
             data = self.mesh_data[obj.name]
-            data.data['data'] = tmesh
+            data.data['mesh_data'] = tmesh
             data.num_remaining = 0
             data.is_export_finished = True
 
@@ -219,102 +289,66 @@ class MeshExporter():
 
     def _get_static_triangle_mesh_data(self, obj):
         if obj.type == 'MESH':
-            scene = bpy.context.scene
-
-            # Ignore edge split modifiers. The edge split modifier does
-            # not alter vertex positions and may generate a non-manifold mesh 
-            # if edges are split
-            edge_split_show_render_values = []
-            for m in obj.modifiers:
-                if m.type == 'EDGE_SPLIT':
-                    edge_split_show_render_values.append(m.show_render)
-                    m.show_render = False
-
-            triangulation_mod = obj.modifiers.new("flip_triangulate", "TRIANGULATE")
-            mesh = obj.to_mesh(scene = scene, 
-                               apply_modifiers = True, 
-                               settings = 'RENDER')
-
-            triangle_mesh = self._mesh_data_to_triangle_mesh(mesh, obj.matrix_world)
-
-            mesh.user_clear()
-            bpy.data.meshes.remove(mesh)
-            obj.modifiers.remove(triangulation_mod)
-
-            for m in obj.modifiers:
-                if m.type == 'EDGE_SPLIT':
-                    m.show_render = edge_split_show_render_values.pop(0)
-
-            return triangle_mesh
+            return vcu.object_to_triangle_mesh(obj, obj.matrix_world)
         else:
             return self._non_mesh_to_triangle_mesh(obj.matrix_world)
 
 
     def _update_keyframed_export(self, step_time):
         start_time = datetime.now()
-        scene = bpy.context.scene
+        objects = self._get_unfinished_export_objects('KEYFRAMED')
 
-        is_finished = False
-        while True:
-            obj = self._get_next_keyframed_object()
-            if not obj:
-                is_finished = True
-                break
+        if not objects:
+            return True
+
+        while objects:
+            obj = objects.pop()
+            base_tmesh = self._get_keyframed_triangle_mesh_data(obj)
+            transform_data = self._get_keyframed_matrix_world_data(obj)
 
             internal_data = self.internal_mesh_data[obj.name]
-            data = self.mesh_data[obj.name]
-
-            frameno = internal_data.next_frame
-            meshno = frameno - scene.frame_start
-            tmesh = self._get_keyframed_triangle_mesh_data(obj, meshno)
-            data.data['data'].append(tmesh)
-            data.num_remaining -= 1
-
-            if meshno != 0:
-                if meshno == 1:
-                    trans_mesh = self._get_translation_data(obj, 0)
-                    data.data['translation_data'].append(trans_mesh)
-                trans_mesh = self._get_translation_data(obj, meshno)
-                data.data['translation_data'].append(trans_mesh)
-
             internal_data.next_frame += 1
 
-            if data.num_remaining == 0:
-                data.is_export_finished = True
+            data = self.mesh_data[obj.name]
+            data.data['mesh_data'] = base_tmesh
+            data.data['matrix_data'] = transform_data
+            data.num_remaining = 0
+            data.is_export_finished = True
 
             if self._get_elapsed_time(start_time) >= step_time:
                 break
 
-        return is_finished
+        return not objects
 
 
-    def _get_keyframed_triangle_mesh_data(self, obj, frameno):
-        internal_data = self.internal_mesh_data[obj.name]
-        world_matrices = internal_data.world_matrix_data
-        matrix_world = world_matrices[frameno]
-
+    def _get_keyframed_triangle_mesh_data(self, obj):
         if obj.type == 'MESH':
-            scene = bpy.context.scene
-
-            triangulation_mod = obj.modifiers.new("flip_triangulate", "TRIANGULATE")
-            mesh = obj.to_mesh(scene = scene, 
-                               apply_modifiers = True, 
-                               settings = 'RENDER')
-
-            triangle_mesh = self._mesh_data_to_triangle_mesh(mesh, matrix_world)
-
-            mesh.user_clear()
-            bpy.data.meshes.remove(mesh)
-            obj.modifiers.remove(triangulation_mod)
-
-            return triangle_mesh
+            return vcu.object_to_triangle_mesh(obj)
         else:
-            return self._non_mesh_to_triangle_mesh(matrix_world)
+            return self._get_vertex_mesh((0, 0, 0))
+
+
+    def _get_keyframed_matrix_world_data(self, obj):
+        internal_data = self.internal_mesh_data[obj.name]
+        transform_dict = {}
+        for i, m in enumerate(internal_data['world_matrix_data']):
+            current_frame = internal_data.next_frame + i
+            mdata = [
+                m[0][0], m[0][1], m[0][2], m[0][3],
+                m[1][0], m[1][1], m[1][2], m[1][3],
+                m[2][0], m[2][1], m[2][2], m[2][3],
+                m[3][0], m[3][1], m[3][2], m[3][3]
+                ]
+            transform_dict[current_frame] = mdata
+
+        return transform_dict
 
 
     def _update_animated_export(self, step_time):
         start_time = datetime.now()
         scene = bpy.context.scene
+        dprops = scene.flip_fluid.get_domain_properties()
+        show_topology_warning = not dprops.advanced.disable_changing_topology_warning
 
         is_finished = False
         while True:
@@ -336,33 +370,36 @@ class MeshExporter():
                     break
 
             tmesh = self._get_animated_triangle_mesh_data(obj)
-            data.data['data'].append(tmesh)
+            data.data['mesh_data'].append(tmesh)
+            data.data['frame_data'].append(internal_data.next_frame)
 
-            num_verts1 = len(data.data['data'][0].vertices) // 3
-            num_verts2 = len(data.data['data'][-1].vertices) // 3
-            if num_verts1 != num_verts2:
-                errframeno = len(data.data['data'])
-                errmsg = ("Error: unable to export animated mesh '" + obj.name +
-                         "'. Animated meshes must have the same number of " +
-                         "vertices for each frame.\n\nFrame 0: " + str(num_verts1) + 
-                         "\nFrame " + str(errframeno) + ": " + str(num_verts2))
-                self._set_error(errmsg)
-                is_finished = True
-                break
+            if internal_data.num_verts < 0:
+                internal_data.num_verts = len(tmesh.vertices) // 3
+            else:
+                num_verts1 = internal_data.num_verts
+                num_verts2 = len(tmesh.vertices) // 3
+                if show_topology_warning and (num_verts1 != num_verts2):
+                    errframeno = internal_data.next_frame
+                    errmsg = ("Warning: unable to export animated mesh '" + obj.name +
+                             "'. Animated meshes must have the same number of " +
+                             "vertices for each frame and must not change topology.\n\nFrame " + 
+                             str(errframeno - 1) + ": " + str(num_verts1) +
+                             "\nFrame " + str(errframeno) + ": " + str(num_verts2))
+
+                    # Allowing changing topology does not seem stable enough
+                    """
+                    errmsg += ("\n\nDisable this warning in the Advanced Settings panel. Warning: " +
+                              "mesh velocity data will not be computed for meshes with changing topology.")
+                    """
+
+                    self._set_error(errmsg)
+                    is_finished = True
+                    break
 
             data.num_remaining -= 1
-
-            meshno = frameno - scene.frame_start
-            if meshno != 0:
-                if meshno == 1:
-                    trans_mesh = self._get_translation_data(obj, 0)
-                    data.data['translation_data'].append(trans_mesh)
-                trans_mesh = self._get_translation_data(obj, meshno)
-                data.data['translation_data'].append(trans_mesh)
-
             internal_data.next_frame += 1
 
-            if data.num_remaining == 0:
+            if data.num_remaining <= 0:
                 data.is_export_finished = True
 
             if self._get_elapsed_time(start_time) >= step_time:
@@ -376,18 +413,7 @@ class MeshExporter():
 
     def _get_animated_triangle_mesh_data(self, obj):
         if obj.type == 'MESH':
-            scene = bpy.context.scene
-            triangulation_mod = obj.modifiers.new("flip_triangulate", "TRIANGULATE")
-            mesh = obj.to_mesh(scene = scene, 
-                               apply_modifiers = True, 
-                               settings = 'RENDER')
-            triangle_mesh = self._mesh_data_to_triangle_mesh(mesh, obj.matrix_world)
-
-            mesh.user_clear()
-            bpy.data.meshes.remove(mesh)
-            obj.modifiers.remove(triangulation_mod)
-
-            return triangle_mesh
+            return vcu.object_to_triangle_mesh(obj, obj.matrix_world)
         else:
             return self._non_mesh_to_triangle_mesh(obj.matrix_world)
 
@@ -446,6 +472,13 @@ class MeshExporter():
 
 
     def _get_export_stage_progess(self, export_type):
+        if export_type == 'ANIMATED':
+            dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+            frame_start, frame_end = dprops.simulation.get_frame_range()
+            frame_current = bpy.context.scene.frame_current
+            progress = (frame_current - frame_start + 1) / (frame_end - frame_start + 1)
+            return progress
+
         total_count = 0
         finished_count = 0
         for name in self.internal_mesh_data.keys():
@@ -462,8 +495,36 @@ class MeshExporter():
 
     def _mesh_data_to_triangle_mesh(self, mesh_data, matrix_world):
         vertex_components = []
+        if vcu.is_blender_28():
+            for mv in mesh_data.vertices:
+                v = matrix_world @ mv.co
+                vertex_components.append(v.x)
+                vertex_components.append(v.y)
+                vertex_components.append(v.z)
+        else:
+            for mv in mesh_data.vertices:
+                v = matrix_world * mv.co
+                vertex_components.append(v.x)
+                vertex_components.append(v.y)
+                vertex_components.append(v.z)
+
+        
+        triangle_indices = []
+        for t in mesh_data.polygons:
+            for idx in t.vertices:
+                triangle_indices.append(idx)
+        
+        tmesh = TriangleMesh()
+        tmesh.vertices = array.array('f', vertex_components)
+        tmesh.triangles = array.array('i', triangle_indices)
+
+        return tmesh
+
+
+    def _keyframed_mesh_data_to_triangle_mesh(self, mesh_data):
+        vertex_components = []
         for mv in mesh_data.vertices:
-            v = matrix_world * mv.co
+            v = mv.co
             vertex_components.append(v.x)
             vertex_components.append(v.y)
             vertex_components.append(v.z)
@@ -488,25 +549,11 @@ class MeshExporter():
         return tmesh
 
 
-    def _get_translation_data(self, obj, frameno):
-        mesh_data = self.mesh_data[obj.name]
-        triangle_meshes = mesh_data.data['data']
-
-        if frameno == 0:
-            mesh1 = triangle_meshes[frameno]
-            mesh2 = triangle_meshes[frameno + 1]
-        else:
-            mesh1 = triangle_meshes[frameno - 1]
-            mesh2 = triangle_meshes[frameno]
-
-        vert_data = []
-        for i in range(len(mesh1.vertices)):
-            vert_data.append(mesh2.vertices[i] - mesh1.vertices[i])
-        trans_mesh = TriangleMesh()
-        trans_mesh.vertices = array.array('f', vert_data)
-        trans_mesh.triangles = array.array('i', [])
-        
-        return trans_mesh
+    def _get_vertex_mesh(self, vertex_location):
+        tmesh = TriangleMesh()
+        tmesh.vertices = array.array('f', [vertex_location[0], vertex_location[1], vertex_location[2]])
+        tmesh.triangles = array.array('i', [])
+        return tmesh
 
 
     def _set_error(self, msg):

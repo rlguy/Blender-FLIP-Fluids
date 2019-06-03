@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,16 +14,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, os, shutil, json, zipfile
+import bpy, os, shutil, json, zipfile, urllib.request, sys, textwrap
 from bpy_extras.io_utils import ImportHelper
 
 from bpy.props import (
         StringProperty,
+        BoolProperty,
+        IntProperty,
+        CollectionProperty,
         )
 
 from ..presets import preset_library
-
 from ..pyfluid import gpu_utils
+from ..utils import version_compatibility_utils as vcu
 
 
 def _get_addon_directory():
@@ -39,6 +42,7 @@ class FLIPFluidPreferencesExportUserData(bpy.types.Operator):
         " .zip file. All user data will be lost after uninstalling the addon.")
 
     filepath = StringProperty(subtype="FILE_PATH")
+    exec(vcu.convert_attribute_to_28("filepath"))
 
 
     @classmethod
@@ -151,7 +155,7 @@ class FLIPFluidPreferencesExportUserData(bpy.types.Operator):
 
 
     def invoke(self, context, event):
-        default_directory = context.user_preferences.filepaths.temporary_directory
+        default_directory = vcu.get_blender_preferences(context).filepaths.temporary_directory
         if bpy.data.is_saved:
             default_directory = os.path.dirname(bpy.data.filepath)
         self.filepath = os.path.join(default_directory, "flip_fluid_user_settings.zip")
@@ -170,6 +174,8 @@ class FLIPFluidPreferencesImportUserData(bpy.types.Operator, ImportHelper):
             options={'HIDDEN'},
             maxlen=255,
             )
+    exec(vcu.convert_attribute_to_28("filter_glob"))
+
 
 
     def get_temp_directory(self):
@@ -240,7 +246,7 @@ class FLIPFluidPreferencesFindGPUDevices(bpy.types.Operator):
 
     def execute(self, context):
         id_name = __name__.split(".")[0]
-        preferences = bpy.context.user_preferences.addons[id_name].preferences
+        preferences = vcu.get_blender_preferences(context).addons[id_name].preferences
 
         devices = gpu_utils.find_gpu_devices()
         preferences.gpu_devices.clear()
@@ -263,13 +269,125 @@ class FLIPFluidPreferencesFindGPUDevices(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class VersionDataTextEntry(bpy.types.PropertyGroup):
+    text = StringProperty(default="")
+    exec(vcu.convert_attribute_to_28("text"))
+
+
+class FlipFluidCheckForUpdates(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.check_for_updates"
+    bl_label = "Check for Updates"
+    bl_description = ("Check for version updates. Note: this will not automatically" + 
+        " install new versions of the addon. Version updates can be found in your" + 
+        " Blender Market account downloads.")
+
+    version_data_url = StringProperty(default="http://rlguy.com/blender_flip_fluids/version_data/versions.json")
+    exec(vcu.convert_attribute_to_28("version_data_url"))
+
+    error = BoolProperty(default=False)
+    exec(vcu.convert_attribute_to_28("error"))
+
+    error_message = StringProperty(default="")
+    exec(vcu.convert_attribute_to_28("error_message"))
+
+    version_text = CollectionProperty(type=VersionDataTextEntry)
+    exec(vcu.convert_attribute_to_28("version_text"))
+
+    window_width = IntProperty(default=1280)
+    exec(vcu.convert_attribute_to_28("window_width"))
+
+
+    def initialize_ui_text(self, text):
+        self.version_text.clear()
+        
+        module = sys.modules["flip_fluids_addon"]
+        current_version = module.bl_info.get('version', (-1, -1, -1))
+
+        version_data_json = json.loads(text)
+        version_data = []
+        for k,v in version_data_json.items():
+            version = k.split('.')
+            version_tuple = (int(version[0]), int(version[1]), int(version[2]))
+            if version_tuple >= current_version:
+                version_data.append({'version': version_tuple, 'data': v})
+
+        version_data_sorted = sorted(version_data, key=lambda k: k['version'], reverse=True)
+        if len(version_data) <= 1:
+            entry = self.version_text.add()
+            entry.text = "You are currently using the most recent version of the FLIP Fluids addon!"
+        else:
+            entry = self.version_text.add()
+            entry.text = "A new version of the FLIP Fluids addon is available!"
+            entry = self.version_text.add()
+            entry.text = "You may download the update from your Blender Market account downloads."
+        entry = self.version_text.add()
+
+        for ve in version_data_sorted:
+            version_string = str(ve['version'][0]) + "." + str(ve['version'][1]) + "." + str(ve['version'][2])
+            entry = self.version_text.add()
+            entry.text = "Version " + version_string
+            for change_text in ve['data']:
+                text_list = textwrap.wrap(change_text, width=120)
+                for i,text_line in enumerate(text_list):
+                    if i == 0:
+                        indent = 6
+                    else:
+                        indent = 10
+                    entry = self.version_text.add()
+                    entry.text = " "*indent + text_line
+            self.version_text.add()
+
+
+    def draw(self, context):
+        column = self.layout.column(align=True)
+
+        if self.error:
+            column.label(text="Error checking for updates:", icon="ERROR")
+            column.separator()
+            column.label(text=self.error_message)
+            return
+
+        for text_entry in self.version_text:
+            column.label(text=text_entry.text)
+
+
+    def execute(self, context):
+        return {'FINISHED'}
+
+
+    def invoke(self, context, event):
+        self.error = False
+        try:
+            response = urllib.request.urlopen(self.version_data_url)
+        except urllib.error.HTTPError:
+            self.error = True
+            self.error_message = "Unable to find version data file. Please contact the developers."
+        except urllib.error.URLError:
+            self.error = True
+            self.error_message = "No network connection found. Please check your internet connection."
+
+        if self.error:
+            return context.window_manager.invoke_props_dialog(self, width=self.window_width)
+
+        data = response.read()
+        text = data.decode('utf-8')
+        self.initialize_ui_text(text)
+        return context.window_manager.invoke_props_dialog(self, width=self.window_width)
+
+
 def register():
     bpy.utils.register_class(FLIPFluidPreferencesExportUserData)
     bpy.utils.register_class(FLIPFluidPreferencesImportUserData)
     bpy.utils.register_class(FLIPFluidPreferencesFindGPUDevices)
+
+    bpy.utils.register_class(VersionDataTextEntry)
+    bpy.utils.register_class(FlipFluidCheckForUpdates)
 
 
 def unregister():
     bpy.utils.unregister_class(FLIPFluidPreferencesExportUserData)
     bpy.utils.unregister_class(FLIPFluidPreferencesImportUserData)
     bpy.utils.unregister_class(FLIPFluidPreferencesFindGPUDevices)
+
+    bpy.utils.unregister_class(VersionDataTextEntry)
+    bpy.utils.unregister_class(FlipFluidCheckForUpdates)

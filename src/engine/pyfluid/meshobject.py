@@ -1,6 +1,6 @@
 # MIT License
 # 
-# Copyright (c) 2018 Ryan L. Guy
+# Copyright (c) 2019 Ryan L. Guy
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -29,16 +29,12 @@ from .trianglemesh import TriangleMesh_t
 
 class MeshObject():
     
-    def __init__(self, i, j, k, dx, mesh_data, translation_data = None):
-        if isinstance(mesh_data, list):
-            if translation_data:
-                self._init_from_meshes_translations(i, j, k, dx, 
-                                                    mesh_data, translation_data)
-            else:
-                self._init_from_meshes(i, j, k, dx, mesh_data)
-        else:
-            self._init_from_mesh(i, j, k, dx, mesh_data)
-
+    def __init__(self, i, j, k, dx):
+        libfunc = lib.MeshObject_new
+        args = [c_int, c_int, c_int, c_double, c_void_p]
+        pb.init_lib_func(libfunc, args, c_void_p)
+        self._obj = pb.execute_lib_func(libfunc, [i, j, k, dx])
+        
     def __del__(self):
         libfunc = lib.MeshObject_destroy
         pb.init_lib_func(libfunc, [c_void_p], None)
@@ -50,43 +46,23 @@ class MeshObject():
     def __call__(self):
         return self._obj
 
-    def _init_from_mesh(self, i, j, k, dx, mesh):
+    def update_mesh_static(self, mesh):
         mesh_struct = mesh.to_struct()
-
-        libfunc = lib.MeshObject_new_from_mesh
-        args = [c_int, c_int, c_int, c_double, c_void_p, c_void_p]
+        libfunc = lib.MeshObject_update_mesh_static
+        args = [c_void_p, TriangleMesh_t, c_void_p]
         pb.init_lib_func(libfunc, args, c_void_p)
-        self._obj = pb.execute_lib_func(libfunc, 
-                                        [i, j, k, dx, byref(mesh_struct)])
+        pb.execute_lib_func(libfunc, [self(), mesh_struct])
 
-    def _init_from_meshes(self, i, j, k, dx, meshes):
-        num_meshes = len(meshes)
-        mesh_structs = (TriangleMesh_t * num_meshes)()
-        for idx, m in enumerate(meshes):
-            mesh_structs[idx] = m.to_struct()
-
-        libfunc = lib.MeshObject_new_from_meshes
-        args = [c_int, c_int, c_int, c_double, c_void_p, c_int, c_void_p]
+    def update_mesh_animated(self, mesh_previous, mesh_current, mesh_next):
+        mesh_struct_previous = mesh_previous.to_struct()
+        mesh_struct_current = mesh_current.to_struct()
+        mesh_struct_next = mesh_next.to_struct()
+        libfunc = lib.MeshObject_update_mesh_animated
+        args = [c_void_p, TriangleMesh_t, TriangleMesh_t, TriangleMesh_t, c_void_p]
         pb.init_lib_func(libfunc, args, c_void_p)
-        self._obj = pb.execute_lib_func(
-                libfunc, [i, j, k, dx, mesh_structs, num_meshes]
-        )
-
-    def _init_from_meshes_translations(self, i, j, k, dx, meshes, translations):
-        num_meshes = len(meshes)
-        mesh_structs = (TriangleMesh_t * num_meshes)()
-        translation_structs = (TriangleMesh_t * num_meshes)()
-        for idx, m in enumerate(meshes):
-            mesh_structs[idx] = m.to_struct()
-        for idx, m in enumerate(translations):
-            translation_structs[idx] = m.to_struct()
-
-        libfunc = lib.MeshObject_new_from_meshes_translations
-        args = [c_int, c_int, c_int, c_double, c_void_p, c_void_p, c_int, c_void_p]
-        pb.init_lib_func(libfunc, args, c_void_p)
-        self._obj = pb.execute_lib_func(
-                libfunc, [i, j, k, dx, mesh_structs, translation_structs, num_meshes]
-        )
+        pb.execute_lib_func(libfunc, [self(), mesh_struct_previous, 
+                                              mesh_struct_current, 
+                                              mesh_struct_next])
 
     @property
     def enable(self):
@@ -118,18 +94,6 @@ class MeshObject():
             pb.execute_lib_func(libfunc, [self()])
 
     @property
-    def mesh_expansion(self):
-        libfunc = lib.MeshObject_get_mesh_expansion
-        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_float)
-        return pb.execute_lib_func(libfunc, [self()])
-
-    @mesh_expansion.setter
-    def mesh_expansion(self, value):
-        libfunc = lib.MeshObject_set_mesh_expansion
-        pb.init_lib_func(libfunc, [c_void_p, c_float, c_void_p], None)
-        pb.execute_lib_func(libfunc, [self(), value])
-
-    @property
     def friction(self):
         libfunc = lib.MeshObject_get_friction
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_float)
@@ -140,6 +104,44 @@ class MeshObject():
     @decorators.check_le(1.0)
     def friction(self, value):
         libfunc = lib.MeshObject_set_friction
+        pb.init_lib_func(libfunc, [c_void_p, c_float, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), value])
+
+    @property
+    def whitewater_influence(self):
+        libfunc = lib.MeshObject_get_whitewater_influence
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_float)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @whitewater_influence.setter
+    @decorators.check_ge_zero
+    def whitewater_influence(self, value):
+        libfunc = lib.MeshObject_set_whitewater_influence
+        pb.init_lib_func(libfunc, [c_void_p, c_float, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), value])
+
+    @property
+    def sheeting_strength(self):
+        libfunc = lib.MeshObject_get_sheeting_strength
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_float)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @sheeting_strength.setter
+    @decorators.check_ge_zero
+    def sheeting_strength(self, value):
+        libfunc = lib.MeshObject_set_sheeting_strength
+        pb.init_lib_func(libfunc, [c_void_p, c_float, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), value])
+
+    @property
+    def mesh_expansion(self):
+        libfunc = lib.MeshObject_get_mesh_expansion
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_float)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @mesh_expansion.setter
+    def mesh_expansion(self, value):
+        libfunc = lib.MeshObject_set_mesh_expansion
         pb.init_lib_func(libfunc, [c_void_p, c_float, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), value])
 

@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@ from mathutils import Vector
 
 from ..presets import preset_library
 from ..utils import ui_utils
+from ..utils import version_compatibility_utils as vcu
 
 from bpy.props import (
         IntProperty,
@@ -124,7 +125,7 @@ class FlipFluidPresetCreateNewPackage(bpy.types.Operator):
 
 
     def draw(self, context):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = vcu.get_active_object(context).flip_fluid.domain
         settings = dprops.presets.new_package_settings
 
         column = self.layout.column()
@@ -183,15 +184,15 @@ class FlipFluidPresetDeletePackage(bpy.types.Operator):
 
 
     def draw(self, context):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = vcu.get_active_object(context).flip_fluid.domain
         settings = dprops.presets.delete_package_settings
 
         column = self.layout.column()
         column.separator()
-        column.label("Select Package:")
+        column.label(text="Select Package:")
         column.prop(settings, 'package', text="")
         column.separator()
-        column.label("Are you sure? This action cannot be undone.")
+        column.label(text="Are you sure? This action cannot be undone.")
 
 
     def execute(self, context):
@@ -231,7 +232,7 @@ class FlipFluidPresetDeletePackage(bpy.types.Operator):
 
 
     def invoke(self, context, event):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = vcu.get_active_object(context).flip_fluid.domain
         settings = dprops.presets.delete_package_settings
         settings.reset()
         return context.window_manager.invoke_props_dialog(self)
@@ -243,6 +244,8 @@ class FlipFluidPresetCreateNewPresetEnableAll(bpy.types.Operator):
     bl_description = "Enable all preset attributes"
 
     collection_id = StringProperty(default="")
+    exec(vcu.convert_attribute_to_28("collection_id"))
+
 
     @classmethod
     def poll(cls, context):
@@ -269,6 +272,7 @@ class FlipFluidPresetCreateNewPresetDisableAll(bpy.types.Operator):
     bl_description = "Disable all preset attributes"
 
     collection_id = StringProperty(default="")
+    exec(vcu.convert_attribute_to_28("collection_id"))
 
     @classmethod
     def poll(cls, context):
@@ -296,6 +300,7 @@ class FlipFluidPresetCreateNewPresetEnableAuto(bpy.types.Operator):
                       " comparing to system default settings")
 
     collection_id = StringProperty(default="")
+    exec(vcu.convert_attribute_to_28("collection_id"))
 
     @classmethod
     def poll(cls, context):
@@ -403,7 +408,7 @@ class FlipFluidPresetCreateNewPreset(bpy.types.Operator):
 
 
     def draw_column(self, context, column_data, column):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = vcu.get_active_object(context).flip_fluid.domain
         settings = dprops.presets.new_preset_settings
         collection = column_data['collection']
 
@@ -420,7 +425,7 @@ class FlipFluidPresetCreateNewPreset(bpy.types.Operator):
 
         row = column.row()
         if column_data['column_id'] == 0:
-            row.label(column_data['label'])
+            row.label(text=column_data['label'])
 
             export_id = settings.get_export_identifier_from_collection(collection)
             collection_id = settings.get_collection_identifier_from_collection(collection)
@@ -457,13 +462,14 @@ class FlipFluidPresetCreateNewPreset(bpy.types.Operator):
             prop_group = getattr(dprops, split_vals[1])
             identifier = split_vals[2]
 
-            split = column.split(percentage=0.02, align=True)
+            split = vcu.ui_split(column, factor=0.02, align=True)
             tick_column = split.column(align=True)
             temp_column = split.column(align=True)
-            split = temp_column.split(percentage=0.42)
+            split = vcu.ui_split(temp_column, factor=0.42)
             label_column = split.column(align=True)
             temp_column = split.column(align=True)
-            split = temp_column.split(percentage = 0.02)
+            split = vcu.ui_split(temp_column, factor=0.02)
+
             lock_column = split.column()
             prop_column = split.column(align=True)
             prop_column = prop_column.row(align=True)
@@ -474,7 +480,7 @@ class FlipFluidPresetCreateNewPreset(bpy.types.Operator):
                     emboss=False
                     )
 
-            label_column.label(p.label)
+            label_column.label(text=p.label)
 
             if p.path in is_key_property:
                 lock_column.prop(p, 'dummy_prop', 
@@ -511,16 +517,16 @@ class FlipFluidPresetCreateNewPreset(bpy.types.Operator):
 
 
     def draw_custom_properties(self, context, base_column):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = vcu.get_active_object(context).flip_fluid.domain
         settings = dprops.presets.new_preset_settings
 
         base_column.separator()
         base_column.separator()
         base_column.separator()
 
-        split = base_column.split(percentage=1/6)
+        split = vcu.ui_split(base_column, factor=1/6)
         column = split.column()
-        column.label("Customize Preset Attributes:")
+        column.label(text="Customize Preset Attributes:")
         column.box()
         column.separator()
         column = split.column()
@@ -536,7 +542,7 @@ class FlipFluidPresetCreateNewPreset(bpy.types.Operator):
             row.operator("flip_fluid_operators.preset_create_new_preset_enable_auto",
                          text="Auto",
                          icon="AUTO")
-            row.label("")
+            row.label(text="")
             row.prop(settings, "ui_sort")
 
             column.separator()
@@ -551,7 +557,7 @@ class FlipFluidPresetCreateNewPreset(bpy.types.Operator):
                          text="",
                          icon="TRIA_RIGHT")
         else:
-            column.label("No panels selected for export...")
+            column.label(text="No panels selected for export...")
             return
 
 
@@ -562,17 +568,17 @@ class FlipFluidPresetCreateNewPreset(bpy.types.Operator):
 
         buffer_pct = 0.95
         column1 = split.column()
-        temp_split = column1.split(percentage=buffer_pct)
+        temp_split = vcu.ui_split(column1, factor=buffer_pct)
         column1 = temp_split.column(align=True)
         temp_column = temp_split.column()
 
         column2 = split.column()
-        temp_split = column2.split(percentage=buffer_pct)
+        temp_split = vcu.ui_split(column2, factor=buffer_pct)
         column2 = temp_split.column(align=True)
         temp_column = temp_split.column()
 
         column3 = split.column()
-        temp_split = column3.split(percentage=buffer_pct)
+        temp_split = vcu.ui_split(column3, factor=buffer_pct)
         column3 = temp_split.column(align=True)
         temp_column = temp_split.column()
 
@@ -587,16 +593,16 @@ class FlipFluidPresetCreateNewPreset(bpy.types.Operator):
     def draw(self, context):
         default_window_height = 28
 
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = vcu.get_active_object(context).flip_fluid.domain
         settings = dprops.presets.new_preset_settings
         package_info = preset_library.package_identifier_to_info(settings.package)
 
         base_column = self.layout.column()
         base_column.separator()
-        split =base_column.split(percentage=0.01)
+        split = vcu.ui_split(base_column, factor=0.01)
         column = split.column()
         for i in range(default_window_height):
-            column.label("")
+            column.label(text="")
 
         base_column = split.column()
 
@@ -604,12 +610,12 @@ class FlipFluidPresetCreateNewPreset(bpy.types.Operator):
         name_column = split.column(align=True)
         export_column = split.column(align=True)
 
-        name_column_split = name_column.split(percentage=0.95)
+        name_column_split = vcu.ui_split(name_column, factor=0.95)
         name_column1 = name_column_split.column()
         name_column2 = name_column_split.column()
 
         row = name_column1.row()
-        row.label("Preset Info:")
+        row.label(text="Preset Info:")
         row = row.row()
         row.alignment = "RIGHT"
         row.operator("flip_fluid_operators.preset_create_new_reset", 
@@ -621,14 +627,14 @@ class FlipFluidPresetCreateNewPreset(bpy.types.Operator):
         name_column1.separator()
 
         if package_info["use_custom_icons"]:
-            split = name_column1.split(percentage=0.23)
+            split = vcu.ui_split(name_column1, factor=0.23)
             name_column_icon = split.column()
             name_column_left = split.column()
-            split = name_column_left.split(percentage=0.2)
+            split = vcu.ui_split(name_column_left, factor=0.2)
             name_column_left = split.column()
             name_column_right = split.column()
         else:
-            split = name_column1.split(percentage=0.3)
+            split = vcu.ui_split(name_column1, factor=0.3)
             name_column_left = split.column()
             name_column_right = split.column()
 
@@ -636,12 +642,12 @@ class FlipFluidPresetCreateNewPreset(bpy.types.Operator):
             name_column_icon.enabled = False
             name_column_icon.template_icon_view(settings, "display_icon")
 
-        name_column_left.label("Package: ")
+        name_column_left.label(text="Package: ")
         name_column_left.separator()
         name_column_left.separator()
-        name_column_left.label("Name: ")
-        name_column_left.label("Description: ")
-        name_column_left.label("Icon: ")
+        name_column_left.label(text="Name: ")
+        name_column_left.label(text="Description: ")
+        name_column_left.label(text="Icon: ")
 
         name_column_right.prop(settings, 'package', text="")
         name_column_right.separator()
@@ -652,11 +658,11 @@ class FlipFluidPresetCreateNewPreset(bpy.types.Operator):
         if package_info["use_custom_icons"]:
             name_column_right.prop_search(settings, "icon", bpy.data, "images", text="")
         else:
-            name_column_right.label("(Custom icons are not enabled for this package)")
+            name_column_right.label(text="(Custom icons are not enabled for this package)")
 
-        split = export_column.split(percentage=0.95)
+        split = vcu.ui_split(export_column, factor=0.95)
         export_column = split.column()
-        export_column.label("Export Panel Settings:")
+        export_column.label(text="Export Panel Settings:")
         export_column.box()
         export_column.separator()
         export_column_split = export_column.split()
@@ -813,18 +819,18 @@ class FlipFluidPresetDeletePreset(bpy.types.Operator):
 
 
     def draw(self, context):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = vcu.get_active_object(context).flip_fluid.domain
         settings = dprops.presets.delete_preset_settings
 
         column = self.layout.column()
         column.separator()
-        column.label("Package:")
+        column.label(text="Package:")
         column.prop(settings, 'package', text="")
         column.separator()
-        column.label("Preset:")
+        column.label(text="Preset:")
         column.prop(settings, 'preset', text="")
         column.separator()
-        column.label("Are you sure? This action cannot be undone.")
+        column.label(text="Are you sure? This action cannot be undone.")
 
 
     def execute(self, context):
@@ -869,7 +875,7 @@ class FlipFluidPresetDeletePreset(bpy.types.Operator):
 
 
     def invoke(self, context, event):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = vcu.get_active_object(context).flip_fluid.domain
         settings = dprops.presets.delete_preset_settings
         settings.reset()
         return context.window_manager.invoke_props_dialog(self)
@@ -931,6 +937,7 @@ class FlipFluidPresetDisplayInfo(bpy.types.Operator):
     bl_description = "Display preset information"
 
     identifier = StringProperty(default="")
+    exec(vcu.convert_attribute_to_28("identifier"))
 
     @classmethod
     def poll(cls, context):
@@ -946,7 +953,7 @@ class FlipFluidPresetDisplayInfo(bpy.types.Operator):
 
 
     def generation_column_partitions(self, context):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = vcu.get_active_object(context).flip_fluid.domain
         settings = dprops.presets.display_preset_settings
         collection_ids = [settings.current_display_panel]
         chunks = settings.ui_properties.generate_column_partition_chunks(collection_ids)
@@ -954,14 +961,14 @@ class FlipFluidPresetDisplayInfo(bpy.types.Operator):
 
 
     def draw_partition_chunk(self, context, chunk, column):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = vcu.get_active_object(context).flip_fluid.domain
         settings = dprops.presets.display_preset_settings
         dummy_props = settings.get_dummy_domain_properties()
         collection = chunk['collection']
 
         row = column.row()
         if not chunk['is_continuation']:
-            row.label(chunk['label'])
+            row.label(text=chunk['label'])
             column.box()
         column.separator()
 
@@ -973,11 +980,11 @@ class FlipFluidPresetDisplayInfo(bpy.types.Operator):
             prop_group = getattr(dummy_props, split_vals[1])
             identifier = split_vals[2]
 
-            split = column.split(percentage=0.05, align=True)
+            split = vcu.ui_split(column, factor=0.05, align=True)
             tick_column = split.column(align=True)
             tick_column.enabled = False
             temp_column = split.column(align=True)
-            split = temp_column.split(percentage = 0.5)
+            split = vcu.ui_split(temp_column, factor=0.5)
             label_column = split.column(align=True)
             prop_column = split.column(align=True)
             prop_column = prop_column.row(align=True)
@@ -988,7 +995,7 @@ class FlipFluidPresetDisplayInfo(bpy.types.Operator):
                     emboss=False
                     )
 
-            label_column.label(p.label)
+            label_column.label(text=p.label)
 
             prop_column.alert = not p.enabled
 
@@ -1010,7 +1017,7 @@ class FlipFluidPresetDisplayInfo(bpy.types.Operator):
 
 
     def draw_preset_properties(self, context, base_column):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = vcu.get_active_object(context).flip_fluid.domain
         settings = dprops.presets.display_preset_settings
 
         base_column.separator()
@@ -1029,24 +1036,24 @@ class FlipFluidPresetDisplayInfo(bpy.types.Operator):
                          text="",
                          icon="TRIA_RIGHT")
         else:
-            column.label("No panels selected for export...")
+            column.label(text="No panels selected for export...")
 
         column.separator()
         split = column.split()
 
         buffer_pct = 0.95
         column1 = split.column()
-        temp_split = column1.split(percentage=buffer_pct)
+        temp_split = vcu.ui_split(column1, factor=buffer_pct)
         column1 = temp_split.column(align=True)
         temp_column = temp_split.column()
 
         column2 = split.column()
-        temp_split = column2.split(percentage=buffer_pct)
+        temp_split = vcu.ui_split(column2, factor=buffer_pct)
         column2 = temp_split.column(align=True)
         temp_column = temp_split.column()
 
         column3 = split.column()
-        temp_split = column3.split(percentage=buffer_pct)
+        temp_split = vcu.ui_split(column3, factor=buffer_pct)
         column3 = temp_split.column(align=True)
         temp_column = temp_split.column()
 
@@ -1059,66 +1066,66 @@ class FlipFluidPresetDisplayInfo(bpy.types.Operator):
     def draw(self, context):
         default_window_height = 23
 
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = vcu.get_active_object(context).flip_fluid.domain
         settings = dprops.presets.display_preset_settings
 
         base_column = self.layout.column()
         base_column.separator()
-        split =base_column.split(percentage=0.01)
+        split = vcu.ui_split(base_column, factor=0.01)
         column = split.column()
         for i in range(default_window_height):
-            column.label("")
+            column.label(text="")
 
         base_column = split.column()
 
-        split = base_column.split(align=True, percentage=0.65)
+        split = vcu.ui_split(base_column, align=True, factor=0.65)
         name_column = split.column(align=True)
         export_column = split.column(align=True)
 
-        name_column_split = name_column.split(percentage=0.95)
+        name_column_split = vcu.ui_split(name_column, factor=0.95)
         name_column1 = name_column_split.column()
         name_column2 = name_column_split.column()
 
         preset_info = preset_library.preset_identifier_to_info(self.identifier)
 
         row = name_column1.row()
-        row.label(preset_info['name'])
+        row.label(text=preset_info['name'])
         name_column1.box()
         name_column1.separator()
 
         if "icon" in preset_info:
-            split = name_column1.split(percentage=0.17)
+            split = vcu.ui_split(name_column1, factor=0.17)
             name_column_icon = split.column()
             name_column1 = split.column()
-            split = name_column1.split(percentage=0.15)
+            split = vcu.ui_split(name_column1, factor=0.15)
             name_column_left = split.column()
             name_column_right = split.column()
 
             name_column_icon.template_icon_view(settings, "display_icon")
         else:
-            split = name_column1.split(percentage=0.15)
+            split = vcu.ui_split(name_column1, factor=0.15)
             name_column_left = split.column()
             name_column_right = split.column()
 
-        name_column_left.label("Preset: ")
+        name_column_left.label(text="Preset: ")
         name_column_left.separator()
-        name_column_left.label("Package: ")
+        name_column_left.label(text="Package: ")
         name_column_left.separator()
-        name_column_left.label("Description: ")
+        name_column_left.label(text="Description: ")
 
         current_package = dprops.presets.current_package
         package_name = self.layout.enum_item_name(
                 dprops.presets, "current_package", current_package
                 )
 
-        name_column_right.label(preset_info['name'])
+        name_column_right.label(text=preset_info['name'])
         name_column_right.separator()
-        name_column_right.label(package_name)
+        name_column_right.label(text=package_name)
         name_column_right.separator()
 
         text_list = textwrap.wrap(preset_info['description'], width=80)
         for line in text_list:
-            name_column_right.label(line)
+            name_column_right.label(text=line)
 
         self.draw_preset_properties(context, base_column)
 
@@ -1171,13 +1178,13 @@ class FlipFluidPresetExportPackage(bpy.types.Operator):
 
 
     def draw(self, context):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = vcu.get_active_object(context).flip_fluid.domain
         settings = dprops.presets.export_package_settings
 
-        split = self.layout.split(percentage=0.25)
+        split = vcu.ui_split(self.layout, factor=0.25)
         column = split.column()
-        column.label("Package:")
-        column.label("Filename:")
+        column.label(text="Package:")
+        column.label(text="Filename:")
 
         column = split.column()
         column.prop(settings, "package", text="")
@@ -1186,8 +1193,8 @@ class FlipFluidPresetExportPackage(bpy.types.Operator):
 
         column = self.layout.column()
         column.separator()
-        column.label("Package will be exported to:")
-        column.label(" "*5 + settings.export_filepath)
+        column.label(text="Package will be exported to:")
+        column.label(text=" "*5 + settings.export_filepath)
         column.separator()
 
 
@@ -1243,6 +1250,8 @@ class SelectPresetPackageZipFile(bpy.types.Operator, ImportHelper):
             options={'HIDDEN'},
             maxlen=255,
             )
+    exec(vcu.convert_attribute_to_28("filter_glob"))
+
 
     def execute(self, context):
         dprops = context.scene.flip_fluid.get_domain_properties()
@@ -1373,7 +1382,7 @@ class FlipFluidPresetImportPackage(bpy.types.Operator):
 
 
     def generation_column_partitions(self, context):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = vcu.get_active_object(context).flip_fluid.domain
         settings = dprops.presets.import_package_settings
         collection_ids = [settings.current_display_panel]
         chunks = settings.ui_properties.generate_column_partition_chunks(collection_ids)
@@ -1381,7 +1390,7 @@ class FlipFluidPresetImportPackage(bpy.types.Operator):
 
 
     def draw_partition_chunk(self, context, chunk, column):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = vcu.get_active_object(context).flip_fluid.domain
         settings = dprops.presets.import_package_settings
         dummy_props = settings.get_dummy_domain_properties()
         collection = chunk['collection']
@@ -1400,11 +1409,11 @@ class FlipFluidPresetImportPackage(bpy.types.Operator):
             prop_group = getattr(dummy_props, split_vals[1])
             identifier = split_vals[2]
 
-            split = column.split(percentage=0.05, align=True)
+            split = vcu.ui_split(column, factor=0.05, align=True)
             tick_column = split.column(align=True)
             tick_column.enabled = False
             temp_column = split.column(align=True)
-            split = temp_column.split(percentage = 0.5)
+            split = vcu.ui_split(temp_column, factor=0.5)
             label_column = split.column(align=True)
             prop_column = split.column(align=True)
             prop_column = prop_column.row(align=True)
@@ -1415,7 +1424,7 @@ class FlipFluidPresetImportPackage(bpy.types.Operator):
                     emboss=False
                     )
 
-            label_column.label(p.label)
+            label_column.label(text=p.label)
 
             prop_column.alert = not p.enabled
 
@@ -1437,7 +1446,7 @@ class FlipFluidPresetImportPackage(bpy.types.Operator):
 
 
     def draw_preset_properties(self, context, base_column):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = vcu.get_active_object(context).flip_fluid.domain
         settings = dprops.presets.import_package_settings
 
         base_column.separator()
@@ -1445,7 +1454,7 @@ class FlipFluidPresetImportPackage(bpy.types.Operator):
         if settings.current_display_panel != 'NONE':
             row = column.row(align=True)
             column.separator()
-            column.label("Preset Attributes:")
+            column.label(text="Preset Attributes:")
             row = column.row(align=True)
             row.alignment = 'LEFT'
             row.operator("flip_fluid_operators.preset_import_select_prev",
@@ -1456,7 +1465,7 @@ class FlipFluidPresetImportPackage(bpy.types.Operator):
                          text="",
                          icon="TRIA_RIGHT")
         else:
-            column.label("No panels selected for export...")
+            column.label(text="No panels selected for export...")
 
 
         column.separator()
@@ -1464,17 +1473,17 @@ class FlipFluidPresetImportPackage(bpy.types.Operator):
 
         buffer_pct = 0.95
         column1 = split.column()
-        temp_split = column1.split(percentage=buffer_pct)
+        temp_split = vcu.ui_split(column1, factor=buffer_pct)
         column1 = temp_split.column(align=True)
         temp_column = temp_split.column()
 
         column2 = split.column()
-        temp_split = column2.split(percentage=buffer_pct)
+        temp_split = vcu.ui_split(column2, factor=buffer_pct)
         column2 = temp_split.column(align=True)
         temp_column = temp_split.column()
 
         column3 = split.column()
-        temp_split = column3.split(percentage=buffer_pct)
+        temp_split = vcu.ui_split(column3, factor=buffer_pct)
         column3 = temp_split.column(align=True)
         temp_column = temp_split.column()
 
@@ -1487,61 +1496,61 @@ class FlipFluidPresetImportPackage(bpy.types.Operator):
     def draw(self, context):
         default_window_height = 28
 
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = vcu.get_active_object(context).flip_fluid.domain
         settings = dprops.presets.import_package_settings
 
         base_column = self.layout.column()
         base_column.separator()
-        split =base_column.split(percentage=0.01)
+        split = vcu.ui_split(base_column, factor=0.01)
         column = split.column()
         for i in range(default_window_height):
-            column.label("")
+            column.label(text="")
 
         base_column = split.column()
 
-        split = base_column.split(align=True, percentage=0.65)
+        split = vcu.ui_split(base_column, align=True, factor=0.65)
         name_column = split.column(align=True)
         export_column = split.column(align=True)
 
-        name_column_split = name_column.split(percentage=0.95)
+        name_column_split = vcu.ui_split(name_column, factor=0.95)
         name_column1 = name_column_split.column()
         name_column2 = name_column_split.column()
 
         row = name_column1.row()
-        row.label("Package Info")
+        row.label(text="Package Info")
         name_column1.box()
         name_column1.separator()
 
         row = name_column1.row()
-        split_column = row.split(percentage=0.1)
+        split_column = vcu.ui_split(row, factor=0.1)
         package_info_left = split_column.column()
-        package_info_left.label("Package:")
+        package_info_left.label(text="Package:")
         package_info_right = split_column.column()
         package_info_right.label(settings.package_info.name)
 
         if settings.package_info.author:
             row = name_column1.row()
-            split_column = row.split(percentage=0.1)
+            split_column = vcu.ui_split(row, factor=0.1)
             package_info_left = split_column.column()
-            package_info_left.label("Author:")
+            package_info_left.label(text="Author:")
             package_info_right = split_column.column()
             package_info_right.label(settings.package_info.author)
 
         if settings.package_info.description:
             row = name_column1.row()
-            split_column = row.split(percentage=0.1)
+            split_column = vcu.ui_split(row, factor=0.1)
             package_info_left = split_column.column()
-            package_info_left.label("Description:")
+            package_info_left.label(text="Description:")
             package_info_right = split_column.column()
             text_list = textwrap.wrap(settings.package_info.description, width=120)
             for line in text_list:
-                package_info_right.label(line)
+                package_info_right.label(text=line)
 
         name_column1.separator()
         row = name_column1.row()
-        split_column = row.split(percentage=0.1)
+        split_column = vcu.ui_split(row, factor=0.1)
         package_info_left = split_column.column()
-        package_info_left.label("Presets:")
+        package_info_left.label(text="Presets:")
         package_info_right = split_column.column()
         presets_row = package_info_right.row(align=True)
         presets_row.alignment = 'LEFT'
@@ -1554,44 +1563,44 @@ class FlipFluidPresetImportPackage(bpy.types.Operator):
         row.operator("flip_fluid_operators.preset_import_select_preset_prev",
                      text="",
                      icon="TRIA_LEFT", emboss=False)
-        row.label("Preset Info")
+        row.label(text="Preset Info")
         row.operator("flip_fluid_operators.preset_import_select_preset_next",
                      text="",
                      icon="TRIA_RIGHT", emboss=False)
-        split = name_column1.split(percentage=0.5)
+        split = vcu.ui_split(name_column1, factor=0.5)
         split.column().box()
         name_column1.separator()
 
         if settings.selected_preset == 'PRESET_NONE':
-            name_column1.label("This package does not contain any presets...")
+            name_column1.label(text="This package does not contain any presets...")
             return
 
         preset_info = settings.get_selected_preset_info()
 
         if preset_info.icon_id != -1:
-            split = name_column1.split(percentage=0.17)
+            split = vcu.ui_split(name_column1, factor=0.17)
             name_column_icon = split.column()
             name_column1 = split.column()
-            split = name_column1.split(percentage=0.12)
+            split = vcu.ui_split(name_column1, factor=0.12)
             name_column_left = split.column()
             name_column_right = split.column()
 
             name_column_icon.template_icon_view(settings, "display_icon")
         else:
-            split = name_column1.split(percentage=0.1)
+            split = vcu.ui_split(name_column1, factor=0.1)
             name_column_left = split.column()
             name_column_right = split.column()
 
-        name_column_left.label("Preset: ")
+        name_column_left.label(text="Preset: ")
         name_column_left.separator()
-        name_column_left.label("Description: ")
+        name_column_left.label(text="Description: ")
 
-        name_column_right.label(preset_info.name)
+        name_column_right.label(text=preset_info.name)
         name_column_right.separator()
 
         text_list = textwrap.wrap(preset_info['description'], width=80)
         for line in text_list:
-            name_column_right.label(line)
+            name_column_right.label(text=line)
 
         self.draw_preset_properties(context, base_column)
 
@@ -1683,6 +1692,7 @@ class FlipFluidPresetRemovePresetFromStack(bpy.types.Operator):
     bl_description = "Remove from preset stack"
 
     stack_index = IntProperty(default=-1)
+    exec(vcu.convert_attribute_to_28("stack_index"))
 
     @classmethod
     def poll(cls, context):
@@ -1705,6 +1715,7 @@ class FlipFluidPresetMovePresetUpInStack(bpy.types.Operator):
     bl_description = "Move preset up in the stack"
 
     stack_index = IntProperty(default=-1)
+    exec(vcu.convert_attribute_to_28("stack_index"))
 
     @classmethod
     def poll(cls, context):
@@ -1727,6 +1738,7 @@ class FlipFluidPresetMovePresetDownInStack(bpy.types.Operator):
     bl_description = "Move preset down in the stack"
 
     stack_index = IntProperty(default=-1)
+    exec(vcu.convert_attribute_to_28("stack_index"))
 
     @classmethod
     def poll(cls, context):
@@ -1749,6 +1761,7 @@ class FlipFluidPresetApplyAndRemoveFromStack(bpy.types.Operator):
     bl_description = "Apply preset and remove from the stack"
 
     stack_index = IntProperty(default=-1)
+    exec(vcu.convert_attribute_to_28("stack_index"))
 
     @classmethod
     def poll(cls, context):
@@ -1792,6 +1805,7 @@ class FlipFluidPresetEditPresetEnableAll(bpy.types.Operator):
     bl_description = "Enable all preset attributes"
 
     collection_id = StringProperty(default="")
+    exec(vcu.convert_attribute_to_28("collection_id"))
 
     @classmethod
     def poll(cls, context):
@@ -1818,6 +1832,7 @@ class FlipFluidPresetEditPresetDisableAll(bpy.types.Operator):
     bl_description = "Disable all preset attributes"
 
     collection_id = StringProperty(default="")
+    exec(vcu.convert_attribute_to_28("collection_id"))
 
     @classmethod
     def poll(cls, context):
@@ -1923,7 +1938,7 @@ class FlipFluidPresetEditPreset(bpy.types.Operator):
 
         row = column.row()
         if column_data['column_id'] == 0:
-            row.label(column_data['label'])
+            row.label(text=column_data['label'])
 
             export_id = settings.get_export_identifier_from_collection(collection)
             collection_id = settings.get_collection_identifier_from_collection(collection)
@@ -1960,13 +1975,13 @@ class FlipFluidPresetEditPreset(bpy.types.Operator):
             prop_group = getattr(dummy_props, split_vals[1])
             identifier = split_vals[2]
 
-            split = column.split(percentage=0.02, align=True)
+            split = vcu.ui_split(column, factor=0.02, align=True)
             tick_column = split.column(align=True)
             temp_column = split.column(align=True)
-            split = temp_column.split(percentage=0.42)
+            split = vcu.ui_split(temp_column, factor=0.42)
             label_column = split.column(align=True)
             temp_column = split.column(align=True)
-            split = temp_column.split(percentage = 0.02)
+            split = vcu.ui_split(temp_column, factor=0.02)
             lock_column = split.column()
             prop_column = split.column(align=True)
             prop_column = prop_column.row(align=True)
@@ -1977,7 +1992,7 @@ class FlipFluidPresetEditPreset(bpy.types.Operator):
                     emboss=False
                     )
 
-            label_column.label(p.label)
+            label_column.label(text=p.label)
 
             if p.path in is_key_property:
                 lock_column.prop(p, 'dummy_prop', 
@@ -2013,16 +2028,16 @@ class FlipFluidPresetEditPreset(bpy.types.Operator):
 
 
     def draw_custom_properties(self, context, base_column):
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = vcu.get_active_object(context).flip_fluid.domain
         settings = dprops.presets.edit_preset_settings
 
         base_column.separator()
         base_column.separator()
         base_column.separator()
 
-        split = base_column.split(percentage=1/6)
+        split = vcu.ui_split(base_column, factor=1/6)
         column = split.column()
-        column.label("Edit Preset Attributes:")
+        column.label(text="Edit Preset Attributes:")
         column.box()
         column.separator()
         column = split.column()
@@ -2035,7 +2050,7 @@ class FlipFluidPresetEditPreset(bpy.types.Operator):
                          icon="FILE_TICK")
             row.operator("flip_fluid_operators.preset_edit_preset_disable_all",
                          icon="CANCEL")
-            row.label("")
+            row.label(text="")
             row.prop(settings, "ui_sort")
 
             column.separator()
@@ -2050,7 +2065,7 @@ class FlipFluidPresetEditPreset(bpy.types.Operator):
                          text="",
                          icon="TRIA_RIGHT")
         else:
-            column.label("No panels selected for export...")
+            column.label(text="No panels selected for export...")
 
 
         column.separator()
@@ -2060,17 +2075,17 @@ class FlipFluidPresetEditPreset(bpy.types.Operator):
 
         buffer_pct = 0.95
         column1 = split.column()
-        temp_split = column1.split(percentage=buffer_pct)
+        temp_split = vcu.ui_split(column1, factor=buffer_pct)
         column1 = temp_split.column(align=True)
         temp_column = temp_split.column()
 
         column2 = split.column()
-        temp_split = column2.split(percentage=buffer_pct)
+        temp_split = vcu.ui_split(column2, factor=buffer_pct)
         column2 = temp_split.column(align=True)
         temp_column = temp_split.column()
 
         column3 = split.column()
-        temp_split = column3.split(percentage=buffer_pct)
+        temp_split = vcu.ui_split(column3, factor=buffer_pct)
         column3 = temp_split.column(align=True)
         temp_column = temp_split.column()
 
@@ -2084,16 +2099,16 @@ class FlipFluidPresetEditPreset(bpy.types.Operator):
     def draw(self, context):
         default_window_height = 30
 
-        dprops = context.scene.objects.active.flip_fluid.domain
+        dprops = vcu.get_active_object(context).flip_fluid.domain
         settings = dprops.presets.edit_preset_settings
         package_info = preset_library.package_identifier_to_info(settings.package)
 
         base_column = self.layout.column()
         base_column.separator()
-        split =base_column.split(percentage=0.01)
+        split = vcu.ui_split(base_column, factor=0.01)
         column = split.column()
         for i in range(default_window_height):
-            column.label("")
+            column.label(text="")
 
         base_column = split.column()
 
@@ -2101,11 +2116,11 @@ class FlipFluidPresetEditPreset(bpy.types.Operator):
         name_column = split.column(align=True)
         export_column = split.column(align=True)
 
-        name_column_split = name_column.split(percentage=0.95)
+        name_column_split = vcu.ui_split(name_column, factor=0.95)
         name_column1 = name_column_split.column()
         name_column2 = name_column_split.column()
 
-        split = name_column1.split(percentage=0.5)
+        split = vcu.ui_split(name_column1, factor=0.5)
         edit_select_column1 = split.column()
         edit_select_column2 = split.column()
         edit_select_column1.prop(settings, "edit_package")
@@ -2113,11 +2128,11 @@ class FlipFluidPresetEditPreset(bpy.types.Operator):
         name_column1.separator()
 
         if settings.edit_preset == 'PRESET_NONE':
-            name_column1.label("No preset selected to edit...")
+            name_column1.label(text="No preset selected to edit...")
             return
 
         row = name_column1.row()
-        row.label("Edit Preset Info:")
+        row.label(text="Edit Preset Info:")
         row = row.row()
         row.alignment = "RIGHT"
         row.operator("flip_fluid_operators.preset_edit_reset", 
@@ -2129,14 +2144,14 @@ class FlipFluidPresetEditPreset(bpy.types.Operator):
         name_column1.separator()
 
         if package_info["use_custom_icons"]:
-            split = name_column1.split(percentage=0.23)
+            split = vcu.ui_split(name_column1, factor=0.23)
             name_column_icon = split.column()
             name_column_left = split.column()
-            split = name_column_left.split(percentage=0.25)
+            split = vcu.ui_split(name_column_left, factor=0.25)
             name_column_left = split.column()
             name_column_right = split.column()
         else:
-            split = name_column1.split(percentage=0.2)
+            split = vcu.ui_split(name_column1, factor=0.2)
             name_column_left = split.column()
             name_column_right = split.column()
 
@@ -2144,12 +2159,12 @@ class FlipFluidPresetEditPreset(bpy.types.Operator):
             name_column_icon.enabled = False
             name_column_icon.template_icon_view(settings, "display_icon")
 
-        name_column_left.label("New Package: ")
+        name_column_left.label(text="New Package: ")
         name_column_left.separator()
         name_column_left.separator()
-        name_column_left.label("New Name: ")
-        name_column_left.label("New Description: ")
-        name_column_left.label("New Icon: ")
+        name_column_left.label(text="New Name: ")
+        name_column_left.label(text="New Description: ")
+        name_column_left.label(text="New Icon: ")
 
         name_column_right.prop(settings, 'package', text="")
         name_column_right.separator()
@@ -2160,11 +2175,11 @@ class FlipFluidPresetEditPreset(bpy.types.Operator):
         if package_info["use_custom_icons"]:
             name_column_right.prop_search(settings, "icon", bpy.data, "images", text="")
         else:
-            name_column_right.label("(Custom icons are not enabled for this package)")
+            name_column_right.label(text="(Custom icons are not enabled for this package)")
 
-        split = export_column.split(percentage=0.95)
+        split = vcu.ui_split(export_column, factor=0.95)
         export_column = split.column()
-        export_column.label("Edit Export Panel Settings:")
+        export_column.label(text="Edit Export Panel Settings:")
         export_column.box()
         export_column.separator()
         export_column_split = export_column.split()

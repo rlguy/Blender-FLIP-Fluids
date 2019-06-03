@@ -1,6 +1,6 @@
 # MIT License
 # 
-# Copyright (c) 2018 Ryan L. Guy
+# Copyright (c) 2019 Ryan L. Guy
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -242,6 +242,21 @@ class FluidSimulation(object):
         pb.execute_lib_func(libfunc, [self(), jitter])
 
     @property
+    def jitter_surface_marker_particles(self):
+        libfunc = lib.FluidSimulation_is_jitter_surface_marker_particles_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @jitter_surface_marker_particles.setter
+    def jitter_surface_marker_particles(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_jitter_surface_marker_particles
+        else:
+            libfunc = lib.FluidSimulation_disable_jitter_surface_marker_particles
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
     def surface_subdivision_level(self):
         libfunc = lib.FluidSimulation_get_surface_subdivision_level
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
@@ -291,6 +306,11 @@ class FluidSimulation(object):
         libfunc = lib.FluidSimulation_set_surface_smoothing_iterations
         pb.init_lib_func(libfunc, [c_void_p, c_int, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), int(n)])
+
+    def set_meshing_volume(self, mesh_object):
+        libfunc = lib.FluidSimulation_set_meshing_volume
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), mesh_object()])
 
     @property
     def min_polyhedron_triangle_count(self):
@@ -404,19 +424,31 @@ class FluidSimulation(object):
             pb.execute_lib_func(libfunc, [self()])
 
     @property
-    def enable_smooth_interface_meshing(self):
-        libfunc = lib.FluidSimulation_is_smooth_interface_meshing_enabled
+    def enable_obstacle_meshing_offset(self):
+        libfunc = lib.FluidSimulation_is_obstacle_meshing_offset_enabled
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
         return bool(pb.execute_lib_func(libfunc, [self()]))
 
-    @enable_smooth_interface_meshing.setter
-    def enable_smooth_interface_meshing(self, boolval):
+    @enable_obstacle_meshing_offset.setter
+    def enable_obstacle_meshing_offset(self, boolval):
         if boolval:
-            libfunc = lib.FluidSimulation_enable_smooth_interface_meshing
+            libfunc = lib.FluidSimulation_enable_obstacle_meshing_offset
         else:
-            libfunc = lib.FluidSimulation_disable_smooth_interface_meshing
+            libfunc = lib.FluidSimulation_disable_obstacle_meshing_offset
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def obstacle_meshing_offset(self):
+        libfunc = lib.FluidSimulation_get_obstacle_meshing_offset
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @obstacle_meshing_offset.setter
+    def obstacle_meshing_offset(self, offset):
+        libfunc = lib.FluidSimulation_set_obstacle_meshing_offset
+        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), offset])
 
     @property
     def enable_inverted_contact_normals(self):
@@ -432,6 +464,64 @@ class FluidSimulation(object):
             libfunc = lib.FluidSimulation_disable_inverted_contact_normals
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_surface_motion_blur(self):
+        libfunc = lib.FluidSimulation_is_surface_motion_blur_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_surface_motion_blur.setter
+    def enable_surface_motion_blur(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_surface_motion_blur
+        else:
+            libfunc = lib.FluidSimulation_disable_surface_motion_blur
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_whitewater_motion_blur(self):
+        libfunc = lib.FluidSimulation_is_whitewater_motion_blur_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_whitewater_motion_blur.setter
+    def enable_whitewater_motion_blur(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_whitewater_motion_blur
+        else:
+            libfunc = lib.FluidSimulation_disable_whitewater_motion_blur
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_remove_surface_near_domain(self):
+        libfunc = lib.FluidSimulation_is_remove_surface_near_domain_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_remove_surface_near_domain.setter
+    def enable_remove_surface_near_domain(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_remove_surface_near_domain
+        else:
+            libfunc = lib.FluidSimulation_disable_remove_surface_near_domain
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def remove_surface_near_domain_distance(self):
+        libfunc = lib.FluidSimulation_get_remove_surface_near_domain_distance
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @remove_surface_near_domain_distance.setter
+    @decorators.check_ge(0)
+    def remove_surface_near_domain_distance(self, n):
+        libfunc = lib.FluidSimulation_set_remove_surface_near_domain_distance
+        pb.init_lib_func(libfunc, [c_void_p, c_int, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), int(n)])
 
     @property
     def enable_fluid_particle_output(self):
@@ -1056,6 +1146,32 @@ class FluidSimulation(object):
         pb.execute_lib_func(libfunc, [self(), c_active])
 
     @property
+    def diffuse_obstacle_influence_base_level(self):
+        libfunc = lib.FluidSimulation_get_diffuse_obstacle_influence_base_level
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @diffuse_obstacle_influence_base_level.setter
+    @decorators.check_ge_zero
+    def diffuse_obstacle_influence_base_level(self, b):
+        libfunc = lib.FluidSimulation_set_diffuse_obstacle_influence_base_level
+        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), b])
+
+    @property
+    def diffuse_obstacle_influence_decay_rate(self):
+        libfunc = lib.FluidSimulation_get_diffuse_obstacle_influence_decay_rate
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @diffuse_obstacle_influence_decay_rate.setter
+    @decorators.check_ge_zero
+    def diffuse_obstacle_influence_decay_rate(self, d):
+        libfunc = lib.FluidSimulation_set_diffuse_obstacle_influence_decay_rate
+        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), d])
+
+    @property
     def enable_opencl_particle_advection(self):
         libfunc = lib.FluidSimulation_is_opencl_particle_advection_enabled
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
@@ -1139,26 +1255,6 @@ class FluidSimulation(object):
         cvect = pb.execute_lib_func(libfunc, [self()])
         return Vector3.from_struct(cvect)
 
-    @decorators.xyz_or_vector
-    def get_variable_body_force(self, px, py, pz):
-        libfunc = lib.FluidSimulation_get_variable_body_force
-        pb.init_lib_func(
-            libfunc, 
-            [c_void_p, c_double, c_double, c_double, c_void_p], Vector3_t
-        )
-        cvect = pb.execute_lib_func(libfunc, [self(), px, py, pz])
-        return Vector3.from_struct(cvect)
-
-    @decorators.xyz_or_vector
-    def get_total_body_force(self, px, py, pz):
-        libfunc = lib.FluidSimulation_get_total_body_force
-        pb.init_lib_func(
-            libfunc, 
-            [c_void_p, c_double, c_double, c_double, c_void_p], Vector3_t
-        )
-        cvect = pb.execute_lib_func(libfunc, [self(), px, py, pz])
-        return Vector3.from_struct(cvect)
-
     def reset_body_force(self):
         libfunc = lib.FluidSimulation_reset_body_force
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
@@ -1176,6 +1272,62 @@ class FluidSimulation(object):
         libfunc = lib.FluidSimulation_set_viscosity
         pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), value])
+
+    @property
+    def surface_tension(self):
+        libfunc = lib.FluidSimulation_get_surface_tension
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @surface_tension.setter
+    @decorators.check_ge_zero
+    def surface_tension(self, value):
+        libfunc = lib.FluidSimulation_set_surface_tension
+        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), value])
+
+    @property
+    def enable_sheet_seeding(self):
+        libfunc = lib.FluidSimulation_is_sheet_seeding_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_sheet_seeding.setter
+    def enable_sheet_seeding(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_sheet_seeding
+        else:
+            libfunc = lib.FluidSimulation_disable_sheet_seeding
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def sheet_fill_threshold(self):
+        libfunc = lib.FluidSimulation_get_sheet_fill_threshold
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @sheet_fill_threshold.setter
+    @decorators.check_ge(-1.0)
+    @decorators.check_le(0.0)
+    def sheet_fill_threshold(self, t):
+        libfunc = lib.FluidSimulation_set_sheet_fill_threshold
+        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), t])
+
+    @property
+    def sheet_fill_rate(self):
+        libfunc = lib.FluidSimulation_get_sheet_fill_rate
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @sheet_fill_rate.setter
+    @decorators.check_ge_zero
+    @decorators.check_le(1.0)
+    def sheet_fill_rate(self, r):
+        libfunc = lib.FluidSimulation_set_sheet_fill_rate
+        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), r])
 
     @property
     def boundary_friction(self):
@@ -1203,6 +1355,19 @@ class FluidSimulation(object):
         libfunc = lib.FluidSimulation_set_CFL_condition_number
         pb.init_lib_func(libfunc, [c_void_p, c_int, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), int(n)])
+
+    @property
+    def surface_tension_condition_number(self):
+        libfunc = lib.FluidSimulation_get_surface_tension_condition_number
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @surface_tension_condition_number.setter
+    @decorators.check_gt(0.0)
+    def surface_tension_condition_number(self, n):
+        libfunc = lib.FluidSimulation_set_surface_tension_condition_number
+        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), n])
 
     @property
     def min_time_steps_per_frame(self):
@@ -1288,21 +1453,6 @@ class FluidSimulation(object):
         libfunc = lib.FluidSimulation_set_preferred_gpu_device
         pb.init_lib_func(libfunc, [c_void_p, c_char_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), c_device_name])
-
-    @property
-    def enable_experimental_optimization_features(self):
-        libfunc = lib.FluidSimulation_is_experimental_optimization_features_enabled
-        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
-        return bool(pb.execute_lib_func(libfunc, [self()]))
-
-    @enable_experimental_optimization_features.setter
-    def enable_experimental_optimization_features(self, boolval):
-        if boolval:
-            libfunc = lib.FluidSimulation_enable_experimental_optimization_features
-        else:
-            libfunc = lib.FluidSimulation_disable_experimental_optimization_features
-        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
-        pb.execute_lib_func(libfunc, [self()])
 
     @property
     def enable_static_solid_levelset_precomputation(self):
@@ -1500,6 +1650,10 @@ class FluidSimulation(object):
         return self._get_output_data(lib.FluidSimulation_get_surface_preview_data_size,
                                      lib.FluidSimulation_get_surface_preview_data)
 
+    def get_surface_blur_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_surface_blur_data_size,
+                                     lib.FluidSimulation_get_surface_blur_data)
+
     def get_diffuse_data(self):
         return self._get_output_data(lib.FluidSimulation_get_diffuse_data_size,
                                      lib.FluidSimulation_get_diffuse_data)
@@ -1515,6 +1669,18 @@ class FluidSimulation(object):
     def get_diffuse_spray_data(self):
         return self._get_output_data(lib.FluidSimulation_get_diffuse_spray_data_size,
                                      lib.FluidSimulation_get_diffuse_spray_data)
+
+    def get_diffuse_foam_blur_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_diffuse_foam_blur_data_size,
+                                     lib.FluidSimulation_get_diffuse_foam_blur_data)
+
+    def get_diffuse_bubble_blur_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_diffuse_bubble_blur_data_size,
+                                     lib.FluidSimulation_get_diffuse_bubble_blur_data)
+
+    def get_diffuse_spray_blur_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_diffuse_spray_blur_data_size,
+                                     lib.FluidSimulation_get_diffuse_spray_blur_data)
 
     def get_fluid_particle_data(self):
         return self._get_output_data(lib.FluidSimulation_get_fluid_particle_data_size,
@@ -1662,9 +1828,13 @@ class FluidSimulationFrameStats_t(ctypes.Structure):
                 ("diffuse_particles", c_int),
                 ("surface", FluidSimulationMeshStats_t),
                 ("preview", FluidSimulationMeshStats_t),
+                ("surfaceblur", FluidSimulationMeshStats_t),
                 ("foam", FluidSimulationMeshStats_t),
                 ("bubble", FluidSimulationMeshStats_t),
                 ("spray", FluidSimulationMeshStats_t),
+                ("foamblur", FluidSimulationMeshStats_t),
+                ("bubbleblur", FluidSimulationMeshStats_t),
+                ("sprayblur", FluidSimulationMeshStats_t),
                 ("particles", FluidSimulationMeshStats_t),
                 ("obstacle", FluidSimulationMeshStats_t),
                 ("timing", FluidSimulationTimingStats_t)]

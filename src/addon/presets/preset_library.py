@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@ import bpy, os, shutil, zipfile, json, re, binascii, random, posixpath
 from bpy.props import CollectionProperty
 from mathutils import Vector
 
-from ..properties import preset_properties
 from ..materials import material_library
+from ..utils import version_compatibility_utils as vcu
 
 PACKAGE_INFO_LIST = None
 PRESET_INFO_LIST = None
@@ -106,6 +106,9 @@ def get_current_package_preset_enums(self, context):
 
 
 def get_package_preset_enums(self, context, package_id):
+    if package_id == "":
+        package_id = get_all_package_enums(self, context)[0][0]
+
     dprops = context.scene.flip_fluid.get_domain_properties()
     if dprops is None:
         return []
@@ -248,20 +251,20 @@ def generate_dummy_domain_object():
     mesh_data = bpy.data.meshes.new("temp_domain_mesh")
     mesh_data.from_pydata([], [], [])
     dummy_object = bpy.data.objects.new("temp_domain_object", mesh_data)
-    bpy.context.scene.objects.link(dummy_object)
+    vcu.link_object(dummy_object, bpy.context)
     dummy_object.flip_fluid.domain.dummy_initialize()
     if dobj is not None:
         dummy_object.parent = dobj
-    bpy.context.scene.update()
+    vcu.depsgraph_update()
     return dummy_object
 
 
 def destroy_dummy_domain_object(domain_object):
     mesh_data = domain_object.data
-    bpy.data.objects.remove(domain_object, True)
+    bpy.data.objects.remove(domain_object, do_unlink=True)
     mesh_data.user_clear()
     bpy.data.meshes.remove(mesh_data)
-    bpy.context.scene.update()
+    vcu.depsgraph_update()
 
 
 def get_system_default_preset_dict():
@@ -426,6 +429,11 @@ def create_new_user_preset(preset_info_dict):
 
     del preset_info_dict["package"]
     del preset_info_dict["icon"]
+    if 'edit_package' in preset_info_dict:
+        del preset_info_dict['edit_package']
+    if 'edit_preset' in preset_info_dict:
+        del preset_info_dict['edit_preset']
+
     __write_dict_to_json(preset_info_dict, preset_path)
     __initialize_preset_info_list()
 
@@ -459,7 +467,12 @@ def delete_preset(identifier):
 def export_package(identifier, filepath, create_directory=True):
     directory = os.path.dirname(filepath)
     if create_directory and not os.path.isdir(directory):
-        os.makedirs(directory)
+        try:
+            os.makedirs(directory)
+        except:
+            return ("Unable to create file: <" + filepath + ">. Please choose" + 
+                    " another filepath. This directory may be invalid or you may not" + 
+                    " have permission to write in this directory.")
     if not os.path.isdir(directory):
         return "Directory does not exist <" + filepath + ">"
 
@@ -643,27 +656,25 @@ def __write_preset_icon(icon_imgdata, icon_path):
 
 def __write_preset_materials(preset_directory, preset_info):
     material_paths = get_preset_material_paths()
-    material_structs = set()
+    non_library_material_names = []
     for p in preset_info['properties']:
-        if p['path'] in material_paths and p['value'] != 'MATERIAL_NONE':
-            material_struct = bpy.data.materials.get(p['value'])
-            if material_struct is None:
-                mname = material_library.material_identifier_to_name(p['value'])
-                if mname is None:
-                    continue
-                material_struct = bpy.data.materials.get(mname)
-            if material_struct is None:
-                material_struct = material_library.import_material(p['value'])
-            material_struct.flip_fluid.is_library_material = False
-            material_structs.add(material_struct)
-            p['value'] = material_struct.name
+        if not (p['path'] in material_paths) or p['value'] == 'MATERIAL_NONE':
+            continue
+        material_name = material_library.import_material(p['value'])
+        material_object = bpy.data.materials.get(material_name)
+        if material_object is None:
+            continue
+        if material_object.flip_fluid_material_library.is_library_material:
+            continue
+        if material_name in non_library_material_names:
+            continue
+        non_library_material_names.append(material_name)
 
-    if not material_structs:
-        return
-
-    material_blend_path = os.path.join(preset_directory, "materials.blend")
-    __create_empty_blend_file(material_blend_path)
-    bpy.data.libraries.write(material_blend_path, material_structs, fake_user=True)
+        material_structs = set()
+        material_structs.add(material_object)
+        material_blend_path = os.path.join(preset_directory, material_name + ".blend")
+        __create_empty_blend_file(material_blend_path)
+        bpy.data.libraries.write(material_blend_path, material_structs, fake_user=True)
 
 
 def __get_default_preset_dict(domain_object):

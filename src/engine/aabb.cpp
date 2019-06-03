@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -187,6 +187,11 @@ AABB AABB::getIntersection(AABB bbox) {
 
     return AABB(vmath::vec3(interminx, interminy, interminz), 
                 vmath::vec3(intermaxx, intermaxy, intermaxz));
+}
+
+bool AABB::isIntersecting(AABB bbox, double eps) {
+    AABB ibox = getIntersection(bbox);
+    return ibox.width * ibox.height * ibox.depth > eps;
 }
 
 AABB AABB::getUnion(AABB bbox) {

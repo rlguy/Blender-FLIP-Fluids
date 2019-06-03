@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -35,65 +35,12 @@ SOFTWARE.
 
 extern "C" {
 
-    EXPORTDLL MeshObject* MeshObject_new_from_mesh(
-            int i, int j, int k, double dx, 
-            MeshUtils::TriangleMesh_t *mesh_data, int *err) {
+    EXPORTDLL MeshObject* MeshObject_new(int i, int j, int k, double dx, int *err) {
 
         *err = CBindings::SUCCESS;
         MeshObject *obstacle = nullptr;
         try {
-            TriangleMesh mesh;
-            MeshUtils::structToTriangleMesh(*mesh_data, mesh);
-            obstacle = new MeshObject(i, j, k, dx, mesh);
-        } catch (std::exception &ex) {
-            CBindings::set_error_message(ex);
-            *err = CBindings::FAIL;
-        }
-
-        return obstacle;
-    }
-
-    EXPORTDLL MeshObject* MeshObject_new_from_meshes(
-            int i, int j, int k, double dx, 
-            MeshUtils::TriangleMesh_t *mesh_data, int num_meshes, int *err) {
-
-        *err = CBindings::SUCCESS;
-        MeshObject *obstacle = nullptr;
-        try {
-            std::vector<TriangleMesh> meshes;
-            for (int idx = 0; idx < num_meshes; idx++) {
-                TriangleMesh mesh;
-                MeshUtils::structToTriangleMesh(mesh_data[idx], mesh);
-                meshes.push_back(mesh);
-            }
-            obstacle = new MeshObject(i, j, k, dx, meshes);
-        } catch (std::exception &ex) {
-            CBindings::set_error_message(ex);
-            *err = CBindings::FAIL;
-        }
-
-        return obstacle;
-    }
-
-    EXPORTDLL MeshObject* MeshObject_new_from_meshes_translations(
-            int i, int j, int k, double dx, 
-            MeshUtils::TriangleMesh_t *mesh_data, 
-            MeshUtils::TriangleMesh_t *translation_data, int num_meshes, int *err) {
-
-        *err = CBindings::SUCCESS;
-        MeshObject *obstacle = nullptr;
-        try {
-            std::vector<TriangleMesh> meshes;
-            std::vector<TriangleMesh> translations;
-            for (int idx = 0; idx < num_meshes; idx++) {
-                TriangleMesh mesh;
-                TriangleMesh translation;
-                MeshUtils::structToTriangleMesh(mesh_data[idx], mesh);
-                MeshUtils::structToTriangleMesh(translation_data[idx], translation);
-                meshes.push_back(mesh);
-                translations.push_back(translation);
-            }
-            obstacle = new MeshObject(i, j, k, dx, meshes, translations);
+            obstacle = new MeshObject(i, j, k, dx);
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -104,6 +51,38 @@ extern "C" {
 
     EXPORTDLL void MeshObject_destroy(MeshObject *obj) {
         delete obj;
+    }
+
+    EXPORTDLL void MeshObject_update_mesh_static(
+            MeshObject* obj, 
+            MeshUtils::TriangleMesh_t mesh_data, int *err) {
+
+        try {
+            TriangleMesh mesh;
+            MeshUtils::structToTriangleMesh(mesh_data, mesh);
+            obj->updateMeshStatic(mesh);
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void MeshObject_update_mesh_animated(
+            MeshObject* obj, 
+            MeshUtils::TriangleMesh_t mesh_data_previous,
+            MeshUtils::TriangleMesh_t mesh_data_current,
+            MeshUtils::TriangleMesh_t mesh_data_next, int *err) {
+
+        try {
+            TriangleMesh meshPrevious, meshCurrent, meshNext;
+            MeshUtils::structToTriangleMesh(mesh_data_previous, meshPrevious);
+            MeshUtils::structToTriangleMesh(mesh_data_current, meshCurrent);
+            MeshUtils::structToTriangleMesh(mesh_data_next, meshNext);
+            obj->updateMeshAnimated(meshPrevious, meshCurrent, meshNext);
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
     }
 
     EXPORTDLL void MeshObject_enable(MeshObject* obj, int *err) {
@@ -136,6 +115,42 @@ extern "C" {
         );
     }
 
+    EXPORTDLL float MeshObject_get_friction(MeshObject* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &MeshObject::getFriction, err
+        );
+    }
+
+    EXPORTDLL void MeshObject_set_friction(MeshObject* obj, float f, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &MeshObject::setFriction, f, err
+        );
+    }
+
+    EXPORTDLL float MeshObject_get_whitewater_influence(MeshObject* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &MeshObject::getWhitewaterInfluence, err
+        );
+    }
+
+    EXPORTDLL void MeshObject_set_whitewater_influence(MeshObject* obj, float value, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &MeshObject::setWhitewaterInfluence, value, err
+        );
+    }
+
+    EXPORTDLL float MeshObject_get_sheeting_strength(MeshObject* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &MeshObject::getSheetingStrength, err
+        );
+    }
+
+    EXPORTDLL void MeshObject_set_sheeting_strength(MeshObject* obj, float value, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &MeshObject::setSheetingStrength, value, err
+        );
+    }
+
     EXPORTDLL float MeshObject_get_mesh_expansion(MeshObject* obj, int *err) {
         return CBindings::safe_execute_method_ret_0param(
             obj, &MeshObject::getMeshExpansion, err
@@ -147,18 +162,6 @@ extern "C" {
                                                  int *err) {
         CBindings::safe_execute_method_void_1param(
             obj, &MeshObject::setMeshExpansion, ex, err
-        );
-    }
-
-    EXPORTDLL float MeshObject_get_friction(MeshObject* obj, int *err) {
-        return CBindings::safe_execute_method_ret_0param(
-            obj, &MeshObject::getFriction, err
-        );
-    }
-
-    EXPORTDLL void MeshObject_set_friction(MeshObject* obj, float ex, int *err) {
-        CBindings::safe_execute_method_void_1param(
-            obj, &MeshObject::setFriction, ex, err
         );
     }
 

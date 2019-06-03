@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,13 +16,17 @@
 
 import bpy
 
+from ..utils import version_compatibility_utils as vcu
 
-class FLIPFluidHelperPanelMain(bpy.types.Panel):
+
+class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
     bl_label = "Main Operations"
-    bl_idname = "flip_fluid_helper_main"
-    bl_category = "FLIP Fluid"
+    bl_category = "FLIP Fluids"
     bl_space_type = 'VIEW_3D'
-    bl_region_type = 'TOOLS'
+    if vcu.is_blender_28():
+        bl_region_type = 'UI'
+    else:
+        bl_region_type = 'TOOLS'
 
 
     @classmethod
@@ -32,10 +36,11 @@ class FLIPFluidHelperPanelMain(bpy.types.Panel):
 
     def draw(self, context):
         hprops = context.scene.flip_fluid_helper
+        preferences = vcu.get_addon_preferences(context)
 
         box = self.layout.box()
         column = box.column(align=True)
-        column.label("Add/Remove Objects:")
+        column.label(text="Add/Remove Objects:")
         column.operator(
                 "flip_fluid_operators.helper_add_objects", 
                 text="Obstacle"
@@ -58,7 +63,7 @@ class FLIPFluidHelperPanelMain(bpy.types.Panel):
 
         box = self.layout.box()
         column = box.column(align=True)
-        column.label("Quick Select:")
+        column.label(text="Quick Select:")
         column.operator("flip_fluid_operators.helper_select_domain", text="Domain")
         column = box.column(align=True)
         column.operator("flip_fluid_operators.helper_select_surface", text="Surface")
@@ -67,14 +72,27 @@ class FLIPFluidHelperPanelMain(bpy.types.Panel):
         row.operator("flip_fluid_operators.helper_select_bubble", text="Bubble")
         row.operator("flip_fluid_operators.helper_select_spray", text="Spray")
 
+        column = self.layout.column()
+        column.separator()
+        column.operator(
+                "flip_fluid_operators.check_for_updates", 
+                text="Check for Updates", 
+                icon="WORLD"
+            )
+
+        column.separator()
+        column.prop(preferences, "beginner_friendly_mode")
 
 
-class FLIPFluidHelperPanelDisplay(bpy.types.Panel):
-    bl_label = "Display Settings"
-    bl_idname = "flip_fluid_helper_display"
-    bl_category = "FLIP Fluid"
+
+class FLIPFLUID_PT_HelperPanelDisplay(bpy.types.Panel):
+    bl_label = "Display Operators"
+    bl_category = "FLIP Fluids"
     bl_space_type = 'VIEW_3D'
-    bl_region_type = 'TOOLS'
+    if vcu.is_blender_28():
+        bl_region_type = 'UI'
+    else:
+        bl_region_type = 'TOOLS'
 
 
     @classmethod
@@ -85,14 +103,14 @@ class FLIPFluidHelperPanelDisplay(bpy.types.Panel):
     def draw(self, context):
         dprops = bpy.context.scene.flip_fluid.get_domain_properties()
         if dprops is None:
-            self.layout.label("Please create a domain object")
+            self.layout.label(text="Please create a domain object")
             return
         rprops = dprops.render
         hprops = context.scene.flip_fluid_helper
 
         box = self.layout.box()
         column = box.column(align=True)
-        column.label("Quick Viewport Display:")
+        column.label(text="Quick Viewport Display:")
 
         row = column.row(align=True)
         row.operator("flip_fluid_operators.quick_viewport_display_final", text="Final")
@@ -112,7 +130,7 @@ class FLIPFluidHelperPanelDisplay(bpy.types.Panel):
         self.layout.separator()
         box = self.layout.box()
         column = box.column()
-        split = column.split(percentage=0.4, align=True)
+        split = vcu.ui_split(column, factor=0.4, align=True)
         left_column = split.column(align=True)
         left_column.separator()
         left_column.separator()
@@ -127,13 +145,13 @@ class FLIPFluidHelperPanelDisplay(bpy.types.Panel):
     
 
 def register():
-    bpy.utils.register_class(FLIPFluidHelperPanelMain)
-    bpy.utils.register_class(FLIPFluidHelperPanelDisplay)
+    bpy.utils.register_class(FLIPFLUID_PT_HelperPanelMain)
+    bpy.utils.register_class(FLIPFLUID_PT_HelperPanelDisplay)
 
 
 def unregister():
     try:
-        bpy.utils.unregister_class(FLIPFluidHelperPanelMain)
-        bpy.utils.unregister_class(FLIPFluidHelperPanelDisplay)
+        bpy.utils.unregister_class(FLIPFLUID_PT_HelperPanelMain)
+        bpy.utils.unregister_class(FLIPFLUID_PT_HelperPanelDisplay)
     except:
         pass

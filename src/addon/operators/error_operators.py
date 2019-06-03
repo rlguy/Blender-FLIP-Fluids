@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,20 +20,28 @@ from bpy.props import (
         IntProperty
         )
 
+from ..utils import version_compatibility_utils as vcu
+
+
 class FlipFluidDisplayError(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.display_error"
     bl_label = ""
     bl_description = ""
 
     error_message = StringProperty()
+    exec(vcu.convert_attribute_to_28("error_message"))
+
     error_description = StringProperty()
+    exec(vcu.convert_attribute_to_28("error_description"))
+
     popup_width = IntProperty(default=400)
+    exec(vcu.convert_attribute_to_28("popup_width"))
 
 
     def draw(self, context):
         row = self.layout.row()
         row.alignment = 'CENTER'
-        row.label(self.error_message, icon='ERROR')
+        row.label(text=self.error_message, icon='ERROR')
 
         if self.error_description:
             text_list = textwrap.wrap(self.error_description, width=self.popup_width//6)
@@ -41,7 +49,7 @@ class FlipFluidDisplayError(bpy.types.Operator):
             column.separator()
             column.separator()
             for idx,line in enumerate(text_list):
-                column.label(line)
+                column.label(text=line)
 
         self.layout.separator()
         self.layout.separator()
@@ -58,7 +66,7 @@ class FlipFluidDisplayError(bpy.types.Operator):
 
 
     def invoke(self, context, event):
-        return context.window_manager.invoke_props_dialog(self, self.popup_width)
+        return context.window_manager.invoke_props_dialog(self, width=self.popup_width)
 
 
 def register():

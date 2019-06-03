@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,8 +21,27 @@ from bpy.props import (
         PointerProperty
         )
 
+from ..utils import version_compatibility_utils as vcu
+
 
 class FlipFluidProperties(bpy.types.PropertyGroup):
+    conv = vcu.convert_attribute_to_28
+    
+    show_render = BoolProperty(
+            name="Show Render",
+            description="Show fluid in render",
+            default=True,
+            ); exec(conv("show_render"))
+    show_viewport = BoolProperty(
+            name="Show Viewport",
+            description="Display fluid in viewport",
+            default=True,
+            ); exec(conv("show_viewport"))
+
+    logo_name = StringProperty("flip_fluids_logo"); exec(conv("logo_name"))
+    domain_object_name = StringProperty(default=""); exec(conv("domain_object_name"))
+
+
     @classmethod
     def register(cls):
         bpy.types.Scene.flip_fluid = PointerProperty(
@@ -30,32 +49,28 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
                 description="",
                 type=cls,
                 )
-
         cls.custom_icons = bpy.utils.previews.new()
-        cls.is_custom_icons_loaded = BoolProperty(False)
-        cls.logo_name = StringProperty("flip_fluids_logo")
-        cls.domain_object_name = StringProperty(default="")
 
 
     @classmethod
     def unregister(cls):
+        bpy.utils.previews.remove(cls.custom_icons)
         del bpy.types.Scene.flip_fluid
 
 
-    def scene_update_post(self, scene):
-        if not self.is_custom_icons_loaded:
-            self._initialize_custom_icons()
+    def load_post(self):
+        self._initialize_custom_icons()
 
 
     def is_domain_object_set(self):
-        for obj in bpy.data.objects:
+        for obj in vcu.get_all_scene_objects():
             if obj.flip_fluid.is_domain():
                 return True
 
 
     def get_num_domain_objects(self):
         n = 0
-        for obj in bpy.data.objects:
+        for obj in vcu.get_all_scene_objects():
             if obj.flip_fluid.is_domain():
                 n += 1
         return n
@@ -83,7 +98,7 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
 
     def get_num_fluid_objects(self):
         n = 0
-        for obj in bpy.data.objects:
+        for obj in vcu.get_all_scene_objects():
             if obj.flip_fluid.is_fluid():
                 n += 1
         return n
@@ -91,7 +106,7 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
 
     def get_fluid_objects(self):
         objects = []
-        for obj in bpy.data.objects:
+        for obj in vcu.get_all_scene_objects():
             if obj.flip_fluid.is_fluid():
                 objects.append(obj)
         return objects
@@ -99,7 +114,7 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
 
     def get_num_obstacle_objects(self):
         n = 0
-        for obj in bpy.data.objects:
+        for obj in vcu.get_all_scene_objects():
             if obj.flip_fluid.is_obstacle():
                 n += 1
         return n
@@ -107,7 +122,7 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
 
     def get_obstacle_objects(self):
         objects = []
-        for obj in bpy.data.objects:
+        for obj in vcu.get_all_scene_objects():
             if obj.flip_fluid.is_obstacle():
                 objects.append(obj)
         return objects
@@ -115,7 +130,7 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
 
     def get_num_inflow_objects(self):
         n = 0
-        for obj in bpy.data.objects:
+        for obj in vcu.get_all_scene_objects():
             if obj.flip_fluid.is_inflow():
                 n += 1
         return n
@@ -123,7 +138,7 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
 
     def get_inflow_objects(self):
         objects = []
-        for obj in bpy.data.objects:
+        for obj in vcu.get_all_scene_objects():
             if obj.flip_fluid.is_inflow():
                 objects.append(obj)
         return objects
@@ -131,7 +146,7 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
 
     def get_num_outflow_objects(self):
         n = 0
-        for obj in bpy.data.objects:
+        for obj in vcu.get_all_scene_objects():
             if obj.flip_fluid.is_outflow():
                 n += 1
         return n
@@ -139,7 +154,7 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
 
     def get_outflow_objects(self):
         objects = []
-        for obj in bpy.data.objects:
+        for obj in vcu.get_all_scene_objects():
             if obj.flip_fluid.is_outflow():
                 objects.append(obj)
         return objects
@@ -153,12 +168,12 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
         addon_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         logo_path = os.path.join(addon_dir, "icons", "flip_fluids_logo.png")
         self.custom_icons.clear()
-        self.custom_icons.load(self.logo_name, logo_path, 'IMAGE')
-        self.is_custom_icons_loaded = True
+        if os.path.isfile(logo_path):
+            self.custom_icons.load(self.logo_name, logo_path, 'IMAGE')
 
 
-def scene_update_post(scene):
-    scene.flip_fluid.scene_update_post(scene)
+def load_post():
+    bpy.context.scene.flip_fluid.load_post()
 
 
 def register():

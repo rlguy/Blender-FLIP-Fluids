@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,92 +25,156 @@ SOFTWARE.
 #ifndef FLUIDENGINE_PARTICLEMESHER_H
 #define FLUIDENGINE_PARTICLEMESHER_H
 
-#include "fragmentedvector.h"
+#include <vector>
+
+#include "vmath.h"
+#include "array3d.h"
+#include "blockarray3d.h"
 #include "scalarfield.h"
+#include "boundedbuffer.h"
 
 class TriangleMesh;
-class CLScalarField;
-class FluidMaterialGrid;
-class AABB;
 class MeshLevelSet;
+
+struct ParticleMesherParameters {
+    int isize = 0;
+    int jsize = 0;
+    int ksize = 0;
+    double dx = 0.0;
+
+    int subdivisions = 1;
+    int computechunks = 1;
+    double radius = 0.0;
+
+    bool isPreviewMesherEnabled = false;
+    double previewdx = 0.0;
+    
+    std::vector<vmath::vec3> *particles;
+    MeshLevelSet *solidSDF;
+};
 
 class ParticleMesher {
 
 public:
     ParticleMesher();
-    ParticleMesher(int isize, int jsize, int ksize, double dx);
-    ~ParticleMesher();
-
-    void setSubdivisionLevel(int n);
-    void setNumPolygonizationSlices(int n);
-
-    TriangleMesh meshParticles(FragmentedVector<vmath::vec3> &particles,
-                               double particleRadius,
-                               MeshLevelSet &solidSDF);
-
-    void setScalarFieldAccelerator(CLScalarField *accelerator);
-    void setScalarFieldAccelerator();
-    void enablePreviewMesher(double dx);
-    void disablePreviewMesher();
-    TriangleMesh getPreviewMesh(FluidMaterialGrid &materialGrid);
+    TriangleMesh meshParticles(ParticleMesherParameters params);
     TriangleMesh getPreviewMesh();
 
 private:
+    enum class Direction { U, V, W };
 
-    TriangleMesh _polygonizeAll(FragmentedVector<vmath::vec3> &particles,
-                                MeshLevelSet &solidSDF);
+    struct MesherComputeChunk {
+        int id = 0;
+        GridIndex minBlockIndex;
+        GridIndex maxBlockIndex;
+        GridIndex minGridIndex;
+        GridIndex maxGridIndex;
+        vmath::vec3 positionOffset;
+        Direction splitDirection;
+        int isize = 0;
+        int jsize = 0;
+        int ksize = 0;
+    };
 
-    TriangleMesh _polygonizeSlices(FragmentedVector<vmath::vec3> &particles,
-                                   MeshLevelSet &solidSDF);
-    TriangleMesh _polygonizeSlice(int startidx, int endidx, 
-                                  FragmentedVector<vmath::vec3> &particles,
-                                  MeshLevelSet &solidSDF);
-    void _getSubdividedGridDimensions(int *i, int *j, int *k, double *dx);
-    void _computeSliceScalarField(int startidx, int endidx, 
-                                  FragmentedVector<vmath::vec3> &particles,
-                                  MeshLevelSet &solidSDF,
-                                  ScalarField &field);
-    vmath::vec3 _getSliceGridPositionOffset(int startidx, int endidx);
-    void _getSliceParticles(int startidx, int endidx, 
-                            FragmentedVector<vmath::vec3> &particles,
-                            FragmentedVector<vmath::vec3> &sliceParticles);
-    void _getMaterialGrid(FluidMaterialGrid &materialGrid);
-    void _getSliceMaterialGrid(int startidx, int endidx,
-                               FluidMaterialGrid &sliceMaterialGrid);
-    AABB _getSliceAABB(int startidx, int endidx);
-    void _addPointsToScalarField(FragmentedVector<vmath::vec3> &points,
-                                 ScalarField &field);
-    void _addPointsToScalarFieldAccelerator(FragmentedVector<vmath::vec3> &points,
-                                            ScalarField &field);
-    void _updateScalarFieldSeam(int startidx, int endidx, ScalarField &field);
-    void _applyScalarFieldSliceSeamData(ScalarField &field);
-    void _saveScalarFieldSliceSeamData(ScalarField &field);
-    void _getSliceMask(int startidx, int endidx, Array3d<bool> &mask);
+    struct MesherComputeChunkData {
+        Array3d<bool> activeBlocks;
+        std::vector<MesherComputeChunk> computeChunks;
+    };
 
+    struct GridCountData {
+        std::vector<int> gridCount;
+        std::vector<int> simpleGridIndices;
+        std::vector<int> overlappingGridIndices;
+        std::vector<bool> invalidPoints;
+        int startidx = 0;
+        int endidx = 0;
+    };
+
+    struct ParticleGridCountData {
+        int numthreads = 1;
+        int gridsize = 1;
+        std::vector<int> totalGridCount;
+        std::vector<GridCountData> threadGridCountData;
+    };
+
+    struct ScalarFieldData {
+        MesherComputeChunk computeChunk;
+        BlockArray3d<float> scalarField;
+        ScalarField fieldValues;
+        std::vector<vmath::vec3> particles;
+    };
+
+    struct ComputeBlock {
+        GridBlock<float> gridBlock;
+        vmath::vec3 *particleData;
+        int numParticles = 0;
+    };
+
+    struct ScalarFieldSeam {
+        Direction direction;
+        GridIndex minGridIndex;
+        GridIndex maxGridIndex;
+        Array3d<float> data;
+        bool isInitialized = false;
+
+        void reset() {
+            direction = Direction::U;
+            minGridIndex = GridIndex(-1, -1, -1);
+            maxGridIndex = GridIndex(-1, -1, -1);
+            data = Array3d<float>();
+            isInitialized = false;
+        }
+    };
+
+    void _initialize(ParticleMesherParameters params);
     void _initializePreviewMesher(double dx);
-    void _addScalarFieldToPreviewField(ScalarField &field);
-    void _addScalarFieldSliceToPreviewField(int startidx, int endidx, 
-                                            ScalarField &field);
-    void _getPreviewMaterialGrid(FluidMaterialGrid &materialGrid,
-                                 FluidMaterialGrid &previewGrid);
-    void _setScalarFieldSolidBorders(ScalarField &field);
+    void _initializeSeamData();
+
+    void _generateComputeChunkData(MesherComputeChunkData &data);
+    void _initializeComputeChunkDataActiveBlocks(MesherComputeChunkData &data);
+    void _initializeComputeChunkDataComputeChunks(MesherComputeChunkData &data);
+
+    TriangleMesh _polygonizeComputeChunk(MesherComputeChunk chunk, MesherComputeChunkData &data);
+    void _initializeScalarFieldData(MesherComputeChunk chunk, MesherComputeChunkData &data,
+                                    ScalarFieldData &fieldData);
     float _getMaxDistanceValue();
+    void _computeScalarField(ScalarFieldData &fieldData);
+    void _computeGridCountData(ScalarFieldData &fieldData, 
+                               ParticleGridCountData &gridCountData);
+    void _initializeGridCountData(ScalarFieldData &fieldData, 
+                                  ParticleGridCountData &gridCountData);
+    void _computeGridCountDataThread(int startidx, int endidx, 
+                                     ScalarFieldData *fieldData, 
+                                     GridCountData *countData);
+    void _sortParticlesIntoBlocks(ScalarFieldData &fieldData, 
+                                  ParticleGridCountData &gridCountData,
+                                  std::vector<vmath::vec3> &sortedParticles,
+                                  std::vector<int> &blockToParticleIndex);
+    void _scalarFieldProducerThread(BoundedBuffer<ComputeBlock> *computeBlockQueue,
+                                    BoundedBuffer<ComputeBlock> *finishedComputeBlockQueue);
+
+    void _setScalarFieldSolidBorders(ScalarField &field);
+    void _addComputeChunkScalarFieldToPreviewField(ScalarFieldData &fieldData);
+    void _updateSeamData(ScalarFieldData &fieldData);
+    void _applySeamData(ScalarFieldData &fieldData);
+    void _commitSeamData(ScalarFieldData &fieldData);
+
+
+    // Meshing Parameters
 
     int _isize = 0;
     int _jsize = 0;
     int _ksize = 0;
     double _dx = 0.0;
 
-    int _subdivisionLevel = 1;
-    int _numPolygonizationSlices = 1;
+    int _subisize = 0;
+    int _subjsize = 0;
+    int _subksize = 0;
+    double _subdx = 0.0;
 
-    double _particleRadius = 0.0;
-
-    Array3d<float> _scalarFieldSeamData;
-
-    int _maxParticlesPerScalarFieldAddition = 1e7;
-    bool _isScalarFieldAcceleratorSet = false;
-    CLScalarField *_scalarFieldAccelerator;
+    int _subdivisions = 1;
+    int _computechunks = 1;
+    double _radius = 0.0;
 
     bool _isPreviewMesherEnabled = false;
     int _pisize = 0;
@@ -119,6 +183,15 @@ private:
     double _pdx = 0.0;
     ScalarField _pfield;
 
+    std::vector<vmath::vec3> *_particles;
+    MeshLevelSet *_solidSDF;
+
+    // Internal Parameters
+    int _blockwidth = 10;
+    int _numComputeBlocksPerJob = 10;
+    double _localdx = 0.1;
+    float _searchRadiusFactor = 1.5f;
+    ScalarFieldSeam _seamData;
 
 };
 

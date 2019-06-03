@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,14 +16,14 @@
 
 bl_info = {
     "name" : "FLIP Fluids",
-    "description": "A FLIP Fluid Simulation Tool for Blender",
+    "description": "A FLIP Fluid Simulation Tool for Blender (v@FLUIDENGINE_VERSION_LABEL@)",
     "author" : "Ryan Guy <ryan.l.guy[at]gmail.com>, Dennis Fassbaender <info[at]df-videos.de>",
     "version" : (@FLUIDENGINE_VERSION_MAJOR@, @FLUIDENGINE_VERSION_MINOR@, @FLUIDENGINE_VERSION_REVISION@),
-    "blender" : (2, 7, 8),
+    "blender" : (2, 80, 0),
     "location" : "Properties > Physics > FLIP Fluid",
     "warning" : "",
-    "wiki_url" : "https://github.com/rlguy/Blender-FLIP-Fluids-Beta/wiki",
-    "tracker_url" : "https://github.com/rlguy/Blender-FLIP-Fluids-Beta/issues",
+    "wiki_url" : "https://github.com/rlguy/Blender-FLIP-Fluids/wiki",
+    "tracker_url" : "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Guidelines-for-Reporting-Bugs-and-Issues",
     "category" : "Animation"
 }
 
@@ -40,7 +40,7 @@ if "bpy" in locals():
         'export',
         'bake',
         'render',
-        'global_vars'
+        'exit_handler'
     ]
     for module_name in reloadable_modules:
         if module_name in locals():
@@ -63,14 +63,17 @@ from . import (
         export,
         bake,
         render,
-        global_vars
+        exit_handler
         )
+
+from .utils import version_compatibility_utils as vcu
 
 
 @bpy.app.handlers.persistent
 def scene_update_post(scene):
     properties.scene_update_post(scene)
     render.scene_update_post(scene)
+    materials.scene_update_post(scene)
 
 
 @bpy.app.handlers.persistent
@@ -106,9 +109,10 @@ def load_pre(nonedata):
 
 @bpy.app.handlers.persistent
 def load_post(nonedata):
-    properties.load_post()
     materials.load_post()
+    properties.load_post()
     presets.load_post()
+    exit_handler.load_post()
     
 
 @bpy.app.handlers.persistent
@@ -119,15 +123,11 @@ def save_pre(nonedata):
 @bpy.app.handlers.persistent
 def save_post(nonedata):
     properties.save_post()
+    exit_handler.save_post()
 
 
 def on_exit():
-    base = os.path.basename(bpy.data.filepath)
-    save_file = os.path.splitext(base)[0]
-    is_unsaved = not base or not save_file
-    if is_unsaved:
-        if os.path.exists(global_vars.CACHE_DIRECTORY):
-            shutil.rmtree(global_vars.CACHE_DIRECTORY)
+    exit_handler.on_exit()
 
 
 def register():
@@ -138,7 +138,11 @@ def register():
     ui.register()
     presets.register()
 
-    bpy.app.handlers.scene_update_post.append(scene_update_post)
+    if vcu.is_blender_28():
+        bpy.app.handlers.depsgraph_update_post.append(scene_update_post)
+    else:
+        bpy.app.handlers.scene_update_post.append(scene_update_post)
+
     bpy.app.handlers.frame_change_pre.append(frame_change_pre)
     bpy.app.handlers.render_pre.append(render_pre)
     bpy.app.handlers.render_post.append(render_post)
@@ -159,7 +163,11 @@ def unregister():
     ui.unregister()
     presets.unregister()
 
-    bpy.app.handlers.scene_update_post.remove(scene_update_post)
+    if vcu.is_blender_28():
+        bpy.app.handlers.depsgraph_update_post.remove(scene_update_post)
+    else:
+        bpy.app.handlers.scene_update_post.remove(scene_update_post)
+
     bpy.app.handlers.frame_change_pre.remove(frame_change_pre)
     bpy.app.handlers.render_pre.remove(render_pre)
     bpy.app.handlers.render_post.remove(render_post)

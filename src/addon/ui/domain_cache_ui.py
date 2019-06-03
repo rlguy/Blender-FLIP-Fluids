@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,8 +16,10 @@
 
 import bpy, math
 
+from ..utils import version_compatibility_utils as vcu
 
-class FlipFluidDomainTypeCachePanel(bpy.types.Panel):
+
+class FLIPFLUID_PT_DomainTypeCachePanel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "physics"
@@ -28,7 +30,7 @@ class FlipFluidDomainTypeCachePanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        obj_props = context.scene.objects.active.flip_fluid
+        obj_props = vcu.get_active_object(context).flip_fluid
         return obj_props.is_active and obj_props.object_type == "TYPE_DOMAIN"
 
 
@@ -50,12 +52,13 @@ class FlipFluidDomainTypeCachePanel(bpy.types.Panel):
 
 
     def draw(self, context):
-        domain_object = context.scene.objects.active
+        domain_object = vcu.get_active_object(context)
         dprops = domain_object.flip_fluid.domain
         cprops = dprops.cache
+        show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
 
         column = self.layout.column(align=True)
-        column.label("Current Cache Directory:")
+        column.label(text="Current Cache Directory:")
         subcolumn = column.column(align=True)
         subcolumn.enabled = not dprops.bake.is_simulation_running
         subcolumn.prop(cprops, "cache_directory")
@@ -64,8 +67,11 @@ class FlipFluidDomainTypeCachePanel(bpy.types.Panel):
         row.operator("flip_fluid_operators.absolute_cache_directory")
         column.separator()
 
+        if not show_advanced:
+            return
+
         column = self.layout.column(align=True)
-        column.label("Cache Operators:")
+        column.label(text="Cache Operators:")
         row = column.row(align=True)
         row.operator("flip_fluid_operators.move_cache", text="Move")
         row.prop(cprops, "move_cache_directory")
@@ -89,8 +95,8 @@ class FlipFluidDomainTypeCachePanel(bpy.types.Panel):
     
 
 def register():
-    bpy.utils.register_class(FlipFluidDomainTypeCachePanel)
+    bpy.utils.register_class(FLIPFLUID_PT_DomainTypeCachePanel)
 
 
 def unregister():
-    bpy.utils.unregister_class(FlipFluidDomainTypeCachePanel)
+    bpy.utils.unregister_class(FLIPFLUID_PT_DomainTypeCachePanel)

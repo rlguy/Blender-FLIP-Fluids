@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,38 +43,36 @@ from . import(
         helper_ui
         )
 
+from ..utils import version_compatibility_utils as vcu
+
 
 def append_to_PHYSICS_PT_add_panel(self, context):
-    obj = context.scene.objects.active
+    obj = vcu.get_active_object(context)
     if not obj.type == 'MESH':
         return
 
     column = self.layout.column(align=True)
-    split = column.split(percentage=0.5)
+    split = vcu.ui_split(column, factor=0.5)
     column_left = split.column()
     column_right = split.column()
 
     if obj.flip_fluid.is_active:
-        column_right.operator(
+        row = column_right.row(align=True)
+        row.operator(
                 "flip_fluid_operators.flip_fluid_remove", 
                  text="FLIP Fluid", 
                  icon='X'
                 )
+        row.prop(context.scene.flip_fluid, "show_render", icon="RESTRICT_RENDER_OFF", text="")
+        row.prop(context.scene.flip_fluid, "show_viewport", icon="RESTRICT_VIEW_OFF", text="")
     else:
+        use_custom_icon = True
         icon = context.scene.flip_fluid.get_logo_icon()
-        if icon is not None:
-            # Icon needs to be reworked
-            """
+        if use_custom_icon and icon is not None:
             column_right.operator(
                     "flip_fluid_operators.flip_fluid_add", 
                     text="FLIP Fluid", 
                     icon_value=context.scene.flip_fluid.get_logo_icon().icon_id
-                    )
-            """
-            column_right.operator(
-                    "flip_fluid_operators.flip_fluid_add", 
-                    text="FLIP Fluid", 
-                    icon='MOD_FLUIDSIM'
                     )
         else:
             column_right.operator(
@@ -93,6 +91,7 @@ def register():
     domain_ui.register()
     cache_object_ui.register()
     helper_ui.register()
+
     bpy.types.PHYSICS_PT_add.append(append_to_PHYSICS_PT_add_panel)
 
 
@@ -105,4 +104,5 @@ def unregister():
     domain_ui.unregister()
     cache_object_ui.unregister()
     helper_ui.unregister()
+        
     bpy.types.PHYSICS_PT_add.remove(append_to_PHYSICS_PT_add_panel)

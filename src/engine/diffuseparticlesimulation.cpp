@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -55,7 +55,13 @@ void DiffuseParticleSimulation::update(DiffuseParticleSimulationParameters param
     _liquidSDF = params.liquidSDF;
     _solidSDF = params.solidSDF;
     _surfaceSDF = params.surfaceSDF;
+    _meshingVolumeSDF = params.meshingVolumeSDF;
+    _isMeshingVolumeSet = params.isMeshingVolumeSet;
     _kgrid = params.curvatureGrid;
+    _influenceGrid = params.influenceGrid;
+    _nearSolidGrid = params.nearSolidGrid;
+    _nearSolidGridCellSize = params.nearSolidGridCellSize;
+
 
     bool isParticlesEnabled = _isFoamEnabled || _isBubblesEnabled || _isSprayEnabled;
     bool emitParticles = _isDiffuseParticleEmissionEnabled && 
@@ -518,9 +524,22 @@ void DiffuseParticleSimulation::getDiffuseParticleFileDataWWP(std::vector<char> 
     std::vector<unsigned char> ids;
     positions.reserve(_diffuseParticles.size());
     ids.reserve(_diffuseParticles.size());
-    for (int i = 0; i < (int)_diffuseParticles.size(); i++) {
-        positions.push_back(_diffuseParticles[i].position * _domainScale + _domainOffset);
-        ids.push_back(_diffuseParticles[i].id);
+
+    if (_isMeshingVolumeSet) {
+        std::vector<bool> isSolid;
+        _meshingVolumeSDF->trilinearInterpolateSolidPoints(_diffuseParticles, isSolid);
+        for (int i = 0; i < (int)_diffuseParticles.size(); i++) {
+            if (isSolid[i]) {
+                continue;
+            }
+            positions.push_back(_diffuseParticles[i].position * _domainScale + _domainOffset);
+            ids.push_back(_diffuseParticles[i].id);
+        }
+    } else {
+        for (int i = 0; i < (int)_diffuseParticles.size(); i++) {
+            positions.push_back(_diffuseParticles[i].position * _domainScale + _domainOffset);
+            ids.push_back(_diffuseParticles[i].id);
+        }
     }
 
     _getDiffuseParticleFileDataWWP(positions, ids, data);
@@ -531,10 +550,24 @@ void DiffuseParticleSimulation::getFoamParticleFileDataWWP(std::vector<char> &da
     std::vector<unsigned char> ids;
     positions.reserve(_diffuseParticles.size());
     ids.reserve(_diffuseParticles.size());
-    for (int i = 0; i < (int)_diffuseParticles.size(); i++) {
-        if (_diffuseParticles[i].type == DiffuseParticleType::foam) {
-            positions.push_back(_diffuseParticles[i].position * _domainScale + _domainOffset);
-            ids.push_back(_diffuseParticles[i].id);
+    if (_isMeshingVolumeSet) {
+        std::vector<bool> isSolid;
+        _meshingVolumeSDF->trilinearInterpolateSolidPoints(_diffuseParticles, isSolid);
+        for (int i = 0; i < (int)_diffuseParticles.size(); i++) {
+            if (isSolid[i]) {
+                continue;
+            }
+            if (_diffuseParticles[i].type == DiffuseParticleType::foam) {
+                positions.push_back(_diffuseParticles[i].position * _domainScale + _domainOffset);
+                ids.push_back(_diffuseParticles[i].id);
+            }
+        }
+    } else {
+        for (int i = 0; i < (int)_diffuseParticles.size(); i++) {
+            if (_diffuseParticles[i].type == DiffuseParticleType::foam) {
+                positions.push_back(_diffuseParticles[i].position * _domainScale + _domainOffset);
+                ids.push_back(_diffuseParticles[i].id);
+            }
         }
     }
 
@@ -546,10 +579,24 @@ void DiffuseParticleSimulation::getBubbleParticleFileDataWWP(std::vector<char> &
     std::vector<unsigned char> ids;
     positions.reserve(_diffuseParticles.size());
     ids.reserve(_diffuseParticles.size());
-    for (int i = 0; i < (int)_diffuseParticles.size(); i++) {
-        if (_diffuseParticles[i].type == DiffuseParticleType::bubble) {
-            positions.push_back(_diffuseParticles[i].position * _domainScale + _domainOffset);
-            ids.push_back(_diffuseParticles[i].id);
+    if (_isMeshingVolumeSet) {
+        std::vector<bool> isSolid;
+        _meshingVolumeSDF->trilinearInterpolateSolidPoints(_diffuseParticles, isSolid);
+        for (int i = 0; i < (int)_diffuseParticles.size(); i++) {
+            if (isSolid[i]) {
+                continue;
+            }
+            if (_diffuseParticles[i].type == DiffuseParticleType::bubble) {
+                positions.push_back(_diffuseParticles[i].position * _domainScale + _domainOffset);
+                ids.push_back(_diffuseParticles[i].id);
+            }
+        }
+    } else {
+        for (int i = 0; i < (int)_diffuseParticles.size(); i++) {
+            if (_diffuseParticles[i].type == DiffuseParticleType::bubble) {
+                positions.push_back(_diffuseParticles[i].position * _domainScale + _domainOffset);
+                ids.push_back(_diffuseParticles[i].id);
+            }
         }
     }
 
@@ -561,14 +608,127 @@ void DiffuseParticleSimulation::getSprayParticleFileDataWWP(std::vector<char> &d
     std::vector<unsigned char> ids;
     positions.reserve(_diffuseParticles.size());
     ids.reserve(_diffuseParticles.size());
-    for (int i = 0; i < (int)_diffuseParticles.size(); i++) {
-        if (_diffuseParticles[i].type == DiffuseParticleType::spray) {
-            positions.push_back(_diffuseParticles[i].position * _domainScale + _domainOffset);
-            ids.push_back(_diffuseParticles[i].id);
+    if (_isMeshingVolumeSet) {
+        std::vector<bool> isSolid;
+        _meshingVolumeSDF->trilinearInterpolateSolidPoints(_diffuseParticles, isSolid);
+        for (int i = 0; i < (int)_diffuseParticles.size(); i++) {
+            if (isSolid[i]) {
+                continue;
+            }
+            if (_diffuseParticles[i].type == DiffuseParticleType::spray) {
+                positions.push_back(_diffuseParticles[i].position * _domainScale + _domainOffset);
+                ids.push_back(_diffuseParticles[i].id);
+            }
+        }
+    } else {
+        for (int i = 0; i < (int)_diffuseParticles.size(); i++) {
+            if (_diffuseParticles[i].type == DiffuseParticleType::spray) {
+                positions.push_back(_diffuseParticles[i].position * _domainScale + _domainOffset);
+                ids.push_back(_diffuseParticles[i].id);
+            }
         }
     }
 
     _getDiffuseParticleFileDataWWP(positions, ids, data);
+}
+
+void DiffuseParticleSimulation::getFoamParticleBlurFileDataWWP(std::vector<char> &data, double dt) {
+    std::vector<vmath::vec3> translations;
+    std::vector<unsigned char> ids;
+    translations.reserve(_diffuseParticles.size());
+    ids.reserve(_diffuseParticles.size());
+    if (_isMeshingVolumeSet) {
+        std::vector<bool> isSolid;
+        _meshingVolumeSDF->trilinearInterpolateSolidPoints(_diffuseParticles, isSolid);
+        for (int i = 0; i < (int)_diffuseParticles.size(); i++) {
+            if (isSolid[i]) {
+                continue;
+            }
+            if (_diffuseParticles[i].type == DiffuseParticleType::foam) {
+                vmath::vec3 p = _diffuseParticles[i].position;
+                vmath::vec3 t = _vfield->evaluateVelocityAtPositionLinear(p) * _domainScale * dt;
+                translations.push_back(t);
+                ids.push_back(_diffuseParticles[i].id);
+            }
+        }
+    } else {
+        for (int i = 0; i < (int)_diffuseParticles.size(); i++) {
+            if (_diffuseParticles[i].type == DiffuseParticleType::foam) {
+                vmath::vec3 p = _diffuseParticles[i].position;
+                vmath::vec3 t = _vfield->evaluateVelocityAtPositionLinear(p) * _domainScale * dt;
+                translations.push_back(t);
+                ids.push_back(_diffuseParticles[i].id);
+            }
+        }
+    }
+
+    _getDiffuseParticleFileDataWWP(translations, ids, data);
+}
+
+void DiffuseParticleSimulation::getBubbleParticleBlurFileDataWWP(std::vector<char> &data, double dt) {
+    std::vector<vmath::vec3> translations;
+    std::vector<unsigned char> ids;
+    translations.reserve(_diffuseParticles.size());
+    ids.reserve(_diffuseParticles.size());
+    if (_isMeshingVolumeSet) {
+        std::vector<bool> isSolid;
+        _meshingVolumeSDF->trilinearInterpolateSolidPoints(_diffuseParticles, isSolid);
+        for (int i = 0; i < (int)_diffuseParticles.size(); i++) {
+            if (isSolid[i]) {
+                continue;
+            }
+            if (_diffuseParticles[i].type == DiffuseParticleType::bubble) {
+                vmath::vec3 p = _diffuseParticles[i].position;
+                vmath::vec3 t = _vfield->evaluateVelocityAtPositionLinear(p) * _domainScale * dt;
+                translations.push_back(t);
+                ids.push_back(_diffuseParticles[i].id);
+            }
+        }
+    } else {
+        for (int i = 0; i < (int)_diffuseParticles.size(); i++) {
+            if (_diffuseParticles[i].type == DiffuseParticleType::bubble) {
+                vmath::vec3 p = _diffuseParticles[i].position;
+                vmath::vec3 t = _vfield->evaluateVelocityAtPositionLinear(p) * _domainScale * dt;
+                translations.push_back(t);
+                ids.push_back(_diffuseParticles[i].id);
+            }
+        }
+    }
+
+    _getDiffuseParticleFileDataWWP(translations, ids, data);
+}
+
+void DiffuseParticleSimulation::getSprayParticleBlurFileDataWWP(std::vector<char> &data, double dt) {
+    std::vector<vmath::vec3> translations;
+    std::vector<unsigned char> ids;
+    translations.reserve(_diffuseParticles.size());
+    ids.reserve(_diffuseParticles.size());
+    if (_isMeshingVolumeSet) {
+        std::vector<bool> isSolid;
+        _meshingVolumeSDF->trilinearInterpolateSolidPoints(_diffuseParticles, isSolid);
+        for (int i = 0; i < (int)_diffuseParticles.size(); i++) {
+            if (isSolid[i]) {
+                continue;
+            }
+            if (_diffuseParticles[i].type == DiffuseParticleType::spray) {
+                vmath::vec3 p = _diffuseParticles[i].position;
+                vmath::vec3 t = _vfield->evaluateVelocityAtPositionLinear(p) * _domainScale * dt;
+                translations.push_back(t);
+                ids.push_back(_diffuseParticles[i].id);
+            }
+        }
+    } else {
+        for (int i = 0; i < (int)_diffuseParticles.size(); i++) {
+            if (_diffuseParticles[i].type == DiffuseParticleType::spray) {
+                vmath::vec3 p = _diffuseParticles[i].position;
+                vmath::vec3 t = _vfield->evaluateVelocityAtPositionLinear(p) * _domainScale * dt;
+                translations.push_back(t);
+                ids.push_back(_diffuseParticles[i].id);
+            }
+        }
+    }
+
+    _getDiffuseParticleFileDataWWP(translations, ids, data);
 }
 
 void DiffuseParticleSimulation::loadDiffuseParticles(FragmentedVector<DiffuseParticle> &particles) {
@@ -641,6 +801,7 @@ void DiffuseParticleSimulation::
 
     double jitter = _getParticleJitter();
     float width = (float)(_diffuseSurfaceNarrowBandSize * _dx);
+    vmath::vec3 hdx(0.5*_dx, 0.5*_dx, 0.5*_dx);
     vmath::vec3 p;
     GridIndex g;
     for (int i = 0; i < (int)_markerParticles->size(); i++) {
@@ -650,7 +811,7 @@ void DiffuseParticleSimulation::
             continue;
         }
 
-        float signedDistance = _surfaceSDF->trilinearInterpolate(p);
+        float signedDistance = Interpolation::trilinearInterpolate(p - hdx, _dx, *_surfaceSDF);
         if (fabs(signedDistance) < width) {
 
             g = Grid3d::positionToGridIndex(p, _dx);
@@ -783,13 +944,15 @@ double DiffuseParticleSimulation::
         return 0.0;
     }
 
-    float k = Interpolation::trilinearInterpolate(p, _dx, *_kgrid);
+    vmath::vec3 hdx(0.5*_dx, 0.5*_dx, 0.5*_dx);
+    float k = Interpolation::trilinearInterpolate(p - hdx, _dx, *_kgrid) * _dx;
     if (k < _minWavecrestCurvature) {
         return 0.0;
     }
     k = fmin(k, _maxWavecrestCurvature);
 
-    vmath::vec3 grad = _surfaceSDF->trilinearInterpolateGradient(p);
+    vmath::vec3 grad;
+    Interpolation::trilinearInterpolateGradient(p - hdx, _dx, *_surfaceSDF, &grad);
     if (fabs(grad.x) < eps && fabs(grad.y) < eps && fabs(grad.z) < eps) {
         return 0.0;
     }
@@ -895,7 +1058,7 @@ void DiffuseParticleSimulation::
         return;
     }
 
-     float eps = 10e-4f;
+    float eps = 10e-4f;
     if (vmath::length(emitter.velocity) < eps) {
         return;
     }
@@ -909,9 +1072,7 @@ void DiffuseParticleSimulation::
     } else {
         e1 = vmath::normalize(vmath::cross(axis, vmath::vec3(1.0, 0.0, 0.0)));
     }
-
-    e1 = emitterRadius * e1;
-    vmath::vec3 e2 = emitterRadius * vmath::normalize(vmath::cross(axis, e1));
+    vmath::vec3 e2 = vmath::normalize(vmath::cross(axis, e1));
 
     AABB boundary = _getBoundaryAABB();
     boundary.expand(-_solidBufferWidth * _dx);
@@ -965,9 +1126,11 @@ int DiffuseParticleSimulation::
         _getNumberOfEmissionParticles(DiffuseParticleEmitter &emitter,
                                       double dt) {
 
+    GridIndex g = Grid3d::positionToGridIndex(emitter.position, _dx);
+    double iscale = _influenceGrid->get(g);
     double wc = _wavecrestEmissionRate*emitter.wavecrestPotential;
     double t = _turbulenceEmissionRate*emitter.turbulencePotential;
-    double n = emitter.energyPotential*(wc + t)*dt;
+    double n = iscale * emitter.energyPotential * (wc + t) * dt;
 
     if (n < 0.0) {
         return 0;
@@ -1027,7 +1190,8 @@ DiffuseParticleType DiffuseParticleSimulation::
 
     double foamDist = _maxFoamToSurfaceDistance * _dx;
     double foamOffset = _foamLayerOffset * _dx;
-    double dist = _surfaceSDF->trilinearInterpolate(dp.position);
+    vmath::vec3 hdx(0.5*_dx, 0.5*_dx, 0.5*_dx);
+    double dist = Interpolation::trilinearInterpolate(dp.position - hdx, _dx, *_surfaceSDF);
 
     DiffuseParticleType oldtype = dp.type;
     DiffuseParticleType type;
@@ -1124,32 +1288,22 @@ AABB DiffuseParticleSimulation::_getBoundaryAABB() {
 
 void DiffuseParticleSimulation::_advanceSprayParticles(double dt) {
 
-    AABB boundary = _getBoundaryAABB();
-    boundary.expand(-_solidBufferWidth * _dx);
+    int spraycount = _getNumSprayParticles();
+    if (spraycount == 0) {
+        return;
+    }
 
-    DiffuseParticle dp;
-    vmath::vec3 nextv, nextp;
-    GridIndex g;
-    float invdt = 1.0f / (float)dt;
-    for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
-        dp = _diffuseParticles[i];
+    int numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)fmin(numCPU, _diffuseParticles.size());
+    std::vector<std::thread> threads(numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, _diffuseParticles.size(), numthreads);
+    for (int i = 0; i < numthreads; i++) {
+        threads[i] = std::thread(&DiffuseParticleSimulation::_advanceSprayParticlesThread, this,
+                                 intervals[i], intervals[i + 1], dt);
+    }
 
-        if (dp.type != DiffuseParticleType::spray) {
-            continue;
-        }
-
-        vmath::vec3 dragvec = -_sprayDragCoefficient * dp.velocity * (float)dt;
-        nextv = dp.velocity + _bodyForce * (float)dt + dragvec;
-        nextp = dp.position + nextv * (float)dt;
-        nextp = _resolveCollision(dp.position, nextp, dp, boundary);
-
-        float maxv  = (float)_maxVelocityFactor * vmath::length(nextv);
-        if (vmath::length(nextp - dp.position) * invdt > maxv) {
-            _markParticleForRemoval(i);
-        } 
-
-        _diffuseParticles[i].position = nextp;
-        _diffuseParticles[i].velocity = nextv;
+    for (int i = 0; i < numthreads; i++) {
+        threads[i].join();
     }
 }
 
@@ -1160,49 +1314,17 @@ void DiffuseParticleSimulation::_advanceBubbleParticles(double dt) {
         return;
     }
 
-    std::vector<vmath::vec3> data;
-    data.reserve(bubblecount);
-    for (int i = 0; i < (int)_diffuseParticles.size(); i++) {
-        if (_diffuseParticles[i].type == DiffuseParticleType::bubble) {
-            data.push_back(_diffuseParticles[i].position);
-        }
+    int numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)fmin(numCPU, _diffuseParticles.size());
+    std::vector<std::thread> threads(numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, _diffuseParticles.size(), numthreads);
+    for (int i = 0; i < numthreads; i++) {
+        threads[i] = std::thread(&DiffuseParticleSimulation::_advanceBubbleParticlesThread, this,
+                                 intervals[i], intervals[i + 1], dt);
     }
 
-    _trilinearInterpolate(data, _vfield, data);
-
-    AABB boundary = _getBoundaryAABB();
-    boundary.expand(-_solidBufferWidth * _dx);
-
-    DiffuseParticle dp;
-    vmath::vec3 vmac, vbub, bouyancyVelocity, dragVelocity;
-    vmath::vec3 nextv, nextp;
-    GridIndex g;
-    int dataidx = 0;
-    float invdt = 1.0f / (float)dt;
-    for (int i = 0; i < (int)_diffuseParticles.size(); i++) {
-        dp = _diffuseParticles[i];
-        if (dp.type != DiffuseParticleType::bubble) {
-            continue;
-        }
-
-        vmac = data[dataidx];
-        vbub = dp.velocity;
-        bouyancyVelocity = (float)-_bubbleBouyancyCoefficient * _bodyForce;
-        dragVelocity = (float)_bubbleDragCoefficient*(vmac - vbub) / (float)dt;
-
-        nextv = dp.velocity + (float)dt*(bouyancyVelocity + dragVelocity);
-        nextp = dp.position + nextv * (float)dt;
-        nextp = _resolveCollision(dp.position, nextp, dp, boundary);
-
-        float maxv  = (float)_maxVelocityFactor * vmath::length(nextv);
-        if (vmath::length(nextp - dp.position) * invdt > maxv) {
-            _markParticleForRemoval(i);
-        } 
-
-        _diffuseParticles[i].position = nextp;
-        _diffuseParticles[i].velocity = nextv;
-
-        dataidx++;
+    for (int i = 0; i < numthreads; i++) {
+        threads[i].join();
     }
 }
 
@@ -1213,33 +1335,35 @@ void DiffuseParticleSimulation::_advanceFoamParticles(double dt) {
         return;
     }
 
-    std::vector<vmath::vec3> positions;
-    positions.reserve(foamcount);
-    for (int i = 0; i < (int)_diffuseParticles.size(); i++) {
-        if (_diffuseParticles[i].type == DiffuseParticleType::foam) {
-            positions.push_back(_diffuseParticles[i].position);
-        }
+    int numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)fmin(numCPU, _diffuseParticles.size());
+    std::vector<std::thread> threads(numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, _diffuseParticles.size(), numthreads);
+    for (int i = 0; i < numthreads; i++) {
+        threads[i] = std::thread(&DiffuseParticleSimulation::_advanceFoamParticlesThread, this,
+                                 intervals[i], intervals[i + 1], dt);
     }
 
-    std::vector<vmath::vec3> nextVelocities(positions.size());
-    _trilinearInterpolate(positions, _vfield, nextVelocities);
+    for (int i = 0; i < numthreads; i++) {
+        threads[i].join();
+    }
+}
 
+void DiffuseParticleSimulation::_advanceSprayParticlesThread(int startidx, int endidx, double dt) {
     AABB boundary = _getBoundaryAABB();
     boundary.expand(-_solidBufferWidth * _dx);
-    
-    DiffuseParticle dp;
-    vmath::vec3 nextp, nextv, vmac, vcurrent, dragVelocity;
-    GridIndex g;
-    int foamidx = 0;
+
     float invdt = 1.0f / (float)dt;
-    for (int i = 0; i < (int)_diffuseParticles.size(); i++) {
-        dp = _diffuseParticles[i];
-        if (dp.type != DiffuseParticleType::foam) {
+    for (int i = startidx; i < endidx; i++) {
+        DiffuseParticle dp = _diffuseParticles[i];
+
+        if (dp.type != DiffuseParticleType::spray) {
             continue;
         }
 
-        nextv = _foamAdvectionStrength * nextVelocities[foamidx];
-        nextp = dp.position + nextv * (float)dt;
+        vmath::vec3 dragvec = -_sprayDragCoefficient * dp.velocity * (float)dt;
+        vmath::vec3 nextv = dp.velocity + _bodyForce * (float)dt + dragvec;
+        vmath::vec3 nextp = dp.position + nextv * (float)dt;
         nextp = _resolveCollision(dp.position, nextp, dp, boundary);
 
         float maxv  = (float)_maxVelocityFactor * vmath::length(nextv);
@@ -1249,8 +1373,62 @@ void DiffuseParticleSimulation::_advanceFoamParticles(double dt) {
 
         _diffuseParticles[i].position = nextp;
         _diffuseParticles[i].velocity = nextv;
+    }
+}
 
-        foamidx++;
+void DiffuseParticleSimulation::_advanceBubbleParticlesThread(int startidx, int endidx, double dt) {
+    AABB boundary = _getBoundaryAABB();
+    boundary.expand(-_solidBufferWidth * _dx);
+
+    float invdt = 1.0f / (float)dt;
+    for (int i = startidx; i < endidx; i++) {
+        DiffuseParticle dp = _diffuseParticles[i];
+        if (dp.type != DiffuseParticleType::bubble) {
+            continue;
+        }
+
+        vmath::vec3 vmac = _vfield->evaluateVelocityAtPositionLinear(dp.position);
+        vmath::vec3 vbub = dp.velocity;
+        vmath::vec3 bouyancyVelocity = (float)-_bubbleBouyancyCoefficient * _bodyForce;
+        vmath::vec3 dragVelocity = (float)_bubbleDragCoefficient*(vmac - vbub) / (float)dt;
+
+        vmath::vec3 nextv = dp.velocity + (float)dt*(bouyancyVelocity + dragVelocity);
+        vmath::vec3 nextp = dp.position + nextv * (float)dt;
+        nextp = _resolveCollision(dp.position, nextp, dp, boundary);
+
+        float maxv  = (float)_maxVelocityFactor * vmath::length(nextv);
+        if (vmath::length(nextp - dp.position) * invdt > maxv) {
+            _markParticleForRemoval(i);
+        } 
+
+        _diffuseParticles[i].position = nextp;
+        _diffuseParticles[i].velocity = nextv;
+    }
+}
+
+void DiffuseParticleSimulation::_advanceFoamParticlesThread(int startidx, int endidx, double dt) {
+    AABB boundary = _getBoundaryAABB();
+    boundary.expand(-_solidBufferWidth * _dx);
+
+    float invdt = 1.0f / (float)dt;
+    for (int i = startidx; i < endidx; i++) {
+        DiffuseParticle dp = _diffuseParticles[i];
+        if (dp.type != DiffuseParticleType::foam) {
+            continue;
+        }
+
+        vmath::vec3 vmac = _vfield->evaluateVelocityAtPositionLinear(dp.position);
+        vmath::vec3 nextv = _foamAdvectionStrength * vmac;
+        vmath::vec3 nextp = dp.position + nextv * (float)dt;
+        nextp = _resolveCollision(dp.position, nextp, dp, boundary);
+
+        float maxv  = (float)_maxVelocityFactor * vmath::length(nextv);
+        if (vmath::length(nextp - dp.position) * invdt > maxv) {
+            _markParticleForRemoval(i);
+        } 
+
+        _diffuseParticles[i].position = nextp;
+        _diffuseParticles[i].velocity = nextv;
     }
 }
 
@@ -1272,30 +1450,73 @@ vmath::vec3 DiffuseParticleSimulation::_resolveCollision(vmath::vec3 oldp,
         }
     }
 
-    float solidPhi = _solidSDF->trilinearInterpolate(newp);
-    if(solidPhi < 0) {
-        vmath::vec3 grad = _solidSDF->trilinearInterpolateGradient(newp);
-        if (vmath::lengthsq(grad) > 0) {
-            grad = vmath::normalize(grad);
-            newp -= (solidPhi - _solidBufferWidth * _dx) * grad;
-            if (_solidSDF->trilinearInterpolate(newp) < 0 || 
-                    vmath::length(newp - origp) > _CFLConditionNumber * _dx) {
-                newp = oldp;
-            }
+    GridIndex oldg = Grid3d::positionToGridIndex(oldp, _nearSolidGridCellSize);
+    GridIndex newg = Grid3d::positionToGridIndex(newp, _nearSolidGridCellSize);
+    if (_nearSolidGrid->isIndexInRange(newg) && (!_nearSolidGrid->get(oldg) && !_nearSolidGrid->get(newg))) {
+        return newp;
+    }
+
+    float eps = 1e-6;
+    float stepDistance = _diffuseParticleStepDistanceFactor * (float)_dx;
+    float travelDistance = (newp - oldp).length();
+    if (travelDistance < eps) {
+        return newp;
+    }
+
+    int numSteps = (int)std::ceil(travelDistance / stepDistance);
+    vmath::vec3 stepdir = (newp - oldp).normalize();
+
+    vmath::vec3 lastPosition = oldp;
+    vmath::vec3 currentPosition;
+    bool foundCollision = false;
+    float collisionPhi = 0.0f;
+    for (int stepidx = 0; stepidx < numSteps; stepidx++) {
+        if (stepidx == numSteps - 1) {
+            currentPosition = newp;
         } else {
-            newp = oldp;
+            currentPosition = oldp + (float)(stepidx + 1) * stepDistance * stepdir;
+        }
+
+        float phi = _solidSDF->trilinearInterpolate(currentPosition);
+        if (phi < 0.0f || !boundary.isPointInside(currentPosition)) {
+            collisionPhi = phi;
+            foundCollision = true;
+            break;
+        }
+
+        lastPosition = currentPosition;
+    }
+
+    if (!foundCollision) {
+        return newp;
+    }
+
+    vmath::vec3 resolvedPosition;
+    float maxResolvedDistance = _CFLConditionNumber * _dx;
+    vmath::vec3 grad = _solidSDF->trilinearInterpolateGradient(currentPosition);
+    if (vmath::length(grad) > eps) {
+        grad = vmath::normalize(grad);
+        resolvedPosition = currentPosition - (collisionPhi - _solidBufferWidth * _dx) * grad;
+        float resolvedPhi = _solidSDF->trilinearInterpolate(resolvedPosition);
+        float resolvedDistance = vmath::length(resolvedPosition - currentPosition);
+        if (resolvedPhi < 0 || resolvedDistance > maxResolvedDistance) {
+            resolvedPosition = lastPosition;
+        }
+    } else {
+        resolvedPosition = lastPosition;
+    }
+
+    if (!boundary.isPointInside(resolvedPosition)) {
+        vmath::vec3 origPosition = resolvedPosition;
+        resolvedPosition = boundary.getNearestPointInsideAABB(resolvedPosition);
+        float resolvedPhi = _solidSDF->trilinearInterpolate(resolvedPosition);
+        float resolvedDistance = vmath::length(resolvedPosition - origPosition);
+        if (resolvedPhi < 0.0f || resolvedDistance > maxResolvedDistance) {
+            resolvedPosition = lastPosition;
         }
     }
 
-    if (!boundary.isPointInside(newp)) {
-        newp = boundary.getNearestPointInsideAABB(newp);
-        if (_solidSDF->trilinearInterpolate(newp) < 0 || 
-                    vmath::length(newp - origp) > _CFLConditionNumber * _dx) {
-            newp = oldp;
-        }
-    }
-
-    return newp;
+    return resolvedPosition;
 }
 
 LimitBehaviour DiffuseParticleSimulation::_getLimitBehaviour(DiffuseParticle &dp) {
@@ -1414,15 +1635,12 @@ void DiffuseParticleSimulation::_removeDiffuseParticles() {
     AABB boundary = _getBoundaryAABB();
     boundary.expand(-_solidBufferWidth * _dx);
 
+    std::vector<bool> isInsideSolid;
+    _solidSDF->trilinearInterpolateSolidPoints(_diffuseParticles, isInsideSolid);
+
     Array3d<int> countGrid = Array3d<int>(_isize, _jsize, _ksize, 0);
-
-    std::vector<bool> isRemoved;
-    _solidSDF->trilinearInterpolateSolidPoints(_diffuseParticles, isRemoved);
+    std::vector<bool> isRemoved(_diffuseParticles.size(), false);
     for (int i = 0; i < (int)_diffuseParticles.size(); i++) {
-        if (isRemoved[i]) {
-            continue;
-        }
-
         DiffuseParticle dp = _diffuseParticles[i];
         if ((!_isFoamEnabled && dp.type == DiffuseParticleType::foam) ||
                 (!_isBubblesEnabled && dp.type == DiffuseParticleType::bubble) ||
@@ -1436,22 +1654,31 @@ void DiffuseParticleSimulation::_removeDiffuseParticles() {
             continue;
         }
 
-        if (_getLimitBehaviour(dp) == LimitBehaviour::kill && !boundary.isPointInside(dp.position)) {
+        bool isInBoundary = boundary.isPointInside(dp.position);
+        if (_getLimitBehaviour(dp) == LimitBehaviour::kill && !isInBoundary) {
             isRemoved[i] = true;
             continue;
         }
 
-        if (!boundary.isPointInside(dp.position)) {
+        if (_getLimitBehaviour(dp) != LimitBehaviour::ballistic && !isInBoundary) {
+            isRemoved[i] = true;
+            continue;
+        }
+
+        if (isInBoundary && isInsideSolid[i]) {
             isRemoved[i] = true;
             continue;
         }
 
         GridIndex g = Grid3d::positionToGridIndex(dp.position, _dx);
-        if (countGrid(g) >= _maxDiffuseParticlesPerCell) {
+        if (countGrid.isIndexInRange(g) && countGrid(g) >= _maxDiffuseParticlesPerCell) {
             isRemoved[i] = true;
             continue;
         }
-        countGrid.add(g, 1);
+
+        if (countGrid.isIndexInRange(g)) {
+            countGrid.add(g, 1);
+        }
     }
 
     _removeItemsFromVector(_diffuseParticles, isRemoved);

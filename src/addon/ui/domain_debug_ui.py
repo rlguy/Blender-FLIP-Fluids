@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,8 +16,10 @@
 
 import bpy
 
+from ..utils import version_compatibility_utils as vcu
 
-class FlipFluidDomainTypeDebugPanel(bpy.types.Panel):
+
+class FLIPFLUID_PT_DomainTypeDebugPanel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "physics"
@@ -27,66 +29,84 @@ class FlipFluidDomainTypeDebugPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        obj_props = context.scene.objects.active.flip_fluid
+        obj_props = vcu.get_active_object(context).flip_fluid
         return obj_props.is_active and obj_props.object_type == "TYPE_DOMAIN"
 
     def draw(self, context):
-        obj = context.scene.objects.active
+        obj = vcu.get_active_object(context)
         gprops = obj.flip_fluid.domain.debug
+        show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
 
         box = self.layout.box()
-        split = box.split(align=True, percentage=0.3)
+        split = vcu.ui_split(box, align=True, factor=0.3)
         column = split.column(align=True)
         column.prop(gprops, "display_simulation_grid", text="Display Grid")
-        column = split.column(align=True)
-        column.enabled = gprops.display_simulation_grid
-        split = column.split(align=True)
-        column = split.column(align=True)
-        column.prop(gprops, "grid_display_mode", text="")
-        column = split.column(align=True)
-        column.prop(gprops, "grid_display_scale", text="Draw Scale")
 
-        split = box.split(align=True, percentage=0.3)
-        column = split.column(align=True)
-        column.enabled = gprops.display_simulation_grid
-        column.label("Enabled Grids:")
-        column.label("Grid Colors:")
-        column.label("Grid Offsets:")
-        column = split.column(align=True)
-        column.enabled = gprops.display_simulation_grid
-        row = column.row(align=True)
-        row.prop(gprops, "enabled_debug_grids", text="", toggle=True)
-        row = column.row(align=True)
-        row.prop(gprops, "x_grid_color", text="")
-        row.prop(gprops, "y_grid_color", text="")
-        row.prop(gprops, "z_grid_color", text="")
-        row = column.row(align=True)
-        row.prop(gprops, "debug_grid_offsets", text="", slider=True)
-        column.prop(gprops, "snap_offsets_to_grid")
+        if show_advanced:
+            column = split.column(align=True)
+            column.enabled = gprops.display_simulation_grid
+            split = column.split(align=True)
+            column = split.column(align=True)
+            column.prop(gprops, "grid_display_mode", text="")
+            column = split.column(align=True)
+            column.prop(gprops, "grid_display_scale", text="Draw Scale")
 
-        box = self.layout.box()
-        box.prop(gprops, "export_fluid_particles")
+            split = vcu.ui_split(box, align=True, factor=0.3)
+            column = split.column(align=True)
+            column.enabled = gprops.display_simulation_grid
+            column.label(text="Enabled Grids:")
+            column.label(text="Grid Colors:")
+            column.label(text="Grid Offsets:")
+            column = split.column(align=True)
+            column.enabled = gprops.display_simulation_grid
+            row = column.row(align=True)
+            row.prop(gprops, "enabled_debug_grids", text="", toggle=True)
+            row = column.row(align=True)
+            row.prop(gprops, "x_grid_color", text="")
+            row.prop(gprops, "y_grid_color", text="")
+            row.prop(gprops, "z_grid_color", text="")
+            row = column.row(align=True)
+            row.prop(gprops, "debug_grid_offsets", text="", slider=True)
+            column.prop(gprops, "snap_offsets_to_grid")
+        
         column = box.column(align=True)
-        column.enabled = gprops.export_fluid_particles
-        column.label("Particle Display Settings:")
-        row = column.row(align=True)
-        row.prop(gprops.min_max_gradient_speed, "value_min")
-        row.prop(gprops.min_max_gradient_speed, "value_max")
-        row = column.row(align=True)
-        row.prop(gprops, "low_speed_particle_color", text="")
-        row.prop(gprops, "high_speed_particle_color", text="")
-        row = column.row(align=True)
-        row.prop(gprops, "fluid_particle_gradient_mode", expand=True)
+        split = vcu.ui_split(column, align=True, factor=0.3)
+        column = split.column(align=True)
+        column.prop(gprops, "display_domain_bounds")
 
-        column = box.column()
-        column.enabled = gprops.export_fluid_particles
-        split = column.split(percentage=0.33)
-        column = split.column()
-        column.label("Particle Size:")
-        column.label("Draw Bounds:")
-        column = split.column()
-        column.prop(gprops, "particle_size", text="")
-        column.prop_search(gprops, "particle_draw_aabb", context.scene, "objects", text="")
+        if show_advanced:
+            column = split.column(align=True)
+            column.enabled = gprops.display_simulation_grid
+            column.prop(gprops, "domain_bounds_color", text="")
+
+        if show_advanced:
+            box = self.layout.box()
+            box.prop(gprops, "export_fluid_particles")
+            column = box.column(align=True)
+            column.enabled = gprops.export_fluid_particles
+            column.label(text="Particle Display Settings:")
+            row = column.row(align=True)
+            row.prop(gprops, "min_gradient_speed")
+            row.prop(gprops, "max_gradient_speed")
+            row = column.row(align=True)
+            row.prop(gprops, "low_speed_particle_color", text="")
+            row.prop(gprops, "high_speed_particle_color", text="")
+            row = column.row(align=True)
+            row.prop(gprops, "fluid_particle_gradient_mode", expand=True)
+
+            column = box.column()
+            column.enabled = gprops.export_fluid_particles
+            split = vcu.ui_split(column, factor=0.33)
+            column = split.column()
+            if not vcu.is_blender_28():
+                # custom drawing particle size does not seem to work in Blender 2.80
+                column.label(text="Particle Size:")
+            column.label(text="Draw Bounds:")
+            column = split.column()
+            if not vcu.is_blender_28():
+                # custom drawing particle size does not seem to work in Blender 2.80
+                column.prop(gprops, "particle_size", text="")
+            column.prop_search(gprops, "particle_draw_aabb", bpy.data, "objects", text="")
 
         column = self.layout.column(align=True)
         column.prop(gprops, "export_internal_obstacle_mesh")
@@ -96,8 +116,8 @@ class FlipFluidDomainTypeDebugPanel(bpy.types.Panel):
 
 
 def register():
-    bpy.utils.register_class(FlipFluidDomainTypeDebugPanel)
+    bpy.utils.register_class(FLIPFLUID_PT_DomainTypeDebugPanel)
 
 
 def unregister():
-    bpy.utils.unregister_class(FlipFluidDomainTypeDebugPanel)
+    bpy.utils.unregister_class(FLIPFLUID_PT_DomainTypeDebugPanel)

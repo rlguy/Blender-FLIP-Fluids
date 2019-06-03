@@ -1,6 +1,6 @@
 # MIT License
 # 
-# Copyright (c) 2018 Ryan L. Guy
+# Copyright (c) 2019 Ryan L. Guy
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -29,15 +29,11 @@ from .trianglemesh import TriangleMesh_t
 
 class MeshFluidSource():
     
-    def __init__(self, i, j, k, dx, mesh_data, translation_data = None):
-        if isinstance(mesh_data, list):
-            if translation_data:
-                self._init_from_meshes_translations(i, j, k, dx, 
-                                                    mesh_data, translation_data)
-            else:
-                self._init_from_meshes(i, j, k, dx, mesh_data)
-        else:
-            self._init_from_mesh(i, j, k, dx, mesh_data)
+    def __init__(self, i, j, k, dx):
+        libfunc = lib.MeshFluidSource_new
+        args = [c_int, c_int, c_int, c_double, c_void_p]
+        pb.init_lib_func(libfunc, args, c_void_p)
+        self._obj = pb.execute_lib_func(libfunc, [i, j, k, dx])
 
     def __del__(self):
         libfunc = lib.MeshFluidSource_destroy
@@ -50,43 +46,23 @@ class MeshFluidSource():
     def __call__(self):
         return self._obj
 
-    def _init_from_mesh(self, i, j, k, dx, mesh):
+    def update_mesh_static(self, mesh):
         mesh_struct = mesh.to_struct()
-
-        libfunc = lib.MeshFluidSource_new_from_mesh
-        args = [c_int, c_int, c_int, c_double, c_void_p, c_void_p]
+        libfunc = lib.MeshFluidSource_update_mesh_static
+        args = [c_void_p, TriangleMesh_t, c_void_p]
         pb.init_lib_func(libfunc, args, c_void_p)
-        self._obj = pb.execute_lib_func(libfunc, 
-                                        [i, j, k, dx, byref(mesh_struct)])
+        pb.execute_lib_func(libfunc, [self(), mesh_struct])
 
-    def _init_from_meshes(self, i, j, k, dx, meshes):
-        num_meshes = len(meshes)
-        mesh_structs = (TriangleMesh_t * num_meshes)()
-        for idx, m in enumerate(meshes):
-            mesh_structs[idx] = m.to_struct()
-
-        libfunc = lib.MeshFluidSource_new_from_meshes
-        args = [c_int, c_int, c_int, c_double, c_void_p, c_int, c_void_p]
+    def update_mesh_animated(self, mesh_previous, mesh_current, mesh_next):
+        mesh_struct_previous = mesh_previous.to_struct()
+        mesh_struct_current = mesh_current.to_struct()
+        mesh_struct_next = mesh_next.to_struct()
+        libfunc = lib.MeshFluidSource_update_mesh_animated
+        args = [c_void_p, TriangleMesh_t, TriangleMesh_t, TriangleMesh_t, c_void_p]
         pb.init_lib_func(libfunc, args, c_void_p)
-        self._obj = pb.execute_lib_func(
-                libfunc, [i, j, k, dx, mesh_structs, num_meshes]
-        )
-
-    def _init_from_meshes_translations(self, i, j, k, dx, meshes, translations):
-        num_meshes = len(meshes)
-        mesh_structs = (TriangleMesh_t * num_meshes)()
-        translation_structs = (TriangleMesh_t * num_meshes)()
-        for idx, m in enumerate(meshes):
-            mesh_structs[idx] = m.to_struct()
-        for idx, m in enumerate(translations):
-            translation_structs[idx] = m.to_struct()
-
-        libfunc = lib.MeshFluidSource_new_from_meshes_translations
-        args = [c_int, c_int, c_int, c_double, c_void_p, c_void_p, c_int, c_void_p]
-        pb.init_lib_func(libfunc, args, c_void_p)
-        self._obj = pb.execute_lib_func(
-                libfunc, [i, j, k, dx, mesh_structs, translation_structs, num_meshes]
-        )
+        pb.execute_lib_func(libfunc, [self(), mesh_struct_previous, 
+                                              mesh_struct_current, 
+                                              mesh_struct_next])
 
     @property
     def enable(self):
@@ -229,6 +205,21 @@ class MeshFluidSource():
             libfunc = lib.MeshFluidSource_enable_rigid_mesh
         else:
             libfunc = lib.MeshFluidSource_disable_rigid_mesh
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_constrained_fluid_velocity(self):
+        libfunc = lib.MeshFluidSource_is_constrained_fluid_velocity_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_constrained_fluid_velocity.setter
+    def enable_constrained_fluid_velocity(self, boolval):
+        if boolval:
+            libfunc = lib.MeshFluidSource_enable_constrained_fluid_velocity
+        else:
+            libfunc = lib.MeshFluidSource_disable_constrained_fluid_velocity
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self()])
 

@@ -1,6 +1,6 @@
 # MIT License
 # 
-# Copyright (c) 2018 Ryan L. Guy
+# Copyright (c) 2019 Ryan L. Guy
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -59,8 +59,11 @@ class PyFluidLib():
         try:
             library = ctypes.cdll.LoadLibrary(libfile)
         except:
-            msg = ("Unable to load fluid engine library: <" + libname + 
-                   ">. Try updating/reinstalling your system graphics drivers and try again.")
+            msg = "Unable to load fluid engine library: <" + libname + ">"
+            msg += " (1) Make sure that you are using a 64-bit version of Python/Blender"
+            msg += " if built for 64-bit and likewise if built for 32-bit."
+            msg += " (2) Try clearing your Blender user settings (make a backup first!)."
+            msg += " (3) Contact the developers if you think that this is an error."
             raise LibraryLoadError(msg)
 
         return library

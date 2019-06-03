@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -571,16 +571,16 @@ void CLScalarField::_addLevelSetPointsNoCL(std::vector<vmath::vec3> &points,
 
         gmin = Grid3d::positionToGridIndex(p + pminOffset, dx);
         gmax = Grid3d::positionToGridIndex(p + pmaxOffset, dx);
-        if (!(nodes->isIndexInRange(gmin) && nodes->isIndexInRange(gmax))) {
+        if (!nodes->isIndexInRange(gmin) && !nodes->isIndexInRange(gmax)) {
             continue;
         }
 
         gmin.i = fmax(0, gmin.i);
         gmin.j = fmax(0, gmin.j);
         gmin.k = fmax(0, gmin.k);
-        gmax.i = fmin(nodes->width, gmax.i);
-        gmax.j = fmin(nodes->height, gmax.j);
-        gmax.k = fmin(nodes->depth, gmax.k);
+        gmax.i = fmin(nodes->width - 1, gmax.i);
+        gmax.j = fmin(nodes->height - 1, gmax.j);
+        gmax.k = fmin(nodes->depth - 1, gmax.k);
 
         for(int k = gmin.k; k <= gmax.k; k++) {
             for(int j = gmin.j; j <= gmax.j; j++) {

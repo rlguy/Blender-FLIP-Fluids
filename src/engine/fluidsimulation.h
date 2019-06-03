@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -45,6 +45,7 @@ SOFTWARE.
 #include "particleadvector.h"
 #include "velocityadvector.h"
 #include "meshfluidsource.h"
+#include "influencegrid.h"
 
 class AABB;
 class MeshFluidSource;
@@ -82,9 +83,13 @@ struct FluidSimulationFrameStats {
 
     FluidSimulationMeshStats surface;
     FluidSimulationMeshStats preview;
+    FluidSimulationMeshStats surfaceblur;
     FluidSimulationMeshStats foam;
     FluidSimulationMeshStats bubble;
     FluidSimulationMeshStats spray;
+    FluidSimulationMeshStats foamblur;
+    FluidSimulationMeshStats bubbleblur;
+    FluidSimulationMeshStats sprayblur;
     FluidSimulationMeshStats particles;
     FluidSimulationMeshStats obstacle;
     FluidSimulationTimingStats timing;
@@ -196,9 +201,14 @@ public:
     /*
         Amount of random jitter (in terms of (1/4)*cell_width) that is added
         to the x/y/z axis' of a newly spawned marker particle.
+
+        Enable/disable jittering near mesh surface
     */
     double getMarkerParticleJitterFactor();
     void setMarkerParticleJitterFactor(double jit);
+    void enableJitterSurfaceMarkerParticles();
+    void disableJitterSurfaceMarkerParticles();
+    bool isJitterSurfaceMarkerParticlesEnabled();
 
     /*
         The surface subdivision level determines how many times the
@@ -241,6 +251,10 @@ public:
     int getSurfaceSmoothingIterations();
     void setSurfaceSmoothingIterations(int n);
 
+    /*
+        If set, only fluid inside of this object will be meshed
+    */
+    void setMeshingVolume(MeshObject *volumeObject);
 
     /*
         Will ensure that the output triangle mesh only contains polyhedrons
@@ -314,11 +328,13 @@ public:
     bool isPreviewMeshOutputEnabled();
 
     /*
-        Generate smooth interface between fluid and obstacle surface
+        isolevel offset for meshing against obstacles
     */
-    void enableSmoothInterfaceMeshing();
-    void disableSmoothInterfaceMeshing();
-    bool isSmoothInterfaceMeshingEnabled();
+    void enableObstacleMeshingOffset();
+    void disableObstacleMeshingOffset();
+    bool isObstacleMeshingOffsetEnabled();
+    double getObstacleMeshingOffset();
+    void setObstacleMeshingOffset(double s);
 
     /*
         Invert surface mesh normals that contact obstacle surfaces. Used for 
@@ -327,6 +343,29 @@ public:
     void enableInvertedContactNormals();
     void disableInvertedContactNormals();
     bool isInvertedContactNormalsEnabled();
+
+    /*
+        Generate motion blur vector data at fluid surface mesh vertices
+    */
+    void enableSurfaceMotionBlur();
+    void disableSurfaceMotionBlur();
+    bool isSurfaceMotionBlurEnabled();
+
+    /*
+        Generate motion blur vector data at whitewater mesh vertices
+    */
+    void enableWhitewaterMotionBlur();
+    void disableWhitewaterMotionBlur();
+    bool isWhitewaterMotionBlurEnabled();
+
+    /*
+        Remove parts of mesh that are near the domain boundary
+    */
+    void enableRemoveSurfaceNearDomain();
+    void disableRemoveSurfaceNearDomain();
+    bool isRemoveSurfaceNearDomainEnabled();
+    int getRemoveSurfaceNearDomainDistance();
+    void setRemoveSurfaceNearDomainDistance(int n);
 
     /*
         Enable/disable the simulation from saving fluid particles
@@ -623,6 +662,21 @@ public:
     void setDiffuseSprayActiveBoundarySides(std::vector<bool> active);
 
     /*
+        Default value of diffue particle influence. If influence at a location
+        is not affected by an obstacle's influence, the amount of diffuse
+        particles generated at the location will be scaled by this value
+    */
+    double getDiffuseObstacleInfluenceBaseLevel();
+    void setDiffuseObstacleInfluenceBaseLevel(double level);
+
+    /*
+        Rate at which influence adjust towards the base level in amount of influence
+        per second.
+    */
+    double getDiffuseObstacleInfluenceDecayRate();
+    void setDiffuseObstacleInfluenceDecayRate(double decay);
+
+    /*
         Enable/disable use of OpenCL for particle advection.
 
         Enabled by default.
@@ -664,30 +718,7 @@ public:
     */
     void addBodyForce(double fx, double fy, double fz);
     void addBodyForce(vmath::vec3 f);
-
-    /*
-        Add a variable body force field function to the simulation. 
-        The force field function takes a 3d vector position as a parameter
-        and returns a 3d vector force.
-
-        Example field function:
-
-            vmath::vec3 forceField(vmath::vec3 p) {
-                vmath::vec3 forceVector(0.0, -9.8, 0.0);
-
-                if (p.x < 4.0) {
-                    forceVector.y = -forceVector.y;
-                }
-                
-                return forceVector
-            }
-    */
-    void addBodyForce(vmath::vec3 (*fieldFunction)(vmath::vec3));
     vmath::vec3 getConstantBodyForce();
-    vmath::vec3 getVariableBodyForce(double x, double y, double z);
-    vmath::vec3 getVariableBodyForce(vmath::vec3 p);
-    vmath::vec3 getTotalBodyForce(double x, double y, double z);
-    vmath::vec3 getTotalBodyForce(vmath::vec3 p);
 
     /*
         Remove all added body forces.
@@ -700,6 +731,35 @@ public:
     */
     double getViscosity();
     void setViscosity(double v);
+
+    /*
+        Surface tension constant of the fluid.
+        Must be greater than or equal to zero. 
+    */
+    double getSurfaceTension();
+    void setSurfaceTension(double v);
+
+    /*
+        Sheet seeding fills in gaps between fluid particles
+        with new particles to preserve thin sheets and splashes
+    */
+    void enableSheetSeeding();
+    void disableSheetSeeding();
+    bool isSheetSeedingEnabled();
+
+    /*
+        Controls how aggressively gaps between particles are filled.
+        Must be in range [-1.0, 0.0].
+    */
+    double getSheetFillThreshold();
+    void setSheetFillThreshold(double f);
+
+    /*
+        Controls rate at which new sheet particles are generated.
+        Must be in range [0.0, 1.0].
+    */
+    double getSheetFillRate();
+    void setSheetFillRate(double r);
 
     /*
         Friction on the domain boundary walls. 
@@ -716,6 +776,8 @@ public:
     */
     int getCFLConditionNumber();
     void setCFLConditionNumber(int n);
+    double getSurfaceTensionConditionNumber();
+    void setSurfaceTensionConditionNumber(double n);
 
     /*
         Min/max time step calculations per frame update
@@ -950,10 +1012,14 @@ public:
     */
     std::vector<char>* getSurfaceData();
     std::vector<char>* getSurfacePreviewData();
+    std::vector<char>* getSurfaceBlurData();
     std::vector<char>* getDiffuseData();
     std::vector<char>* getDiffuseFoamData();
     std::vector<char>* getDiffuseBubbleData();
     std::vector<char>* getDiffuseSprayData();
+    std::vector<char>* getDiffuseFoamBlurData();
+    std::vector<char>* getDiffuseBubbleBlurData();
+    std::vector<char>* getDiffuseSprayBlurData();
     std::vector<char>* getFluidParticleData();
     std::vector<char>* getInternalObstacleMeshData();
     std::vector<char>* getLogFileData();
@@ -994,14 +1060,19 @@ private:
     struct FluidSimulationOutputData {
         std::vector<char> surfaceData;
         std::vector<char> surfacePreviewData;
+        std::vector<char> surfaceBlurData;
         std::vector<char> diffuseData;
         std::vector<char> diffuseFoamData;
         std::vector<char> diffuseBubbleData;
         std::vector<char> diffuseSprayData;
+        std::vector<char> diffuseFoamBlurData;
+        std::vector<char> diffuseBubbleBlurData;
+        std::vector<char> diffuseSprayBlurData;
         std::vector<char> fluidParticleData;
         std::vector<char> internalObstacleMeshData;
         std::vector<char> logfileData;
         FluidSimulationFrameStats frameData;
+        bool isInitialized = false;
     };
 
     struct MarkerParticleLoadData {
@@ -1017,12 +1088,13 @@ private:
         double updateLiquidLevelSet = 0.0;
         double advectVelocityField = 0.0;
         double saveVelocityField = 0.0;
-        double calculateDiffuseCurvatureGrid = 0.0;
+        double calculateFluidCurvatureGrid = 0.0;
         double applyBodyForcesToVelocityField = 0.0;
         double applyViscosityToVelocityField = 0.0;
         double pressureSolve = 0.0;
         double constrainVelocityFields = 0.0;
         double updateDiffuseMaterial = 0.0;
+        double updateSheetSeeding = 0.0;
         double updateMarkerParticleVelocities = 0.0;
         double deleteSavedVelocityField = 0.0;
         double advanceMarkerParticles = 0.0;
@@ -1036,12 +1108,13 @@ private:
                            updateLiquidLevelSet +
                            advectVelocityField +
                            saveVelocityField +
-                           calculateDiffuseCurvatureGrid +
+                           calculateFluidCurvatureGrid +
                            applyBodyForcesToVelocityField +
                            applyViscosityToVelocityField +
                            pressureSolve +
                            constrainVelocityFields +
                            updateDiffuseMaterial +
+                           updateSheetSeeding +
                            updateMarkerParticleVelocities +
                            deleteSavedVelocityField +
                            advanceMarkerParticles +
@@ -1057,12 +1130,13 @@ private:
             updateLiquidLevelSet           *= factor;
             advectVelocityField            *= factor;
             saveVelocityField              *= factor;
-            calculateDiffuseCurvatureGrid  *= factor;
+            calculateFluidCurvatureGrid    *= factor;
             applyBodyForcesToVelocityField *= factor;
             applyViscosityToVelocityField  *= factor;
             pressureSolve                  *= factor;
             constrainVelocityFields        *= factor;
             updateDiffuseMaterial          *= factor;
+            updateSheetSeeding             *= factor;
             updateMarkerParticleVelocities *= factor;
             deleteSavedVelocityField       *= factor;
             advanceMarkerParticles         *= factor;
@@ -1078,12 +1152,10 @@ private:
     void _initializeLogFile();
     void _initializeSimulationGrids(int isize, int jsize, int ksize, double dx);
     void _initializeSimulation();
-    void _logOpenCLInfo();
     void _initializeParticleRadii();
     double _getMarkerParticleJitter();
     vmath::vec3 _jitterMarkerParticlePosition(vmath::vec3 p, double jitter);
     void _addMarkerParticle(vmath::vec3 p, vmath::vec3 velocity);
-    void _initializeCLObjects();
     void _loadParticles();
     void _loadMarkerParticles(MarkerParticleLoadData &data);
     void _loadDiffuseParticles(DiffuseParticleLoadData &data);
@@ -1094,7 +1166,7 @@ private:
     double _calculateNextTimeStep(double dt);
     double _getMaximumMeshObjectFluidVelocity(MeshObject *object, 
                                               vmath::vec3 fluidVelocity);
-    double _predictMaximumMarkerParticleSpeed();
+    double _predictMaximumMarkerParticleSpeed(double dt);
     double _getMaximumMarkerParticleSpeed();
     double _getMaximumObstacleSpeed(double dt);
     void _updateTimingData();
@@ -1118,6 +1190,10 @@ private:
     std::vector<MeshObjectStatus> _getSolidObjectStatus();
     void _updateSolidLevelSet(double dt);
     void _updateObstacles(double dt);
+    void _updateNearSolidGrid();
+    void _initializeNearSolidGridThread(int startidx, int endidx);
+    void _resolveSolidLevelSetUpdateCollisionsThread(int startidx, int endidx);
+    void _resolveSolidLevelSetUpdateCollisions();
     void _updateObstacleObjects(double dt);
     void _launchUpdateObstacleObjectsThread(double dt);
     void _joinUpdateObstacleObjectsThread();
@@ -1135,31 +1211,23 @@ private:
     void _launchAdvectVelocityFieldThread();
     void _joinAdvectVelocityFieldThread();
     void _advectVelocityField();
-    void _advectVelocityFieldU();
-    void _advectVelocityFieldV();
-    void _advectVelocityFieldW();
-    void _computeVelocityScalarField(Array3d<float> &field, 
-                                     Array3d<bool> &isValueSet, 
-                                     int dir);
-    void _computeVelocityScalarFieldThread(int startidx, int endidx,
-                                           FragmentedVector<MarkerParticle> *particles, 
-                                           Array3d<float> *field, 
-                                           Array3d<float> *weightfield,
-                                           int dir, int splitdir);
     void _saveVelocityField();
     void _deleteSavedVelocityField();
+
+    /*
+        Calculate Fluid Curvature
+    */
+    void _calculateFluidCurvatureGridThread();
+    void _launchCalculateFluidCurvatureGridThread();
+    void _joinCalculateFluidCurvatureGridThread();
 
     /*
         Apply Body Forces
     */
     void _applyBodyForcesToVelocityField(double dt);
     vmath::vec3 _getConstantBodyForce();
-    vmath::vec3 _getVariableBodyForce(double px, double py, double pz);
-    vmath::vec3 _getVariableBodyForce(vmath::vec3 p);
-    void _applyConstantBodyForces(double dt);
-    void _applyVariableBodyForces(double dt);
-    void _applyVariableBodyForce(vmath::vec3 (*fieldFunction)(vmath::vec3),
-                                 double dt);
+    void _getInflowConstrainedVelocityComponents(ValidVelocityComponentGrid &ex);
+    void _applyConstantBodyForces(ValidVelocityComponentGrid &ex, double dt);
 
     /*
         Viscosity Solve
@@ -1172,15 +1240,6 @@ private:
     void _updateWeightGrid();
     void _updateWeightGridMT(int dir);
     void _updateWeightGridThread(int startidx, int endidx, int dir);
-    Array3d<float> _computePressureGrid(double dt, bool *success);
-    void _applyPressureToVelocityField(Array3d<float> &pressureGrid, double dt);
-    void _applyPressureToVelocityFieldMT(Array3d<float> &pressureGrid, 
-                                         FluidMaterialGrid &mgrid,
-                                         double dt, int dir);
-    void _applyPressureToVelocityFieldThread(int startidx, int endidx, 
-                                             Array3d<float> *pressureGrid, 
-                                             FluidMaterialGrid *mgrid,
-                                             double dt, int dir);
     void _pressureSolve(double dt);
 
     /*
@@ -1192,25 +1251,29 @@ private:
     /*
         Constrain Velocity Field
     */
-    float _getFaceFrictionU(int i, int j, int k);
-    float _getFaceFrictionV(int i, int j, int k);
-    float _getFaceFrictionW(int i, int j, int k);
+    float _getFaceFrictionU(GridIndex g);
+    float _getFaceFrictionV(GridIndex g);
+    float _getFaceFrictionW(GridIndex g);
     void _constrainVelocityField(MACVelocityField &MACGrid);
+    void _constrainVelocityFieldMT(MACVelocityField &MACGrid, int dir);
+    void _constrainVelocityFieldThread(int startidx, int endidx, 
+                                       MACVelocityField *vfield, int dir);
     void _constrainVelocityFields();
 
     /*
         Update Diffuse Particle Simulation
     */
     void _updateDiffuseMaterial(double dt);
-    void _launchCalculateDiffuseCurvatureGridThread();
-    void _joinCalculateDiffuseCurvatureGridThread();
-    void _calculateDiffuseCurvatureGridThread();
+    void _updateDiffuseInfluenceGrid(double dt);
 
     /*
         Update MarkerParticle Velocities
     */
     void _updateMarkerParticleVelocities();
-    void _updateMarkerParticleVelocitiesThread(int startidx, int endidx);
+    void _updatePICFLIPMarkerParticleVelocities();
+    void _updatePICFLIPMarkerParticleVelocitiesThread(int startidx, int endidx);
+    void _constrainMarkerParticleVelocities();
+    void _constrainMarkerParticleVelocities(MeshFluidSource *inflow);
 
     /*
         Advance MarkerParticles
@@ -1221,12 +1284,11 @@ private:
                                        std::vector<vmath::vec3> *output);
     vmath::vec3 _RK3(vmath::vec3 p0, double dt);
 
-    void _resolveMarkerParticleCollisions(std::vector<vmath::vec3> &positionsOld, 
-                                          std::vector<vmath::vec3> &positionsNew);
     void _resolveMarkerParticleCollisions(int startidx, int endidx,
                                           std::vector<vmath::vec3> &positionsOld, 
                                           std::vector<vmath::vec3> &positionsNew);
-    vmath::vec3 _resolveCollision(vmath::vec3 oldp, vmath::vec3 newp, AABB &boundary);
+    vmath::vec3 _resolveCollision(vmath::vec3 oldp, vmath::vec3 newp,
+                                  AABB &boundary);
     float _getMarkerParticleSpeedLimit(double dt);
     void _removeMarkerParticles(double dt);
 
@@ -1257,14 +1319,17 @@ private:
     void _updateInflowMeshFluidSource(MeshFluidSource *source, ParticleMaskGrid &maskgrid);
     void _updateOutflowMeshFluidSource(MeshFluidSource *source);
     int _getNumFluidCells();
+    void _updateSheetSeeding();
 
     /*
         Output Simulation Data
     */
     void _outputSimulationData();
-    void _outputSurfaceMeshThread(FragmentedVector<vmath::vec3> *particles,
-                                  MeshLevelSet *soldSDF);
-    void _computeDomainBoundarySDF(MeshLevelSet *sdf);
+    void _outputSurfaceMeshThread(std::vector<vmath::vec3> *particles,
+                                  MeshLevelSet *solidSDF);
+    void _updateMeshingVolumeSDF();
+    void _applyMeshingVolumeToSDF(MeshLevelSet *sdf);
+    void _filterParticlesOutsideMeshingVolume(std::vector<vmath::vec3> *particles);
     void _launchOutputSurfaceMeshThread();
     void _joinOutputSurfaceMeshThread();
     void _outputDiffuseMaterial();
@@ -1280,8 +1345,10 @@ private:
                                    std::vector<char> &outdata);
     void _smoothSurfaceMesh(TriangleMesh &mesh);
     void _invertContactNormals(TriangleMesh &mesh);
+    void _removeMeshNearDomain(TriangleMesh &mesh);
+    void _computeDomainBoundarySDF(MeshLevelSet *sdf);
     void _polygonizeOutputSurface(TriangleMesh &surface, TriangleMesh &preview,
-                                  FragmentedVector<vmath::vec3> *particles,
+                                  std::vector<vmath::vec3> *particles,
                                   MeshLevelSet *soldSDF);
     void _outputSimulationLogFile();
 
@@ -1308,8 +1375,27 @@ private:
         items.shrink_to_fit();
     }
 
+    template<class T>
+    void _removeItemsFromVector(std::vector<T> &items, std::vector<bool> &isRemoved) {
+        FLUIDSIM_ASSERT(items.size() == isRemoved.size());
+
+        int currentidx = 0;
+        for (unsigned int i = 0; i < items.size(); i++) {
+            if (!isRemoved[i]) {
+                items[currentidx] = items[i];
+                currentidx++;
+            }
+        }
+
+        int numRemoved = items.size() - currentidx;
+        for (int i = 0; i < numRemoved; i++) {
+            items.pop_back();
+        }
+        items.shrink_to_fit();
+    }
+
     inline double _randomDouble(double min, double max) {
-        return min + (double)rand() / ((double)RAND_MAX / (max - min));
+        return min + ((double)rand() / (double)RAND_MAX) * (max - min);
     }
 
     template<class T>
@@ -1341,11 +1427,14 @@ private:
     double _currentFrameDeltaTime = 0.0;
     double _currentFrameDeltaTimeRemaining = 0.0;
     bool _isLastFrameTimeStep = false;
+    bool _isZeroLengthDeltaTime = false;
+    bool _isSkippedFrame = false;
     int _minFrameTimeSteps = 1;
     int _maxFrameTimeSteps = 6;
     double _totalSimulationTime = 0;
     bool _isCurrentFrameFinished = true;
     double _CFLConditionNumber = 5.0;
+    double _surfaceTensionConditionNumber = 10.0;
     LogFile _logfile;
 
     // Update fluid material
@@ -1354,6 +1443,7 @@ private:
     FragmentedVector<MarkerParticle> _markerParticles;
     std::vector<FluidMeshObject> _addedFluidMeshObjectQueue;
     double _markerParticleJitterFactor = 0.0;
+    bool _isJitterSurfaceMarkerParticlesEnabled = false;
     int _liquidLevelSetExactBand = 3;
 
     bool _isMarkerParticleLoadPending = false;
@@ -1364,6 +1454,9 @@ private:
     // Update obstacles
     std::vector<MeshObject*> _obstacles;
     std::thread _updateObstacleObjectsThread;
+    Array3d<bool> _nearSolidGrid;
+    int _nearSolidGridCellSizeFactor = 3;
+    double _nearSolidGridCellSize = 0.0f;
 
     // Compute levelset signed distance field
     MeshLevelSet _solidSDF;
@@ -1376,15 +1469,21 @@ private:
     bool _isSolidLevelSetUpToDate = false;
     bool _isPrecomputedSolidLevelSetUpToDate = false;
     int _solidLevelSetExactBand = 3;
+    double _liquidSDFParticleScale = 1.0;
     double _liquidSDFParticleRadius = 0.0;
     std::thread _updateLiquidLevelSetThread;
 
     // Reconstruct output fluid surface
     bool _isSurfaceMeshReconstructionEnabled = true;
     bool _isPreviewSurfaceMeshEnabled = false;
-    bool _isSmoothInterfaceMeshingEnabled = true;
     bool _isInvertedContactNormalsEnabled = false;
+    bool _isSurfaceMotionBlurEnabled = false;
+    bool _isWhitewaterMotionBlurEnabled = false;
     double _contactThresholdDistance = 0.08;          // in # of grid cells
+    bool _isObstacleMeshingOffsetEnabled = true;
+    double _obstacleMeshingOffset = 0.0;                 // in # of grid cells
+    bool _isRemoveSurfaceNearDomainEnabled = false;
+    int _removeSurfaceNearDomainDistance = 0;         // in # of grid cells
     double _previewdx = 0.0;
     bool _isFluidParticleOutputEnabled = false;
     bool _isInternalObstacleMeshOutputEnabled = false;
@@ -1406,6 +1505,11 @@ private:
     FluidSimulationOutputData _outputData;
     TimingData _timingData;
 
+    MeshObject *_meshingVolume = NULL;
+    MeshLevelSet _meshingVolumeSDF;
+    bool _isMeshingVolumeSet = false;
+    bool _isMeshingVolumeLevelSetUpToDate = false;
+
     bool _isAsynchronousMeshingEnabled = true;
     std::thread _mesherThread;
 
@@ -1414,10 +1518,16 @@ private:
     int _maxParticlesPerVelocityAdvection = 5e6;
     std::thread _advectVelocityFieldThread;
 
+    // Calculate fluid curvature
+    Array3d<float> _fluidSurfaceLevelSet;
+    Array3d<float> _fluidCurvatureGrid;
+    std::thread _fluidCurvatureThread;
+    bool _isCalculateFluidCurvatureGridThreadRunning = false;
+
     // Apply body forces
-    typedef vmath::vec3 (*FieldFunction)(vmath::vec3);
-    std::vector<FieldFunction> _variableBodyForces;
     std::vector<vmath::vec3> _constantBodyForces;
+    bool _isSurfaceTensionEnabled = false;
+    double _surfaceTensionConstant = 0.0;
 
     // Viscosity solve
     Array3d<float> _viscosity;
@@ -1440,9 +1550,14 @@ private:
 
     // Update diffuse particle simulation
     DiffuseParticleSimulation _diffuseMaterial;
-    MeshLevelSet _diffuseSurfaceLevelSet;
-    Array3d<float> _diffuseCurvatureGrid;
-    std::thread _diffuseCurvatureThread;
+    double _diffuseObstacleInfluenceBaseLevel = 1.0;
+    double _diffuseObstacleInfluenceDecayRate = 2.0;
+    InfluenceGrid _obstacleInfluenceGrid;
+
+    // Sheeting
+    bool _isSheetSeedingEnabled = false;
+    float _sheetFillThreshold = -0.95f;
+    float _sheetFillRate = 0.5f;
 
     // Update MarkerParticle velocities
     int _maxParticlesPerPICFLIPUpdate = 10e6;
@@ -1453,18 +1568,19 @@ private:
     // Advance MarkerParticles
     int _maxParticlesPerParticleAdvection = 10e6;
     int _maxMarkerParticlesPerCell = 250;
-    float _solidBufferWidth = 0.01f;
+    float _solidBufferWidth = 0.1f;
     bool _isAdaptiveObstacleTimeSteppingEnabled = false;
     bool _isExtremeVelocityRemovalEnabled = true;
     double _maxExtremeVelocityRemovalPercent = 0.0005;
     int _maxExtremeVelocityRemovalAbsolute = 35;
+    float _markerParticleStepDistanceFactor = 0.5;
     
     // OpenCL
+    // NOTE: These objects are not used within the simulator, but will remain
+    //       defined in case they are needed for future use.
     ParticleAdvector _particleAdvector;
-    CLScalarField _scalarFieldAccelerator;
     CLScalarField _mesherScalarFieldAccelerator;
 
-    bool _isExperimentalOptimizationEnabled = true;
 };
 
 #endif

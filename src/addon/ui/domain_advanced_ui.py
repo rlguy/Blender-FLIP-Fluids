@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,8 +16,10 @@
 
 import bpy
 
+from ..utils import version_compatibility_utils as vcu
 
-class FlipFluidDomainTypeAdvancedPanel(bpy.types.Panel):
+
+class FLIPFLUID_PT_DomainTypeAdvancedPanel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "physics"
@@ -27,57 +29,71 @@ class FlipFluidDomainTypeAdvancedPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        obj_props = context.scene.objects.active.flip_fluid
+        obj_props = vcu.get_active_object(context).flip_fluid
         return obj_props.is_active and obj_props.object_type == "TYPE_DOMAIN"
 
     def draw(self, context):
-        obj = context.scene.objects.active
+        obj = vcu.get_active_object(context)
         aprops = obj.flip_fluid.domain.advanced
+        show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
 
         column = self.layout.column(align=True)
-        column.label("Frame Substeps:")
+        column.label(text="Frame Substeps:")
         row = column.row(align=True)
         row.prop(aprops.min_max_time_steps_per_frame, "value_min", text="Min")
         row.prop(aprops.min_max_time_steps_per_frame, "value_max", text="Max")
-        column.prop(aprops, "enable_adaptive_obstacle_time_stepping")
+
+        if show_advanced:
+            column.prop(aprops, "enable_adaptive_obstacle_time_stepping")
 
         column = self.layout.column()
-        column.label("Simulation Stability:")
-        column.prop(aprops, "particle_jitter_factor", slider=True)
+        column.label(text="Simulation Stability:")
+
+        if show_advanced:
+            row = column.row(align=True)
+            row.prop(aprops, "particle_jitter_factor", slider=True)
+            row.prop(aprops, "jitter_surface_particles")
         column.prop(aprops, "PICFLIP_ratio", slider=True)
-        column.prop(aprops, "CFL_condition_number")
-        column.prop(aprops, "enable_extreme_velocity_removal")
-
-        column = self.layout.column()
-        split = column.split(align=True)
-
-        column_left = split.column(align=True)
-        column_left.label("Multithreading:")
-        row = column_left.row(align=True)
-        row.prop(aprops, "threading_mode", expand=True)
-        row = column_left.row(align=True)
-        if aprops.threading_mode == 'THREADING_MODE_AUTO_DETECT':
-            row.enabled = False
-            row.prop(aprops, "num_threads_auto_detect")
-        elif aprops.threading_mode == 'THREADING_MODE_FIXED':
-            row.prop(aprops, "num_threads_fixed")
-
-        column_right = split.column(align=True)
-        column_right.label("GPU:")
-        column_right.prop(aprops, "enable_gpu_features")
-        
         column = self.layout.column(align=True)
-        column.separator()
-        column.label("Performance and Optimization:")
-        column.prop(aprops, "enable_asynchronous_meshing")
-        column.prop(aprops, "precompute_static_obstacles")
-        column.prop(aprops, "reserve_temporary_grids")
-        column.prop(aprops, "experimental_optimization_features")
+        column.prop(aprops, "CFL_condition_number")
+
+        if show_advanced:
+            column.prop(aprops, "enable_extreme_velocity_removal")
+
+        if show_advanced:
+            column = self.layout.column()
+            split = column.split(align=True)
+
+            column_left = split.column(align=True)
+            column_left.label(text="Multithreading:")
+            row = column_left.row(align=True)
+            row.prop(aprops, "threading_mode", expand=True)
+            row = column_left.row(align=True)
+            if aprops.threading_mode == 'THREADING_MODE_AUTO_DETECT':
+                row.enabled = False
+                row.prop(aprops, "num_threads_auto_detect")
+            elif aprops.threading_mode == 'THREADING_MODE_FIXED':
+                row.prop(aprops, "num_threads_fixed")
+            
+            column = self.layout.column(align=True)
+            column.separator()
+            column.label(text="Performance and Optimization:")
+            column.prop(aprops, "enable_asynchronous_meshing")
+            column.prop(aprops, "precompute_static_obstacles")
+            column.prop(aprops, "reserve_temporary_grids")
+
+            # Allowing changing topology is disabled. Does not seem to be stable
+            """
+            column = self.layout.column(align=True)
+            column.separator()
+            column.label(text="Warnings and Errors:")
+            column.prop(aprops, "disable_changing_topology_warning")
+            """
         
     
 def register():
-    bpy.utils.register_class(FlipFluidDomainTypeAdvancedPanel)
+    bpy.utils.register_class(FLIPFLUID_PT_DomainTypeAdvancedPanel)
 
 
 def unregister():
-    bpy.utils.unregister_class(FlipFluidDomainTypeAdvancedPanel)
+    bpy.utils.unregister_class(FLIPFLUID_PT_DomainTypeAdvancedPanel)

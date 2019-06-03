@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,8 +16,10 @@
 
 import bpy
 
+from ..utils import version_compatibility_utils as vcu
 
-class FlipFluidNoneTypePanel(bpy.types.Panel):
+
+class FLIPFLUID_PT_NoneTypePanel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "physics"
@@ -27,21 +29,21 @@ class FlipFluidNoneTypePanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        obj_props = context.scene.objects.active.flip_fluid
+        obj_props = vcu.get_active_object(context).flip_fluid
         return obj_props.is_active and obj_props.object_type == 'TYPE_NONE'
 
 
     def draw(self, context):
-        obj = context.scene.objects.active
-        obj_props = context.scene.objects.active.flip_fluid
+        obj = vcu.get_active_object(context)
+        obj_props = obj.flip_fluid
 
         column = self.layout.column()
         column.prop(obj_props, "object_type")
     
 
 def register():
-    bpy.utils.register_class(FlipFluidNoneTypePanel)
+    bpy.utils.register_class(FLIPFLUID_PT_NoneTypePanel)
 
 
 def unregister():
-    bpy.utils.unregister_class(FlipFluidNoneTypePanel)
+    bpy.utils.unregister_class(FLIPFLUID_PT_NoneTypePanel)

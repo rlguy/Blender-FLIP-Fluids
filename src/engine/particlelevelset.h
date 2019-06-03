@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +34,8 @@ SOFTWARE.
 #include "fragmentedvector.h"
 #include "array3d.h"
 #include "vmath.h"
+#include "blockarray3d.h"
+#include "boundedbuffer.h"
 
 class MeshLevelSet;
 class ScalarField;
@@ -63,21 +65,67 @@ public:
 
     void calculateSignedDistanceField(FragmentedVector<MarkerParticle> &particles, 
                                       double radius);
-    void extrapolateSignedDistanceIntoSolids(MeshLevelSet &solidPhi);
-    void calculateCurvatureGrid(MeshLevelSet &surfacePhi, Array3d<float> &kgrid);
+    void postProcessSignedDistanceField(MeshLevelSet &solidPhi);
+    void calculateCurvatureGrid(Array3d<float> &surfacePhi, Array3d<float> &kgrid);
 
 private:
 
+    struct GridCountData {
+        std::vector<int> gridCount;
+        std::vector<int> simpleGridIndices;
+        std::vector<int> overlappingGridIndices;
+        std::vector<bool> invalidPoints;
+        int startidx = 0;
+        int endidx = 0;
+    };
+
+    struct ParticleGridCountData {
+        int numthreads = 1;
+        int gridsize = 1;
+        std::vector<int> totalGridCount;
+        std::vector<GridCountData> threadGridCountData;
+    };
+
+    struct ComputeBlock {
+        GridBlock<float> gridBlock;
+        vmath::vec3 *particleData;
+        int numParticles = 0;
+        float radius = 0.0f;
+    };
+
     float _getMaxDistance();
-    void _computeSignedDistanceFromParticles(FragmentedVector<MarkerParticle> &particles, 
+
+    void _computeSignedDistanceFromParticles(std::vector<vmath::vec3> &particles, 
                                              double radius);
-    void _computeSignedDistanceFromParticlesThread(int startidx, int endidx, 
-                                                   FragmentedVector<MarkerParticle> *particles, 
-                                                   double radius, int splitdir);
+    void _initializeBlockGrid(std::vector<vmath::vec3> &particles,
+                              BlockArray3d<float> &blockphi);
+    void _initializeActiveBlocksThread(int startidx, int endidx, 
+                                       std::vector<vmath::vec3> *particles,
+                                       Array3d<bool> *activeBlocks);
+    void _computeGridCountData(std::vector<vmath::vec3> &particles,
+                               double radius,
+                               BlockArray3d<float> &blockphi, 
+                               ParticleGridCountData &countdata);
+    void _initializeGridCountData(std::vector<vmath::vec3> &particles,
+                                  BlockArray3d<float> &blockphi, 
+                                  ParticleGridCountData &countdata);
+    void _computeGridCountDataThread(int startidx, int endidx, 
+                                     std::vector<vmath::vec3> *particles,
+                                     double radius,
+                                     BlockArray3d<float> *blockphi, 
+                                     GridCountData *countdata);
+    void _sortParticlesIntoBlocks(std::vector<vmath::vec3> &particles,
+                                  ParticleGridCountData &countdata, 
+                                  std::vector<vmath::vec3> &sortedParticleData, 
+                                  std::vector<int> &blockToParticleDataIndex);
+    void _computeExactBandProducerThread(BoundedBuffer<ComputeBlock> *computeBlockQueue,
+                                         BoundedBuffer<ComputeBlock> *finishedComputeBlockQueue);
+
     void _initializeCurvatureGridScalarField(ScalarField &field);
     void _initializeCurvatureGridScalarFieldThread(int startidx, int endidx, 
                                                    ScalarField *field);
-    void _getValidCurvatureNodes(MeshLevelSet &surfacePhi, Array3d<bool> &validNodes);
+    void _getValidCurvatureNodes(Array3d<float> &surfacePhi, Array3d<bool> &validNodes);
+    float _getCurvature(int i, int j, int k, Array3d<float> &phi);
     
     int _isize = 0;
     int _jsize = 0;
@@ -85,10 +133,12 @@ private:
     double _dx = 0.0;
     Array3d<float> _phi;
 
-    double _curvatureGridSmoothingValue = 0.5;
-    int _curvatureGridSmoothingIterations = 2;
-    int _curvatureGridExactBand = 2;
-    int _curvatureGridExtrapolationLayers = 5;
+    int _curvatureGridExactBand = 3;
+    int _curvatureGridExtrapolationLayers = 3;
+
+    int _blockwidth = 10;
+    int _numComputeBlocksPerJob = 10;
+    float _searchRadiusFactor = 2.0f;
 };
 
 #endif

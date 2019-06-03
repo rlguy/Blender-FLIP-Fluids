@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,11 @@ object_types = (
     ('TYPE_OUTFLOW',  "Outflow",  "Object removes fluid from the simulation", 5)
     )
 
+frame_range_modes = (
+    ('FRAME_RANGE_TIMELINE', "Timeline", "Use the start and end frame range from the timeline"),
+    ('FRAME_RANGE_CUSTOM',   "Custom",   "Use a custom start and end frame range")
+    )
+
 frame_offset_types = (
     ('OFFSET_TYPE_TIMELINE', "Timeline Frame", "Trigger fluid object at frame in timeline"),
     ('OFFSET_TYPE_FRAME',    "Frame Offset",   "Trigger fluid object at a frame offset from start of the simulation")
@@ -43,12 +48,6 @@ mesh_types = (
     ('MESH_TYPE_DEFORM', "Deformable", "Mesh shape changes/deforms during animation. Slower to calculate, only use if really necessary.")
     )
 
-export_modes = (
-    ('EXPORT_DEFAULT', "Default", "Only export simulation settings and object meshes at the start of a bake. Skip re-exportation when resuming a paused simulation."),
-    ('EXPORT_SKIP',    "Skip",    "If previously exported simulation settings and object meshes are found, skip re-exportation."),
-    ('EXPORT_FORCE',   "Force",   "Always re-export simulation settings and object meshes when starting or resuming a bake.")
-    )
-
 display_modes = (
     ('DISPLAY_NONE',    "None",    "Display nothing"),
     ('DISPLAY_PREVIEW', "Preview", "Display preview quality results"),
@@ -63,6 +62,11 @@ whitewater_view_settings_modes = (
 whitewater_object_settings_modes = (
     ('WHITEWATER_OBJECT_SETTINGS_WHITEWATER',        "Whitewater",        "Adjust particle object settings for all whitewater particles"),
     ('WHITEWATER_OBJECT_SETTINGS_FOAM_BUBBLE_SPRAY', "Spray Bubble Foam", "Adjust particle object settings for foam, bubble, and spray particles separately")
+    )
+
+whitewater_ui_modes = (
+    ('WHITEWATER_UI_MODE_BASIC',    "Basic",    "Display only the basic and most important whitewater simulation parameters"),
+    ('WHITEWATER_UI_MODE_ADVANCED', "Advanced", "Display all whitewater simulation parameters")
     )
 
 cache_info_modes = (
@@ -91,6 +95,17 @@ surface_compute_chunk_modes = (
     ('COMPUTE_CHUNK_MODE_FIXED', "Fixed", "Manually determine the number of compute chunks")
     )
 
+meshing_volume_modes = (
+    ('MESHING_VOLUME_MODE_DOMAIN',  "Domain Volume", "Mesh all fluid that is inside of the domain."),
+    ('MESHING_VOLUME_MODE_OBJECT',  "Object Volume", "Mesh only fluid that is inside of a custom object.")
+    )
+
+obstacle_meshing_modes = (
+    ('MESHING_MODE_INSIDE_SURFACE',  "Inside Surface",  "Generate fluid-solid interface on the inside of the obstacle. Fluid surface will penetrate the obstacle."),
+    ('MESHING_MODE_ON_SURFACE',      "On Surface",      "Generate fluid-solid interface directly on the obstacle surface. May lead to rendering artifacts."),
+    ('MESHING_MODE_OUTSIDE_SURFACE', "Outside Surface", "Generate fluid-solid interface on the outside of the obstacle. Leaves a gap between the fluid surface and obstacle.")
+    )
+
 threading_modes = (
     ('THREADING_MODE_AUTO_DETECT', "Auto-detect", "Automatically determine the number of threads, based on CPUs"),
     ('THREADING_MODE_FIXED',       "Fixed",       "Manually determine the number of threads")
@@ -106,4 +121,10 @@ gradient_interpolation_modes = (
     ('GRADIENT_NONE', "No Gradient",  "Do not interpolate between colors"),
     ('GRADIENT_RGB',  "RGB Gradient", "Interpolate between colors in RGB colorspace"),
     ('GRADIENT_HSV',  "HSV Gradient", "Interpolate between colors in HSV colorspace"),
+    )
+
+material_types = (
+    ('MATERIAL_TYPE_SURFACE',    "Surface",    "Material suitable for surface mesh"),
+    ('MATERIAL_TYPE_WHITEWATER', "Whitewater", "Material suitable for whitewater mesh"),
+    ('MATERIAL_TYPE_ALL',        "All",        "Material suitable for any mesh"),
     )

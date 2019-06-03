@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, os, json, csv
+import bpy, os, json, csv, math
 
 from ..objects import flip_fluid_mesh_exporter
 from .. import export
@@ -40,6 +40,9 @@ class ExportFluidSimulation(bpy.types.Operator):
 
 
     def _initialize_mesh_exporter(self, context):
+        print("Exporting Simulation Meshes:")
+        print("------------------------------------------------------------")
+
         simprops = context.scene.flip_fluid
         objects = (simprops.get_fluid_objects() +
                    simprops.get_obstacle_objects() +
@@ -47,7 +50,9 @@ class ExportFluidSimulation(bpy.types.Operator):
                    simprops.get_outflow_objects())
         object_names = [obj.name for obj in objects]
 
-        self.mesh_data = {key: None for key in object_names}
+        export_dir = self._get_export_directory()
+        export.clean_export_directory(object_names, export_dir)
+        self.mesh_data = export.get_mesh_exporter_parameter_dict(object_names, export_dir)
         self.mesh_exporter = flip_fluid_mesh_exporter.MeshExporter(self.mesh_data)
 
 
@@ -75,7 +80,7 @@ class ExportFluidSimulation(bpy.types.Operator):
 
     def _initialize_operator(self, context):
         context.window_manager.modal_handler_add(self)
-        self.timer = context.window_manager.event_timer_add(0.01, context.window)
+        self.timer = context.window_manager.event_timer_add(0.01, window=context.window)
 
         dprops = self._get_domain_properties()
         dprops.bake.is_export_operator_cancelled = False
@@ -85,18 +90,37 @@ class ExportFluidSimulation(bpy.types.Operator):
         dprops.cache.logfile_name = self._get_logfile_name(context)
 
 
+    def _get_export_filepath(self):
+        dprops = self._get_domain_properties()
+        return os.path.join(dprops.cache.get_cache_abspath(), 
+                            dprops.bake.export_directory_name,
+                            dprops.bake.export_filename)
+
+
+    def _get_export_directory(self):
+        dprops = self._get_domain_properties()
+        return os.path.join(dprops.cache.get_cache_abspath(), 
+                            dprops.bake.export_directory_name)
+
+
     def _export_simulation_data_file(self):
         dprops = self._get_domain_properties()
-        dprops.bake.export_filepath = os.path.join(dprops.cache.get_cache_abspath(), 
-                                                   dprops.bake.export_filename)
-        dprops.bake.export_success = export.export(
-                bpy.context, 
-                self.mesh_data, 
+        dprops.bake.export_filepath = self._get_export_filepath()
+        dprops.bake.export_success = export.export_simulation_data(
+                bpy.context,
                 dprops.bake.export_filepath
                 )
 
         if dprops.bake.export_success:
             dprops.bake.is_cache_directory_set = True
+
+
+    def _export_mesh_data(self):
+        dprops = self._get_domain_properties()
+        cache_directory = dprops.cache.get_cache_abspath()
+        export_folder = dprops.bake.export_directory_name
+        export_directory = os.path.join(cache_directory, export_folder)
+        export.export_mesh_data(self.mesh_data, export_directory)
 
 
     @classmethod
@@ -119,6 +143,8 @@ class ExportFluidSimulation(bpy.types.Operator):
             self.is_executing_timer_event = True
 
             is_finished = self.mesh_exporter.update_export(self.export_step_time)
+            self._export_mesh_data()
+
             dprops.bake.export_progress = self.mesh_exporter.export_progress
             dprops.bake.export_stage = self.mesh_exporter.export_stage
             if is_finished:

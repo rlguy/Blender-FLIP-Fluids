@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -38,12 +38,13 @@ class MeshFluidSource
 {
 public:
     MeshFluidSource();
-    MeshFluidSource(int i, int j, int k, double dx, TriangleMesh mesh);
-    MeshFluidSource(int i, int j, int k, double dx, std::vector<TriangleMesh> meshes);
-    MeshFluidSource(int i, int j, int k, double dx, 
-                    std::vector<TriangleMesh> meshes, 
-                    std::vector<TriangleMesh> translations);
+    MeshFluidSource(int i, int j, int k, double dx);
     ~MeshFluidSource();
+
+    void updateMeshStatic(TriangleMesh meshCurrent);
+    void updateMeshAnimated(TriangleMesh meshPrevious, 
+                            TriangleMesh meshCurrent, 
+                            TriangleMesh meshNext);
     
     void enable();
     void disable();
@@ -78,6 +79,11 @@ public:
     void enableRigidMesh();
     void disableRigidMesh();
     bool isRigidMeshEnabled();
+
+    void enableConstrainedFluidVelocity();
+    void disableConstrainedFluidVelocity();
+    bool isConstrainedFluidVelocityEnabled();
+
 
     void outflowInverse();
     bool isOutflowInversed();
@@ -114,6 +120,7 @@ private:
     bool _isDiffuseOutflowEnabled = true;
     bool _isOutflowInversed = false;
     bool _isRigidMesh = true;
+    bool _isConstrainedFluidVelocity = true;
     vmath::vec3 _sourceVelocity;
     VelocityFieldData _vfieldData;
 

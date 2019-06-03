@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,35 +29,8 @@ SOFTWARE.
 MeshObject::MeshObject() {
 }
 
-MeshObject::MeshObject(int i, int j, int k, double dx, TriangleMesh mesh) :
+MeshObject::MeshObject(int i, int j, int k, double dx) :
         _isize(i), _jsize(j), _ksize(k), _dx(dx) {
-
-    _meshes.push_back(mesh);
-
-    std::vector<vmath::vec3> trans(mesh.vertices.size());
-    _vertexTranslations.push_back(trans);
-}
-
-MeshObject::MeshObject(int i, int j, int k, double dx, 
-                       std::vector<TriangleMesh> meshes) :
-        _isize(i), _jsize(j), _ksize(k), _dx(dx), _meshes(meshes) {
-
-    for (size_t i = 0; i < meshes.size(); i++) {
-        std::vector<vmath::vec3> trans(meshes[i].vertices.size());
-        _vertexTranslations.push_back(trans);
-    }
-}
-
-MeshObject::MeshObject(int i, int j, int k, double dx,
-                       std::vector<TriangleMesh> meshes,
-                       std::vector<TriangleMesh> translations) :
-        _isize(i), _jsize(j), _ksize(k), _dx(dx), _meshes(meshes) {
-
-    FLUIDSIM_ASSERT(meshes.size() == translations.size());
-    for (size_t i = 0; i < translations.size(); i++) {
-        FLUIDSIM_ASSERT(translations[i].vertices.size() == meshes[i].vertices.size())
-        _vertexTranslations.push_back(translations[i].vertices);
-    }
 }
 
 MeshObject::~MeshObject() {
@@ -67,8 +40,43 @@ void MeshObject::getGridDimensions(int *i, int *j, int *k) {
     *i = _isize; *j = _jsize; *k = _ksize; 
 }
 
-void MeshObject::setFrame(int f) {
-    _currentFrame = f;
+void MeshObject::updateMeshStatic(TriangleMesh meshCurrent) {
+    _meshPrevious = meshCurrent;
+    _meshCurrent = meshCurrent;
+    _meshNext = meshCurrent;
+    _vertexTranslationsCurrent = std::vector<vmath::vec3>(meshCurrent.vertices.size());
+    _vertexTranslationsNext = std::vector<vmath::vec3>(meshCurrent.vertices.size());
+    _isAnimated = false;
+    _isChangingTopology = false;
+}
+
+void MeshObject::updateMeshAnimated(TriangleMesh meshPrevious, 
+                                    TriangleMesh meshCurrent, 
+                                    TriangleMesh meshNext) {
+    _meshPrevious = meshPrevious;
+    _meshCurrent = meshCurrent;
+    _meshNext = meshNext;
+    _isChangingTopology = false;
+
+    _vertexTranslationsCurrent = std::vector<vmath::vec3>(meshCurrent.vertices.size());
+    if (_meshPrevious.vertices.size() == _meshCurrent.vertices.size()) {
+        for (size_t i = 0; i < meshCurrent.vertices.size(); i++) {
+            _vertexTranslationsCurrent[i] = _meshCurrent.vertices[i] - _meshPrevious.vertices[i];
+        }
+    } else {
+        _isChangingTopology = true;
+    }
+
+    _vertexTranslationsNext = std::vector<vmath::vec3>(meshNext.vertices.size());
+    if (_meshNext.vertices.size() == _meshCurrent.vertices.size()) {
+        for (size_t i = 0; i < meshCurrent.vertices.size(); i++) {
+            _vertexTranslationsNext[i] = _meshNext.vertices[i] - _meshCurrent.vertices[i];
+        }
+    } else {
+        _isChangingTopology = true;
+    }
+
+    _isAnimated = true;
 }
 
 void MeshObject::getCells(std::vector<GridIndex> &cells) {
@@ -117,7 +125,7 @@ void MeshObject::getCells(float frameInterpolation, std::vector<GridIndex> &cell
 }
 
 bool MeshObject::isAnimated() {
-    return _meshes.size() > 1;
+    return _isAnimated;
 }
 
 void MeshObject::clearObjectStatus() {
@@ -125,65 +133,46 @@ void MeshObject::clearObjectStatus() {
 }
 
 TriangleMesh MeshObject::getMesh() {
-    if (_meshes.empty()) {
-        return TriangleMesh();
-    }
-
-    return _meshes[_currentFrame % _meshes.size()];
+    return _meshCurrent;
 }
 
 TriangleMesh MeshObject::getMesh(float frameInterpolation) {
+    // TODO: update this method to improve/handle rigid, deformable, or
+    // topology-changing meshes
+
+    if (_isChangingTopology) {
+        return getMesh();
+    }
+
     frameInterpolation = fmax(0.0f, frameInterpolation);
     frameInterpolation = fmin(1.0f, frameInterpolation);
 
-    if (_meshes.size() < 2) {
-        return getMesh();
-    }
-
-    if (_currentFrame == (int)_meshes.size() - 1 || frameInterpolation == 0.0f) {
-        return getMesh();
-    }
-
-    TriangleMesh m1 = _meshes[_currentFrame];
-    TriangleMesh m2 = _meshes[_currentFrame + 1];
-
-    TriangleMesh outmesh = m1;
-    for (size_t i = 0; i < m1.vertices.size(); i++) {
-        vmath::vec3 v1 = m1.vertices[i];
-        vmath::vec3 v2 = m2.vertices[i];
+    TriangleMesh outmesh = _meshCurrent;
+    for (size_t i = 0; i < _meshCurrent.vertices.size(); i++) {
+        vmath::vec3 v1 = _meshCurrent.vertices[i];
+        vmath::vec3 v2 = _meshNext.vertices[i];
         outmesh.vertices[i] = v1 + frameInterpolation * (v2 - v1);
     }
 
     return outmesh;
 }
 
-TriangleMesh MeshObject::getFrameMesh(int frameno) {
-    return _meshes[frameno % _meshes.size()];
-}
-
 std::vector<vmath::vec3> MeshObject::getVertexTranslations() {
-    return _vertexTranslations[_currentFrame % _meshes.size()];
+    return _vertexTranslationsCurrent;
 }
 
 std::vector<vmath::vec3> MeshObject::getVertexTranslations(float frameInterpolation) {
+    if (_isChangingTopology) {
+        return getVertexTranslations();
+    }
+
     frameInterpolation = fmax(0.0f, frameInterpolation);
     frameInterpolation = fmin(1.0f, frameInterpolation);
 
-    if (_meshes.size() < 2) {
-        return getVertexTranslations();
-    }
-
-    if (_currentFrame == (int)_meshes.size() - 1 || frameInterpolation == 0.0f) {
-        return getVertexTranslations();
-    }
-
-    std::vector<vmath::vec3> t1 = _vertexTranslations[_currentFrame];
-    std::vector<vmath::vec3> t2 = _vertexTranslations[_currentFrame + 1];
-
-    std::vector<vmath::vec3> transout(t1.size(), vmath::vec3());
-    for (size_t i = 0; i < t1.size(); i++) {
-        vmath::vec3 p1 = t1[i];
-        vmath::vec3 p2 = t2[i];
+    std::vector<vmath::vec3> transout(_vertexTranslationsCurrent.size(), vmath::vec3());
+    for (size_t i = 0; i < _vertexTranslationsCurrent.size(); i++) {
+        vmath::vec3 p1 = _vertexTranslationsCurrent[i];
+        vmath::vec3 p2 = _vertexTranslationsNext[i];
         transout[i] = p1 + frameInterpolation * (p2 - p1);
     }
 
@@ -212,7 +201,7 @@ std::vector<vmath::vec3> MeshObject::getVertexVelocities(double dt, float frameI
 }
 
 std::vector<vmath::vec3> MeshObject::getFrameVertexVelocities(int frameno, double dt) {
-    std::vector<vmath::vec3> velocities = _vertexTranslations[frameno % _meshes.size()];
+    std::vector<vmath::vec3> velocities = _vertexTranslationsCurrent;
 
     double eps = 1e-10;
     if (dt < eps) {
@@ -278,14 +267,6 @@ bool MeshObject::isInversed() {
     return _isInversed;
 }
 
-void MeshObject::setMeshExpansion(float ex) {
-    _meshExpansion = ex;
-}
-
-float MeshObject::getMeshExpansion() {
-    return _meshExpansion;
-}
-
 void MeshObject::setFriction(float f) {
     f = fmin(f, 1.0f);
     f = fmax(f, 0.0f);
@@ -294,6 +275,32 @@ void MeshObject::setFriction(float f) {
 
 float MeshObject::getFriction() {
     return _friction;
+}
+
+void MeshObject::setWhitewaterInfluence(float value) {
+    value = fmax(value, 0.0f);
+    _whitewaterInfluence = value;
+}
+
+float MeshObject::getWhitewaterInfluence() {
+    return _whitewaterInfluence;
+}
+
+void MeshObject::setSheetingStrength(float value) {
+    value = fmax(value, 0.0f);
+    _sheetingStrength = value;
+}
+
+float MeshObject::getSheetingStrength() {
+    return _sheetingStrength;
+}
+
+void MeshObject::setMeshExpansion(float ex) {
+    _meshExpansion = ex;
+}
+
+float MeshObject::getMeshExpansion() {
+    return _meshExpansion;
 }
 
 void MeshObject::enableAppendObjectVelocity() {
@@ -309,32 +316,21 @@ bool MeshObject::isAppendObjectVelocityEnabled() {
 }
 
 RigidBodyVelocity MeshObject::getRigidBodyVelocity(double framedt) {
-    return getRigidBodyVelocity(framedt, _currentFrame);
-}
-
-RigidBodyVelocity MeshObject::getRigidBodyVelocity(double framedt, int frameno) {
     framedt = fmax(framedt, 1e-6);
 
     float vscale = _objectVelocityInfluence;
     float eps = 1e-5;
     RigidBodyVelocity rv;
-    if (_meshes.size() <= 1) {
+    if (!_isAnimated || _isChangingTopology) {
         TriangleMesh m = getMesh();
         rv.centroid = m.getCentroid();
         rv.axis = vmath::vec3(1.0, 0.0, 0.0);
         return rv;
     }
 
-    TriangleMesh m1, m2;
-    if (frameno == (int)_meshes.size() - 1) {
-        m1 = _meshes[frameno - 1];
-        m2 = _meshes[frameno];
-        rv.centroid = m2.getCentroid();
-    } else {
-        m1 = _meshes[frameno];
-        m2 = _meshes[frameno + 1];
-        rv.centroid = m1.getCentroid();
-    }
+    TriangleMesh m1 = _meshCurrent;
+    TriangleMesh m2 = _meshNext;
+    rv.centroid = m1.getCentroid();
 
     vmath::vec3 c1 = m1.getCentroid();
     vmath::vec3 c2 = m2.getCentroid();
@@ -589,6 +585,7 @@ void MeshObject::_addMeshIslandsToLevelSetFractureOptimization(
 
     workQueue.notifyFinished();
     for (size_t i = 0; i < threads.size(); i++) {
+        workQueue.notifyFinished();
         threads[i].join();
     }
 }
@@ -637,16 +634,14 @@ bool MeshObject::_isMeshChanged() {
         return false;
     }
 
-    if (_currentFrame == 0) {
+    if (_meshPrevious.vertices.size() != _meshCurrent.vertices.size()) {
         return true;
     }
 
-    TriangleMesh m1 = _meshes[_currentFrame - 1];
-    TriangleMesh m2 = _meshes[_currentFrame];
     float eps = 1e-5;
     bool isMeshChanged = false;
-    for (size_t i = 0; i < m1.vertices.size(); i++) {
-        if (vmath::length(m1.vertices[i] - m2.vertices[i]) > eps) {
+    for (size_t i = 0; i < _meshPrevious.vertices.size(); i++) {
+        if (vmath::length(_meshPrevious.vertices[i] - _meshCurrent.vertices[i]) > eps) {
             isMeshChanged = true;
             break;
         }

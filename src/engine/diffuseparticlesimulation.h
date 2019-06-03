@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -60,8 +60,13 @@ struct DiffuseParticleSimulationParameters {
     MACVelocityField *vfield;
     ParticleLevelSet *liquidSDF;
     MeshLevelSet *solidSDF;
-    MeshLevelSet *surfaceSDF;
+    Array3d<float> *surfaceSDF;
+    MeshLevelSet *meshingVolumeSDF;
+    bool isMeshingVolumeSet = false;
     Array3d<float> *curvatureGrid;
+    Array3d<float> *influenceGrid;
+    Array3d<bool> *nearSolidGrid;
+    double nearSolidGridCellSize;
 };
 
 enum class LimitBehaviour : char { 
@@ -204,6 +209,9 @@ public:
     void getFoamParticleFileDataWWP(std::vector<char> &data);
     void getBubbleParticleFileDataWWP(std::vector<char> &data);
     void getSprayParticleFileDataWWP(std::vector<char> &data);
+    void getFoamParticleBlurFileDataWWP(std::vector<char> &data, double dt);
+    void getBubbleParticleBlurFileDataWWP(std::vector<char> &data, double dt);
+    void getSprayParticleBlurFileDataWWP(std::vector<char> &data, double dt);
 
     void loadDiffuseParticles(FragmentedVector<DiffuseParticle> &particles);
 
@@ -272,6 +280,9 @@ private:
     void _advanceSprayParticles(double dt);
     void _advanceBubbleParticles(double dt);
     void _advanceFoamParticles(double dt);
+    void _advanceSprayParticlesThread(int startidx, int endidx, double dt);
+    void _advanceBubbleParticlesThread(int startidx, int endidx, double dt);
+    void _advanceFoamParticlesThread(int startidx, int endidx, double dt);
     vmath::vec3 _resolveCollision(vmath::vec3 oldp, vmath::vec3 newp, 
                                   DiffuseParticle &dp, AABB &boundary);
     LimitBehaviour _getLimitBehaviour(DiffuseParticle &dp);
@@ -311,7 +322,7 @@ private:
     }
 
     inline double _randomDouble(double min, double max) {
-        return min + (double)rand() / ((double)RAND_MAX / (max - min));
+        return min + ((double)rand() / (double)RAND_MAX) * (max - min);
     }
 
     int _isize = 0;
@@ -358,6 +369,7 @@ private:
     double _maxDiffuseParticlesPerCell = 5000;
     double _emitterRadiusFactor = 8.0;            // in multiples of _markerParticleRadius
     double _particleJitterFactor = 1.0;
+    double _diffuseParticleStepDistanceFactor = 0.5;
 
     bool _isPreserveFoamEnabled = false;
     double _foamPreservationRate = 0.75;
@@ -376,8 +388,13 @@ private:
     MACVelocityField *_vfield;
     ParticleLevelSet *_liquidSDF;
     MeshLevelSet *_solidSDF;
-    MeshLevelSet *_surfaceSDF;
+    Array3d<float> *_surfaceSDF;
+    MeshLevelSet *_meshingVolumeSDF = NULL;
+    bool _isMeshingVolumeSet = false;
     Array3d<float> *_kgrid;
+    Array3d<float> *_influenceGrid;
+    Array3d<bool> *_nearSolidGrid;
+    double _nearSolidGridCellSize = 0.0;
 
     FluidMaterialGrid _mgrid;
     Array3d<bool> _borderingAirGrid;

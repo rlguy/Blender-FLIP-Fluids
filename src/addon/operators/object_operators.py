@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,6 +16,8 @@
 
 import bpy
 
+from ..utils import version_compatibility_utils as vcu
+
 
 class FlipFluidAdd(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.flip_fluid_add"
@@ -24,8 +26,9 @@ class FlipFluidAdd(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        obj = context.scene.objects.active
+        obj = vcu.get_active_object(context)
         obj.flip_fluid.is_active = True
+        vcu.add_to_flip_fluids_collection(obj, context)
         return {'FINISHED'}
 
 
@@ -36,9 +39,10 @@ class FlipFluidRemove(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        obj = context.scene.objects.active
+        obj = vcu.get_active_object(context)
         obj.flip_fluid.object_type = 'TYPE_NONE'
         obj.flip_fluid.is_active = False
+        vcu.remove_from_flip_fluids_collection(obj, context)
         return {'FINISHED'}
 
 

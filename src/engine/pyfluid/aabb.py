@@ -1,6 +1,6 @@
 # MIT License
 # 
-# Copyright (c) 2018 Ryan L. Guy
+# Copyright (c) 2019 Ryan L. Guy
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -162,17 +162,14 @@ class AABB(object):
         self._position.z = value
 
     @width.setter
-    @decorators.check_ge_zero
     def width(self, value):
         self._width = float(value)
 
     @height.setter
-    @decorators.check_ge_zero
     def height(self, value):
         self._height = float(value)
 
     @depth.setter
-    @decorators.check_ge_zero
     def depth(self, value):
         self._depth = float(value)
 

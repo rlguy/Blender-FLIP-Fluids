@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,27 +25,27 @@ from bpy.props import (
         )
 
 from .flip_fluid_aabb import AABB
+from .. import render
+from ..operators import draw_operators
+from ..utils import version_compatibility_utils as vcu
 
 DISABLE_MESH_CACHE_LOAD = False
 GL_POINT_CACHE_DATA = {}
 
 
 class FLIPFluidMeshBounds(bpy.types.PropertyGroup):
-    @classmethod
-    def register(cls):
-        cls.x = FloatProperty(0.0)
-        cls.y = FloatProperty(0.0)
-        cls.z = FloatProperty(0.0)
-        cls.width = FloatProperty(1.0)
-        cls.height = FloatProperty(1.0)
-        cls.depth = FloatProperty(1.0)
-        cls.dx = FloatProperty(1.0)
-        cls.is_set = BoolProperty(False)
-
-
-    @classmethod
-    def unregister(cls):
-        pass
+    conv = vcu.convert_attribute_to_28
+    x = FloatProperty(0.0); exec(conv("x"))
+    y = FloatProperty(0.0); exec(conv("y"))
+    z = FloatProperty(0.0); exec(conv("z"))
+    width = FloatProperty(1.0); exec(conv("width"))
+    height = FloatProperty(1.0); exec(conv("height"))
+    depth = FloatProperty(1.0); exec(conv("depth"))
+    dx = FloatProperty(1.0); exec(conv("dx"))
+    isize = IntProperty(0); exec(conv("isize"))
+    jsize = IntProperty(0); exec(conv("jsize"))
+    ksize = IntProperty(0); exec(conv("ksize"))
+    is_set = BoolProperty(False); exec(conv("is_set"))
 
 
     def set(self, bounds_dict):
@@ -60,36 +60,51 @@ class FLIPFluidMeshBounds(bpy.types.PropertyGroup):
         self.height = bounds_dict['height']
         self.depth = bounds_dict['depth']
         self.dx = bounds_dict['dx']
+        self.isize = bounds_dict['isize']
+        self.jsize = bounds_dict['jsize']
+        self.ksize = bounds_dict['ksize']
 
 
     def is_set(self):
         return self.is_set
 
 
+class FlipFluidLoadedMeshData(bpy.types.PropertyGroup):
+    conv = vcu.convert_attribute_to_28
+    mesh_prefix = StringProperty(default="mesh_prefix"); exec(conv("mesh_prefix"))
+    enable_motion_blur = BoolProperty(default=False); exec(conv("enable_motion_blur"))
+    motion_blur_scale = FloatProperty(default=-1.0); exec(conv("motion_blur_scale"))
+    wwp_import_percentage = IntProperty(default=0); exec(conv("wwp_import_percentage"))
+    duplivert_scale = FloatProperty(default=1.0); exec(conv("duplivert_scale"))
+    is_rendering = BoolProperty(default=True); exec(conv("is_rendering"))
+    frame = IntProperty(default=-1); exec(conv("frame"))
+
+
 class FlipFluidMeshCache(bpy.types.PropertyGroup):
-    @classmethod
-    def register(cls):
-        cls.mesh_prefix = StringProperty(default="")
-        cls.mesh_display_name_prefix = StringProperty(default="")
-        cls.mesh_file_extension = StringProperty(default="")
-        cls.cache_object_default_name = StringProperty(default="")
-        cls.cache_object_name = StringProperty(default="")
-        cls.is_mesh_shading_smooth = BoolProperty(default=False)
-        cls.current_loaded_frame = IntProperty(default=-1)
-        cls.import_function_name = StringProperty(default="import_empty")
-        cls.wwp_import_percentage = IntProperty(default=100)
-        cls.cache_object_type = StringProperty(default="CACHE_OBJECT_TYPE_NONE")
+    conv = vcu.convert_attribute_to_28
 
-        cls.is_duplivert_object_set = BoolProperty(default=False)
-        cls.current_duplivert_loaded_frame = IntProperty(default=-1)
-        cls.duplivert_object_default_name = StringProperty(default="_particle")
-        cls.duplivert_object_name = StringProperty(default="")
-        cls.bounds = PointerProperty(type=FLIPFluidMeshBounds)
+    mesh_prefix = StringProperty(default=""); exec(conv("mesh_prefix"))
+    mesh_display_name_prefix = StringProperty(default=""); exec(conv("mesh_display_name_prefix"))
+    mesh_file_extension = StringProperty(default=""); exec(conv("mesh_file_extension"))
+    enable_motion_blur = BoolProperty(default=False); exec(conv("enable_motion_blur"))
+    motion_blur_scale = FloatProperty(default=1.0); exec(conv("motion_blur_scale"))
+    cache_object_default_name = StringProperty(default=""); exec(conv("cache_object_default_name"))
+    cache_object_name = StringProperty(default=""); exec(conv("cache_object_name"))
+    is_mesh_shading_smooth = BoolProperty(default=False); exec(conv("is_mesh_shading_smooth"))
+    current_loaded_frame = IntProperty(default=-1); exec(conv("current_loaded_frame"))
+    import_function_name = StringProperty(default="import_empty"); exec(conv("import_function_name"))
+    wwp_import_percentage = IntProperty(default=100); exec(conv("wwp_import_percentage"))
+    duplivert_scale = FloatProperty(default=1.0); exec(conv("duplivert_scale"))
+    cache_object_type = StringProperty(default="CACHE_OBJECT_TYPE_NONE"); exec(conv("cache_object_type"))
 
+    is_duplivert_object_set = BoolProperty(default=False); exec(conv("is_duplivert_object_set"))
+    current_duplivert_loaded_frame = IntProperty(default=-1); exec(conv("current_duplivert_loaded_frame"))
+    duplivert_object_default_name = StringProperty(default="_particle"); exec(conv("duplivert_object_default_name"))
+    duplivert_object_name = StringProperty(default=""); exec(conv("duplivert_object_name"))
+    bounds = PointerProperty(type=FLIPFluidMeshBounds); exec(conv("bounds"))
 
-    @classmethod
-    def unregister(cls):
-        pass
+    loaded_frame_data = PointerProperty(type=FlipFluidLoadedMeshData); exec(conv("loaded_frame_data"))
+    loaded_duplivert_frame_data = PointerProperty(type=FlipFluidLoadedMeshData); exec(conv("loaded_duplivert_frame_data"))
 
 
     def initialize_cache_object(self):
@@ -107,7 +122,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         cache_object.lock_location = (True, True, True)
         cache_object.lock_rotation = (True, True, True)
         cache_object.lock_scale = (True, True, True)
-        bpy.context.scene.objects.link(cache_object)
+        vcu.link_fluid_mesh_object(cache_object)
 
         self.cache_object_name = cache_object.name
         self._initialize_cache_object_octane(cache_object)
@@ -118,7 +133,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
             return
         cache_object = self.get_cache_object(domain_object)
         mesh_data = cache_object.data
-        bpy.data.objects.remove(cache_object, True)
+        bpy.data.objects.remove(cache_object, do_unlink=True)
         mesh_data.user_clear()
         bpy.data.meshes.remove(mesh_data)
         self.cache_object_name = ""
@@ -146,6 +161,26 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         bpy.data.meshes.remove(old_mesh_data)
 
 
+    def _is_loaded_frame_up_to_date(self, frameno):
+        d = self.loaded_frame_data
+        return not (self.mesh_prefix           != d.mesh_prefix or 
+                    self.enable_motion_blur    != d.enable_motion_blur or
+                    self.motion_blur_scale     != d.motion_blur_scale or
+                    self.wwp_import_percentage != d.wwp_import_percentage or
+                    render.is_rendering()      != d.is_rendering or
+                    self.current_loaded_frame  != frameno)
+
+
+    def _commit_loaded_frame_data(self, frameno):
+        d = self.loaded_frame_data
+        d.mesh_prefix           = self.mesh_prefix
+        d.enable_motion_blur    = self.enable_motion_blur
+        d.motion_blur_scale     = self.motion_blur_scale
+        d.wwp_import_percentage = self.wwp_import_percentage
+        d.is_rendering          = render.is_rendering()
+        d.frame  = frameno
+
+
     def load_frame(self, frameno, force_load = False):
         global DISABLE_MESH_CACHE_LOAD
         if DISABLE_MESH_CACHE_LOAD:
@@ -167,6 +202,13 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
             # Blender will crash if object is reloaded in edit mode
             return
 
+        if self._is_loaded_frame_up_to_date(frameno) and not force_load:
+            return
+
+        is_render_backloading = current_frame == self.loaded_frame_data.frame - 1
+        if render.is_rendering() and self.enable_motion_blur and is_render_backloading:
+            return
+
         self._initialize_bounds_data(frameno)
         vertices, triangles = self._import_frame_mesh(frameno)
 
@@ -186,7 +228,32 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
         self.update_transforms()
 
+        if self.enable_motion_blur:
+            blur_data = self._import_motion_blur_data(frameno)
+            if len(blur_data) == len(vertices):
+                cache_object.shape_key_add(name="basis" + frame_string, from_mix=False)
+                shape_key = cache_object.shape_key_add(name="blur1" + frame_string, from_mix=False)
+                for i, v in enumerate(shape_key.data):
+                    v.co[0] += blur_data[i][0] * self.motion_blur_scale
+                    v.co[1] += blur_data[i][1] * self.motion_blur_scale
+                    v.co[2] += blur_data[i][2] * self.motion_blur_scale
+                shape_key.keyframe_insert(data_path='value', frame=current_frame)
+                shape_key.value = 1
+                shape_key.keyframe_insert(data_path='value', frame=current_frame + 1)
+                shape_key.value = 0
+
+                shape_key = cache_object.shape_key_add(name="blur2" + frame_string, from_mix=False)
+                for i, v in enumerate(shape_key.data):
+                    v.co[0] -= blur_data[i][0] * self.motion_blur_scale
+                    v.co[1] -= blur_data[i][1] * self.motion_blur_scale
+                    v.co[2] -= blur_data[i][2] * self.motion_blur_scale
+                shape_key.keyframe_insert(data_path='value', frame=current_frame)
+                shape_key.value = 1
+                shape_key.keyframe_insert(data_path='value', frame=current_frame - 1)
+                shape_key.value = 0
+
         self.current_loaded_frame = current_frame
+        self._commit_loaded_frame_data(frameno)
 
 
     def update_transforms(self):
@@ -195,13 +262,19 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         transmat = mathutils.Matrix.Translation(-transvect)
         cache_object.data.transform(transmat)
         domain_object = self._get_domain_object()
-        domain_bounds = AABB.from_blender_object(domain_object)
+        dprops = self._get_domain_properties()
 
+        domain_bounds = AABB.from_blender_object(domain_object)
         domain_pos = mathutils.Vector((domain_bounds.x, domain_bounds.y, domain_bounds.z))
-        scalex = (math.ceil(domain_bounds.xdim / self.bounds.dx) * self.bounds.dx) / self.bounds.width
-        scaley = (math.ceil(domain_bounds.ydim / self.bounds.dx) * self.bounds.dx) / self.bounds.height
-        scalez = (math.ceil(domain_bounds.zdim / self.bounds.dx) * self.bounds.dx) / self.bounds.depth
+
+        resolution = max(self.bounds.isize, self.bounds.jsize, self.bounds.ksize)
+        isize, jsize, ksize, dx = dprops.simulation.get_grid_dimensions(resolution=resolution)
+
+        scalex = (isize * dx) / self.bounds.width
+        scaley = (jsize * dx) / self.bounds.height
+        scalez = (ksize * dx) / self.bounds.depth
         scale = min(scalex, scaley, scalez)
+
         cache_object.matrix_world = mathutils.Matrix.Identity(4)
         cache_object.matrix_parent_inverse = domain_object.matrix_world.inverted()
         cache_object.scale = (scale, scale, scale)
@@ -226,6 +299,28 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         duplivert_object.active_material_index = 0
 
 
+    def _is_loaded_duplivert_frame_up_to_date(self, frameno):
+        d = self.loaded_duplivert_frame_data
+        return not (self.mesh_prefix           != d.mesh_prefix or 
+                    self.enable_motion_blur    != d.enable_motion_blur or
+                    self.motion_blur_scale     != d.motion_blur_scale or
+                    self.wwp_import_percentage != d.wwp_import_percentage or
+                    self.duplivert_scale       != d.duplivert_scale or
+                    render.is_rendering()      != d.is_rendering or
+                    self.current_loaded_frame  != frameno)
+
+
+    def _commit_loaded_duplivert_frame_data(self, frameno):
+        d = self.loaded_duplivert_frame_data
+        d.mesh_prefix           = self.mesh_prefix
+        d.enable_motion_blur    = self.enable_motion_blur
+        d.motion_blur_scale     = self.motion_blur_scale
+        d.wwp_import_percentage = self.wwp_import_percentage
+        d.dupliver_scale        = self.duplivert_scale
+        d.is_rendering          = render.is_rendering()
+        d.current_loaded_frame  = frameno
+
+
     def load_duplivert_object(self, obj, 
                               scale=1.0, display_in_viewport=False, force_load=False):
         if not self._is_domain_set():
@@ -236,6 +331,8 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
             return
         if not self._is_cache_object_initialized():
             self.initialize_cache_object()
+        if self._is_loaded_duplivert_frame_up_to_date(current_frame):
+            return
         if self.is_duplivert_object_set:
             self.unload_duplivert_object()
 
@@ -246,22 +343,24 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         duplivert_mesh_data.name = duplivert_mesh_name
         duplivert_object = bpy.data.objects.new(duplivert_object_name, duplivert_mesh_data)
         duplivert_object.parent = cache_object
-        duplivert_object.hide = not display_in_viewport
+        vcu.set_object_hide_viewport(duplivert_object, not display_in_viewport)
         duplivert_object.matrix_world = obj.matrix_world.copy()
         duplivert_object.location = (0, 0, 0)
         duplivert_object.scale[0] *= scale
         duplivert_object.scale[1] *= scale
         duplivert_object.scale[2] *= scale
         self.apply_duplivert_object_material(duplivert_object)
-        bpy.context.scene.objects.link(duplivert_object)
+        vcu.link_fluid_mesh_object(duplivert_object, bpy.context)
 
-        cache_object.dupli_type = 'VERTS'
+        vcu.set_object_instance_type(cache_object, 'VERTS')
 
         self.is_duplivert_object_set = True
+        self.duplivert_scale = scale
         self.duplivert_object_name = duplivert_object.name
         self.load_duplivert_object_octane(cache_object, duplivert_object)
 
         self.current_duplivert_loaded_frame = current_frame
+        self._commit_loaded_duplivert_frame_data(current_frame)
 
 
     def unload_duplivert_object(self):
@@ -271,16 +370,17 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         duplivert_object = bpy.data.objects.get(self.duplivert_object_name)
         if duplivert_object is not None:
             mesh_data = duplivert_object.data
-            bpy.data.objects.remove(duplivert_object, True)
+            bpy.data.objects.remove(duplivert_object, do_unlink=True)
             mesh_data.user_clear()
             bpy.data.meshes.remove(mesh_data)
 
         cache_object = self.get_cache_object()
-        cache_object.dupli_type = 'NONE'
+        vcu.set_object_instance_type(cache_object, 'NONE')
 
         self.is_duplivert_object_set = False
         self.duplivert_object_name = ""
         self.current_duplivert_loaded_frame = -1
+        self._commit_loaded_duplivert_frame_data(-1)
 
 
     def get_cache_object(self, domain_object = None):
@@ -395,6 +495,14 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         return os.path.join(bakefiles_directory, filename)
 
 
+    def _get_motion_blur_filepath(self, frameno):
+        filename = ("blur" + self.mesh_prefix + 
+                    self._frame_number_to_string(frameno) + 
+                    "." + self.mesh_file_extension)
+        bakefiles_directory = self._get_bakefiles_directory()
+        return os.path.join(bakefiles_directory, filename)
+
+
     def _is_frame_cached(self, frameno):
         path = self._get_mesh_filepath(frameno)
         return os.path.isfile(path)
@@ -440,11 +548,15 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
 
     def _transfer_mesh_materials(self, src_mesh_data, dst_mesh_data):
-        for m in dst_mesh_data.materials:
-            dst_mesh_data.materials.pop(0, update_data=True)
+        material_names = []
         for m in src_mesh_data.materials:
-            dst_mesh_data.materials.append(m)
-
+            material_names.append(m.name)
+        for name in material_names:
+            for m in bpy.data.materials:
+                if m.name == name:
+                    dst_mesh_data.materials.append(m)
+                    break
+                    
 
     def _transfer_mesh_smoothness(self, src_mesh_data, dst_mesh_data):
         if self._is_mesh_smooth(src_mesh_data):
@@ -470,13 +582,13 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
 
     def _smooth_mesh(self, mesh_data):
-        for p in mesh_data.polygons:
-            p.use_smooth = True
+        values = [True] * len(mesh_data.polygons)
+        mesh_data.polygons.foreach_set("use_smooth", values)
 
 
     def _flatten_mesh(self, mesh_data):
-        for p in mesh_data.polygons:
-            p.use_smooth = False
+        values = [False] * len(mesh_data.polygons)
+        mesh_data.polygons.foreach_set("use_smooth", values)
 
 
     def _import_frame_mesh(self, frameno):
@@ -491,6 +603,22 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         else:
             vertices, triangles = import_function(filepath)
         return vertices, triangles
+
+
+    def _import_motion_blur_data(self, frameno):
+        if not self._is_domain_set() or not self._is_frame_cached(frameno):
+            return []
+
+        filepath = self._get_motion_blur_filepath(frameno)
+        if not os.path.exists(filepath):
+            return []
+
+        import_function = getattr(self, self.import_function_name)
+        if import_function == self.import_wwp:
+            translation_data, _ = import_function(filepath, self.wwp_import_percentage)
+        else:
+            translation_data, _ = import_function(filepath)
+        return translation_data
 
 
     def _get_bounds_filepath(self, frameno):
@@ -511,18 +639,12 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
 
 class FlipFluidGLPointCache(bpy.types.PropertyGroup):
-    @classmethod
-    def register(cls):
-        cls.mesh_prefix = StringProperty(default="")
-        cls.mesh_file_extension = StringProperty(default="")
-        cls.current_loaded_frame = IntProperty(default=-1)
-        cls.uid = IntProperty(default=-1)
-        cls.is_enabled = BoolProperty(default=False)
-
-
-    @classmethod
-    def unregister(cls):
-        pass
+    conv = vcu.convert_attribute_to_28
+    mesh_prefix = StringProperty(default=""); exec(conv("mesh_prefix"))
+    mesh_file_extension = StringProperty(default=""); exec(conv("mesh_file_extension"))
+    current_loaded_frame = IntProperty(default=-1); exec(conv("current_loaded_frame"))
+    uid = IntProperty(default=-1); exec(conv("uid"))
+    is_enabled = BoolProperty(default=False); exec(conv("is_enabled"))
 
 
     def enable(self):
@@ -551,6 +673,7 @@ class FlipFluidGLPointCache(bpy.types.PropertyGroup):
         global GL_POINT_CACHE_DATA
         if self.uid != -1 and self.uid in GL_POINT_CACHE_DATA:
             del GL_POINT_CACHE_DATA[self.uid]
+        draw_operators.update_debug_particle_geometry(bpy.context)
 
 
     def get_point_cache_data(self):
@@ -582,6 +705,7 @@ class FlipFluidGLPointCache(bpy.types.PropertyGroup):
         GL_POINT_CACHE_DATA[self.uid] = d
 
         self.current_loaded_frame = current_frame
+        draw_operators.update_debug_particle_geometry(bpy.context)
 
 
     def import_fpd(self, filename):
@@ -666,19 +790,13 @@ class FlipFluidGLPointCache(bpy.types.PropertyGroup):
 
 
 class FlipFluidCache(bpy.types.PropertyGroup):
-    @classmethod
-    def register(cls):
-        cls.surface = PointerProperty(type=FlipFluidMeshCache)
-        cls.foam = PointerProperty(type=FlipFluidMeshCache)
-        cls.bubble = PointerProperty(type=FlipFluidMeshCache)
-        cls.spray = PointerProperty(type=FlipFluidMeshCache)
-        cls.gl_particles = PointerProperty(type=FlipFluidGLPointCache)
-        cls.obstacle = PointerProperty(type=FlipFluidMeshCache)
-
-
-    @classmethod
-    def unregister(cls):
-        pass
+    conv = vcu.convert_attribute_to_28
+    surface = PointerProperty(type=FlipFluidMeshCache); exec(conv("surface"))
+    foam = PointerProperty(type=FlipFluidMeshCache); exec(conv("foam"))
+    bubble = PointerProperty(type=FlipFluidMeshCache); exec(conv("bubble"))
+    spray = PointerProperty(type=FlipFluidMeshCache); exec(conv("spray"))
+    gl_particles = PointerProperty(type=FlipFluidGLPointCache); exec(conv("gl_particles"))
+    obstacle = PointerProperty(type=FlipFluidMeshCache); exec(conv("obstacle"))
 
 
     def initialize_cache_settings(self):
@@ -806,6 +924,7 @@ class FlipFluidCache(bpy.types.PropertyGroup):
 
 def register():
     bpy.utils.register_class(FLIPFluidMeshBounds)
+    bpy.utils.register_class(FlipFluidLoadedMeshData)
     bpy.utils.register_class(FlipFluidMeshCache)
     bpy.utils.register_class(FlipFluidGLPointCache)
     bpy.utils.register_class(FlipFluidCache)
@@ -813,6 +932,7 @@ def register():
 
 def unregister():
     bpy.utils.unregister_class(FLIPFluidMeshBounds)
+    bpy.utils.unregister_class(FlipFluidLoadedMeshData)
     bpy.utils.unregister_class(FlipFluidMeshCache)
     bpy.utils.unregister_class(FlipFluidGLPointCache)
     bpy.utils.unregister_class(FlipFluidCache)

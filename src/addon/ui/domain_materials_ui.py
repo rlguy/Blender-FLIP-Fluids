@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,9 +17,10 @@
 import bpy
 
 from ..materials import material_library
+from ..utils import version_compatibility_utils as vcu
 
 
-class FlipFluidDomainTypeMaterialsPanel(bpy.types.Panel):
+class FLIPFLUID_PT_DomainTypeMaterialsPanel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "physics"
@@ -29,16 +30,15 @@ class FlipFluidDomainTypeMaterialsPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        obj_props = context.scene.objects.active.flip_fluid
+        obj_props = vcu.get_active_object(context).flip_fluid
         return obj_props.is_active and obj_props.object_type == "TYPE_DOMAIN"
 
     def draw(self, context):
         if not material_library.is_material_library_available():
-            self.layout.label("This feature is missing data and will be disabled.")
-            self.layout.label("Please contact the developers if you think this is an error.")
+            self.layout.label(text="This feature is not available in the GitHub release.")
             return
 
-        obj = context.scene.objects.active
+        obj = vcu.get_active_object(context)
         mprops = obj.flip_fluid.domain.materials
 
         column = self.layout.column()
@@ -50,12 +50,14 @@ class FlipFluidDomainTypeMaterialsPanel(bpy.types.Panel):
         self.layout.row().separator()
         row = self.layout.row(align = True)
         row.prop(mprops, "material_import", text = "")
-        row.operator("flip_fluid_operators.import_material")
+        column = row.column(align=True)
+        column.operator("flip_fluid_operators.import_material")
+        column.operator("flip_fluid_operators.import_material_copy")
 
 
 def register():
-    bpy.utils.register_class(FlipFluidDomainTypeMaterialsPanel)
+    bpy.utils.register_class(FLIPFLUID_PT_DomainTypeMaterialsPanel)
 
 
 def unregister():
-    bpy.utils.unregister_class(FlipFluidDomainTypeMaterialsPanel)
+    bpy.utils.unregister_class(FLIPFLUID_PT_DomainTypeMaterialsPanel)

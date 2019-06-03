@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -215,8 +215,7 @@ private:
     void _validateOutput(std::vector<vmath::vec3> &output);
 
 
-    bool _isInitialized = false;
-    std::string _initializationErrorMessage;
+    #if WITH_OPENCL
 
     int _isize = 0;
     int _jsize = 0;
@@ -228,6 +227,12 @@ private:
     int _dataChunkHeight = 8;
     int _dataChunkDepth = 8;
     int _maxChunksPerComputation = 15000;
+
+    #endif
+    // ENDIF WITH_OPENCL
+
+    bool _isInitialized = false;
+    std::string _initializationErrorMessage;
     int _kernelWorkLoadSize = 1000;
     bool _isOpenCLEnabled = true;
     

@@ -189,8 +189,20 @@ void multiply(FixedSparseMatrix<T> &matrix, std::vector<T> &x, std::vector<T> &r
     FLUIDSIM_ASSERT(matrix.n == x.size());
     result.resize(matrix.n);
 
+    int elementsPerThread = 500000;
     int numCPU = ThreadUtils::getMaxThreadCount();
-    int numthreads = (int)fmin(numCPU, matrix.n);
+    int numthreads = (int)fmin(numCPU, std::ceil((float)matrix.n / (float)elementsPerThread));
+    if (numthreads == 1) {
+        for(size_t i = 0; i < result.size(); i++){
+            result[i] = 0;
+            for (size_t j = matrix.rowstart[i]; j < matrix.rowstart[i + 1]; j++){
+                result[i] += matrix.value[j] * x[matrix.colindex[j]];
+            }
+        }
+
+        return;
+    }
+
     std::vector<std::thread> threads(numthreads);
     std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, matrix.n, numthreads);
     for (int i = 0; i < numthreads; i++) {

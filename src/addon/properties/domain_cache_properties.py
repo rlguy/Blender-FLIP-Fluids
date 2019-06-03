@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,57 +24,53 @@ from bpy.props import (
         StringProperty
         )
 
-from .. import global_vars
+from .. import exit_handler
+from ..utils import version_compatibility_utils as vcu
 
 class DomainCacheProperties(bpy.types.PropertyGroup):
-    @classmethod
-    def register(cls):
-        temp_directory = bpy.context.user_preferences.filepaths.temporary_directory
-        default_cache_directory = os.path.join(temp_directory, "untitled_flip_fluid_cache")
-        cls.cache_directory = StringProperty(
-                name="",
-                description="Simulation files will be saved to this directory",
-                default=default_cache_directory, 
-                subtype='DIR_PATH',
-                update=lambda self, context: self._update_cache_directory(context),
-                )
-        cls.default_cache_directory = StringProperty(
-                default=default_cache_directory, 
-                subtype='DIR_PATH',
-                )
-        cls.move_cache_directory = StringProperty(
-                name="",
-                description="Cache directory will be moved to this location",
-                default=temp_directory, 
-                subtype='DIR_PATH',
-                )
-        cls.rename_cache_directory = StringProperty(
-                name="",
-                description="Cache directory will be renamed to this value",
-                default="untitled_flip_fluid_cache",
-                )
-        cls.copy_cache_directory = StringProperty(
-                name="",
-                description="Cache directory contents will be copied to this location",
-                default=default_cache_directory, 
-                subtype='DIR_PATH',
-                )
-        cls.clear_cache_directory_logs = BoolProperty(
-                name="Clear log files",
-                description="Also delete log files when freeing cache directory",
-                default=False,
-                )
-        cls.logfile_name = StringProperty(
-                default=os.path.join(temp_directory, "flip_fluid_log.txt"), 
-                subtype='FILE_NAME',
-                )
+    conv = vcu.convert_attribute_to_28
+    temp_directory = vcu.get_blender_preferences(bpy.context).filepaths.temporary_directory
+    default_cache_directory_str = os.path.join(temp_directory, "untitled_flip_fluid_cache")
+    
+    cache_directory = StringProperty(
+            name="",
+            description="Simulation files will be saved to this directory",
+            default=default_cache_directory_str, 
+            subtype='DIR_PATH',
+            update=lambda self, context: self._update_cache_directory(context),
+            ); exec(conv("cache_directory"))
+    default_cache_directory = StringProperty(
+            default=default_cache_directory_str, 
+            subtype='DIR_PATH',
+            ); exec(conv("default_cache_directory"))
+    move_cache_directory = StringProperty(
+            name="",
+            description="Cache directory will be moved to this location",
+            default=temp_directory, 
+            subtype='DIR_PATH',
+            ); exec(conv("move_cache_directory"))
+    rename_cache_directory = StringProperty(
+            name="",
+            description="Cache directory will be renamed to this value",
+            default="untitled_flip_fluid_cache",
+            ); exec(conv("rename_cache_directory"))
+    copy_cache_directory = StringProperty(
+            name="",
+            description="Cache directory contents will be copied to this location",
+            default=default_cache_directory_str, 
+            subtype='DIR_PATH',
+            ); exec(conv("copy_cache_directory"))
+    clear_cache_directory_logs = BoolProperty(
+            name="Clear log files",
+            description="Also delete log files when freeing cache directory",
+            default=False,
+            ); exec(conv("clear_cache_directory_logs"))
+    logfile_name = StringProperty(
+            default=os.path.join(temp_directory, "flip_fluid_log.txt"), 
+            subtype='FILE_NAME',
+            ); exec(conv("logfile_name"))
 
-        cls.is_cache_directory_set = BoolProperty(default=False)
-
-
-    @classmethod
-    def unregister(cls):
-        pass
+    is_cache_directory_set = BoolProperty(default=False); exec(conv("is_cache_directory_set"))
 
 
     def register_preset_properties(self, registry, path):
@@ -123,7 +119,7 @@ class DomainCacheProperties(bpy.types.PropertyGroup):
 
         dprops.stats.refresh_stats()
         dprops.bake.check_autosave()
-        global_vars.CACHE_DIRECTORY = self.get_cache_abspath()
+        exit_handler.set_cache_directory(self.get_cache_abspath())
 
 
     def _check_cache_directory(self):

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -35,65 +35,12 @@ SOFTWARE.
 
 extern "C" {
 
-    EXPORTDLL MeshFluidSource* MeshFluidSource_new_from_mesh(
-            int i, int j, int k, double dx, 
-            MeshUtils::TriangleMesh_t *mesh_data, int *err) {
+    EXPORTDLL MeshFluidSource* MeshFluidSource_new(int i, int j, int k, double dx, int *err) {
 
         *err = CBindings::SUCCESS;
         MeshFluidSource *source = nullptr;
         try {
-            TriangleMesh mesh;
-            MeshUtils::structToTriangleMesh(*mesh_data, mesh);
-            source = new MeshFluidSource(i, j, k, dx, mesh);
-        } catch (std::exception &ex) {
-            CBindings::set_error_message(ex);
-            *err = CBindings::FAIL;
-        }
-
-        return source;
-    }
-
-    EXPORTDLL MeshFluidSource* MeshFluidSource_new_from_meshes(
-            int i, int j, int k, double dx, 
-            MeshUtils::TriangleMesh_t *mesh_data, int num_meshes, int *err) {
-
-        *err = CBindings::SUCCESS;
-        MeshFluidSource *source = nullptr;
-        try {
-            std::vector<TriangleMesh> meshes;
-            for (int idx = 0; idx < num_meshes; idx++) {
-                TriangleMesh mesh;
-                MeshUtils::structToTriangleMesh(mesh_data[idx], mesh);
-                meshes.push_back(mesh);
-            }
-            source = new MeshFluidSource(i, j, k, dx, meshes);
-        } catch (std::exception &ex) {
-            CBindings::set_error_message(ex);
-            *err = CBindings::FAIL;
-        }
-
-        return source;
-    }
-
-    EXPORTDLL MeshFluidSource* MeshFluidSource_new_from_meshes_translations(
-            int i, int j, int k, double dx, 
-            MeshUtils::TriangleMesh_t *mesh_data, 
-            MeshUtils::TriangleMesh_t *translation_data, int num_meshes, int *err) {
-
-        *err = CBindings::SUCCESS;
-        MeshFluidSource *source = nullptr;
-        try {
-            std::vector<TriangleMesh> meshes;
-            std::vector<TriangleMesh> translations;
-            for (int idx = 0; idx < num_meshes; idx++) {
-                TriangleMesh mesh;
-                TriangleMesh translation;
-                MeshUtils::structToTriangleMesh(mesh_data[idx], mesh);
-                MeshUtils::structToTriangleMesh(translation_data[idx], translation);
-                meshes.push_back(mesh);
-                translations.push_back(translation);
-            }
-            source = new MeshFluidSource(i, j, k, dx, meshes, translations);
+            source = new MeshFluidSource(i, j, k, dx);
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -104,6 +51,38 @@ extern "C" {
 
     EXPORTDLL void MeshFluidSource_destroy(MeshFluidSource *obj) {
         delete obj;
+    }
+
+    EXPORTDLL void MeshFluidSource_update_mesh_static(
+            MeshFluidSource* obj, 
+            MeshUtils::TriangleMesh_t mesh_data, int *err) {
+
+        try {
+            TriangleMesh mesh;
+            MeshUtils::structToTriangleMesh(mesh_data, mesh);
+            obj->updateMeshStatic(mesh);
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void MeshFluidSource_update_mesh_animated(
+            MeshFluidSource* obj, 
+            MeshUtils::TriangleMesh_t mesh_data_previous,
+            MeshUtils::TriangleMesh_t mesh_data_current,
+            MeshUtils::TriangleMesh_t mesh_data_next, int *err) {
+
+        try {
+            TriangleMesh meshPrevious, meshCurrent, meshNext;
+            MeshUtils::structToTriangleMesh(mesh_data_previous, meshPrevious);
+            MeshUtils::structToTriangleMesh(mesh_data_current, meshCurrent);
+            MeshUtils::structToTriangleMesh(mesh_data_next, meshNext);
+            obj->updateMeshAnimated(meshPrevious, meshCurrent, meshNext);
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
     }
 
     EXPORTDLL void MeshFluidSource_enable(MeshFluidSource* obj, int *err) {
@@ -259,6 +238,24 @@ extern "C" {
     EXPORTDLL int MeshFluidSource_is_rigid_mesh_enabled(MeshFluidSource* obj, int *err) {
         return CBindings::safe_execute_method_ret_0param(
             obj, &MeshFluidSource::isRigidMeshEnabled, err
+        );
+    }
+
+    EXPORTDLL void MeshFluidSource_enable_constrained_fluid_velocity(MeshFluidSource* obj, int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &MeshFluidSource::enableConstrainedFluidVelocity, err
+        );
+    }
+
+    EXPORTDLL void MeshFluidSource_disable_constrained_fluid_velocity(MeshFluidSource* obj, int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &MeshFluidSource::disableConstrainedFluidVelocity, err
+        );
+    }
+
+    EXPORTDLL int MeshFluidSource_is_constrained_fluid_velocity_enabled(MeshFluidSource* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &MeshFluidSource::isConstrainedFluidVelocityEnabled, err
         );
     }
 

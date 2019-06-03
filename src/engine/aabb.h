@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 Ryan L. Guy
+Copyright (c) 2019 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -50,6 +50,7 @@ public:
     bool isLineIntersecting(vmath::vec3 p1, vmath::vec3 p2);
     AABB getIntersection(AABB bbox);
     AABB getUnion(AABB bbox);
+    bool isIntersecting(AABB bbox, double eps = 1e-6);
 
     vmath::vec3 getMinPoint();
     vmath::vec3 getMaxPoint();

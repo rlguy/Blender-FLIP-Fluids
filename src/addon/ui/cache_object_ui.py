@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,8 +16,10 @@
 
 import bpy
 
+from ..utils import version_compatibility_utils as vcu
 
-class FlipFluidCacheObjectTypePanel(bpy.types.Panel):
+
+class FLIPFLUID_PT_CacheObjectTypePanel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "physics"
@@ -29,7 +31,7 @@ class FlipFluidCacheObjectTypePanel(bpy.types.Panel):
         dprops = context.scene.flip_fluid.get_domain_properties()
         if dprops is None:
             return False
-        obj = context.scene.objects.active
+        obj = vcu.get_active_object(context)
         return dprops.mesh_cache.is_cache_object(obj)
 
 
@@ -43,13 +45,13 @@ class FlipFluidCacheObjectTypePanel(bpy.types.Panel):
 
         box = self.layout.box()
         column = box.column()
-        split = column.split(percentage=0.5)
+        split = vcu.ui_split(column, factor=0.5)
         column_left = split.column()
-        column_left.label("Surface Render Display:")
+        column_left.label(text="Surface Render Display:")
         column_left.prop(rprops, "render_display", text="")
 
         column_right = split.column()
-        column_right.label("Surface Viewport Display:")
+        column_right.label(text="Surface Viewport Display:")
         column_right.prop(rprops, "viewport_display", text="")
 
 
@@ -59,33 +61,36 @@ class FlipFluidCacheObjectTypePanel(bpy.types.Panel):
 
         box = self.layout.box()
         column = box.column()
-        split = column.split(percentage=0.5)
+        split = vcu.ui_split(column, factor=0.5)
         column_left = split.column()
-        column_left.label("Whitewater Render Display:")
+        column_left.label(text="Whitewater Render Display:")
         column_left.prop(rprops, "whitewater_render_display", text="")
 
         column_right = split.column()
-        column_right.label("Whitewater Viewport Display:")
+        column_right.label(text="Whitewater Viewport Display:")
         column_right.prop(rprops, "whitewater_viewport_display", text="")
 
 
     def draw_whitewater_viewport_render_settings(self, render_pct_prop, viewport_pct_prop):
         dprops = self.get_domain_properties()
         rprops = dprops.render
+        show_advanced = not vcu.get_addon_preferences(bpy.context).beginner_friendly_mode
 
         box = self.layout.box()
-        box.label("Display Settings Mode:")
-        row = box.row()
-        row.prop(rprops, "whitewater_view_settings_mode", expand=True)
+
+        if show_advanced:
+            box.label(text="Display Settings Mode:")
+            row = box.row()
+            row.prop(rprops, "whitewater_view_settings_mode", expand=True)
 
         column = box.column(align=True)
         split = column.split()
         column = split.column(align = True)
-        column.label("Final Display Settings:")
+        column.label(text="Final Display Settings:")
         column.prop(rprops, render_pct_prop, slider = True)
 
         column = split.column(align = True)
-        column.label("Preview Display Settings:")
+        column.label(text="Preview Display Settings:")
         column.prop(rprops, viewport_pct_prop, slider = True)
 
 
@@ -97,25 +102,34 @@ class FlipFluidCacheObjectTypePanel(bpy.types.Panel):
                                                  render_display_prop):
         dprops = self.get_domain_properties()
         rprops = dprops.render
+        show_advanced = not vcu.get_addon_preferences(bpy.context).beginner_friendly_mode
+
+        if not show_advanced:
+            box = self.layout.box()
+            box.label(text="Particle Object Settings:")
+            row = box.row(align=True)
+            row.prop(rprops, scale_prop)
+            row.prop(rprops, render_display_prop)
+            return
 
         box = self.layout.box()
-        box.label("Particle Object Settings Mode:")
+        box.label(text="Particle Object Settings Mode:")
         row = box.row()
         row.prop(rprops, "whitewater_particle_object_settings_mode", expand=True)
 
         column = box.column()
         row = column.row()
         column = row.column()
-        split = column.split(percentage = 0.25)
+        split = vcu.ui_split(column, factor=0.25)
         column = split.column()
-        column.label(label_str)
+        column.label(text=label_str)
         column = split.column()
-        split = column.split(percentage = 0.5)
+        split = vcu.ui_split(column, factor=0.5)
         column = split.column(align = True)
         row = column.row(align = True)
         row.enabled = not rprops.whitewater_use_icosphere_object
         row.prop_search(rprops, object_prop, 
-                        bpy.context.scene, "objects", text = "")
+                        bpy.data, "objects", text = "")
         row = column.row(align = True)
         row.prop(rprops, scale_prop)
         column = split.column(align = True)
@@ -128,7 +142,7 @@ class FlipFluidCacheObjectTypePanel(bpy.types.Panel):
 
         self.layout.separator()
         box = self.layout.box()
-        box.label("Material Library")
+        box.label(text="Material Library")
         box.prop(dprops.materials, material_prop, text=prop_str)
         box.separator()
 
@@ -137,7 +151,7 @@ class FlipFluidCacheObjectTypePanel(bpy.types.Panel):
         dprops = self.get_domain_properties()
 
         column = self.layout.column()
-        column.label("Surface")
+        column.label(text="Surface")
         column.separator()
 
         self.draw_surface_viewport_render_display()
@@ -152,7 +166,7 @@ class FlipFluidCacheObjectTypePanel(bpy.types.Panel):
         rprops = dprops.render
 
         column = self.layout.column()
-        column.label("Foam")
+        column.label(text="Foam")
         column.separator()
         
         self.draw_whitewater_viewport_render_display()
@@ -197,7 +211,7 @@ class FlipFluidCacheObjectTypePanel(bpy.types.Panel):
         rprops = dprops.render
 
         column = self.layout.column()
-        column.label("Bubble")
+        column.label(text="Bubble")
         column.separator()
         
         self.draw_whitewater_viewport_render_display()
@@ -242,7 +256,7 @@ class FlipFluidCacheObjectTypePanel(bpy.types.Panel):
         rprops = dprops.render
 
         column = self.layout.column()
-        column.label("Spray")
+        column.label(text="Spray")
         column.separator()
 
         self.draw_whitewater_viewport_render_display()
@@ -285,7 +299,7 @@ class FlipFluidCacheObjectTypePanel(bpy.types.Panel):
     def draw(self, context):
         dprops = self.get_domain_properties()
 
-        obj = context.scene.objects.active
+        obj = vcu.get_active_object(context)
         cache_props = dprops.mesh_cache.get_mesh_cache_from_blender_object(obj)
         if cache_props is None:
             return
@@ -301,8 +315,8 @@ class FlipFluidCacheObjectTypePanel(bpy.types.Panel):
     
 
 def register():
-    bpy.utils.register_class(FlipFluidCacheObjectTypePanel)
+    bpy.utils.register_class(FLIPFLUID_PT_CacheObjectTypePanel)
 
 
 def unregister():
-    bpy.utils.unregister_class(FlipFluidCacheObjectTypePanel)
+    bpy.utils.unregister_class(FLIPFLUID_PT_CacheObjectTypePanel)

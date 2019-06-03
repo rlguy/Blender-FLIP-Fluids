@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,88 +26,84 @@ from . import preset_properties
 from .. import types
 from ..presets import preset_library
 from ..objects import flip_fluid_preset_stack
+from ..utils import version_compatibility_utils as vcu
 
 
 class DomainPresetsProperties(bpy.types.PropertyGroup):
-    @classmethod
-    def register(cls):
-        cls.enable_presets = BoolProperty(
-                name="Enable Presets",
-                description="Enable functionality to apply fluid presets",
-                default=False,
-                update=lambda self, context: self._update_enable_presets(context),
-                )
-        cls.current_package = EnumProperty(
-                name="Package",
-                description="Preset package",
-                items=preset_library.get_all_package_enums,
-                update=lambda self, context: self._update_current_package(context),
-                )
-        cls.current_preset = EnumProperty(
-                items=preset_library.get_current_package_preset_enums,
-                name="Preset",
-                description="Fluid Preset",
-                update=lambda self, context: self._update_current_preset(context),
-                )
-        cls.preview_preset = BoolProperty(
-                name="Preview",
-                description="Preview the effects of the selected preset before"
-                    " adding to the preset stack",
-                default=False,
-                update=lambda self, context: self._update_preview_preset(context),
-                )
-        cls.new_package_settings = PointerProperty(
-                name="New Package Settings",
-                description="",
-                type=preset_properties.NewPresetPackageSettings,
-                )
-        cls.delete_package_settings = PointerProperty(
-                name="Delete Package Settings",
-                description="",
-                type=preset_properties.DeletePresetPackageSettings,
-                )
-        cls.new_preset_settings = PointerProperty(
-                name="New Preset Settings",
-                description="",
-                type=preset_properties.NewPresetSettings,
-                )
-        cls.delete_preset_settings = PointerProperty(
-                name="Delete Preset Settings",
-                description="",
-                type=preset_properties.DeletePresetSettings,
-                )
-        cls.edit_preset_settings = PointerProperty(
-                name="Edit Preset Settings",
-                description="",
-                type=preset_properties.EditPresetSettings,
-                )
-        cls.display_preset_settings = PointerProperty(
-                name="Display Preset Settings",
-                description="",
-                type=preset_properties.DisplayPresetInfoSettings,
-                )
-        cls.export_package_settings = PointerProperty(
-                name="Export Package Settings",
-                description="",
-                type=preset_properties.ExportPresetPackageSettings,
-                )
-        cls.import_package_settings = PointerProperty(
-                name="Import Package Settings",
-                description="",
-                type=preset_properties.ImportPresetPackageSettings,
-                )
-        cls.preset_stack = PointerProperty(
-                name="Flip Fluid Preset Stack",
-                description="",
-                type=flip_fluid_preset_stack.FlipFluidPresetStack,
-                )
+    conv = vcu.convert_attribute_to_28
 
-        cls.preset_manager_expanded = BoolProperty(default=False)
+    enable_presets = BoolProperty(
+            name="Enable Presets",
+            description="Enable functionality to apply fluid presets",
+            default=False,
+            update=lambda self, context: self._update_enable_presets(context),
+            ); exec(conv("enable_presets"))
+    current_package = EnumProperty(
+            name="Package",
+            description="Preset package",
+            items=preset_library.get_all_package_enums,
+            update=lambda self, context: self._update_current_package(context),
+            ); exec(conv("current_package"))
+    current_preset = EnumProperty(
+            items=preset_library.get_current_package_preset_enums,
+            name="Preset",
+            description="Fluid Preset",
+            update=lambda self, context: self._update_current_preset(context),
+            ); exec(conv("current_preset"))
+    preview_preset = BoolProperty(
+            name="Preview",
+            description="Automatically assign preset on change (without"
+                " needing to add to the preset stack)",
+            default=False,
+            update=lambda self, context: self._update_preview_preset(context),
+            ); exec(conv("preview_preset"))
+    new_package_settings = PointerProperty(
+            name="New Package Settings",
+            description="",
+            type=preset_properties.NewPresetPackageSettings,
+            ); exec(conv("new_package_settings"))
+    delete_package_settings = PointerProperty(
+            name="Delete Package Settings",
+            description="",
+            type=preset_properties.DeletePresetPackageSettings,
+            ); exec(conv("delete_package_settings"))
+    new_preset_settings = PointerProperty(
+            name="New Preset Settings",
+            description="",
+            type=preset_properties.NewPresetSettings,
+            ); exec(conv("new_preset_settings"))
+    delete_preset_settings = PointerProperty(
+            name="Delete Preset Settings",
+            description="",
+            type=preset_properties.DeletePresetSettings,
+            ); exec(conv("delete_preset_settings"))
+    edit_preset_settings = PointerProperty(
+            name="Edit Preset Settings",
+            description="",
+            type=preset_properties.EditPresetSettings,
+            ); exec(conv("edit_preset_settings"))
+    display_preset_settings = PointerProperty(
+            name="Display Preset Settings",
+            description="",
+            type=preset_properties.DisplayPresetInfoSettings,
+            ); exec(conv("display_preset_settings"))
+    export_package_settings = PointerProperty(
+            name="Export Package Settings",
+            description="",
+            type=preset_properties.ExportPresetPackageSettings,
+            ); exec(conv("export_package_settings"))
+    import_package_settings = PointerProperty(
+            name="Import Package Settings",
+            description="",
+            type=preset_properties.ImportPresetPackageSettings,
+            ); exec(conv("import_package_settings"))
+    preset_stack = PointerProperty(
+            name="Flip Fluid Preset Stack",
+            description="",
+            type=flip_fluid_preset_stack.FlipFluidPresetStack,
+            ); exec(conv("preset_stack"))
 
-
-    @classmethod
-    def unregister(cls):
-        pass
+    preset_manager_expanded = BoolProperty(default=False); exec(conv("preset_manager_expanded"))
 
 
     def register_preset_properties(self, registry, path):
@@ -131,8 +127,17 @@ class DomainPresetsProperties(bpy.types.PropertyGroup):
     def check_preset_enums(self):
         # Avoids blank package/preset enums if package or preset is missing
         current_preset = self.current_preset
-        self.current_package = self.current_package
-        self.current_preset = current_preset
+        try:
+            self.current_package = self.current_package
+        except:
+            enums = preset_library.get_all_package_enums(self, bpy.context)
+            self.current_package = enums[0][0]
+
+        try:
+            # preset does not exist in this addon installation
+            self.current_preset = current_preset
+        except:
+            self.current_preset = 'PRESET_NONE'
 
 
     def _initialize_default_current_package(self):

@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,6 +16,8 @@
 
 import bpy
 
+from .utils import version_compatibility_utils as vcu
+
 IS_RENDERING = False
 IS_FRAME_REQUIRING_RELOAD = False
 
@@ -28,8 +30,6 @@ def frame_change_pre(scene):
     __load_frame(__get_current_frame())
     dprops = __get_domain_properties()
     dprops.render.current_frame = __get_current_frame()
-
-    IS_RENDERING = False
 
 
 def render_pre(scene):
@@ -59,6 +59,11 @@ def scene_update_post(scene):
     if IS_FRAME_REQUIRING_RELOAD:
         IS_FRAME_REQUIRING_RELOAD = False
         reload_frame(__get_current_frame())
+
+
+def is_rendering():
+    global IS_RENDERING
+    return IS_RENDERING
 
 
 def reload_frame(frameno):
@@ -100,8 +105,12 @@ def __get_display_mode():
     dprops = __get_domain_properties()
     if IS_RENDERING:
         mode = dprops.render.render_display
+        if not bpy.context.scene.flip_fluid.show_render:
+            mode = 'DISPLAY_NONE'
     else:
         mode = dprops.render.viewport_display
+        if not bpy.context.scene.flip_fluid.show_viewport:
+            mode = 'DISPLAY_NONE'
     return mode
 
 
@@ -128,12 +137,17 @@ def __load_surface_frame(frameno, force_reload=False):
     if display_mode == 'DISPLAY_FINAL':
         cache.surface.mesh_prefix = ""
         cache.surface.mesh_display_name_prefix = "final_"
+        render_blur = IS_RENDERING and dprops.render.render_surface_motion_blur
+        cache.surface.enable_motion_blur = render_blur
+        cache.surface.motion_blur_scale = dprops.render.surface_motion_blur_scale
     elif display_mode == 'DISPLAY_PREVIEW':
         cache.surface.mesh_prefix = "preview"
         cache.surface.mesh_display_name_prefix = "preview_"
+        cache.surface.enable_motion_blur = False
     elif display_mode == 'DISPLAY_NONE':
         cache.surface.mesh_prefix = "none"
         cache.surface.mesh_display_name_prefix = "none_"
+        cache.surface.enable_motion_blur = False
 
     force_load = force_reload or IS_RENDERING
     cache.surface.load_frame(frameno, force_load)
@@ -159,6 +173,14 @@ def __load_whitewater_particle_frame(frameno, force_reload=False):
         cache.foam.mesh_display_name_prefix = "final_"
         cache.bubble.mesh_display_name_prefix = "final_"
         cache.spray.mesh_display_name_prefix = "final_"
+
+        render_blur = IS_RENDERING and dprops.render.render_whitewater_motion_blur
+        cache.foam.enable_motion_blur = render_blur
+        cache.bubble.enable_motion_blur = render_blur
+        cache.spray.enable_motion_blur = render_blur
+        cache.foam.motion_blur_scale = dprops.render.whitewater_motion_blur_scale
+        cache.bubble.motion_blur_scale = dprops.render.whitewater_motion_blur_scale
+        cache.spray.motion_blur_scale = dprops.render.whitewater_motion_blur_scale
     elif display_mode == 'DISPLAY_PREVIEW':
         cache.foam.mesh_prefix = "foam"
         cache.bubble.mesh_prefix = "bubble"
@@ -166,6 +188,9 @@ def __load_whitewater_particle_frame(frameno, force_reload=False):
         cache.foam.mesh_display_name_prefix = "preview_"
         cache.bubble.mesh_display_name_prefix = "preview_"
         cache.spray.mesh_display_name_prefix = "preview_"
+        cache.foam.enable_motion_blur = False
+        cache.bubble.enable_motion_blur = False
+        cache.spray.enable_motion_blur = False
     elif display_mode == 'DISPLAY_NONE':
         cache.foam.mesh_prefix = "foam_none"
         cache.bubble.mesh_prefix = "bubble_none"
@@ -173,6 +198,9 @@ def __load_whitewater_particle_frame(frameno, force_reload=False):
         cache.foam.mesh_display_name_prefix = "none_"
         cache.bubble.mesh_display_name_prefix = "none_"
         cache.spray.mesh_display_name_prefix = "none_"
+        cache.foam.enable_motion_blur = False
+        cache.bubble.enable_motion_blur = False
+        cache.spray.enable_motion_blur = False
 
     if rprops.whitewater_view_settings_mode == 'VIEW_SETTINGS_WHITEWATER':
         if display_mode == 'DISPLAY_FINAL':
@@ -206,7 +234,7 @@ def __load_whitewater_particle_frame(frameno, force_reload=False):
 
 def __delete_object(obj):
     mesh_data = obj.data
-    bpy.data.objects.remove(obj, True)
+    bpy.data.objects.remove(obj, do_unlink=True)
     mesh_data.user_clear()
     bpy.data.meshes.remove(mesh_data)
 
@@ -257,7 +285,7 @@ def __generate_icosphere():
         p.use_smooth = True
 
     obj = bpy.data.objects.new("Icosphere", mesh)
-    bpy.context.scene.objects.link(obj) 
+    vcu.link_fluid_mesh_object(obj, bpy.context)
 
     return obj
 
@@ -359,8 +387,6 @@ def __load_whitewater_particle_object_frame(frameno, force_reload=False):
         __delete_object(bubble_object)
     if destroy_spray_object:
         __delete_object(spray_object)
-
-    bpy.context.scene.update()
 
 
 def __load_whitewater_frame(frameno, force_reload=False):

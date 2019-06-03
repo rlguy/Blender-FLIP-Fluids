@@ -1,5 +1,5 @@
 # Blender FLIP Fluid Add-on
-# Copyright (C) 2018 Ryan L. Guy
+# Copyright (C) 2019 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,23 +47,63 @@ from . import (
         outflow_properties
         )
 from .. import types
+from ..utils import version_compatibility_utils as vcu
 
 
 class ObjectViewSettings(bpy.types.PropertyGroup):
-    @classmethod
-    def register(cls):
-        cls.hide_render = BoolProperty(default=False)
-        cls.show_name = BoolProperty(default=False)
-        cls.draw_type = StringProperty(default="")
-        cls.layers = BoolVectorProperty(size=20)
-
-
-    @classmethod
-    def unregister(cls):
-        pass
+    conv = vcu.convert_attribute_to_28
+    hide_render = BoolProperty(default=False); exec(conv("hide_render"))
+    show_name = BoolProperty(default=False); exec(conv("show_name"))
+    draw_type = StringProperty(default=""); exec(conv("draw_type"))
+    layers = BoolVectorProperty(size=20); exec(conv("layers"))
 
 
 class FlipFluidObjectProperties(bpy.types.PropertyGroup):
+    conv = vcu.convert_attribute_to_28
+    
+    domain = PointerProperty(
+            name="Flip Fluid Domain Properties",
+            description="",
+            type=domain_properties.FlipFluidDomainProperties,
+            ); exec(conv("domain"))
+    fluid = PointerProperty(
+            name="Flip Fluid Fluid Properties",
+            description="",
+            type=fluid_properties.FlipFluidFluidProperties,
+            ); exec(conv("fluid"))
+    obstacle = PointerProperty(
+            name="Flip Fluid Obstacle Properties",
+            description="",
+            type=obstacle_properties.FlipFluidObstacleProperties,
+            ); exec(conv("obstacle"))
+    inflow = PointerProperty(
+            name="Flip Fluid Inflow Properties",
+            description="",
+            type=inflow_properties.FlipFluidInflowProperties,
+            ); exec(conv("inflow"))
+    outflow = PointerProperty(
+            name="Flip Fluid Outflow Properties",
+            description="",
+            type=outflow_properties.FlipFluidOutflowProperties,
+            ); exec(conv("outflow"))
+    object_type = EnumProperty(
+            name="Type",
+            description="Type of participation in the FLIP fluid simulation",
+            items=types.object_types,
+            default='TYPE_NONE',
+            get=lambda self: self._get_object_type(),
+            set=lambda self, value: self._set_object_type(value),
+            update=lambda self, context: self._update_object_type(context),
+            ); exec(conv("object_type"))
+    saved_view_settings = PointerProperty(
+            name="Saved View Settings",
+            description="",
+            type=ObjectViewSettings,
+            ); exec(conv("saved_view_settings"))
+
+    is_active = BoolProperty(default=False); exec(conv("is_active"))
+    is_view_settings_saved = BoolProperty(default=False); exec(conv("is_view_settings_saved"))
+
     @classmethod
     def register(cls):
         bpy.types.Object.flip_fluid = PointerProperty(
@@ -71,48 +111,6 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
                 description="",
                 type=cls,
                 )
-        cls.domain = PointerProperty(
-                name="Flip Fluid Domain Properties",
-                description="",
-                type=domain_properties.FlipFluidDomainProperties,
-                )
-        cls.fluid = PointerProperty(
-                name="Flip Fluid Fluid Properties",
-                description="",
-                type=fluid_properties.FlipFluidFluidProperties,
-                )
-        cls.obstacle = PointerProperty(
-                name="Flip Fluid Obstacle Properties",
-                description="",
-                type=obstacle_properties.FlipFluidObstacleProperties,
-                )
-        cls.inflow = PointerProperty(
-                name="Flip Fluid Inflow Properties",
-                description="",
-                type=inflow_properties.FlipFluidInflowProperties,
-                )
-        cls.outflow = PointerProperty(
-                name="Flip Fluid Outflow Properties",
-                description="",
-                type=outflow_properties.FlipFluidOutflowProperties,
-                )
-        cls.object_type = EnumProperty(
-                name="Type",
-                description="Type of participation in the FLIP fluid simulation",
-                items=types.object_types,
-                default='TYPE_NONE',
-                get=lambda self: self._get_object_type(),
-                set=lambda self, value: self._set_object_type(value),
-                update=lambda self, context: self._update_object_type(context),
-                )
-        cls.saved_view_settings = PointerProperty(
-                name="Saved View Settings",
-                description="",
-                type=ObjectViewSettings,
-                )
-
-        cls.is_active = BoolProperty(default=False)
-        cls.is_view_settings_saved = BoolProperty(default=False)
         
 
     @classmethod
@@ -196,11 +194,11 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
         else:
             newtype = 'TYPE_NONE'
 
-        active_object = bpy.context.scene.objects.active
+        active_object = vcu.get_active_object()
         if oldtype == 'TYPE_NONE' and newtype != 'TYPE_NONE':
-            self._save_object_view_settings(bpy.context.scene.objects.active)
+            self._save_object_view_settings(active_object)
         if oldtype != 'TYPE_NONE' and newtype == 'TYPE_NONE':
-            self._reset_object_view_settings(bpy.context.scene.objects.active)
+            self._reset_object_view_settings(active_object)
             self._toggle_cycles_ray_visibility(active_object, True)
 
         if oldtype != 'TYPE_DOMAIN' and newtype == 'TYPE_DOMAIN':
@@ -227,45 +225,45 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
 
 
     def _update_object_type(self, context):
-        obj = context.scene.objects.active
+        obj = vcu.get_active_object(context)
         primary_layer = 0
         object_layer = 14
 
         if self.object_type == 'TYPE_DOMAIN':
             obj.hide_render = True
-            obj.draw_type = 'BOUNDS'
+            vcu.set_object_display_type(obj, 'BOUNDS')
             obj.show_name = True
             self._set_object_layer(obj, object_layer)
-            context.scene.layers[object_layer] = True
+            self._set_scene_layer(context.scene, object_layer)
 
         elif self.object_type == 'TYPE_FLUID':
             obj.hide_render = True
-            obj.draw_type = 'WIRE'
+            vcu.set_object_display_type(obj, 'WIRE')
             obj.show_name = True
             self._set_object_layer(obj, object_layer)
-            context.scene.layers[object_layer] = True
+            self._set_scene_layer(context.scene, object_layer)
 
         elif self.object_type == 'TYPE_OBSTACLE':
             obj.hide_render = False
-            obj.draw_type = 'TEXTURED'
+            vcu.set_object_display_type(obj, 'TEXTURED')
             obj.show_name = True
             self._set_object_layers(obj, [primary_layer, object_layer])
-            context.scene.layers[primary_layer] = True
-            context.scene.layers[object_layer] = True
+            self._set_scene_layer(context.scene, primary_layer)
+            self._set_scene_layer(context.scene, object_layer)
 
         elif self.object_type == 'TYPE_INFLOW':
             obj.hide_render = True
-            obj.draw_type = 'WIRE'
+            vcu.set_object_display_type(obj, 'WIRE')
             obj.show_name = True
             self._set_object_layer(obj, object_layer)
-            context.scene.layers[object_layer] = True
+            self._set_scene_layer(context.scene, object_layer)
 
         elif self.object_type == 'TYPE_OUTFLOW':
             obj.hide_render = True
-            obj.draw_type = 'WIRE'
+            vcu.set_object_display_type(obj, 'WIRE')
             obj.show_name = True
             self._set_object_layer(obj, object_layer)
-            context.scene.layers[object_layer] = True
+            self._set_scene_layer(context.scene, object_layer)
 
 
     def _save_object_view_settings(self, obj):
@@ -274,9 +272,13 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
 
         self.saved_view_settings.hide_render = obj.hide_render
         self.saved_view_settings.show_name = obj.show_name
-        self.saved_view_settings.draw_type = obj.draw_type
-        for i in range(20):
-            self.saved_view_settings.layers[i] = obj.layers[i]
+        self.saved_view_settings.draw_type = vcu.get_object_display_type(obj)
+
+        # Layers do not seem to be in Blender 2.80
+        if not vcu.is_blender_28():
+            for i in range(20):
+                self.saved_view_settings.layers[i] = obj.layers[i]
+
         self.is_view_settings_saved = True
         
 
@@ -286,24 +288,44 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
 
         obj.hide_render = self.saved_view_settings.hide_render
         obj.show_name = self.saved_view_settings.show_name
-        obj.draw_type = self.saved_view_settings.draw_type
-        for i in range(20):
-            obj.layers[i] = True
-        for i in range(20):
-            obj.layers[i] = self.saved_view_settings.layers[i]
+        vcu.set_object_display_type(obj, self.saved_view_settings.draw_type)
+
+        # Layers do not seem to be in Blender 2.80
+        if not vcu.is_blender_28():
+            for i in range(20):
+                obj.layers[i] = True
+            for i in range(20):
+                obj.layers[i] = self.saved_view_settings.layers[i]
+                
         self.is_view_settings_saved = False
 
 
     def _set_object_layer(self, obj, layeridx):
+        if vcu.is_blender_28():
+            # Layers do not seem to be in Blender 2.80
+            return
+
         obj.layers[layeridx] = True
         for i in range(20):
             obj.layers[i] = (i == layeridx)
 
 
     def _set_object_layers(self, obj, layers):
+        if vcu.is_blender_28():
+            # Layers do not seem to be in Blender 2.80
+            return
+
         obj.layers[layers[0]] = True
         for i in range(20):
             obj.layers[i] = (i in layers)
+
+
+    def _set_scene_layer(self, scene, layeridx):
+        if vcu.is_blender_28():
+            # Layers do not seem to be in Blender 2.80
+            return
+
+        scene.layers[layeridx] = True
 
 
 def scene_update_post(scene):
@@ -320,6 +342,10 @@ def load_pre():
 
 def load_post():
     domain_properties.load_post()
+    obstacle_properties.load_post()
+    fluid_properties.load_post()
+    inflow_properties.load_post()
+    outflow_properties.load_post()
 
 
 def save_pre():
