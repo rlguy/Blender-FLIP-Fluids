@@ -1,1 +1,0 @@
-See the release notes section of the Documentation/Wiki: https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Release-Notes
