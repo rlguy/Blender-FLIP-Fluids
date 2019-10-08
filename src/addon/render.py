@@ -22,68 +22,12 @@ IS_RENDERING = False
 IS_FRAME_REQUIRING_RELOAD = False
 
 
-def frame_change_pre(scene):
-    global IS_RENDERING
-    if not __is_domain_set():
-        return
-        
-    __load_frame(__get_current_frame())
-    dprops = __get_domain_properties()
-    dprops.render.current_frame = __get_current_frame()
-
-
-def render_pre(scene):
-    global IS_RENDERING
-    IS_RENDERING = True
-
-
-def render_post(scene):
-    global IS_RENDERING
-    IS_RENDERING = False
-
-
-def render_cancel(scene):
-    global IS_RENDERING
-    global IS_FRAME_REQUIRING_RELOAD
-    IS_RENDERING = False
-    IS_FRAME_REQUIRING_RELOAD = True
-
-
-def render_complete(scene):
-    global IS_FRAME_REQUIRING_RELOAD
-    IS_FRAME_REQUIRING_RELOAD = True
-
-
-def scene_update_post(scene):
-    global IS_FRAME_REQUIRING_RELOAD
-    if IS_FRAME_REQUIRING_RELOAD:
-        IS_FRAME_REQUIRING_RELOAD = False
-        reload_frame(__get_current_frame())
-
-
-def is_rendering():
-    global IS_RENDERING
-    return IS_RENDERING
-
-
-def reload_frame(frameno):
-    if not __is_domain_set():
-        return
-    __load_frame(frameno, True)
-    dprops = bpy.context.scene.flip_fluid.get_domain_properties()
-    dprops.render.current_frame = frameno
+def __get_domain_properties():
+    return bpy.context.scene.flip_fluid.get_domain_properties() 
 
 
 def __is_domain_set():
-    return bpy.context.scene.flip_fluid.get_num_domain_objects() != 0 
-
-
-def __get_domain_object():
-    return bpy.context.scene.flip_fluid.get_domain_object() 
-
-
-def __get_domain_properties():
-    return bpy.context.scene.flip_fluid.get_domain_properties() 
+    return bpy.context.scene.flip_fluid.get_domain_object() is not None
 
 
 def __get_current_frame():
@@ -114,6 +58,39 @@ def __get_display_mode():
     return mode
 
 
+def __update_surface_display_mode():
+    dprops = __get_domain_properties()
+    surface_cache = dprops.mesh_cache.surface
+
+    display_mode = __get_display_mode()
+    if display_mode == 'DISPLAY_FINAL':
+        surface_cache.mesh_prefix = ""
+        surface_cache.mesh_display_name_prefix = "final_"
+        render_blur = IS_RENDERING and dprops.render.render_surface_motion_blur
+        surface_cache.enable_motion_blur = render_blur
+        surface_cache.motion_blur_scale = dprops.render.surface_motion_blur_scale
+    elif display_mode == 'DISPLAY_PREVIEW':
+        surface_cache.mesh_prefix = "preview"
+        surface_cache.mesh_display_name_prefix = "preview_"
+        surface_cache.enable_motion_blur = False
+    elif display_mode == 'DISPLAY_NONE':
+        surface_cache.mesh_prefix = "none"
+        surface_cache.mesh_display_name_prefix = "none_"
+        surface_cache.enable_motion_blur = False
+
+
+def __load_surface_frame(frameno, force_reload=False):
+    global IS_RENDERING
+    if not __is_domain_set():
+        return
+
+    __update_surface_display_mode()
+
+    force_load = force_reload or IS_RENDERING
+    dprops = __get_domain_properties()
+    dprops.mesh_cache.surface.load_frame(frameno, force_load)
+
+
 def __get_whitewater_display_mode():
     if not __is_domain_set():
         return
@@ -126,44 +103,37 @@ def __get_whitewater_display_mode():
     return mode
 
 
-def __load_surface_frame(frameno, force_reload=False):
-    global IS_RENDERING
-    if not __is_domain_set():
-        return
-
-    dprops = __get_domain_properties()
-    cache = dprops.mesh_cache
-    display_mode = __get_display_mode()
-    if display_mode == 'DISPLAY_FINAL':
-        cache.surface.mesh_prefix = ""
-        cache.surface.mesh_display_name_prefix = "final_"
-        render_blur = IS_RENDERING and dprops.render.render_surface_motion_blur
-        cache.surface.enable_motion_blur = render_blur
-        cache.surface.motion_blur_scale = dprops.render.surface_motion_blur_scale
-    elif display_mode == 'DISPLAY_PREVIEW':
-        cache.surface.mesh_prefix = "preview"
-        cache.surface.mesh_display_name_prefix = "preview_"
-        cache.surface.enable_motion_blur = False
-    elif display_mode == 'DISPLAY_NONE':
-        cache.surface.mesh_prefix = "none"
-        cache.surface.mesh_display_name_prefix = "none_"
-        cache.surface.enable_motion_blur = False
-
-    force_load = force_reload or IS_RENDERING
-    cache.surface.load_frame(frameno, force_load)
-
-
-def __load_whitewater_particle_frame(frameno, force_reload=False):
-    global IS_RENDERING
-    if not __is_domain_set():
-        return
-
-    domain_object = __get_domain_object()
+def __get_whitewater_display_percentages():
     dprops = __get_domain_properties()
     rprops = dprops.render
+
+    display_mode = __get_whitewater_display_mode()
+    if rprops.whitewater_view_settings_mode == 'VIEW_SETTINGS_WHITEWATER':
+        if display_mode == 'DISPLAY_FINAL':
+            pct = rprops.render_whitewater_pct
+        elif display_mode == 'DISPLAY_PREVIEW':
+            pct = rprops.viewport_whitewater_pct
+        elif display_mode == 'DISPLAY_NONE':
+            pct = 0
+        foam_pct = bubble_pct = spray_pct = pct
+    else:
+        if display_mode == 'DISPLAY_FINAL':
+            foam_pct = rprops.render_foam_pct
+            bubble_pct = rprops.render_bubble_pct
+            spray_pct = rprops.render_spray_pct
+        elif display_mode == 'DISPLAY_PREVIEW':
+            foam_pct = rprops.viewport_foam_pct
+            bubble_pct = rprops.viewport_bubble_pct
+            spray_pct = rprops.viewport_spray_pct
+        elif display_mode == 'DISPLAY_NONE':
+            foam_pct = bubble_pct = spray_pct = 0
+
+    return foam_pct, bubble_pct, spray_pct
+
+
+def __update_whitewater_display_mode():
+    dprops = __get_domain_properties()
     cache = dprops.mesh_cache
-    if not dprops.whitewater.enable_whitewater_simulation:
-        return
 
     display_mode = __get_whitewater_display_mode()
     if display_mode == 'DISPLAY_FINAL':
@@ -202,92 +172,126 @@ def __load_whitewater_particle_frame(frameno, force_reload=False):
         cache.bubble.enable_motion_blur = False
         cache.spray.enable_motion_blur = False
 
-    if rprops.whitewater_view_settings_mode == 'VIEW_SETTINGS_WHITEWATER':
-        if display_mode == 'DISPLAY_FINAL':
-            pct = rprops.render_whitewater_pct
-        elif display_mode == 'DISPLAY_PREVIEW':
-            pct = rprops.viewport_whitewater_pct
-        elif display_mode == 'DISPLAY_NONE':
-            pct = 0
-        foam_pct = bubble_pct = spray_pct = pct
-    else:
-        if display_mode == 'DISPLAY_FINAL':
-            foam_pct = rprops.render_foam_pct
-            bubble_pct = rprops.render_bubble_pct
-            spray_pct = rprops.render_spray_pct
-        elif display_mode == 'DISPLAY_PREVIEW':
-            foam_pct = rprops.viewport_foam_pct
-            bubble_pct = rprops.viewport_bubble_pct
-            spray_pct = rprops.viewport_spray_pct
-        elif display_mode == 'DISPLAY_NONE':
-            foam_pct = bubble_pct = spray_pct = 0
-
+    foam_pct, bubble_pct, spray_pct = __get_whitewater_display_percentages()
     cache.foam.wwp_import_percentage = foam_pct
     cache.bubble.wwp_import_percentage = bubble_pct
     cache.spray.wwp_import_percentage = spray_pct
 
+
+
+def __load_whitewater_particle_frame(frameno, force_reload=False):
+    global IS_RENDERING
+    if not __is_domain_set():
+        return
+
+    dprops = __get_domain_properties()
+    if not dprops.whitewater.enable_whitewater_simulation:
+        return
+
+    __update_whitewater_display_mode()
+
     force_load = force_reload or IS_RENDERING
-    cache.foam.load_frame(frameno, force_load)
-    cache.bubble.load_frame(frameno, force_load)
-    cache.spray.load_frame(frameno, force_load)
+    dprops.mesh_cache.foam.load_frame(frameno, force_load)
+    dprops.mesh_cache.bubble.load_frame(frameno, force_load)
+    dprops.mesh_cache.spray.load_frame(frameno, force_load)
 
 
-def __delete_object(obj):
-    mesh_data = obj.data
-    bpy.data.objects.remove(obj, do_unlink=True)
-    mesh_data.user_clear()
-    bpy.data.meshes.remove(mesh_data)
-
-
-def __generate_icosphere():
+def __generate_icosphere_geometry():
     # Icosphere with 1 subdivision centred at origin
     verts = [
-        (0.0000, 0.0000, -1.0000),
-        (0.7236, -0.5257, -0.4472),
-        (-0.2764, -0.8506, -0.4472),
-        (-0.8944, 0.0000, -0.4472),
-        (-0.2764, 0.8506, -0.4472),
-        (0.7236, 0.5257, -0.4472),
-        (0.2764, -0.8506, 0.4472),
-        (-0.7236, -0.5257, 0.4472),
-        (-0.7236, 0.5257, 0.4472),
-        (0.2764, 0.8506, 0.4472),
-        (0.8944, 0.0000, 0.4472),
-        (0.0000, 0.0000, 1.0000)
+        (0.0000, 0.0000, -1.0000), (0.7236, -0.5257, -0.4472), (-0.2764, -0.8506, -0.4472),
+        (-0.8944, 0.0000, -0.4472), (-0.2764, 0.8506, -0.4472), (0.7236, 0.5257, -0.4472),
+        (0.2764, -0.8506, 0.4472), (-0.7236, -0.5257, 0.4472), (-0.7236, 0.5257, 0.4472),
+        (0.2764, 0.8506, 0.4472), (0.8944, 0.0000, 0.4472), (0.0000, 0.0000, 1.0000)
     ]
-
-    faces = [
-        (0, 1, 2),
-        (1, 0, 5),
-        (0, 2, 3),
-        (0, 3, 4),
-        (0, 4, 5),
-        (1, 5, 10),
-        (2, 1, 6),
-        (3, 2, 7),
-        (4, 3, 8),
-        (5, 4, 9),
-        (1, 10, 6),
-        (2, 6, 7),
-        (3, 7, 8),
-        (4, 8, 9),
-        (5, 9, 10),
-        (6, 10, 11),
-        (7, 6, 11),
-        (8, 7, 11),
-        (9, 8, 11),
-        (10, 9, 11)
+    tris = [
+        (0, 1, 2), (1, 0, 5), (0, 2, 3), (0, 3, 4), (0, 4, 5), (1, 5, 10), (2, 1, 6), (3, 2, 7),
+        (4, 3, 8), (5, 4, 9), (1, 10, 6), (2, 6, 7), (3, 7, 8), (4, 8, 9), (5, 9, 10), (6, 10, 11),
+        (7, 6, 11), (8, 7, 11), (9, 8, 11), (10, 9, 11)
     ]
+    return verts, tris
 
-    mesh = bpy.data.meshes.new("IcosphereMesh")
-    mesh.from_pydata(verts, [], faces)
-    for p in mesh.polygons:
-        p.use_smooth = True
 
-    obj = bpy.data.objects.new("Icosphere", mesh)
-    vcu.link_fluid_mesh_object(obj, bpy.context)
+def __get_object_geometry(bl_object):
+    verts, faces = [], []
+    for v in bl_object.data.vertices:
+        verts.append((v.co.x, v.co.y, v.co.z))
+    for p in bl_object.data.polygons:
+        face = []
+        for idx in p.vertices:
+            face.append(idx)
+        faces.append(tuple(face))
+    return verts, faces
 
-    return obj
+
+def __get_whitewater_particle_object_geometry(whitewater_type):
+    dprops = __get_domain_properties()
+    rprops = dprops.render
+
+    if whitewater_type == 'FOAM':
+        use_icosphere_bool = rprops.foam_use_icosphere_object
+        particle_object_name = rprops.foam_particle_object
+    elif whitewater_type == 'BUBBLE':
+        use_icosphere_bool = rprops.bubble_use_icosphere_object
+        particle_object_name = rprops.bubble_particle_object
+    elif whitewater_type == 'SPRAY':
+        use_icosphere_bool = rprops.spray_use_icosphere_object
+        particle_object_name = rprops.spray_particle_object
+
+    merge_settings = rprops.whitewater_particle_object_settings_mode == 'WHITEWATER_OBJECT_SETTINGS_WHITEWATER'
+    if merge_settings:
+            use_icosphere = rprops.whitewater_use_icosphere_object
+    else:
+        use_icosphere = use_icosphere_bool
+
+    if use_icosphere:
+        return __generate_icosphere_geometry()
+    else:
+        if merge_settings:
+            object_name = rprops.whitewater_particle_object
+        else:
+            object_name = particle_object_name
+        bl_object = bpy.data.objects.get(object_name)
+
+        if bl_object is not None:
+            return __get_object_geometry(bl_object)
+        else:
+            return [], []
+
+
+def __get_whitewater_particle_object_scale(whitewater_type):
+    dprops = __get_domain_properties()
+    rprops = dprops.render
+
+    if whitewater_type == 'FOAM':
+        particle_object_scale = rprops.foam_particle_scale
+    elif whitewater_type == 'BUBBLE':
+        particle_object_scale = rprops.bubble_particle_scale
+    elif whitewater_type == 'SPRAY':
+        particle_object_scale = rprops.spray_particle_scale
+
+    if rprops.whitewater_particle_object_settings_mode == 'WHITEWATER_OBJECT_SETTINGS_WHITEWATER':
+        return rprops.whitewater_particle_scale
+    else:
+        return particle_object_scale
+
+
+def __get_whitewater_particle_object_display_bool(whitewater_type):
+    global IS_RENDERING
+    dprops = __get_domain_properties()
+    rprops = dprops.render
+
+    if whitewater_type == 'FOAM':
+        particle_object_viewport_display = not rprops.only_display_foam_in_render
+    elif whitewater_type == 'BUBBLE':
+        particle_object_viewport_display = not rprops.only_display_bubble_in_render
+    elif whitewater_type == 'SPRAY':
+        particle_object_viewport_display = not rprops.only_display_spray_in_render
+
+    if rprops.whitewater_particle_object_settings_mode == 'WHITEWATER_OBJECT_SETTINGS_WHITEWATER':
+        return (not rprops.only_display_whitewater_in_render) or IS_RENDERING
+    else:
+        return particle_object_viewport_display or IS_RENDERING
 
 
 def __load_whitewater_particle_object_frame(frameno, force_reload=False):
@@ -295,98 +299,49 @@ def __load_whitewater_particle_object_frame(frameno, force_reload=False):
     if not __is_domain_set():
         return
 
-    domain_object = __get_domain_object()
     dprops = __get_domain_properties()
-    rprops = dprops.render
-    cache = dprops.mesh_cache
     if not dprops.whitewater.enable_whitewater_simulation:
         return
 
-    if rprops.whitewater_particle_object_settings_mode == 'WHITEWATER_OBJECT_SETTINGS_WHITEWATER':
-        foam_object = rprops.whitewater_particle_object
-        bubble_object = rprops.whitewater_particle_object
-        spray_object = rprops.whitewater_particle_object
-    else:
-        foam_object = rprops.foam_particle_object
-        bubble_object = rprops.bubble_particle_object
-        spray_object = rprops.spray_particle_object
+    foam_verts,   foam_tris =   __get_whitewater_particle_object_geometry("FOAM")
+    bubble_verts, bubble_tris = __get_whitewater_particle_object_geometry("BUBBLE")
+    spray_verts,  spray_tris =  __get_whitewater_particle_object_geometry("SPRAY")
 
-    foam_object = bpy.data.objects.get(foam_object)
-    bubble_object = bpy.data.objects.get(bubble_object)
-    spray_object = bpy.data.objects.get(spray_object)
+    foam_scale =   __get_whitewater_particle_object_scale('FOAM')
+    bubble_scale = __get_whitewater_particle_object_scale('BUBBLE')
+    spray_scale =  __get_whitewater_particle_object_scale('SPRAY')
 
-    destroy_foam_object = destroy_bubble_object = destroy_spray_object = False
-    if rprops.whitewater_particle_object_settings_mode == 'WHITEWATER_OBJECT_SETTINGS_WHITEWATER':
-        if rprops.whitewater_use_icosphere_object:
-            foam_object = __generate_icosphere()
-            bubble_object = __generate_icosphere()
-            spray_object = __generate_icosphere()
-            destroy_foam_object = destroy_bubble_object = destroy_spray_object = True
-    else:
-        if rprops.foam_use_icosphere_object:
-            foam_object = __generate_icosphere()
-            destroy_foam_object = True
-        if rprops.bubble_use_icosphere_object:
-            bubble_object = __generate_icosphere()
-            destroy_bubble_object = True
-        if rprops.spray_use_icosphere_object:
-            spray_object = __generate_icosphere()
-            destroy_spray_object = True
-
-    if rprops.whitewater_particle_object_settings_mode == 'WHITEWATER_OBJECT_SETTINGS_WHITEWATER':
-        display_viewport = not rprops.only_display_whitewater_in_render
-        display_object = IS_RENDERING or display_viewport
-        display_foam_viewport = display_bubble_viewport = display_spray_viewport = display_viewport
-        display_foam = display_bubble = display_spray = display_object
-        foam_scale = bubble_scale = spray_scale = rprops.whitewater_particle_scale
-    else:
-        display_foam_viewport = not rprops.only_display_foam_in_render
-        display_bubble_viewport = not rprops.only_display_bubble_in_render
-        display_spray_viewport = not rprops.only_display_spray_in_render
-        display_foam = IS_RENDERING or display_foam_viewport
-        display_bubble = IS_RENDERING or display_bubble_viewport
-        display_spray = IS_RENDERING or display_spray_viewport
-        foam_scale = rprops.foam_particle_scale
-        bubble_scale = rprops.bubble_particle_scale
-        spray_scale = rprops.spray_particle_scale
+    display_foam_particle =   __get_whitewater_particle_object_display_bool('FOAM')
+    display_bubble_particle = __get_whitewater_particle_object_display_bool('BUBBLE')
+    display_spray_particle =  __get_whitewater_particle_object_display_bool('SPRAY')
 
     force_load = force_reload or IS_RENDERING
-    if foam_object and display_foam:
-        cache.foam.load_duplivert_object(
-                foam_object, 
-                foam_scale, 
-                display_foam_viewport, 
+    if foam_verts and display_foam_particle:
+        dprops.mesh_cache.foam.load_duplivert_object(
+                foam_verts, foam_tris,
+                foam_scale,
                 force_load
                 )
     else:
-        cache.foam.unload_duplivert_object()
+        dprops.mesh_cache.foam.unload_duplivert_object()
         
-    if bubble_object and display_bubble:
-        cache.bubble.load_duplivert_object(
-                bubble_object, 
-                bubble_scale, 
-                display_bubble_viewport, 
+    if bubble_verts and display_bubble_particle:
+        dprops.mesh_cache.bubble.load_duplivert_object(
+                bubble_verts, bubble_tris,
+                bubble_scale,
                 force_load
                 )
     else:
-        cache.bubble.unload_duplivert_object()
+        dprops.mesh_cache.bubble.unload_duplivert_object()
 
-    if spray_object and display_spray:
-        cache.spray.load_duplivert_object(
-                spray_object, 
-                spray_scale, 
-                display_spray_viewport, 
+    if spray_verts and display_spray_particle:
+        dprops.mesh_cache.spray.load_duplivert_object(
+                spray_verts, spray_tris,
+                spray_scale,
                 force_load
                 )
     else:
-        cache.spray.unload_duplivert_object()
-
-    if destroy_foam_object:
-        __delete_object(foam_object)
-    if destroy_bubble_object:
-        __delete_object(bubble_object)
-    if destroy_spray_object:
-        __delete_object(spray_object)
+        dprops.mesh_cache.spray.unload_duplivert_object()
 
 
 def __load_whitewater_frame(frameno, force_reload=False):
@@ -394,20 +349,7 @@ def __load_whitewater_frame(frameno, force_reload=False):
     __load_whitewater_particle_object_frame(frameno, force_reload)
 
 
-def __load_obstacle_frame(frameno, force_reload=False):
-    global IS_RENDERING
-    if not __is_domain_set():
-        return
-
-    dprops = __get_domain_properties()
-    if not dprops.debug.export_internal_obstacle_mesh:
-        return
-
-    force_load = force_reload or IS_RENDERING
-    dprops.mesh_cache.obstacle.load_frame(frameno, force_load)
-
-
-def __load_particle_frame(frameno, force_reload=False):
+def __load_fluid_particle_debug_frame(frameno, force_reload=False):
     global IS_RENDERING
     if not __is_domain_set():
         return
@@ -420,13 +362,107 @@ def __load_particle_frame(frameno, force_reload=False):
     dprops.mesh_cache.gl_particles.load_frame(frameno, force_load)
 
 
+def __load_obstacle_debug_frame(frameno, force_reload=False):
+    global IS_RENDERING
+    if not __is_domain_set():
+        return
+
+    dprops = __get_domain_properties()
+    if not dprops.debug.export_internal_obstacle_mesh:
+        return
+
+    force_load = force_reload or IS_RENDERING
+    dprops.mesh_cache.obstacle.load_frame(frameno, force_load)
+
+
 def __load_frame(frameno, force_reload=False):
     if not __is_domain_set():
         return
 
     dprops = __get_domain_properties()
-    dprops.mesh_cache.initialize_cache_settings()
+    dprops.mesh_cache.initialize_cache_objects()
+
     __load_surface_frame(frameno, force_reload)
     __load_whitewater_frame(frameno, force_reload)
-    __load_particle_frame(frameno, force_reload)
-    __load_obstacle_frame(frameno, force_reload)
+    __load_fluid_particle_debug_frame(frameno, force_reload)
+    __load_obstacle_debug_frame(frameno, force_reload)
+
+
+def reload_frame(frameno):
+    if not __is_domain_set():
+        return
+    __load_frame(frameno, True)
+
+
+def render_init(scene):
+    if not __is_domain_set():
+        return
+
+    global IS_RENDERING
+    IS_RENDERING = True
+
+    dprops = __get_domain_properties()
+    dprops.mesh_cache.initialize_cache_objects()
+
+    if dprops.whitewater.enable_whitewater_simulation:
+        dprops.mesh_cache.foam.initialize_duplivert_object()
+        dprops.mesh_cache.bubble.initialize_duplivert_object()
+        dprops.mesh_cache.spray.initialize_duplivert_object()
+
+
+def render_complete(scene):
+    if not __is_domain_set():
+        return
+
+    global IS_RENDERING
+    global IS_FRAME_REQUIRING_RELOAD
+    IS_RENDERING = False
+    IS_FRAME_REQUIRING_RELOAD = True
+
+    dprops = __get_domain_properties()
+    if dprops.whitewater.enable_whitewater_simulation:
+        if not __get_whitewater_particle_object_display_bool('FOAM'):
+            dprops.mesh_cache.foam.unload_duplivert_object()
+        if not __get_whitewater_particle_object_display_bool('BUBBLE'):
+            dprops.mesh_cache.bubble.unload_duplivert_object()
+        if not __get_whitewater_particle_object_display_bool('SPRAY'):
+            dprops.mesh_cache.spray.unload_duplivert_object()
+
+
+def render_cancel(scene):
+    render_complete(scene)
+
+
+def frame_change_post(scene):
+    if not __is_domain_set():
+        return
+
+    if is_rendering() and vcu.is_blender_28():
+        if not scene.render.use_lock_interface:
+                print("FLIP FLUIDS WARNING: The Blender interface should be locked during render to prevent render crashes (Blender > Render > Lock Interface).")
+        if not vcu.is_blender_281():
+            print("FLIP FLUIDS WARNING: Blender 2.80 contains a bug that can cause frequent render crashes and incorrect render results. Blender version 2.81 or higher is recommended.")
+
+    frameno = __get_current_frame()
+    __load_frame(frameno)
+    dprops = __get_domain_properties()
+    dprops.render.current_frame = frameno
+
+
+def scene_update_post(scene):
+    if not __is_domain_set():
+        return
+
+    global IS_FRAME_REQUIRING_RELOAD
+    if IS_FRAME_REQUIRING_RELOAD:
+        IS_FRAME_REQUIRING_RELOAD = False
+
+        current_frame = __get_current_frame()
+        reload_frame(current_frame)
+        dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+        dprops.render.current_frame = current_frame
+
+
+def is_rendering():
+    global IS_RENDERING
+    return IS_RENDERING

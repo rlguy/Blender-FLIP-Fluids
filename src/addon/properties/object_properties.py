@@ -332,8 +332,8 @@ def scene_update_post(scene):
     domain_properties.scene_update_post(scene)
 
 
-def frame_change_pre(scene):
-    domain_properties.frame_change_pre(scene)
+def frame_change_post(scene):
+    domain_properties.frame_change_post(scene)
 
 
 def load_pre():

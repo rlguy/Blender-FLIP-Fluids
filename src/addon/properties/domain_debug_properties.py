@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, os
+import bpy, os, sys
 from bpy.props import (
         BoolProperty,
         BoolVectorProperty,
@@ -23,7 +23,8 @@ from bpy.props import (
         FloatVectorProperty,
         IntProperty,
         StringProperty,
-        PointerProperty
+        PointerProperty,
+        CollectionProperty
         )
 
 from .custom_properties import (
@@ -37,6 +38,17 @@ from .. import (
 
 from ..operators import draw_operators
 from ..utils import version_compatibility_utils as vcu
+
+
+class VersionHistoryItem(bpy.types.PropertyGroup):
+    conv = vcu.convert_attribute_to_28
+    blender_version = StringProperty(default="-1"); exec(conv("blender_version"))
+    flip_fluids_version = StringProperty(default="-1"); exec(conv("flip_fluids_version"))
+    flip_fluids_label = StringProperty(default="-1"); exec(conv("flip_fluids_label"))
+
+
+    def get_info_string(self):
+        return self.blender_version + "\t" + self.flip_fluids_version + "\t" + self.flip_fluids_label
 
 
 class DomainDebugProperties(bpy.types.PropertyGroup):
@@ -207,6 +219,8 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
     is_draw_debug_grid_operator_running = BoolProperty(default=False); exec(conv("is_draw_debug_grid_operator_running"))
     is_draw_gl_particles_operator_running = BoolProperty(default=False); exec(conv("is_draw_gl_particles_operator_running"))
 
+    version_history = CollectionProperty(type=VersionHistoryItem); exec(conv("version_history"))
+
 
     def register_preset_properties(self, registry, path):
         add = registry.add_property
@@ -241,6 +255,27 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
 
     def scene_update_post(self, scene):
         self._update_debug_grid_geometry(bpy.context)
+
+
+    def save_pre(self):
+        bl_info = sys.modules["flip_fluids_addon"].bl_info
+        vdata = self.version_history.add()
+        vdata.blender_version = bpy.app.version_string
+        vdata.flip_fluids_version = str(bl_info.get('version', (-1, -1, -1)))
+        vdata.flip_fluids_label = bl_info.get('description', "-1")
+        if len(self.version_history) > 250:
+            self.version_history.remove(0)
+
+
+    def print_version_history(self):
+        if len(self.version_history) == 0:
+            print("No version history")
+        for idx,vdata in enumerate(self.version_history):
+            print(idx, vdata.get_info_string())
+
+
+    def clear_version_history(self):
+        self.version_history.clear()
 
 
     def get_particle_draw_aabb_object(self):
@@ -321,8 +356,10 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
 
 
 def register():
+    bpy.utils.register_class(VersionHistoryItem)
     bpy.utils.register_class(DomainDebugProperties)
 
 
 def unregister():
+    bpy.utils.unregister_class(VersionHistoryItem)
     bpy.utils.unregister_class(DomainDebugProperties)

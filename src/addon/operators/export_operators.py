@@ -40,8 +40,10 @@ class ExportFluidSimulation(bpy.types.Operator):
 
 
     def _initialize_mesh_exporter(self, context):
-        print("Exporting Simulation Meshes:")
-        print("------------------------------------------------------------")
+        dprops = self._get_domain_properties()
+        if dprops.debug.display_console_output:
+            print("Exporting Simulation Meshes:")
+            print("------------------------------------------------------------")
 
         simprops = context.scene.flip_fluid
         objects = (simprops.get_fluid_objects() +

@@ -124,6 +124,9 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         cache_object.lock_scale = (True, True, True)
         vcu.link_fluid_mesh_object(cache_object)
 
+        smooth_mod = cache_object.modifiers.new("Smooth", "SMOOTH")
+        smooth_mod.iterations = 0
+
         self.cache_object_name = cache_object.name
         self._initialize_cache_object_octane(cache_object)
 
@@ -132,10 +135,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         if not self._is_cache_object_initialized(domain_object):
             return
         cache_object = self.get_cache_object(domain_object)
-        mesh_data = cache_object.data
-        bpy.data.objects.remove(cache_object, do_unlink=True)
-        mesh_data.user_clear()
-        bpy.data.meshes.remove(mesh_data)
+        vcu.delete_object(cache_object)
         self.cache_object_name = ""
 
 
@@ -144,21 +144,33 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
             return
 
         cache_object = self.get_cache_object()
-        old_mesh_data = cache_object.data
 
-        mesh_data_name = self.cache_object_default_name + "_mesh"
-        new_mesh_data = bpy.data.meshes.new(mesh_data_name)
-        new_mesh_data.from_pydata([], [], [])
-        
-        self._transfer_mesh_materials(old_mesh_data, new_mesh_data)
-        self._transfer_mesh_smoothness(old_mesh_data, new_mesh_data)
-        self._transfer_octane_settings(old_mesh_data, new_mesh_data)
+        if vcu.is_blender_281():
+            mesh_data = cache_object.data
 
-        cache_object.data = new_mesh_data
-        domain_object = self._get_domain_object()
+            is_smooth = self._is_mesh_smooth(mesh_data)
+            octane_mesh_type = self._get_octane_mesh_type(mesh_data)
 
-        old_mesh_data.user_clear()
-        bpy.data.meshes.remove(old_mesh_data)
+            mesh_data.clear_geometry()
+            mesh_data.from_pydata([], [], [])
+
+            self._set_mesh_smoothness(mesh_data, is_smooth)
+            self._set_octane_settings(mesh_data, octane_mesh_type)
+
+        else:
+            old_mesh_data = cache_object.data
+
+            mesh_data_name = self.cache_object_default_name + "_mesh"
+            new_mesh_data = bpy.data.meshes.new(mesh_data_name)
+            new_mesh_data.from_pydata([], [], [])
+            
+            self._transfer_mesh_materials(old_mesh_data, new_mesh_data)
+            self._transfer_mesh_smoothness(old_mesh_data, new_mesh_data)
+            self._transfer_octane_settings(old_mesh_data, new_mesh_data)
+
+            cache_object.data = new_mesh_data
+
+            vcu.delete_mesh_data(old_mesh_data)
 
 
     def _is_loaded_frame_up_to_date(self, frameno):
@@ -181,79 +193,101 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         d.frame  = frameno
 
 
-    def load_frame(self, frameno, force_load = False):
+    def _is_load_frame_valid(self, frameno, force_load=False):
         global DISABLE_MESH_CACHE_LOAD
         if DISABLE_MESH_CACHE_LOAD:
-            return
+            return False
 
         if not self._is_domain_set():
-            return
+            return False
 
         current_frame = bpy.context.scene.frame_current
         if current_frame == self.current_loaded_frame and not force_load:
+            return False
+
+        if self._is_loaded_frame_up_to_date(frameno) and not force_load:
+            return False
+
+        is_render_backloading = current_frame == self.loaded_frame_data.frame - 1
+        if render.is_rendering() and self.enable_motion_blur and is_render_backloading:
+            return False
+
+        return True
+
+
+    def _update_motion_blur(self, frameno):
+        if not self.enable_motion_blur:
+            return
+
+        cache_object = self.get_cache_object()
+        frame_string = self._frame_number_to_string(frameno)
+        current_frame = bpy.context.scene.frame_current
+
+        if vcu.is_blender_281() and cache_object.data.shape_keys is not None:
+            for idx,key in enumerate(cache_object.data.shape_keys.key_blocks):
+                cache_object.shape_key_remove(key=key)
+
+        blur_data = self._import_motion_blur_data(frameno)
+        if len(blur_data) == len(cache_object.data.vertices):
+            cache_object.shape_key_add(name="basis" + frame_string, from_mix=False)
+            shape_key = cache_object.shape_key_add(name="blur1" + frame_string, from_mix=False)
+            for i, v in enumerate(shape_key.data):
+                v.co[0] += blur_data[i][0] * self.motion_blur_scale
+                v.co[1] += blur_data[i][1] * self.motion_blur_scale
+                v.co[2] += blur_data[i][2] * self.motion_blur_scale
+            shape_key.keyframe_insert(data_path='value', frame=current_frame)
+            shape_key.value = 1
+            shape_key.keyframe_insert(data_path='value', frame=current_frame + 1)
+            shape_key.value = 0
+
+            shape_key = cache_object.shape_key_add(name="blur2" + frame_string, from_mix=False)
+            for i, v in enumerate(shape_key.data):
+                v.co[0] -= blur_data[i][0] * self.motion_blur_scale
+                v.co[1] -= blur_data[i][1] * self.motion_blur_scale
+                v.co[2] -= blur_data[i][2] * self.motion_blur_scale
+            shape_key.keyframe_insert(data_path='value', frame=current_frame)
+            shape_key.value = 1
+            shape_key.keyframe_insert(data_path='value', frame=current_frame - 1)
+            shape_key.value = 0
+
+
+    def load_frame(self, frameno, force_load=False):
+        if not self._is_load_frame_valid(frameno, force_load):
             return
 
         if not self._is_cache_object_initialized():
             self.initialize_cache_object()
 
         cache_object = self.get_cache_object()
-        old_mesh_data = cache_object.data
         if cache_object.mode == 'EDIT':
             # Blender will crash if object is reloaded in edit mode
             return
 
-        if self._is_loaded_frame_up_to_date(frameno) and not force_load:
-            return
-
-        is_render_backloading = current_frame == self.loaded_frame_data.frame - 1
-        if render.is_rendering() and self.enable_motion_blur and is_render_backloading:
-            return
-
         self._initialize_bounds_data(frameno)
-        vertices, triangles = self._import_frame_mesh(frameno)
 
         frame_string = self._frame_number_to_string(frameno)
         new_mesh_data_name = (self.mesh_display_name_prefix + 
                               self.cache_object_name + 
                               frame_string)
-        new_mesh_data = bpy.data.meshes.new(new_mesh_data_name)
-        new_mesh_data.from_pydata(vertices, [], triangles)
-        self._transfer_mesh_materials(old_mesh_data, new_mesh_data)
-        self._transfer_mesh_smoothness(old_mesh_data, new_mesh_data)
-        self._transfer_octane_settings(old_mesh_data, new_mesh_data)
+        is_smooth = self._is_mesh_smooth(cache_object.data)
+        octane_mesh_type = self._get_octane_mesh_type(cache_object.data)
+        vertices, triangles = self._import_frame_mesh(frameno)
 
-        cache_object.data = new_mesh_data
-        old_mesh_data.user_clear()
-        bpy.data.meshes.remove(old_mesh_data)
+        vcu.swap_object_mesh_data_geometry(cache_object, vertices, triangles, 
+                                           new_mesh_data_name,
+                                           is_smooth,
+                                           octane_mesh_type)
 
         self.update_transforms()
-
         if self.enable_motion_blur:
-            blur_data = self._import_motion_blur_data(frameno)
-            if len(blur_data) == len(vertices):
-                cache_object.shape_key_add(name="basis" + frame_string, from_mix=False)
-                shape_key = cache_object.shape_key_add(name="blur1" + frame_string, from_mix=False)
-                for i, v in enumerate(shape_key.data):
-                    v.co[0] += blur_data[i][0] * self.motion_blur_scale
-                    v.co[1] += blur_data[i][1] * self.motion_blur_scale
-                    v.co[2] += blur_data[i][2] * self.motion_blur_scale
-                shape_key.keyframe_insert(data_path='value', frame=current_frame)
-                shape_key.value = 1
-                shape_key.keyframe_insert(data_path='value', frame=current_frame + 1)
-                shape_key.value = 0
+            self._update_motion_blur(frameno)
 
-                shape_key = cache_object.shape_key_add(name="blur2" + frame_string, from_mix=False)
-                for i, v in enumerate(shape_key.data):
-                    v.co[0] -= blur_data[i][0] * self.motion_blur_scale
-                    v.co[1] -= blur_data[i][1] * self.motion_blur_scale
-                    v.co[2] -= blur_data[i][2] * self.motion_blur_scale
-                shape_key.keyframe_insert(data_path='value', frame=current_frame)
-                shape_key.value = 1
-                shape_key.keyframe_insert(data_path='value', frame=current_frame - 1)
-                shape_key.value = 0
-
-        self.current_loaded_frame = current_frame
+        self.current_loaded_frame = bpy.context.scene.frame_current
         self._commit_loaded_frame_data(frameno)
+
+        if vcu.is_blender_279() or render.is_rendering():
+            # This statement causes crashes if exporting Alembic in Blender 2.8x.
+            vcu.depsgraph_update()
 
 
     def update_transforms(self):
@@ -321,46 +355,93 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         d.current_loaded_frame  = frameno
 
 
-    def load_duplivert_object(self, obj, 
-                              scale=1.0, display_in_viewport=False, force_load=False):
+    def _is_load_duplivert_object_valid(self, force_load=False):
         if not self._is_domain_set():
-            return
-
+            return False
         current_frame = bpy.context.scene.frame_current
         if current_frame == self.current_duplivert_loaded_frame and not force_load:
+            return False
+        if self._is_loaded_duplivert_frame_up_to_date(current_frame):
+            return False
+        return True
+
+
+    def _is_octane_available(self):
+        return hasattr(bpy.context.scene, 'octane')
+
+
+    def _initialize_duplivert_object_octane(self, cache_object, duplivert_object):
+        if not self._is_octane_available():
             return
+        duplivert_object.data.octane.mesh_type = cache_object.data.octane.mesh_type
+
+
+    def initialize_duplivert_object(self):
         if not self._is_cache_object_initialized():
             self.initialize_cache_object()
-        if self._is_loaded_duplivert_frame_up_to_date(current_frame):
-            return
-        if self.is_duplivert_object_set:
-            self.unload_duplivert_object()
-
         cache_object = self.get_cache_object()
+
+        if self.is_duplivert_object_set and self.get_duplivert_object() is not None:
+            return
+
         duplivert_object_name = self.cache_object_name + self.duplivert_object_default_name
         duplivert_mesh_name = duplivert_object_name + "_mesh"
-        duplivert_mesh_data = obj.data.copy()
-        duplivert_mesh_data.name = duplivert_mesh_name
+        duplivert_mesh_data = bpy.data.meshes.new(duplivert_mesh_name)
+        duplivert_mesh_data.from_pydata([], [], [])
         duplivert_object = bpy.data.objects.new(duplivert_object_name, duplivert_mesh_data)
         duplivert_object.parent = cache_object
-        vcu.set_object_hide_viewport(duplivert_object, not display_in_viewport)
-        duplivert_object.matrix_world = obj.matrix_world.copy()
-        duplivert_object.location = (0, 0, 0)
-        duplivert_object.scale[0] *= scale
-        duplivert_object.scale[1] *= scale
-        duplivert_object.scale[2] *= scale
-        self.apply_duplivert_object_material(duplivert_object)
-        vcu.link_fluid_mesh_object(duplivert_object, bpy.context)
+        vcu.link_fluid_mesh_object(duplivert_object)
 
+        self._initialize_duplivert_object_octane(cache_object, duplivert_object)
+        vcu.set_object_instance_type(cache_object, 'VERTS')
+
+        self.is_duplivert_object_set = True
+        self.duplivert_object_name = duplivert_object.name
+
+
+
+    def load_duplivert_object(self, vertices, faces, scale=1.0, force_load=False):
+        if not self._is_load_duplivert_object_valid(force_load):
+            return
+
+        if not self._is_cache_object_initialized():
+            self.initialize_cache_object()
+        if not self.is_duplivert_object_set:
+            self.initialize_duplivert_object()
+
+        cache_object = self.get_cache_object()
+        duplivert_object = self.get_duplivert_object()
+        duplivert_mesh_name = self.cache_object_name + self.duplivert_object_default_name + "_mesh"
+        is_smooth = True
+        octane_mesh_type = self._get_octane_mesh_type(cache_object.data)
+
+        vcu.swap_object_mesh_data_geometry(
+                duplivert_object, 
+                vertices, faces, 
+                duplivert_mesh_name, 
+                is_smooth, 
+                octane_mesh_type
+            )
+
+        duplivert_object.location = (0, 0, 0)
+        duplivert_object.scale[0] = scale
+        duplivert_object.scale[1] = scale
+        duplivert_object.scale[2] = scale
+
+        self.apply_duplivert_object_material(duplivert_object)
         vcu.set_object_instance_type(cache_object, 'VERTS')
 
         self.is_duplivert_object_set = True
         self.duplivert_scale = scale
         self.duplivert_object_name = duplivert_object.name
-        self.load_duplivert_object_octane(cache_object, duplivert_object)
 
+        current_frame = bpy.context.scene.frame_current
         self.current_duplivert_loaded_frame = current_frame
         self._commit_loaded_duplivert_frame_data(current_frame)
+
+        if vcu.is_blender_279() or render.is_rendering():
+            # This statement causes crashes if exporting Alembic in Blender 2.8x.
+            vcu.depsgraph_update()
 
 
     def unload_duplivert_object(self):
@@ -369,10 +450,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
         duplivert_object = bpy.data.objects.get(self.duplivert_object_name)
         if duplivert_object is not None:
-            mesh_data = duplivert_object.data
-            bpy.data.objects.remove(duplivert_object, do_unlink=True)
-            mesh_data.user_clear()
-            bpy.data.meshes.remove(mesh_data)
+            vcu.delete_object(duplivert_object)
 
         cache_object = self.get_cache_object()
         vcu.set_object_instance_type(cache_object, 'NONE')
@@ -460,7 +538,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
 
     def _is_domain_set(self):
-        return bpy.context.scene.flip_fluid.get_num_domain_objects() != 0
+        return bpy.context.scene.flip_fluid.get_domain_object() is not None
 
 
     def _get_domain_object(self):
@@ -523,16 +601,6 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
             cache_object.data.octane.mesh_type = SCATTER
 
 
-    def _is_octane_available(self):
-        return hasattr(bpy.context.scene, 'octane')
-
-
-    def load_duplivert_object_octane(self, cache_object, duplivert_object):
-        if not self._is_octane_available():
-            return
-        duplivert_object.data.octane.mesh_type = cache_object.data.octane.mesh_type
-
-
     def _is_cache_object_initialized(self, domain_object = None):
         if domain_object is None and not self._is_domain_set():
             return False
@@ -565,9 +633,27 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
             self._flatten_mesh(dst_mesh_data)
 
 
+    def _set_mesh_smoothness(self, mesh_data, is_smooth):
+        if is_smooth:
+            self._smooth_mesh(mesh_data)
+        else:
+            self._flatten_mesh(mesh_data)
+
+
     def _transfer_octane_settings(self, src_mesh_data, dst_mesh_data):
         if self._is_octane_available():
             dst_mesh_data.octane.mesh_type = src_mesh_data.octane.mesh_type
+
+
+    def _get_octane_mesh_type(self, mesh_data):
+        if self._is_octane_available():
+            return mesh_data.octane.mesh_type
+        return None
+
+
+    def _set_octane_settings(self, mesh_data, mesh_type):
+        if self._is_octane_available() and mesh_type is not None:
+            mesh_data.octane.mesh_type = mesh_type
 
 
     def _is_mesh_smooth(self, mesh_data):
@@ -904,7 +990,7 @@ class FlipFluidCache(bpy.types.PropertyGroup):
 
 
     def _is_domain_set(self):
-        return bpy.context.scene.flip_fluid.get_num_domain_objects() != 0
+        return bpy.context.scene.flip_fluid.get_domain_object() is not None
 
 
     def _get_domain_object(self):

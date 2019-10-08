@@ -35,7 +35,8 @@ class FLIPFLUID_PT_DomainTypeMaterialsPanel(bpy.types.Panel):
 
     def draw(self, context):
         if not material_library.is_material_library_available():
-            self.layout.label(text="This feature is not available in the GitHub release.")
+            self.layout.label(text="This feature is missing data and will be disabled.")
+            self.layout.label(text="Please contact the developers if you think this is an error.")
             return
 
         obj = vcu.get_active_object(context)

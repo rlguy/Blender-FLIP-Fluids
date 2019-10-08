@@ -17,6 +17,7 @@
 import bpy
 
 from ..utils import version_compatibility_utils as vcu
+from ..utils import installation_utils
 
 
 class FlipFluidAdd(bpy.types.Operator):
@@ -24,6 +25,12 @@ class FlipFluidAdd(bpy.types.Operator):
     bl_label = "Add FLIP fluid object"
     bl_description = "Add active object as FLIP Fluid"
     bl_options = {'REGISTER'}
+
+
+    @classmethod
+    def poll(csl, context):
+        return installation_utils.is_installation_complete()
+
 
     def execute(self, context):
         obj = vcu.get_active_object(context)
@@ -37,6 +44,12 @@ class FlipFluidRemove(bpy.types.Operator):
     bl_label = "Remove FLIP fluid object"
     bl_description = "Remove FLIP Fluid settings from Object"
     bl_options = {'REGISTER'}
+
+
+    @classmethod
+    def poll(csl, context):
+        return installation_utils.is_installation_complete()
+
 
     def execute(self, context):
         obj = vcu.get_active_object(context)

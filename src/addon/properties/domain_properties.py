@@ -144,15 +144,15 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
         self.simulation.initialize()
         self.cache.initialize()
         self.advanced.initialize()
-        #self.materials.initialize()
+        self.materials.initialize()
         self._initialize_cache()
         self._initialize_property_registry()
-        #self.presets.initialize()
+        self.presets.initialize()
 
 
     def dummy_initialize(self):
         self.simulation.initialize()
-        #self.materials.initialize()
+        self.materials.initialize()
         self._initialize_property_registry()
 
 
@@ -261,8 +261,8 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
         #self.materials.scene_update_post(scene)
 
 
-    def frame_change_pre(self, scene):
-        self.stats.frame_change_pre(scene)
+    def frame_change_post(self, scene):
+        self.stats.frame_change_post(scene)
 
 
     def load_pre(self):
@@ -281,7 +281,7 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
 
 
     def save_pre(self):
-        pass
+        self.debug.save_pre()
 
 
     def save_post(self):
@@ -295,11 +295,11 @@ def scene_update_post(scene):
     dprops.scene_update_post(scene)
 
 
-def frame_change_pre(scene):
+def frame_change_post(scene):
     dprops = scene.flip_fluid.get_domain_properties()
     if dprops is None:
         return
-    dprops.frame_change_pre(scene)
+    dprops.frame_change_post(scene)
 
 
 def load_pre():

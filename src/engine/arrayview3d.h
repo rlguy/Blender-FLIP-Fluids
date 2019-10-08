@@ -189,6 +189,8 @@ public:
                 }
             }
         }
+
+        return view;
     }
 
     void fill(T value) {

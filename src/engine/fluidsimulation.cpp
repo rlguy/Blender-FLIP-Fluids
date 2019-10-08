@@ -4453,9 +4453,9 @@ void FluidSimulation::_polygonizeOutputSurface(TriangleMesh &surface, TriangleMe
         float eps = 1e-9;
         float offset = (float)(_obstacleMeshingOffset * _dx);
         if (std::abs(offset) > eps) {
-            for (int k = 0; k < _ksize + 1; k++) {
-                for (int j = 0; j < _jsize + 1; j++) {
-                    for (int i = 0; i < _isize + 1; i++) {
+            for (int k = 2; k < _ksize - 1; k++) {
+                for (int j = 2; j < _jsize - 1; j++) {
+                    for (int i = 2; i < _isize - 1; i++) {
                         solidSDF->set(i, j, k, solidSDF->get(i, j, k) + offset);
                     }
                 }

@@ -19,7 +19,8 @@ if "bpy" in locals():
     reloadable_modules = [
         'export_utils',
         'ui_utils',
-        'preset_utils'
+        'preset_utils',
+        'installation_utils'
     ]
     for module_name in reloadable_modules:
         if module_name in locals():
@@ -30,5 +31,6 @@ import bpy
 from . import (
     export_utils,
     ui_utils,
-    preset_utils
+    preset_utils,
+    installation_utils
     )

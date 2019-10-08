@@ -260,10 +260,7 @@ def generate_dummy_domain_object():
 
 
 def destroy_dummy_domain_object(domain_object):
-    mesh_data = domain_object.data
-    bpy.data.objects.remove(domain_object, do_unlink=True)
-    mesh_data.user_clear()
-    bpy.data.meshes.remove(mesh_data)
+    vcu.delete_object(domain_object)
     vcu.depsgraph_update()
 
 

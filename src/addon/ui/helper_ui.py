@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy
+import bpy, platform
 
 from ..utils import version_compatibility_utils as vcu
 
@@ -39,8 +39,8 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
         preferences = vcu.get_addon_preferences(context)
 
         box = self.layout.box()
+        box.label(text="Add/Remove Objects:")
         column = box.column(align=True)
-        column.label(text="Add/Remove Objects:")
         column.operator(
                 "flip_fluid_operators.helper_add_objects", 
                 text="Obstacle"
@@ -62,8 +62,8 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
         column.operator("flip_fluid_operators.helper_remove_objects", text="Remove")
 
         box = self.layout.box()
+        box.label(text="Quick Select:")
         column = box.column(align=True)
-        column.label(text="Quick Select:")
         column.operator("flip_fluid_operators.helper_select_domain", text="Domain")
         column = box.column(align=True)
         column.operator("flip_fluid_operators.helper_select_surface", text="Surface")
@@ -71,6 +71,27 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
         row.operator("flip_fluid_operators.helper_select_foam", text="Foam")
         row.operator("flip_fluid_operators.helper_select_bubble", text="Bubble")
         row.operator("flip_fluid_operators.helper_select_spray", text="Spray")
+
+        if platform.system() == "Windows":
+            box = self.layout.box()
+            box.label(text="Command Line Tools:")
+            column = box.column(align=True)
+            column.operator("flip_fluid_operators.helper_command_line_bake")
+            column.operator("flip_fluid_operators.helper_command_line_render")
+        
+        box = self.layout.box()
+        box.label(text="Render Tools:")
+        column = box.column(align=True)
+        if vcu.is_blender_28():
+            status = "Enabled" if context.scene.render.use_lock_interface else 'Disabled'
+            icon = 'FUND' if context.scene.render.use_lock_interface else 'ERROR'
+            column.operator("flip_fluid_operators.helper_stable_rendering_28")
+            column.label(text="Current status: " + status, icon=icon)
+        else:
+            status = "Enabled" if context.scene.render.display_mode == 'SCREEN' else 'Disabled'
+            icon = 'FILE_TICK' if context.scene.render.display_mode == 'SCREEN' else 'ERROR'
+            column.operator("flip_fluid_operators.helper_stable_rendering_279")
+            column.label(text="Current status: " + status, icon=icon)
 
         column = self.layout.column()
         column.separator()

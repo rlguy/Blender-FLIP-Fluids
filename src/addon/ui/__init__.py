@@ -44,6 +44,7 @@ from . import(
         )
 
 from ..utils import version_compatibility_utils as vcu
+from ..utils import installation_utils
 
 
 def append_to_PHYSICS_PT_add_panel(self, context):
@@ -66,20 +67,33 @@ def append_to_PHYSICS_PT_add_panel(self, context):
         row.prop(context.scene.flip_fluid, "show_render", icon="RESTRICT_RENDER_OFF", text="")
         row.prop(context.scene.flip_fluid, "show_viewport", icon="RESTRICT_VIEW_OFF", text="")
     else:
-        use_custom_icon = True
-        icon = context.scene.flip_fluid.get_logo_icon()
-        if use_custom_icon and icon is not None:
+        if not installation_utils.is_installation_complete():
             column_right.operator(
-                    "flip_fluid_operators.flip_fluid_add", 
-                    text="FLIP Fluid", 
-                    icon_value=context.scene.flip_fluid.get_logo_icon().icon_id
-                    )
+                        "flip_fluid_operators.flip_fluid_add", 
+                        text="FLIP Fluid", 
+                        icon='ERROR'
+                        )
         else:
-            column_right.operator(
-                    "flip_fluid_operators.flip_fluid_add", 
-                    text="FLIP Fluid", 
-                    icon='MOD_FLUIDSIM'
-                    )
+            use_custom_icon = True
+            icon = context.scene.flip_fluid.get_logo_icon()
+            if use_custom_icon and icon is not None:
+                column_right.operator(
+                        "flip_fluid_operators.flip_fluid_add", 
+                        text="FLIP Fluid", 
+                        icon_value=context.scene.flip_fluid.get_logo_icon().icon_id
+                        )
+            else:
+                column_right.operator(
+                        "flip_fluid_operators.flip_fluid_add", 
+                        text="FLIP Fluid", 
+                        icon='MOD_FLUIDSIM'
+                        )
+
+    if not installation_utils.is_installation_complete():
+        box = self.layout.box()
+        box.label(text="IMPORTANT: Blender restart required", icon="ERROR")
+        box.label(text="Please restart Blender to complete")
+        box.label(text="installation of the FLIP Fluids add-on.")
 
 
 def register():

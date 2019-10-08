@@ -108,9 +108,10 @@ class FLIPFLUID_PT_DomainTypeFluidSurfacePanel(bpy.types.Panel):
         row.prop(sprops, "smoothing_value")
         row.prop(sprops, "smoothing_iterations")
 
-        column = self.layout.column(align=True)
-        column.separator()
-        column.prop(sprops, "generate_motion_blur_data")
+        # Motion Blur is no longer supported
+        #column = self.layout.column(align=True)
+        #column.separator()
+        #column.prop(sprops, "generate_motion_blur_data")
 
 
 def register():

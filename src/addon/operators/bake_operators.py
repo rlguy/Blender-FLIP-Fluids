@@ -19,6 +19,7 @@ import bpy, os, glob, json, threading, shutil
 from .. import bake
 from ..objects import flip_fluid_mesh_exporter
 from .. import export
+from ..utils import installation_utils
 
 _IS_BAKE_OPERATOR_RUNNING = False
 
@@ -244,6 +245,12 @@ class BakeFluidSimulation(bpy.types.Operator):
 
 
     def execute(self, context):
+        if not installation_utils.is_installation_complete():
+            self.report({"ERROR"}, 
+                         "FLIP Fluids installation incomplete. Restart Blender to complete installation. If you think this is an error, please contact the developers.")
+            self.cancel(context)
+            return {'CANCELLED'}
+
         if not context.scene.flip_fluid.is_domain_object_set():
             self.report({"ERROR_INVALID_INPUT"}, 
                          "Fluid simulation requires a domain object")

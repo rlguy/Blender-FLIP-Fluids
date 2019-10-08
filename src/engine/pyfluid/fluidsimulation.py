@@ -85,9 +85,9 @@ class FluidSimulation(object):
         self._obj = pb.execute_lib_func(libfunc, [isize, jsize, ksize, dx])
 
     def __del__(self):
-        libfunc = lib.FluidSimulation_destroy
-        pb.init_lib_func(libfunc, [c_void_p], None)
         try:
+            libfunc = lib.FluidSimulation_destroy
+            pb.init_lib_func(libfunc, [c_void_p], None)
             libfunc(self._obj)
         except:
             pass

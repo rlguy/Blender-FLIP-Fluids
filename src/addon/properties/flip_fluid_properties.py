@@ -166,7 +166,11 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
 
     def _initialize_custom_icons(self):
         addon_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        logo_path = os.path.join(addon_dir, "icons", "flip_fluids_logo.png")
+        if vcu.is_blender_28():
+            icon_filename = "flip_fluids_logo_28.png"
+        else:
+            icon_filename = "flip_fluids_logo_27.png"
+        logo_path = os.path.join(addon_dir, "icons", icon_filename)
         self.custom_icons.clear()
         if os.path.isfile(logo_path):
             self.custom_icons.load(self.logo_name, logo_path, 'IMAGE')

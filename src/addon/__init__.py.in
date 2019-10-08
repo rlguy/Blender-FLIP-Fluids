@@ -19,7 +19,7 @@ bl_info = {
     "description": "A FLIP Fluid Simulation Tool for Blender (v@FLUIDENGINE_VERSION_LABEL@)",
     "author" : "Ryan Guy <ryan.l.guy[at]gmail.com>, Dennis Fassbaender <info[at]df-videos.de>",
     "version" : (@FLUIDENGINE_VERSION_MAJOR@, @FLUIDENGINE_VERSION_MINOR@, @FLUIDENGINE_VERSION_REVISION@),
-    "blender" : (2, 80, 0),
+    "blender" : (2, 81, 0),
     "location" : "Properties > Physics > FLIP Fluid",
     "warning" : "",
     "wiki_url" : "https://github.com/rlguy/Blender-FLIP-Fluids/wiki",
@@ -66,30 +66,28 @@ from . import (
         exit_handler
         )
 
+from .utils import installation_utils
 from .utils import version_compatibility_utils as vcu
 
 
 @bpy.app.handlers.persistent
 def scene_update_post(scene):
-    properties.scene_update_post(scene)
+    if not render.is_rendering():
+        # We don't want to update these while rendering to prevent
+        # odd behaviour in the depsgraph
+        properties.scene_update_post(scene)
+        materials.scene_update_post(scene)
     render.scene_update_post(scene)
-    materials.scene_update_post(scene)
 
 
 @bpy.app.handlers.persistent
-def frame_change_pre(scene):
-    properties.frame_change_pre(scene)
-    render.frame_change_pre(scene)
+def render_init(scene):
+    render.render_init(scene)
 
 
 @bpy.app.handlers.persistent
-def render_pre(scene):
-    render.render_pre(scene)
-
-
-@bpy.app.handlers.persistent
-def render_post(scene):
-    render.render_post(scene)
+def render_complete(scene):
+    render.render_complete(scene)
 
 
 @bpy.app.handlers.persistent
@@ -98,8 +96,9 @@ def render_cancel(scene):
 
 
 @bpy.app.handlers.persistent
-def render_complete(scene):
-    render.render_complete(scene)
+def frame_change_post(scene):
+    properties.frame_change_post(scene)
+    render.frame_change_post(scene)
 
 
 @bpy.app.handlers.persistent
@@ -109,6 +108,11 @@ def load_pre(nonedata):
 
 @bpy.app.handlers.persistent
 def load_post(nonedata):
+    if vcu.is_blender_28() and not vcu.is_blender_281():
+        print("FLIP FLUIDS WARNING: Blender 2.80 contains bugs that can cause frequent crashes during render, Alembic export, and rigid/cloth simulation baking. Blender version 2.81 or higher is recommended.")
+
+    installation_utils.complete_installation()
+
     materials.load_post()
     properties.load_post()
     presets.load_post()
@@ -143,11 +147,10 @@ def register():
     else:
         bpy.app.handlers.scene_update_post.append(scene_update_post)
 
-    bpy.app.handlers.frame_change_pre.append(frame_change_pre)
-    bpy.app.handlers.render_pre.append(render_pre)
-    bpy.app.handlers.render_post.append(render_post)
-    bpy.app.handlers.render_cancel.append(render_cancel)
+    bpy.app.handlers.render_init.append(render_init)
     bpy.app.handlers.render_complete.append(render_complete)
+    bpy.app.handlers.render_cancel.append(render_cancel)
+    bpy.app.handlers.frame_change_post.append(frame_change_post)
     bpy.app.handlers.load_pre.append(load_pre)
     bpy.app.handlers.load_post.append(load_post)
     bpy.app.handlers.save_pre.append(save_pre)
@@ -168,11 +171,10 @@ def unregister():
     else:
         bpy.app.handlers.scene_update_post.remove(scene_update_post)
 
-    bpy.app.handlers.frame_change_pre.remove(frame_change_pre)
-    bpy.app.handlers.render_pre.remove(render_pre)
-    bpy.app.handlers.render_post.remove(render_post)
-    bpy.app.handlers.render_cancel.remove(render_cancel)
+    bpy.app.handlers.render_init.remove(render_init)
     bpy.app.handlers.render_complete.remove(render_complete)
+    bpy.app.handlers.render_cancel.remove(render_cancel)
+    bpy.app.handlers.frame_change_post.remove(frame_change_post)
     bpy.app.handlers.load_pre.remove(load_pre)
     bpy.app.handlers.load_post.remove(load_post)
     bpy.app.handlers.save_pre.remove(save_pre)
