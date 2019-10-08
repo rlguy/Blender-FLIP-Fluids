@@ -25,6 +25,7 @@ from bpy.props import (
         )
 
 from ..ui import helper_ui
+from ..utils import installation_utils
 from ..utils import version_compatibility_utils as vcu
 
 
@@ -89,6 +90,45 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
 
     def draw(self, context):
         column = self.layout.column(align=True)
+
+        is_installation_complete = installation_utils.is_installation_complete()
+        if not is_installation_complete:
+            box = column.box()
+            box.label(text="IMPORTANT: Blender restart required", icon='ERROR')
+            box.separator()
+            box.label(text="Please Restart Blender to complete installation of the FLIP Fluids add-on")
+            box.separator()
+            box.label(text="Preferences will be available after the installation is complete")
+            box.separator()
+            box.separator()
+            box.operator(
+                    "wm.url_open", 
+                    text="Installation Instructions", 
+                    icon="WORLD"
+                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Addon-Installation-and-Uninstallation"
+
+        if vcu.is_blender_28() and not vcu.is_blender_281():
+            box = column.box()
+            box.label(text="WARNING: Blender 2.80 contains bugs that can cause frequent crashes", icon='ERROR')
+            box.label(text="     during render, Alembic export, and rigid/cloth simulation baking.")
+            box.separator()
+            box.label(text="     Blender version 2.81 or higher is recommended.")
+            box.separator()
+            box.operator(
+                    "wm.url_open", 
+                    text="Blender 2.80 Known Issues and Workarounds", 
+                    icon="WORLD"
+                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Blender-2.8-Support#known-issues"
+            column.separator()
+            column.separator()
+
+        if vcu.is_blender_28():
+            box = column.box()
+            box.label(text="Reminder: It is necessary to lock the Blender interface during render to ", icon='INFO')
+            box.label(text="     prevent crashes (Blender > Render > Lock Interface).")
+
+        if not is_installation_complete:
+            return
 
         split = column.split()
         column_left = split.column(align=True)

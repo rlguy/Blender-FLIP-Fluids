@@ -21,6 +21,14 @@ from ..pyfluid import TriangleMesh
 
 def is_blender_28():
     return bpy.app.version >= (2, 80, 0)
+
+
+def is_blender_281():
+    return bpy.app.version >= (2, 81, 0)
+
+
+def is_blender_279():
+    return bpy.app.version <= (2, 79, 999)
     
 
 def register_dict_property(dict_object, name_str, prop):
@@ -103,9 +111,11 @@ def get_object_hide_viewport(obj):
 
 def set_object_instance_type(obj, display_type):
     if is_blender_28():
-        obj.instance_type = display_type
+        if obj.instance_type != display_type:
+            obj.instance_type = display_type
     else:
-        obj.dupli_type = display_type
+        if obj.dupli_type != display_type:
+            obj.dupli_type = display_type
 
 
 def get_flip_fluids_collection(context):
@@ -172,6 +182,18 @@ def remove_from_flip_fluids_collection(obj, context):
             flip_collection.objects.unlink(obj)
 
 
+def delete_object(obj):
+    mesh_data = obj.data
+    bpy.data.objects.remove(obj, do_unlink=True)
+    mesh_data.user_clear()
+    bpy.data.meshes.remove(mesh_data)
+
+
+def delete_mesh_data(mesh_data):
+    mesh_data.user_clear()
+    bpy.data.meshes.remove(mesh_data)
+
+
 def get_scene_collection(context=None):
     if context is None:
         context = bpy.context
@@ -206,21 +228,6 @@ def depsgraph_update(context=None):
     else:
         context.scene.update()
 
-"""
-def object_to_mesh(obj, context=None):
-    if context is None:
-        context = bpy.context
-    if is_blender_28():
-        # A change in Blender 2.80 seems to require updating the scene
-        # to have modifiers apply correctly (08-apr-2019)
-        context.scene.update()
-        return obj.to_mesh(depsgraph=context.depsgraph, 
-                           apply_modifiers=True)
-    else:
-        return obj.to_mesh(scene=context.scene, 
-                           apply_modifiers=True, 
-                           settings='RENDER')
-"""
 
 def object_to_triangle_mesh(obj, matrix_world=None):
     edge_split_show_render_values = []
@@ -284,6 +291,51 @@ def object_to_triangle_mesh(obj, matrix_world=None):
             m.show_render = edge_split_show_render_values.pop(0)
 
     return tmesh
+
+
+def _set_mesh_smoothness(mesh_data, is_smooth):
+        values = [is_smooth] * len(mesh_data.polygons)
+        mesh_data.polygons.foreach_set("use_smooth", values)
+
+
+def _set_octane_mesh_type(mesh_data, mesh_type):
+        if hasattr(bpy.context.scene, 'octane') and mesh_type is not None:
+            mesh_data.octane.mesh_type = mesh_type
+
+
+def _transfer_mesh_materials(src_mesh_data, dst_mesh_data):
+        material_names = []
+        for m in src_mesh_data.materials:
+            material_names.append(m.name)
+
+        for name in material_names:
+            for m in bpy.data.materials:
+                if m.name == name:
+                    dst_mesh_data.materials.append(m)
+                    break
+
+
+def swap_object_mesh_data_geometry(bl_object, vertices=[], triangles=[], 
+                                   mesh_name="Untitled",
+                                   smooth_mesh=False,
+                                   octane_mesh_type='0'):
+    if is_blender_281():
+        bl_object.data.clear_geometry()
+        bl_object.data.from_pydata(vertices, [], triangles)
+        _set_mesh_smoothness(bl_object.data, smooth_mesh)
+        _set_octane_mesh_type(bl_object.data, octane_mesh_type)
+    else:
+        old_mesh_data = bl_object.data
+        new_mesh_data = bpy.data.meshes.new(mesh_name)
+        new_mesh_data.from_pydata(vertices, [], triangles)
+        bl_object.data = new_mesh_data
+
+        _transfer_mesh_materials(old_mesh_data, new_mesh_data)
+        _set_mesh_smoothness(new_mesh_data, smooth_mesh)
+        _set_octane_mesh_type(new_mesh_data, octane_mesh_type)
+
+        old_mesh_data.user_clear()
+        bpy.data.meshes.remove(old_mesh_data)
 
 
 def get_blender_preferences(context=None):

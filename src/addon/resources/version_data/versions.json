@@ -98,5 +98,23 @@
         "Performace improvements",
         "Stability improvements",
         "Meshing improvements"
+    ],
+    "1.0.6": [
+        "Added support for Blender 2.81",
+        "Added operators to toolbox menu to automatically launch command line baking and rendering processes (Feature only supported on Windows)",
+        "Added reminder in the addon installation/preferences menu and Physics panel to complete installation by restarting Blender",
+        "Added warning about Blender 2.80 bugs to the addon installation/preferences menu and system console output",
+        "Added a reminder to prevent render crashes by locking interface in Blender 2.8x to addon installation/preferences menu and system console output",
+        "Added an operator to the FLIP Fluid Display Settings panel and toolshelf menu to automatically lock the interface (Blender 2.8x)",
+        "Added an operator to the FLIP Fluid Display Settings panel and toolshelf menu to automatically set the render display mode to Fullscreen (Blender 2.79)",
+        "Added monochromatic FLIP Fluids icon for Blender 2.8x",
+        "Fixed issue that could cause frequent Blender 2.8x crashes during render, Alembic export, and rigid/cloth simulation baking (issue #403)",
+        "Fixed bug where Inflow 'Substep Emissions' value could not be keyframed",
+        "Fixed TypeError that could be triggered at the end of simulation baking (issue #469)",
+        "Fixed bug where console output would still be displayed during mesh export when the 'Display Console Output' option was disabled",
+        "Reduced amount of particle meshing artifacts on boundary of domain",
+        "Addon no longer automatically deletes the FLIP Fluids cache when closing an unsaved .blend file",
+        "Addon now automatically adds a smooth modifier (set to 0 iterations) to the fluid mesh objects",
+        "Addon will now display an error if a user attempts to bake a simulation before completing installation"
     ]
 }

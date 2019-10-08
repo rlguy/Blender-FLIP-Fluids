@@ -36,9 +36,9 @@ class MeshFluidSource():
         self._obj = pb.execute_lib_func(libfunc, [i, j, k, dx])
 
     def __del__(self):
-        libfunc = lib.MeshFluidSource_destroy
-        pb.init_lib_func(libfunc, [c_void_p], None)
         try:
+            libfunc = lib.MeshFluidSource_destroy
+            pb.init_lib_func(libfunc, [c_void_p], None)
             libfunc(self._obj)
         except:
             pass
@@ -89,7 +89,7 @@ class MeshFluidSource():
     def substep_emissions(self, n):
         libfunc = lib.MeshFluidSource_set_substep_emissions
         pb.init_lib_func(libfunc, [c_void_p, c_int, c_void_p], None)
-        pb.execute_lib_func(libfunc, [self(), n])
+        pb.execute_lib_func(libfunc, [self(), int(n)])
 
     @property
     def inflow(self):

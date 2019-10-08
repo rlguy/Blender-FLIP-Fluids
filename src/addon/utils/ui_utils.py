@@ -159,6 +159,5 @@ def force_ui_redraw():
     mesh_data.from_pydata([], [], [])
     obj = bpy.data.objects.new("test_object", mesh_data)
     vcu.link_object(obj, bpy.context)
-    bpy.data.objects.remove(obj, do_unlink=True)
-    mesh_data.user_clear()
-    bpy.data.meshes.remove(mesh_data)
+    vcu.delete_object(obj)
+    

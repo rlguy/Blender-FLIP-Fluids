@@ -215,9 +215,9 @@ private:
         Array3d<bool> activeGrid(blockdims.i, blockdims.j, blockdims.k, false);
         activeGrid.set(params.activeblocks, true);
         int idcounter = 0;
-        for (size_t k = 0; k < activeGrid.depth; k++) {
-            for (size_t j = 0; j < activeGrid.height; j++) {
-                for (size_t i = 0; i < activeGrid.width; i++) {
+        for (int k = 0; k < activeGrid.depth; k++) {
+            for (int j = 0; j < activeGrid.height; j++) {
+                for (int i = 0; i < activeGrid.width; i++) {
                     if (activeGrid(i, j, k)) {
                         BlockData *bd = _blockDataGrid.getPointer(i, j, k);
                         bd->id = idcounter;

@@ -19,6 +19,7 @@ import bpy, os, glob, json, threading, shutil
 from .. import bake
 from ..objects import flip_fluid_mesh_exporter
 from .. import export
+from ..utils import installation_utils
 
 _IS_BAKE_OPERATOR_RUNNING = False
 
@@ -244,6 +245,12 @@ class BakeFluidSimulation(bpy.types.Operator):
 
 
     def execute(self, context):
+        if not installation_utils.is_installation_complete():
+            self.report({"ERROR"}, 
+                         "FLIP Fluids installation incomplete. Restart Blender to complete installation. If you think this is an error, please contact the developers.")
+            self.cancel(context)
+            return {'CANCELLED'}
+
         if not context.scene.flip_fluid.is_domain_object_set():
             self.report({"ERROR_INVALID_INPUT"}, 
                          "Fluid simulation requires a domain object")
@@ -261,12 +268,11 @@ class BakeFluidSimulation(bpy.types.Operator):
         num_outflow = context.scene.flip_fluid.get_num_outflow_objects()
         num_obstacle = context.scene.flip_fluid.get_num_obstacle_objects()
         if num_fluid > 1 or num_inflow > 1 or num_outflow > 1 or num_obstacle > 1:
-            errmsg = "The FLIP Fluids Demo is limited to one of each object type.\n\n"
-            errmsg += "Objects found:\n"
-            errmsg += "Fluid: " + str(num_fluid) + " | "
+            errmsg = "The FLIP Fluids Demo is limited to one of each object type. "
+            errmsg += "<Fluid: " + str(num_fluid) + " | "
             errmsg += "Inflows: " + str(num_inflow) + " | "
             errmsg += "Outflows: " + str(num_outflow) + " | "
-            errmsg += "Obstacles: " + str(num_obstacle) + "\n\n"
+            errmsg += "Obstacles: " + str(num_obstacle) + ">\n\n"
 
             if num_fluid > 1:
                 objects = context.scene.flip_fluid.get_fluid_objects()
@@ -290,7 +296,7 @@ class BakeFluidSimulation(bpy.types.Operator):
                 errmsg += "\n"
 
             if num_obstacle > 1:
-                objects = context.scene.flip_fluid.get_obstacle_objects()
+                objects = context.scene.flip_fluid.get_inflow_objects()
                 errmsg += "Obstacle objects: "
                 for obj in objects:
                     errmsg += "<" + obj.name + "> "

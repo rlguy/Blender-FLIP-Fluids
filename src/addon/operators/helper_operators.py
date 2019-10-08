@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, os
+import bpy, os, subprocess, platform
 from bpy.props import (
         StringProperty
         )
@@ -265,6 +265,113 @@ class FlipFluidDisplayEnableWhitewaterTooltip(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class FlipFluidHelperCommandLineBake(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_command_line_bake"
+    bl_label = "Launch Bake"
+    bl_description = ("Launch a new command line window and start baking." +
+                     " The .blend file will need to be saved before using" +
+                     " this operator.")
+
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.flip_fluid.get_domain_object() is not None
+
+
+    def execute(self, context):
+        domain = context.scene.flip_fluid.get_domain_object()
+        if domain is None:
+            return {'CANCELLED'}
+
+        script_path = os.path.dirname(os.path.realpath(__file__))
+        script_path = os.path.dirname(script_path)
+        script_path = os.path.join(script_path, "resources", "command_line_scripts", "run_simulation.py")
+
+        system = platform.system()
+        if system == "Windows":
+            command = ["start", "cmd", "/k", "blender.exe", "--background", bpy.data.filepath, "--python", script_path]
+        elif system == "Darwin":
+            # Feature not available on MacOS
+            return {'CANCELLED'}
+        elif system == "Linux":
+            # Feature not available on Linux
+            return {'CANCELLED'}
+
+        subprocess.call(command, shell=True)
+
+        return {'FINISHED'}
+
+
+class FlipFluidHelperCommandLineRender(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_command_line_render"
+    bl_label = "Launch Render"
+    bl_description = ("Launch a new command line window and start rendering the animation." +
+                     " The .blend file will need to be saved before using this operator.")
+
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.flip_fluid.get_domain_object() is not None
+
+
+    def execute(self, context):
+        domain = context.scene.flip_fluid.get_domain_object()
+        if domain is None:
+            return {'CANCELLED'}
+        
+        system = platform.system()
+        if system == "Windows":
+            command = ["start", "cmd", "/k", "blender.exe", "--background", bpy.data.filepath, "-a"]
+        elif system == "Darwin":
+            # Feature not available on MacOS
+            return {'CANCELLED'}
+        elif system == "Linux":
+            # Feature not available on Linux
+            return {'CANCELLED'}
+
+        subprocess.call(command, shell=True)
+
+        return {'FINISHED'}
+
+
+class FlipFluidHelperStableRendering279(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_stable_rendering_279"
+    bl_label = "Enable Stable Rendering"
+    bl_description = ("Activate to prevent crashes and incorrect results during render."
+                      " Activation will automatically set the Render Display Mode to"
+                      " 'Full Screen' (Properties > Render > Display) and is a recommendation"
+                      " to prevent viewport instability")
+
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.render.display_mode != 'SCREEN'
+
+
+    def execute(self, context):
+        context.scene.render.display_mode = 'SCREEN'
+        return {'FINISHED'}
+
+
+class FlipFluidHelperStableRendering28(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_stable_rendering_28"
+    bl_label = "Enable Stable Rendering"
+    bl_description = ("Activate to prevent crashes and incorrect results during render."
+                      " Activation will automatically lock the Blender interface"
+                      " during render (Blender > Render > Lock Interface) and is highly"
+                      " recommended")
+
+
+    @classmethod
+    def poll(cls, context):
+        return not context.scene.render.use_lock_interface
+
+
+    def execute(self, context):
+        context.scene.render.use_lock_interface = True
+        return {'FINISHED'}
+
+
 def register():
     bpy.utils.register_class(FlipFluidHelperSelectDomain)
     bpy.utils.register_class(FlipFluidHelperSelectSurface)
@@ -274,6 +381,10 @@ def register():
     bpy.utils.register_class(FlipFluidHelperAddObjects)
     bpy.utils.register_class(FlipFluidHelperRemoveObjects)
     bpy.utils.register_class(FlipFluidHelperLoadLastFrame)
+    bpy.utils.register_class(FlipFluidHelperCommandLineBake)
+    bpy.utils.register_class(FlipFluidHelperCommandLineRender)
+    bpy.utils.register_class(FlipFluidHelperStableRendering279)
+    bpy.utils.register_class(FlipFluidHelperStableRendering28)
 
     bpy.utils.register_class(FlipFluidEnableWhitewaterSimulation)
     bpy.utils.register_class(FlipFluidEnableWhitewaterMenu)
@@ -289,6 +400,10 @@ def unregister():
     bpy.utils.unregister_class(FlipFluidHelperAddObjects)
     bpy.utils.unregister_class(FlipFluidHelperRemoveObjects)
     bpy.utils.unregister_class(FlipFluidHelperLoadLastFrame)
+    bpy.utils.unregister_class(FlipFluidHelperCommandLineBake)
+    bpy.utils.unregister_class(FlipFluidHelperCommandLineRender)
+    bpy.utils.unregister_class(FlipFluidHelperStableRendering279)
+    bpy.utils.unregister_class(FlipFluidHelperStableRendering28)
 
     bpy.utils.unregister_class(FlipFluidEnableWhitewaterSimulation)
     bpy.utils.unregister_class(FlipFluidEnableWhitewaterMenu)

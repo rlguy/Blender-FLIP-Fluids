@@ -196,11 +196,13 @@ def __export_static_mesh_data(object_data, mesh_directory):
     with open(info_filepath, "w") as f:
         f.write(info_json)
 
-    export_str = "Exporting static mesh: <" + object_data['name'] + ">, "
-    export_str += "verts: " + str(len(mesh_data.vertices) // 3)
-    export_str += ", tris: " + str(len(mesh_data.triangles) // 3)
-    export_str += ", filesize: " + __format_bytes(len(bobj_data))
-    print(export_str)
+    dprops = __get_domain_properties()
+    if dprops.debug.display_console_output:
+        export_str = "Exporting static mesh: <" + object_data['name'] + ">, "
+        export_str += "verts: " + str(len(mesh_data.vertices) // 3)
+        export_str += ", tris: " + str(len(mesh_data.triangles) // 3)
+        export_str += ", filesize: " + __format_bytes(len(bobj_data))
+        print(export_str)
 
     object_data['data']['mesh_data'] = None
 
@@ -231,12 +233,14 @@ def __export_keyframed_mesh_data(object_data, mesh_directory):
     matrix_filesize = os.stat(matrix_filepath).st_size 
     filesize = len(bobj_data) + matrix_filesize
 
-    export_str = "Exporting keyframed mesh: <" + object_data['name'] + ">, "
-    export_str += "numframes: " + str(len(matrix_data))
-    export_str += ", verts: " + str(len(mesh_data.vertices) // 3)
-    export_str += ", tris: " + str(len(mesh_data.triangles) // 3)
-    export_str += ", filesize: " + __format_bytes(filesize)
-    print(export_str)
+    dprops = __get_domain_properties()
+    if dprops.debug.display_console_output:
+        export_str = "Exporting keyframed mesh: <" + object_data['name'] + ">, "
+        export_str += "numframes: " + str(len(matrix_data))
+        export_str += ", verts: " + str(len(mesh_data.vertices) // 3)
+        export_str += ", tris: " + str(len(mesh_data.triangles) // 3)
+        export_str += ", filesize: " + __format_bytes(filesize)
+        print(export_str)
 
     object_data['data']['mesh_data'] = None
     object_data['data']['matrix_data'] = None
@@ -246,6 +250,7 @@ def __export_animated_mesh_data(object_data, mesh_directory):
     mesh_data = object_data['data']['mesh_data']
     frame_data = object_data['data']['frame_data']
 
+    dprops = __get_domain_properties()
     for i, mesh in enumerate(mesh_data):
         bobj_data = mesh.to_bobj()
         frameno = frame_data[i]
@@ -255,12 +260,13 @@ def __export_animated_mesh_data(object_data, mesh_directory):
         with open(filepath, 'wb') as mesh_file:
             mesh_file.write(bobj_data)
 
-        export_str = "Exporting animated mesh: <" + object_data['name'] + ">, "
-        export_str += "frame: " + str(frameno)
-        export_str += ", verts: " + str(len(mesh.vertices) // 3)
-        export_str += ", tris: " + str(len(mesh.triangles) // 3)
-        export_str += ", filesize: " + __format_bytes(len(bobj_data))
-        print(export_str)
+        if dprops.debug.display_console_output:
+            export_str = "Exporting animated mesh: <" + object_data['name'] + ">, "
+            export_str += "frame: " + str(frameno)
+            export_str += ", verts: " + str(len(mesh.vertices) // 3)
+            export_str += ", tris: " + str(len(mesh.triangles) // 3)
+            export_str += ", filesize: " + __format_bytes(len(bobj_data))
+            print(export_str)
 
     files = os.listdir(mesh_directory)
     files = [f.split('.')[0][-6:] for f in files]

@@ -239,7 +239,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.refresh_stats()
 
 
-    def frame_change_pre(self, scene):
+    def frame_change_post(self, scene):
         if self.cache_info_type == "FRAME_INFO" and self.lock_info_frame_to_timeline:
             if self.current_info_frame != scene.frame_current:
                 self.current_info_frame = scene.frame_current

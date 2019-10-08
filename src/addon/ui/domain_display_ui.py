@@ -34,6 +34,22 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
         return obj_props.is_active and obj_props.object_type == "TYPE_DOMAIN"
 
 
+    def draw_render_settings(self, context):
+        box = self.layout.box()
+        box.label(text="Render Tools:")
+        column = box.column(align=True)
+        if vcu.is_blender_28():
+            status = "Enabled" if context.scene.render.use_lock_interface else 'Disabled'
+            icon = 'FUND' if context.scene.render.use_lock_interface else 'ERROR'
+            column.operator("flip_fluid_operators.helper_stable_rendering_28")
+            column.label(text="Current status: " + status, icon=icon)
+        else:
+            status = "Enabled" if context.scene.render.display_mode == 'SCREEN' else 'Disabled'
+            icon = 'FILE_TICK' if context.scene.render.display_mode == 'SCREEN' else 'ERROR'
+            column.operator("flip_fluid_operators.helper_stable_rendering_279")
+            column.label(text="Current status: " + status, icon=icon)
+
+
     def draw_surface_display_settings(self, context):
         domain_object = vcu.get_active_object(context)
         rprops = domain_object.flip_fluid.domain.render
@@ -54,6 +70,8 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
         column_right.label(text="Surface Viewport Display:")
         column_right.prop(rprops, "viewport_display", text="")
 
+        # Motion blur rendering is currently not supported due
+        # to limitations in Blender
         """
         if show_advanced:
             column = box.column()
@@ -252,6 +270,7 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
 
         self.draw_surface_display_settings(context)
         self.draw_whitewater_display_settings(context)
+        self.draw_render_settings(context)
     
 
 def register():

@@ -302,8 +302,7 @@ private:
                                 Array3d<float> *field);
     void _addField(Array3d<float> *src, Array3d<float> *dest);
 
-    bool _isInitialized = false;
-    std::string _initializationErrorMessage;
+    #if WITH_OPENCL
 
     int _isize = 0;
     int _jsize = 0;
@@ -323,11 +322,16 @@ private:
     int _minWorkGroupSize = 32;
     int _maxParticlesPerChunk = 1024;
     int _maxChunksPerComputation = 100000;
-    int _kernelWorkLoadSize = 100000;
 
+    #endif
+    // ENDIF WITH_OPENCL
+
+    bool _isInitialized = false;
+    std::string _initializationErrorMessage;
+
+    int _kernelWorkLoadSize = 100000;
     bool _isMaxScalarFieldValueThresholdSet = false;
     float _maxScalarFieldValueThreshold = 1.0;
-
     bool _isOpenCLEnabled = true;
     
 };

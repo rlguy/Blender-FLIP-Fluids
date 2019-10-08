@@ -256,7 +256,8 @@ class FLIPFLUID_PT_DomainTypePresetsPanel(bpy.types.Panel):
 
     def draw(self, context):
         if not preset_library.get_user_package_info_list():
-            self.layout.label(text="This feature is not available in the FLIP Fluids Demo.")
+            self.layout.label(text="This feature is missing data and will be disabled.")
+            self.layout.label(text="Please contact the developers if you think this is an error.")
             return
 
         show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode

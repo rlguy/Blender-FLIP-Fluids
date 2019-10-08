@@ -4492,9 +4492,9 @@ void FluidSimulation::_polygonizeOutputSurface(TriangleMesh &surface, TriangleMe
         float eps = 1e-9;
         float offset = (float)(_obstacleMeshingOffset * _dx);
         if (std::abs(offset) > eps) {
-            for (int k = 0; k < _ksize + 1; k++) {
-                for (int j = 0; j < _jsize + 1; j++) {
-                    for (int i = 0; i < _isize + 1; i++) {
+            for (int k = 2; k < _ksize - 1; k++) {
+                for (int j = 2; j < _jsize - 1; j++) {
+                    for (int i = 2; i < _isize - 1; i++) {
                         solidSDF->set(i, j, k, solidSDF->get(i, j, k) + offset);
                     }
                 }
@@ -4792,13 +4792,13 @@ void FluidSimulation::_outputDiffuseMaterial() {
         _outputData.diffuseBubbleData = std::vector<char>(0);
         _outputData.diffuseSprayData = std::vector<char>(0);
 
-        if (_randomDouble(0.0, 1.0) > pct) {
+        if (_randomDouble(0.0, 1.0) < pct) {
             _diffuseMaterial.getFoamParticleFileDataWWP(_outputData.diffuseFoamData);
         }
-        if (_randomDouble(0.0, 1.0) > pct) {
+        if (_randomDouble(0.0, 1.0) < pct) {
             _diffuseMaterial.getBubbleParticleFileDataWWP(_outputData.diffuseBubbleData);
         }
-        if (_randomDouble(0.0, 1.0) > pct) {
+        if (_randomDouble(0.0, 1.0) < pct) {
             _diffuseMaterial.getSprayParticleFileDataWWP(_outputData.diffuseSprayData);
         }
 
