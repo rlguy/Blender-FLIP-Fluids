@@ -173,7 +173,7 @@ public:
         return view;
     }
 
-    void getViewAsArray3d(Array3d<T> &view) {
+    Array3d<T> getViewAsArray3d(Array3d<T> &view) {
         if (!(view.width == width && view.height == height && view.depth = depth)) {
             std::string msg = "Error: array dimensions must be equal to view dimensions.\n";
             msg += "width: " + _toString(width) + 
