@@ -536,9 +536,13 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
         is_foam_enabled = __get_parameter_data(whitewater.enable_foam, frameno)
         is_bubbles_enabled = __get_parameter_data(whitewater.enable_bubbles, frameno)
         is_spray_enabled = __get_parameter_data(whitewater.enable_spray, frameno)
+        is_dust_enabled = __get_parameter_data(whitewater.enable_dust, frameno)
+        is_dust_boundary_emission_enabled = __get_parameter_data(whitewater.enable_dust_emission_near_boundary, frameno)
         fluidsim.enable_diffuse_foam = is_foam_enabled
         fluidsim.enable_diffuse_bubbles = is_bubbles_enabled
         fluidsim.enable_diffuse_spray = is_spray_enabled
+        fluidsim.enable_diffuse_dust = is_dust_enabled
+        fluidsim.enable_boundary_diffuse_dust_emission = is_dust_boundary_emission_enabled
 
         fluidsim.enable_whitewater_motion_blur = \
             __get_parameter_data(whitewater.generate_whitewater_motion_blur_data, frameno)
@@ -551,8 +555,13 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
 
         wavecrest_rate = __get_parameter_data(whitewater.wavecrest_emission_rate, frameno)
         turbulence_rate = __get_parameter_data(whitewater.turbulence_emission_rate, frameno)
+        dust_rate = __get_parameter_data(whitewater.dust_emission_rate, frameno)
         fluidsim.diffuse_particle_wavecrest_emission_rate = wavecrest_rate
         fluidsim.diffuse_particle_turbulence_emission_rate = turbulence_rate
+        fluidsim.diffuse_particle_dust_emission_rate = dust_rate
+
+        spray_emission_speed = __get_parameter_data(whitewater.spray_emission_speed, frameno)
+        fluidsim.diffuse_spray_emission_speed = spray_emission_speed
 
         min_speed, max_speed = __get_parameter_data(whitewater.min_max_whitewater_energy_speed, frameno)
         fluidsim.min_diffuse_emitter_energy = 0.5 * min_speed * min_speed
@@ -581,26 +590,33 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
         foam_modifier = __get_parameter_data(whitewater.foam_lifespan_modifier, frameno)
         bubble_modifier = __get_parameter_data(whitewater.bubble_lifespan_modifier, frameno)
         spray_modifier = __get_parameter_data(whitewater.spray_lifespan_modifier, frameno)
+        dust_modifier = __get_parameter_data(whitewater.dust_lifespan_modifier, frameno)
         fluidsim.foam_particle_lifetime_modifier = 1.0 / max(foam_modifier, 1e-6)
         fluidsim.bubble_particle_lifetime_modifier = 1.0 / max(bubble_modifier, 1e-6)
         fluidsim.spray_particle_lifetime_modifier = 1.0 / max(spray_modifier, 1e-6)
+        fluidsim.dust_particle_lifetime_modifier = 1.0 / max(dust_modifier, 1e-6)
 
         foam_behaviour = __get_parameter_data(whitewater.foam_boundary_behaviour, frameno)
         bubble_behaviour = __get_parameter_data(whitewater.bubble_boundary_behaviour, frameno)
         spray_behaviour = __get_parameter_data(whitewater.spray_boundary_behaviour, frameno)
+        dust_behaviour = __get_parameter_data(whitewater.bubble_boundary_behaviour, frameno) # Same as bubble for now
         foam_behaviour = __get_limit_behaviour_enum(foam_behaviour)
         bubble_behaviour = __get_limit_behaviour_enum(bubble_behaviour)
         spray_behaviour = __get_limit_behaviour_enum(spray_behaviour)
+        dust_behaviour = __get_limit_behaviour_enum(dust_behaviour)
         fluidsim.diffuse_foam_limit_behaviour = foam_behaviour
         fluidsim.diffuse_bubble_limit_behaviour = bubble_behaviour
         fluidsim.diffuse_spray_limit_behaviour = spray_behaviour
+        fluidsim.diffuse_dust_limit_behaviour = dust_behaviour
 
         foam_active_sides = __get_parameter_data(whitewater.foam_boundary_active, frameno)
         bubble_active_sides = __get_parameter_data(whitewater.bubble_boundary_active, frameno)
         spray_active_sides = __get_parameter_data(whitewater.spray_boundary_active, frameno)
+        dust_active_sides = __get_parameter_data(whitewater.bubble_boundary_active, frameno) # Same as bubble for now
         fluidsim.diffuse_foam_active_boundary_sides = foam_active_sides
         fluidsim.diffuse_bubble_active_boundary_sides = bubble_active_sides
         fluidsim.diffuse_spray_active_boundary_sides = spray_active_sides
+        fluidsim.diffuse_dust_active_boundary_sides = dust_active_sides
 
         strength = __get_parameter_data(whitewater.foam_advection_strength, frameno)
         foam_depth = __get_parameter_data(whitewater.foam_layer_depth, frameno)
@@ -621,6 +637,11 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
         bouyancy = __get_parameter_data(whitewater.bubble_bouyancy_coefficient, frameno)
         fluidsim.diffuse_bubble_drag_coefficient = drag
         fluidsim.diffuse_bubble_bouyancy_coefficient = bouyancy
+
+        drag = __get_parameter_data(whitewater.dust_drag_coefficient, frameno)
+        bouyancy = __get_parameter_data(whitewater.dust_bouyancy_coefficient, frameno)
+        fluidsim.diffuse_dust_drag_coefficient = drag
+        fluidsim.diffuse_dust_bouyancy_coefficient = bouyancy
 
         drag = __get_parameter_data(whitewater.spray_drag_coefficient, frameno)
         fluidsim.diffuse_spray_drag_coefficient = drag
@@ -1032,6 +1053,7 @@ def __update_animatable_obstacle_properties(data, frameid):
         mesh_object.enable = __get_parameter_data(data.is_enabled, frameid)
         mesh_object.friction = __get_parameter_data(data.friction, frameid)
         mesh_object.whitewater_influence = __get_parameter_data(data.whitewater_influence, frameid)
+        mesh_object.dust_emission_strength = __get_parameter_data(data.dust_emission_strength, frameid)
         mesh_object.sheeting_strength = __get_parameter_data(data.sheeting_strength, frameid)
         mesh_object.mesh_expansion = __get_parameter_data(data.mesh_expansion, frameid)
 
@@ -1123,9 +1145,13 @@ def __update_animatable_domain_properties(fluidsim, data, frameno):
         is_foam_enabled = __get_parameter_data(whitewater.enable_foam, frameno)
         is_bubbles_enabled = __get_parameter_data(whitewater.enable_bubbles, frameno)
         is_spray_enabled = __get_parameter_data(whitewater.enable_spray, frameno)
+        is_dust_enabled = __get_parameter_data(whitewater.enable_dust, frameno)
+        is_dust_boundary_emission_enabled = __get_parameter_data(whitewater.enable_dust_emission_near_boundary, frameno)
         __set_property(fluidsim, 'enable_diffuse_foam', is_foam_enabled)
         __set_property(fluidsim, 'enable_diffuse_bubbles', is_bubbles_enabled)
         __set_property(fluidsim, 'enable_diffuse_spray', is_spray_enabled)
+        __set_property(fluidsim, 'enable_diffuse_dust', is_dust_enabled)
+        __set_property(fluidsim, 'enable_boundary_diffuse_dust_emission', is_dust_boundary_emission_enabled)
 
         whitewater_motion_blur = __get_parameter_data(whitewater.generate_whitewater_motion_blur_data, frameno)
         __set_property(fluidsim, 'enable_whitewater_motion_blur', whitewater_motion_blur)
@@ -1135,8 +1161,13 @@ def __update_animatable_domain_properties(fluidsim, data, frameno):
 
         wavecrest_rate = __get_parameter_data(whitewater.wavecrest_emission_rate, frameno)
         turbulence_rate = __get_parameter_data(whitewater.turbulence_emission_rate, frameno)
+        dust_rate = __get_parameter_data(whitewater.dust_emission_rate, frameno)
         __set_property(fluidsim, 'diffuse_particle_wavecrest_emission_rate', wavecrest_rate)
         __set_property(fluidsim, 'diffuse_particle_turbulence_emission_rate', turbulence_rate)
+        __set_property(fluidsim, 'diffuse_particle_dust_emission_rate', dust_rate)
+
+        spray_emission_speed = __get_parameter_data(whitewater.spray_emission_speed, frameno)
+        __set_property(fluidsim, 'diffuse_spray_emission_speed', spray_emission_speed)
 
         min_speed, max_speed = __get_parameter_data(whitewater.min_max_whitewater_energy_speed, frameno)
         __set_property(fluidsim, 'min_diffuse_emitter_energy', 0.5 * min_speed * min_speed)
@@ -1165,26 +1196,33 @@ def __update_animatable_domain_properties(fluidsim, data, frameno):
         foam_modifier = __get_parameter_data(whitewater.foam_lifespan_modifier, frameno)
         bubble_modifier = __get_parameter_data(whitewater.bubble_lifespan_modifier, frameno)
         spray_modifier = __get_parameter_data(whitewater.spray_lifespan_modifier, frameno)
+        dust_modifier = __get_parameter_data(whitewater.dust_lifespan_modifier, frameno)
         __set_property(fluidsim, 'foam_particle_lifetime_modifier', 1.0 / max(foam_modifier, 1e-6))
         __set_property(fluidsim, 'bubble_particle_lifetime_modifier', 1.0 / max(bubble_modifier, 1e-6))
         __set_property(fluidsim, 'spray_particle_lifetime_modifier', 1.0 / max(spray_modifier, 1e-6))
+        __set_property(fluidsim, 'dust_particle_lifetime_modifier', 1.0 / max(dust_modifier, 1e-6))
 
         foam_behaviour = __get_parameter_data(whitewater.foam_boundary_behaviour, frameno)
         bubble_behaviour = __get_parameter_data(whitewater.bubble_boundary_behaviour, frameno)
         spray_behaviour = __get_parameter_data(whitewater.spray_boundary_behaviour, frameno)
+        dust_behaviour = __get_parameter_data(whitewater.bubble_boundary_behaviour, frameno) # Same as bubble for now
         foam_behaviour = __get_limit_behaviour_enum(foam_behaviour)
         bubble_behaviour = __get_limit_behaviour_enum(bubble_behaviour)
         spray_behaviour = __get_limit_behaviour_enum(spray_behaviour)
+        dust_behaviour = __get_limit_behaviour_enum(dust_behaviour)
         __set_property(fluidsim, 'diffuse_foam_limit_behaviour', foam_behaviour)
         __set_property(fluidsim, 'diffuse_bubble_limit_behaviour', bubble_behaviour)
         __set_property(fluidsim, 'diffuse_spray_limit_behaviour', spray_behaviour)
+        __set_property(fluidsim, 'diffuse_dust_limit_behaviour', dust_behaviour)
 
         foam_active_sides = __get_parameter_data(whitewater.foam_boundary_active, frameno)
         bubble_active_sides = __get_parameter_data(whitewater.bubble_boundary_active, frameno)
         spray_active_sides = __get_parameter_data(whitewater.spray_boundary_active, frameno)
+        dust_active_sides = __get_parameter_data(whitewater.bubble_boundary_active, frameno) # Same as bubble for now
         __set_property(fluidsim, 'diffuse_foam_active_boundary_sides', foam_active_sides)
         __set_property(fluidsim, 'diffuse_bubble_active_boundary_sides', bubble_active_sides)
         __set_property(fluidsim, 'diffuse_spray_active_boundary_sides', spray_active_sides)
+        __set_property(fluidsim, 'diffuse_dust_active_boundary_sides', dust_active_sides)
 
         strength = __get_parameter_data(whitewater.foam_advection_strength, frameno)
         foam_depth = __get_parameter_data(whitewater.foam_layer_depth, frameno)
@@ -1205,6 +1243,11 @@ def __update_animatable_domain_properties(fluidsim, data, frameno):
         bouyancy = __get_parameter_data(whitewater.bubble_bouyancy_coefficient, frameno)
         __set_property(fluidsim, 'diffuse_bubble_drag_coefficient', drag)
         __set_property(fluidsim, 'diffuse_bubble_bouyancy_coefficient', bouyancy)
+
+        drag = __get_parameter_data(whitewater.dust_drag_coefficient, frameno)
+        bouyancy = __get_parameter_data(whitewater.dust_bouyancy_coefficient, frameno)
+        __set_property(fluidsim, 'diffuse_dust_drag_coefficient', drag)
+        __set_property(fluidsim, 'diffuse_dust_bouyancy_coefficient', bouyancy)
 
         drag = __get_parameter_data(whitewater.spray_drag_coefficient, frameno)
         __set_property(fluidsim, 'diffuse_spray_drag_coefficient', drag)
@@ -1427,6 +1470,12 @@ def __write_whitewater_data(cache_directory, fluidsim, frameno):
     with open(spray_filepath, 'wb') as f:
         f.write(filedata)
 
+    dust_filename = "dust" + fstring + ".wwp"
+    dust_filepath = os.path.join(cache_directory, "bakefiles", dust_filename)
+    filedata = fluidsim.get_diffuse_dust_data()
+    with open(dust_filepath, 'wb') as f:
+        f.write(filedata)
+
     if fluidsim.enable_whitewater_motion_blur:
         foam_blur_filename = "blurfoam" + fstring + ".wwp"
         foam_blur_filepath = os.path.join(cache_directory, "bakefiles", foam_blur_filename)
@@ -1444,6 +1493,12 @@ def __write_whitewater_data(cache_directory, fluidsim, frameno):
         spray_blur_filepath = os.path.join(cache_directory, "bakefiles", spray_blur_filename)
         filedata = fluidsim.get_diffuse_spray_blur_data()
         with open(spray_blur_filepath, 'wb') as f:
+            f.write(filedata)
+
+        dust_blur_filename = "blurdust" + fstring + ".wwp"
+        dust_blur_filepath = os.path.join(cache_directory, "bakefiles", dust_blur_filename)
+        filedata = fluidsim.get_diffuse_dust_blur_data()
+        with open(dust_blur_filepath, 'wb') as f:
             f.write(filedata)
 
 
@@ -1510,9 +1565,11 @@ def __get_frame_stats_dict(cstats):
     stats["foam"] = __get_mesh_stats_dict(cstats.foam)
     stats["bubble"] = __get_mesh_stats_dict(cstats.bubble)
     stats["spray"] = __get_mesh_stats_dict(cstats.spray)
+    stats["dust"] = __get_mesh_stats_dict(cstats.dust)
     stats["foamblur"] = __get_mesh_stats_dict(cstats.foamblur)
     stats["bubbleblur"] = __get_mesh_stats_dict(cstats.bubbleblur)
     stats["sprayblur"] = __get_mesh_stats_dict(cstats.sprayblur)
+    stats["dustblur"] = __get_mesh_stats_dict(cstats.dustblur)
     stats["particles"] = __get_mesh_stats_dict(cstats.particles)
     stats["obstacle"] = __get_mesh_stats_dict(cstats.obstacle)
     stats["timing"] = __get_timing_stats_dict(cstats.timing)

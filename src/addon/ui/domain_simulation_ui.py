@@ -221,13 +221,17 @@ class FLIPFLUID_PT_DomainTypePanel(bpy.types.Panel):
         column_left.prop(sprops, "resolution")
 
         column_right = split.column(align=True)
+        column_right.enabled = not sprops.auto_preview_resolution
         column_right.prop(sprops, "preview_resolution")
 
+        column = box.column(align=True)
+        split = vcu.ui_split(column, factor=0.5)
+        column_left = split.column(align=True)
+        column_right = split.column(align=True)
         if show_advanced:
-            column = box.column(align=True)
-            split = vcu.ui_split(column, factor=0.5)
-            column_left = split.column(align=True)
             column_left.prop(sprops, "lock_cell_size")
+
+        column_right.prop(sprops, "auto_preview_resolution", text="Use Recommended")
 
 
     def draw_time_settings(self, context, box):
@@ -236,7 +240,7 @@ class FLIPFLUID_PT_DomainTypePanel(bpy.types.Panel):
         show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
 
         column = box.column(align=True)
-        column.label(text="Time:")
+        column.label(text="Timing:")
 
         split = vcu.ui_split(column, factor=0.5)
 

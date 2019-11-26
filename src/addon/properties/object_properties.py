@@ -103,6 +103,8 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
 
     is_active = BoolProperty(default=False); exec(conv("is_active"))
     is_view_settings_saved = BoolProperty(default=False); exec(conv("is_view_settings_saved"))
+    last_hide_render_state = BoolProperty(default=False); exec(conv("last_hide_render_state"))
+
 
     @classmethod
     def register(cls):
@@ -116,6 +118,13 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
     @classmethod
     def unregister(cls):
         del bpy.types.Object.flip_fluid
+
+
+    def scene_update_post(self, scene, bl_object):
+        if bl_object.hide_render == self.last_hide_render_state:
+            return
+        self._toggle_cycles_ray_visibility(bl_object, not bl_object.hide_render)
+        self.last_hide_render_state = bl_object.hide_render
 
 
     def get_object_type():
@@ -175,6 +184,15 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
         obj.cycles_visibility.shadow = is_enabled
 
 
+    def _lock_interface(self):
+        # Should only be executed upon creation of a domain object in Blender 2.8x.
+        # Locking the Blender interface is necessary to prevent crashes in Blender >= v2.81
+        # and helps prevent crashes in Blender 2.80
+        if not vcu.is_blender_28():
+            return
+        bpy.context.scene.render.use_lock_interface = True
+
+
     def _set_object_type(self, value):
         oldtype = self.object_type
         self['object_type'] = value
@@ -205,6 +223,7 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
             active_object.flip_fluid.domain.initialize()
             active_object.lock_rotation = (True, True, True)
             self._toggle_cycles_ray_visibility(active_object, False)
+            self._lock_interface()
         if oldtype == 'TYPE_DOMAIN' and newtype != 'TYPE_DOMAIN':
             active_object.lock_rotation = (False, False, False)
             active_object.flip_fluid.domain.destroy()
@@ -372,9 +391,19 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
 def scene_update_post(scene):
     domain_properties.scene_update_post(scene)
 
+    flip_objects = (scene.flip_fluid.get_inflow_objects() +
+                    scene.flip_fluid.get_outflow_objects() +
+                    scene.flip_fluid.get_fluid_objects())
+    domain_object = scene.flip_fluid.get_domain_object()
+    if domain_object is not None:
+        flip_objects.append(domain_object)
 
-def frame_change_post(scene):
-    domain_properties.frame_change_post(scene)
+    for obj in flip_objects:
+        obj.flip_fluid.scene_update_post(scene, obj)
+
+
+def frame_change_post(scene, depsgraph=None):
+    domain_properties.frame_change_post(scene, depsgraph)
 
 
 def load_pre():

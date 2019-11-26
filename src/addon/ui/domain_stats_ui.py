@@ -90,6 +90,7 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
                 column.label(text="             Foam:")
                 column.label(text="             Bubble:")
                 column.label(text="             Spray:")
+                column.label(text="             Dust:")
 
             column = split.column()
             column.label(text=str(sprops.frame_info_id))
@@ -101,6 +102,7 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
                 column.label(text=self.format_number(sprops.foam_mesh.verts).lstrip())
                 column.label(text=self.format_number(sprops.bubble_mesh.verts).lstrip())
                 column.label(text=self.format_number(sprops.spray_mesh.verts).lstrip())
+                column.label(text=self.format_number(sprops.dust_mesh.verts).lstrip())
 
 
     def draw_frame_info_timing_stats(self, context, box):
@@ -227,6 +229,13 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
                 column4.label(text=self.format_bytes(sprops.spray_mesh.bytes.get()))
                 total_bytes += sprops.spray_mesh.bytes.get()
 
+            if sprops.dust_mesh.enabled:
+                column1.label(text="Dust")
+                column2.label(text=self.format_number(sprops.dust_mesh.verts))
+                column3.label(text="")
+                column4.label(text=self.format_bytes(sprops.dust_mesh.bytes.get()))
+                total_bytes += sprops.dust_mesh.bytes.get()
+
             if sprops.foamblur_mesh.enabled:
                 column1.label(text="Foam Motion Blur")
                 column2.label(text=self.format_number(sprops.foamblur_mesh.verts))
@@ -247,6 +256,13 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
                 column3.label(text="")
                 column4.label(text=self.format_bytes(sprops.sprayblur_mesh.bytes.get()))
                 total_bytes += sprops.sprayblur_mesh.bytes.get()
+
+            if sprops.dustblur_mesh.enabled:
+                column1.label(text="Dust Motion Blur")
+                column2.label(text=self.format_number(sprops.dustblur_mesh.verts))
+                column3.label(text="")
+                column4.label(text=self.format_bytes(sprops.dustblur_mesh.bytes.get()))
+                total_bytes += sprops.dustblur_mesh.bytes.get()
 
             if sprops.particle_mesh.enabled:
                 column1.label(text="Particles")
@@ -410,9 +426,11 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
                            sprops.foam_mesh.enabled or 
                            sprops.bubble_mesh.enabled or 
                            sprops.spray_mesh.enabled or 
+                           sprops.dust_mesh.enabled or 
                            sprops.foamblur_mesh.enabled or 
                            sprops.bubbleblur_mesh.enabled or 
                            sprops.sprayblur_mesh.enabled or 
+                           sprops.dustblur_mesh.enabled or 
                            sprops.particle_mesh.enabled or
                            sprops.obstacle_mesh.enabled)
 
@@ -458,6 +476,12 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
                 row_count += 1
                 total_size += sprops.spray_mesh.bytes.get()
 
+            if sprops.dust_mesh.enabled:
+                column1.label(text="Dust")
+                column2.label(text=self.format_bytes(sprops.dust_mesh.bytes.get()))
+                row_count += 1
+                total_size += sprops.dust_mesh.bytes.get()
+
             if sprops.foamblur_mesh.enabled:
                 column1.label(text="Foam Motion Blur")
                 column2.label(text=self.format_bytes(sprops.foamblur_mesh.bytes.get()))
@@ -475,6 +499,12 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
                 column2.label(text=self.format_bytes(sprops.sprayblur_mesh.bytes.get()))
                 row_count += 1
                 total_size += sprops.sprayblur_mesh.bytes.get()
+
+            if sprops.dustblur_mesh.enabled:
+                column1.label(text="Dust Motion Blur")
+                column2.label(text=self.format_bytes(sprops.dustblur_mesh.bytes.get()))
+                row_count += 1
+                total_size += sprops.dustblur_mesh.bytes.get()
 
             if sprops.particle_mesh.enabled:
                 column1.label(text="Particles")

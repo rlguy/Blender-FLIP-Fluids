@@ -257,6 +257,32 @@ float MeshLevelSet::trilinearInterpolate(vmath::vec3 pos) {
     return Interpolation::trilinearInterpolate(pos, _dx, _phi);
 }
 
+void MeshLevelSet::trilinearInterpolatePoints(std::vector<vmath::vec3> &points, 
+                                              std::vector<float> &results) {
+    results = std::vector<float>(points.size(), 0.0f);
+
+    int numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)fmin(numCPU, points.size());
+    std::vector<std::thread> threads(numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, points.size(), numthreads);
+    for (int i = 0; i < numthreads; i++) {
+        threads[i] = std::thread(&MeshLevelSet::_trilinearInterpolatePointsThread, this,
+                                 intervals[i], intervals[i + 1], &points, &results);
+    }
+
+    for (int i = 0; i < numthreads; i++) {
+        threads[i].join();
+    }
+}
+
+void MeshLevelSet::_trilinearInterpolatePointsThread(int startidx, int endidx,
+                                                     std::vector<vmath::vec3> *points, 
+                                                     std::vector<float> *results) {
+    for (int i = startidx; i < endidx; i++) {
+        (*results)[i] = trilinearInterpolate(points->at(i));
+    }
+}
+
 void MeshLevelSet::trilinearInterpolateSolidGridPoints(vmath::vec3 offset, double dx, 
                                                        Array3d<bool> &grid) {
 

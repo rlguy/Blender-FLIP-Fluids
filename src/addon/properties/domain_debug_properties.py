@@ -245,10 +245,13 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
 
 
     def load_post(self):
+        self.is_draw_debug_grid_operator_running = False
+        is_draw_gl_particles_operator_running = False
+
         if self.export_fluid_particles:
             self._update_debug_particle_geometry(bpy.context)
             bpy.ops.flip_fluid_operators.draw_gl_particles('INVOKE_DEFAULT')
-        if self.display_simulation_grid:
+        if self.is_simulation_grid_debugging_enabled():
             self._update_debug_grid_geometry(bpy.context)
             bpy.ops.flip_fluid_operators.draw_debug_grid('INVOKE_DEFAULT')
 
@@ -306,15 +309,14 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
 
 
     def _update_export_internal_obstacle_mesh(self, context):
-        domain_object = context.scene.flip_fluid.get_domain_object()
-        if domain_object is None:
+        dprops = context.scene.flip_fluid.get_domain_properties()
+        if dprops is None:
             return
-        dprops = domain_object.flip_fluid.domain
 
         if self.export_internal_obstacle_mesh:
             dprops.mesh_cache.initialize_cache_objects()
         else:
-            dprops.mesh_cache.delete_obstacle_cache_object(domain_object)
+            dprops.mesh_cache.delete_obstacle_cache_object()
 
 
     def _update_display_simulation_grid(self, context):

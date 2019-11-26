@@ -96,9 +96,9 @@ def render_cancel(scene):
 
 
 @bpy.app.handlers.persistent
-def frame_change_post(scene):
-    properties.frame_change_post(scene)
-    render.frame_change_post(scene)
+def frame_change_post(scene, depsgraph=None):
+    properties.frame_change_post(scene, depsgraph)
+    render.frame_change_post(scene, depsgraph)
 
 
 @bpy.app.handlers.persistent

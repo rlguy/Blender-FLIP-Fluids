@@ -86,10 +86,12 @@ public:
 
     void getDiffuseParticleTypeCounts(int *numfoam, 
                                     int *numbubble, 
-                                    int *numspray);
+                                    int *numspray,
+                                    int *numdust);
     int getNumSprayParticles();
     int getNumBubbleParticles();
     int getNumFoamParticles();
+    int getNumDustParticles();
 
     void enableDiffuseParticleEmission();
     void disableDiffuseParticleEmission();
@@ -106,6 +108,14 @@ public:
     void enableSpray();
     void disableSpray();
     bool isSprayEnabled();
+
+    void enableDust();
+    void disableDust();
+    bool isDustEnabled();
+
+    void enableBoundaryDustEmission();
+    void disableBoundaryDustEmission();
+    bool isBoundaryDustEmissionEnabled();
 
     FragmentedVector<DiffuseParticle>* getDiffuseParticles();
     int getNumDiffuseParticles();
@@ -149,14 +159,17 @@ public:
     void setBubbleParticleLifetimeModifier(double modifier);
     double getSprayParticleLifetimeModifier();
     void setSprayParticleLifetimeModifier(double modifier);
+    double getDustParticleLifetimeModifier();
+    void setDustParticleLifetimeModifier(double modifier);
 
     double getDiffuseParticleWavecrestEmissionRate();
     void setDiffuseParticleWavecrestEmissionRate(double r);
+
     double getDiffuseParticleTurbulenceEmissionRate();
     void setDiffuseParticleTurbulenceEmissionRate(double r);
-    void getDiffuseParticleEmissionRates(double *rwc, double *rt);
-    void setDiffuseParticleEmissionRates(double r);
-    void setDiffuseParticleEmissionRates(double rwc, double rt);
+
+    double getDiffuseParticleDustEmissionRate();
+    void setDiffuseParticleDustEmissionRate(double r);
 
     double getFoamAdvectionStrength();
     void setFoamAdvectionStrength(double s);
@@ -180,8 +193,15 @@ public:
     double getBubbleBouyancyCoefficient();
     void setBubbleBouyancyCoefficient(double b);
 
+    double getDustDragCoefficient();
+    void setDustDragCoefficient(double d);
+    double getDustBouyancyCoefficient();
+    void setDustBouyancyCoefficient(double b);
+
     double getSprayDragCoefficient();
     void setSprayDragCoefficient(double d);
+    double getSprayEmissionSpeed();
+    void setSprayEmissionSpeed(double value);
 
     LimitBehaviour getFoamLimitBehaviour();
     void setFoamLimitBehavour(LimitBehaviour b);
@@ -192,6 +212,9 @@ public:
     LimitBehaviour getSprayLimitBehaviour();
     void setSprayLimitBehavour(LimitBehaviour b);
 
+    LimitBehaviour getDustLimitBehaviour();
+    void setDustLimitBehavour(LimitBehaviour b);
+
     std::vector<bool> getFoamActiveBoundarySides();
     void setFoamActiveBoundarySides(std::vector<bool> active);
 
@@ -201,6 +224,9 @@ public:
     std::vector<bool> getSprayActiveBoundarySides();
     void setSprayActiveBoundarySides(std::vector<bool> active);
 
+    std::vector<bool> getDustActiveBoundarySides();
+    void setDustActiveBoundarySides(std::vector<bool> active);
+
     void setDomainOffset(vmath::vec3 offset);
     vmath::vec3 getDomainOffset();
     void setDomainScale(double scale);
@@ -209,9 +235,11 @@ public:
     void getFoamParticleFileDataWWP(std::vector<char> &data);
     void getBubbleParticleFileDataWWP(std::vector<char> &data);
     void getSprayParticleFileDataWWP(std::vector<char> &data);
+    void getDustParticleFileDataWWP(std::vector<char> &data);
     void getFoamParticleBlurFileDataWWP(std::vector<char> &data, double dt);
     void getBubbleParticleBlurFileDataWWP(std::vector<char> &data, double dt);
     void getSprayParticleBlurFileDataWWP(std::vector<char> &data, double dt);
+    void getDustParticleBlurFileDataWWP(std::vector<char> &data, double dt);
 
     void loadDiffuseParticles(FragmentedVector<DiffuseParticle> &particles);
 
@@ -223,18 +251,21 @@ private:
         double energyPotential;
         double wavecrestPotential;
         double turbulencePotential;
+        double dustPotential;
 
         DiffuseParticleEmitter() : energyPotential(0.0),
                                    wavecrestPotential(0.0),
-                                   turbulencePotential(0.0) {}
+                                   turbulencePotential(0.0),
+                                   dustPotential(0.0) {}
 
         DiffuseParticleEmitter(vmath::vec3 p, vmath::vec3 v, 
-                               double e, double wc, double t) : 
+                               double e, double wc, double t, double d) : 
                                    position(p),
                                    velocity(v),
                                    energyPotential(e),
                                    wavecrestPotential(wc),
-                                   turbulencePotential(t) {}
+                                   turbulencePotential(t),
+                                   dustPotential(d) {}
     };    
 
     void _trilinearInterpolate(std::vector<vmath::vec3> &input, MACVelocityField *vfield, 
@@ -242,7 +273,8 @@ private:
     void _trilinearInterpolateThread(int startidx, int endidx, 
                                      std::vector<vmath::vec3> *input, MACVelocityField *vfield, 
                                      std::vector<vmath::vec3> *output);
-    void _getDiffuseParticleEmitters(std::vector<DiffuseParticleEmitter> &emitters);
+    void _getDiffuseParticleEmitters(std::vector<DiffuseParticleEmitter> &normalEmitters,
+                                     std::vector<DiffuseParticleEmitter> &dustEmitters);
     void _sortMarkerParticlePositions(std::vector<vmath::vec3> &surface, 
                                       std::vector<vmath::vec3> &inside);
     double _getParticleJitter();
@@ -255,12 +287,16 @@ private:
                                             std::vector<DiffuseParticleEmitter> &emitters);
     double _getWavecrestPotential(vmath::vec3 p, vmath::vec3 v);
     double _getTurbulencePotential(vmath::vec3 p, TurbulenceField &tfield);
+    double _getDustTurbulencePotential(vmath::vec3 p, double emissionStrength, TurbulenceField &tfield);
     double _getEnergyPotential(vmath::vec3 velocity);
     void _getInsideDiffuseParticleEmitters(std::vector<vmath::vec3> &inside, 
                                            std::vector<DiffuseParticleEmitter> &emitters);
+    void _getDiffuseDustParticleEmitters(std::vector<vmath::vec3> &particles, 
+                                         std::vector<DiffuseParticleEmitter> &dustEmitters);
     void _shuffleDiffuseParticleEmitters(std::vector<DiffuseParticleEmitter> &emitters);
 
-    void _emitDiffuseParticles(std::vector<DiffuseParticleEmitter> &emitters, double dt);
+    void _emitNormalDiffuseParticles(std::vector<DiffuseParticleEmitter> &emitters, double dt);
+    void _emitDustDiffuseParticles(std::vector<DiffuseParticleEmitter> &emitters, double dt);
     void _emitDiffuseParticles(DiffuseParticleEmitter &emitter, 
                                double dt,
                                std::vector<DiffuseParticle> &particles);
@@ -280,9 +316,11 @@ private:
     void _advanceSprayParticles(double dt);
     void _advanceBubbleParticles(double dt);
     void _advanceFoamParticles(double dt);
+    void _advanceDustParticles(double dt);
     void _advanceSprayParticlesThread(int startidx, int endidx, double dt);
     void _advanceBubbleParticlesThread(int startidx, int endidx, double dt);
     void _advanceFoamParticlesThread(int startidx, int endidx, double dt);
+    void _advanceDustParticlesThread(int startidx, int endidx, double dt);
     vmath::vec3 _resolveCollision(vmath::vec3 oldp, vmath::vec3 newp, 
                                   DiffuseParticle &dp, AABB &boundary);
     LimitBehaviour _getLimitBehaviour(DiffuseParticle &dp);
@@ -291,10 +329,12 @@ private:
     void _markParticleForRemoval(unsigned int index);
     void _getDiffuseParticleTypeCounts(int *numfoam, 
                                       int *numbubble, 
-                                      int *numspray);
+                                      int *numspray,
+                                      int *numdust);
     int _getNumSprayParticles();
     int _getNumBubbleParticles();
     int _getNumFoamParticles();
+    int _getNumDustParticles();
 
     void _removeDiffuseParticles();
 
@@ -339,6 +379,8 @@ private:
     bool _isFoamEnabled = true;
     bool _isBubblesEnabled = true;
     bool _isSprayEnabled = true;
+    bool _isDustEnabled = false;
+    bool _isBoundaryDustEmissionEnabled = false;
     double _diffuseSurfaceNarrowBandSize = 1.5;  // in number of grid cells
     double _solidBufferWidth = 0.25;             // in number of grid cells
     double _maxVelocityFactor = 1.1;
@@ -349,6 +391,8 @@ private:
     double _maxParticleEnergy = 60.0;
     double _minTurbulence = 100.0;
     double _maxTurbulence = 200.0;
+    double _minDustTurbulenceFactor = 0.75;
+    double _maxDustTurbulenceFactor = 1.0;
     double _emitterGenerationRate = 1.0;
     unsigned int _maxNumDiffuseParticles = 10e6;
     double _minDiffuseParticleLifetime = 0.0;
@@ -356,16 +400,25 @@ private:
     double _lifetimeVariance = 3.0;
     double _wavecrestEmissionRate = 175;
     double _turbulenceEmissionRate = 175;
-    double _foamLayerOffset = 0.0;                // in number of grid cells
-    double _maxFoamToSurfaceDistance = 1.0;       // in number of grid cells
-    double _foamBufferWidth = 1.0;                // in number of grid cells
+    double _dustEmissionRate = 175;
+    double _foamLayerOffset = 0.0;                     // in number of grid cells
+    double _maxFoamToSurfaceDistance = 1.0;            // in number of grid cells
+    double _foamBufferWidth = 1.0;                     // in number of grid cells
+    double _maxDustEmitterToObstacleDistance = 2.5;    // in number of grid cells
     double _sprayParticleLifetimeModifier = 2.0;
     double _bubbleParticleLifetimeModifier = 0.333;
     double _foamParticleLifetimeModifier = 1.0;
+    double _dustParticleLifetimeModifier = 1.0;
     double _foamAdvectionStrength = 1.0;
     double _bubbleBouyancyCoefficient = 4.0;
     double _bubbleDragCoefficient = 1.0;
+    double _dustBouyancyCoefficient = -4.0;
+    double _dustBouyancyVarianceFactor = 0.5;
+    double _dustDragCoefficient = 0.5;
+    double _dustDragVarianceFactor = 0.25;
     double _sprayDragCoefficient = 0.0;
+    double _sprayDragVarianceFactor = 0.25;
+    double _sprayEmissionSpeedFactor = 1.0;
     double _maxDiffuseParticlesPerCell = 5000;
     double _emitterRadiusFactor = 8.0;            // in multiples of _markerParticleRadius
     double _particleJitterFactor = 1.0;
@@ -379,9 +432,11 @@ private:
     LimitBehaviour _foamLimitBehaviour = LimitBehaviour::collide;
     LimitBehaviour _bubbleLimitBehaviour = LimitBehaviour::collide;
     LimitBehaviour _sprayLimitBehaviour = LimitBehaviour::collide;
+    LimitBehaviour _dustLimitBehaviour = LimitBehaviour::collide;
     std::vector<bool> _foamActiveSides;
     std::vector<bool> _bubbleActiveSides;
     std::vector<bool> _sprayActiveSides;
+    std::vector<bool> _dustActiveSides;
     AABB _emitterGenerationBounds;
 
     FragmentedVector<MarkerParticle> *_markerParticles;

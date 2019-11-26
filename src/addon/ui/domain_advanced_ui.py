@@ -82,13 +82,10 @@ class FLIPFLUID_PT_DomainTypeAdvancedPanel(bpy.types.Panel):
             column.prop(aprops, "precompute_static_obstacles")
             column.prop(aprops, "reserve_temporary_grids")
 
-            # Allowing changing topology is disabled. Does not seem to be stable
-            """
             column = self.layout.column(align=True)
             column.separator()
             column.label(text="Warnings and Errors:")
             column.prop(aprops, "disable_changing_topology_warning")
-            """
         
     
 def register():

@@ -58,22 +58,19 @@ class FLIPFLUID_PT_DomainTypeWhitewaterPanel(bpy.types.Panel):
             column_right.enabled = show_advanced_whitewater
             column_right.prop(wprops, "highlight_advanced_settings")
 
+        self.layout.separator()
+        box = self.layout.box()
+        box.label(text="Whitewater Simulation Particles:")
+        column = box.column(align=True)
+        column.enabled = is_whitewater_enabled
+
+        row = column.row()
+        row.prop(wprops, "enable_foam")
+        row.prop(wprops, "enable_bubbles")
+        row.prop(wprops, "enable_spray")
+        row.prop(wprops, "enable_dust")
+
         if show_advanced_whitewater:
-            self.layout.separator()
-            box = self.layout.box()
-            box.alert = highlight_advanced
-            box.label(text="Whitewater Simulation Particles:")
-            column = box.column(align=True)
-            column.enabled = is_whitewater_enabled
-
-            split = column.split()
-            column = split.column()
-            column.prop(wprops, "enable_foam")
-            column = split.column()
-            column.prop(wprops, "enable_bubbles")
-            column = split.column()
-            column.prop(wprops, "enable_spray")
-
             # Whitewater motion blur rendering is currently too resource intensive
             # for Blender Cycles
             """
@@ -100,6 +97,12 @@ class FLIPFLUID_PT_DomainTypeWhitewaterPanel(bpy.types.Panel):
         column = box.column(align=True)
         column.prop(wprops, "wavecrest_emission_rate")
         column.prop(wprops, "turbulence_emission_rate")
+        column = column.column(align=True)
+        column.enabled = wprops.enable_dust
+        column.prop(wprops, "dust_emission_rate")
+
+        column = box.column(align=True)
+        column.prop(wprops, "spray_emission_speed", slider=True)
 
         if show_advanced_whitewater:
             column = box.column(align=True)
@@ -129,6 +132,10 @@ class FLIPFLUID_PT_DomainTypeWhitewaterPanel(bpy.types.Panel):
             column = box.column(align=True)
             column.alert = highlight_advanced
             column.prop(wprops, "enable_whitewater_emission_near_boundary")
+
+        column = box.column(align=True)
+        column.enabled = wprops.enable_dust
+        column.prop(wprops, "enable_dust_emission_near_boundary", text="Enable dust emission near domain floor")
 
         self.layout.separator()
 
@@ -166,7 +173,7 @@ class FLIPFLUID_PT_DomainTypeWhitewaterPanel(bpy.types.Panel):
             row.prop(wprops.min_max_foam_density, "value_max")
 
         if show_advanced:
-            column = box.column()
+            column = box.column(align=True)
             column.label(text="Bubble:")
             column.prop(wprops, "bubble_drag_coefficient", text="Drag Coefficient", slider=True)
             column.prop(wprops, "bubble_bouyancy_coefficient", text="Buoyancy Coefficient")
@@ -174,6 +181,12 @@ class FLIPFLUID_PT_DomainTypeWhitewaterPanel(bpy.types.Panel):
             column = box.column(align=True)
             column.label(text="Spray:")
             column.prop(wprops, "spray_drag_coefficient", text="Drag Coefficient", slider=True)
+
+            column = box.column(align=True)
+            column.enabled = wprops.enable_dust
+            column.label(text="Dust:")
+            column.prop(wprops, "dust_drag_coefficient", text="Drag Coefficient", slider=True)
+            column.prop(wprops, "dust_bouyancy_coefficient", text="Buoyancy Coefficient")
 
             self.layout.separator()
             column = box.column(align=True)
@@ -189,6 +202,9 @@ class FLIPFLUID_PT_DomainTypeWhitewaterPanel(bpy.types.Panel):
             column.prop(wprops, "foam_lifespan_modifier", text="Foam")
             column.prop(wprops, "bubble_lifespan_modifier", text="Bubble")
             column.prop(wprops, "spray_lifespan_modifier", text="Spray")
+            column = column.column(align=True)
+            column.enabled = wprops.enable_dust
+            column.prop(wprops, "dust_lifespan_modifier", text="Dust")
 
         if show_advanced_whitewater:
             box.alert = highlight_advanced
@@ -256,13 +272,16 @@ class FLIPFLUID_PT_DomainTypeWhitewaterPanel(bpy.types.Panel):
             if len(obstacle_objects) == 0:
                 column.label(text=indent_str + "No obstacle objects found...")
             else:
-                split = column.split(align=True)
+                split = vcu.ui_split(column, factor=0.25, align=True)
                 column_left = split.column(align=True)
                 column_right = split.column(align=True)
                 for ob in obstacle_objects:
                     pgroup = ob.flip_fluid.get_property_group()
                     column_left.label(text=ob.name, icon="OBJECT_DATA")
-                    column_right.prop(pgroup, "whitewater_influence", text="influence")
+                    row = column_right.row()
+                    row.alignment = 'RIGHT'
+                    row.prop(pgroup, "whitewater_influence", text="influence")
+                    row.prop(pgroup, "dust_emission_strength", text="dust emission")
     
 
 def register():

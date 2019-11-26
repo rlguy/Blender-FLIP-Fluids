@@ -78,6 +78,14 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
                 " layer will be destroyed",
             default=True,
             ); exec(conv("enable_spray"))
+    enable_dust = BoolProperty(
+            name="Dust",
+            description="Enable solving for dust particles. Dust particles are"
+                " generated near obstacle surfaces and are advected with the"
+                " fluid velocity while sinking towards the ground. If disabled,"
+                " these particles will not be generated.",
+            default=False,
+            ); exec(conv("enable_dust"))
     generate_whitewater_motion_blur_data = BoolProperty(
             name="Generate Motion Blur Vectors",
             description="Generate whitewater speed vectors for motion blur"
@@ -115,6 +123,22 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
             step=30,
             precision=0,
             ); exec(conv("turbulence_emission_rate"))
+    dust_emission_rate = FloatProperty(
+            name="Dust Emission Rate", 
+            description="Maximum number of dust particles that a"
+                " dust emitter may generate per simulation second", 
+            min=0, soft_max=1000,
+            default=175,
+            step=30,
+            precision=0,
+            ); exec(conv("dust_emission_rate"))
+    spray_emission_speed = FloatProperty(
+            name="Spray Emission Speed", 
+            description="Speed scaling factor for spray particle emission. Increasing"
+                " this value will generate more spread out and exaggerated spray effects", 
+            min=1.0, soft_max=3.0,
+            default=1.0,
+            ); exec(conv("spray_emission_speed"))
     min_max_whitewater_energy_speed = NewMinMaxFloatProperty(
             name_min="Min Energy Speed", 
             description_min="Fluid with speed less than this value will generate"
@@ -176,8 +200,14 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
             name="Enable Emission Near Domain Boundary",
             description="Allow whitewater emitters to generate particles at"
                 " the domain boundary",
-            default = True,
+            default=True,
             ); exec(conv("enable_whitewater_emission_near_boundary"))
+    enable_dust_emission_near_boundary = BoolProperty(
+            name="Enable Dust Emission Near Domain Boundary",
+            description="Allow whitewater emitters to generate dust particles near"
+                " the domain floor",
+            default=False,
+            ); exec(conv("enable_dust_emission_near_boundary"))
     min_max_whitewater_lifespan = NewMinMaxFloatProperty(
             name_min="Min Lifespan", 
             description_min="Minimum whitewater particle lifespan in seconds", 
@@ -220,6 +250,13 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
             default=5.0,
             precision=1,
             ); exec(conv("spray_lifespan_modifier"))
+    dust_lifespan_modifier = FloatProperty(
+            name="Dust Lifespan Modifier", 
+            description="Multiply the lifespan of a dust particle by this value", 
+            min=0.0,
+            default=2.0,
+            precision=1,
+            ); exec(conv("dust_lifespan_modifier"))
     foam_advection_strength = FloatProperty(
             name="Foam Advection Strength", 
             description="Controls how much the foam moves along with the motion"
@@ -310,6 +347,26 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
             default=3.0,
             precision=2,
             ); exec(conv("spray_drag_coefficient"))
+    dust_drag_coefficient = FloatProperty(
+            name="Dust Drag Coefficient", 
+            description="Controls how quickly dust particles are dragged with"
+                " the fluid velocity. If set to 1, dust particles will be"
+                " immediately dragged into the flow direction of the fluid", 
+            min=0.0, max=1.0,
+            default=0.75,
+            precision=2,
+            subtype='FACTOR',
+            ); exec(conv("dust_drag_coefficient"))
+    dust_bouyancy_coefficient = FloatProperty(
+            name="Dust Bouyancy Coefficient", 
+            description="Controls how quickly dust particles sink towards"
+                " the ground. Decreasing this value will cause particles to sink"
+                " more quickly. If set to a positive value, dust will float towards"
+                " fluid surface.", 
+            default=-3.0,
+            precision=2,
+            step=0.3,
+            ); exec(conv("dust_bouyancy_coefficient"))
     foam_boundary_behaviour = EnumProperty(
             name="Foam Behaviour At Limits",
             description="Specifies the foam particle behavior when hitting the"
@@ -381,21 +438,26 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
         add(path + ".enable_foam",                              "Enable Foam",                    group_id=0)
         add(path + ".enable_bubbles",                           "Enable Bubbles",                 group_id=0)
         add(path + ".enable_spray",                             "Enable Spray",                   group_id=0)
+        add(path + ".enable_dust",                              "Enable Dust",                    group_id=0)
         add(path + ".generate_whitewater_motion_blur_data",     "Generate Motion Blur Data",      group_id=0)
         add(path + ".enable_whitewater_emission",               "Enable Emission",                group_id=0)
         add(path + ".whitewater_emitter_generation_rate",       "Emission Rate",                  group_id=0)
         add(path + ".wavecrest_emission_rate",                  "Wavecrest Emission Rate",        group_id=0)
         add(path + ".turbulence_emission_rate",                 "Turbulence Emission Rate",       group_id=0)
+        add(path + ".dust_emission_rate",                       "Dust Emission Rate",             group_id=0)
+        add(path + ".spray_emission_speed",                     "Spray Emission Speed",           group_id=0)
         add(path + ".min_max_whitewater_energy_speed",          "Min-Max Energy Speed",           group_id=0)
         add(path + ".min_max_whitewater_wavecrest_curvature",   "Min-Max Curvature",              group_id=0)
         add(path + ".min_max_whitewater_turbulence",            "Min-Max Turbulence",             group_id=0)
         add(path + ".max_whitewater_particles",                 "Max Particles",                  group_id=0)
         add(path + ".enable_whitewater_emission_near_boundary", "Emit Near Boundary",             group_id=0)
+        add(path + ".enable_dust_emission_near_boundary",       "Emit Dust Near Boundary",        group_id=0)
         add(path + ".min_max_whitewater_lifespan",              "Min-Max Lifespane",              group_id=1)
         add(path + ".whitewater_lifespan_variance",             "Lifespan Variance",              group_id=1)
         add(path + ".foam_lifespan_modifier",                   "Foam Lifespan Modifier",         group_id=1)
         add(path + ".bubble_lifespan_modifier",                 "Bubble Lifespan Modifier",       group_id=1)
         add(path + ".spray_lifespan_modifier",                  "Spray Lifespan Modifier",        group_id=1)
+        add(path + ".dust_lifespan_modifier",                   "Dust Lifespan Modifier",         group_id=1)
         add(path + ".foam_advection_strength",                  "Foam Advection Strength",        group_id=1)
         add(path + ".foam_layer_depth",                         "Foam Depth",                     group_id=1)
         add(path + ".foam_layer_offset",                        "Foam Offset",                    group_id=1)
@@ -405,6 +467,8 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
         add(path + ".bubble_drag_coefficient",                  "Bubble Drag",                    group_id=2)
         add(path + ".bubble_bouyancy_coefficient",              "Bubble Bouyancy",                group_id=2)
         add(path + ".spray_drag_coefficient",                   "Spray Drag",                     group_id=2)
+        add(path + ".dust_drag_coefficient",                    "Dust Drag",                      group_id=2)
+        add(path + ".dust_bouyancy_coefficient",                "Dust Bouyancy",                  group_id=2)
         add(path + ".foam_boundary_behaviour",                  "Foam Boundary Behaviour",        group_id=2)
         add(path + ".bubble_boundary_behaviour",                "Bubble Boundary Behaviour",      group_id=2)
         add(path + ".spray_boundary_behaviour",                 "Spray Boundary Behaviour",       group_id=2)
@@ -416,7 +480,6 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
 
 
     def _update_enable_whitewater_simulation(self, context):
-        domain_object = context.scene.flip_fluid.get_domain_object()
         dprops = context.scene.flip_fluid.get_domain_properties()
         if dprops is None:
             return
@@ -428,7 +491,7 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
             dprops.materials.whitewater_bubble_material = dprops.materials.whitewater_bubble_material
             dprops.materials.whitewater_spray_material = dprops.materials.whitewater_spray_material
         else:
-            dprops.mesh_cache.delete_whitewater_cache_objects(domain_object)
+            dprops.mesh_cache.delete_whitewater_cache_objects()
 
 
 def register():

@@ -87,9 +87,11 @@ struct FluidSimulationFrameStats {
     FluidSimulationMeshStats foam;
     FluidSimulationMeshStats bubble;
     FluidSimulationMeshStats spray;
+    FluidSimulationMeshStats dust;
     FluidSimulationMeshStats foamblur;
     FluidSimulationMeshStats bubbleblur;
     FluidSimulationMeshStats sprayblur;
+    FluidSimulationMeshStats dustblur;
     FluidSimulationMeshStats particles;
     FluidSimulationMeshStats obstacle;
     FluidSimulationTimingStats timing;
@@ -423,6 +425,14 @@ public:
     void disableDiffuseSpray();
     bool isDiffuseSprayEnabled();
 
+    void enableDiffuseDust();
+    void disableDiffuseDust();
+    bool isDiffuseDustEnabled();
+
+    void enableBoundaryDiffuseDustEmission();
+    void disableBoundaryDiffuseDustEmission();
+    bool isBoundaryDustDiffuseEmissionEnabled();
+
     /*
         TODO: rename methods to clarify enabling/disabling output
 
@@ -529,7 +539,7 @@ public:
     void setDiffuseParticleLifetimeVariance(double variance);
 
     /*
-        Lifetime modifiers for foam/bubble/spray particle.
+        Lifetime modifiers for foam/bubble/spray/dust particle.
     */
     double getFoamParticleLifetimeModifier();
     void setFoamParticleLifetimeModifier(double modifier);
@@ -537,6 +547,8 @@ public:
     void setBubbleParticleLifetimeModifier(double modifier);
     double getSprayParticleLifetimeModifier();
     void setSprayParticleLifetimeModifier(double modifier);
+    double getDustParticleLifetimeModifier();
+    void setDustParticleLifetimeModifier(double modifier);
 
     /*
         Diffuse particle emission rates.
@@ -566,9 +578,8 @@ public:
     void setDiffuseParticleWavecrestEmissionRate(double r);
     double getDiffuseParticleTurbulenceEmissionRate();
     void setDiffuseParticleTurbulenceEmissionRate(double r);
-    void getDiffuseParticleEmissionRates(double *rwc, double *rt);
-    void setDiffuseParticleEmissionRates(double r);
-    void setDiffuseParticleEmissionRates(double rwc, double rt);
+    double getDiffuseParticleDustEmissionRate();
+    void setDiffuseParticleDustEmissionRate(double r);
 
     /*
         Advection strength in range [0.0, 1.0] controls how much the foam moves 
@@ -612,26 +623,38 @@ public:
     void setMaxDiffuseFoamDensity(double d);
 
     /*
-        Drag coefficient in range [0.0, 1.0] controls how quickly bubble particles 
+        Drag coefficient in range [0.0, 1.0] controls how quickly bubble/dust particles 
         are dragged with the fluid velocity. If set to 1, bubble particles will
         be immediately dragged into the flow direction of the fluid.
     */
     double getDiffuseBubbleDragCoefficient();
     void setDiffuseBubbleDragCoefficient(double d);
 
+    double getDiffuseDustDragCoefficient();
+    void setDiffuseDustDragCoefficient(double d);
+
     /*
-        Bouyancy coefficient controls how quickly bubble particles float towards
+        Bouyancy coefficient controls how quickly bubble/dust particles float towards
         the fluid surface. If set to a negative value, bubbles will sink away 
         from the fluid surface.
     */
     double getDiffuseBubbleBouyancyCoefficient();
     void setDiffuseBubbleBouyancyCoefficient(double b);
 
+    double getDiffuseDustBouyancyCoefficient();
+    void setDiffuseDustBouyancyCoefficient(double b);
+
     /*
         Amount of air resistance acting on a diffuse spray particle
     */
     double getDiffuseSprayDragCoefficient();
     void setDiffuseSprayDragCoefficient(double d);
+
+    /*
+        Scaling factor for spray velocity during emission
+    */
+    double getDiffuseSprayEmissionSpeed();
+    void setDiffuseSprayEmissionSpeed(double value);
 
     /*
         Diffuse particle behaviour at limits
@@ -652,6 +675,9 @@ public:
     LimitBehaviour getDiffuseSprayLimitBehaviour();
     void setDiffuseSprayLimitBehaviour(LimitBehaviour b);
 
+    LimitBehaviour getDiffuseDustLimitBehaviour();
+    void setDiffuseDustLimitBehaviour(LimitBehaviour b);
+
     std::vector<bool> getDiffuseFoamActiveBoundarySides();
     void setDiffuseFoamActiveBoundarySides(std::vector<bool> active);
 
@@ -660,6 +686,9 @@ public:
 
     std::vector<bool> getDiffuseSprayActiveBoundarySides();
     void setDiffuseSprayActiveBoundarySides(std::vector<bool> active);
+
+    std::vector<bool> getDiffuseDustActiveBoundarySides();
+    void setDiffuseDustActiveBoundarySides(std::vector<bool> active);
 
     /*
         Default value of diffue particle influence. If influence at a location
@@ -1017,9 +1046,11 @@ public:
     std::vector<char>* getDiffuseFoamData();
     std::vector<char>* getDiffuseBubbleData();
     std::vector<char>* getDiffuseSprayData();
+    std::vector<char>* getDiffuseDustData();
     std::vector<char>* getDiffuseFoamBlurData();
     std::vector<char>* getDiffuseBubbleBlurData();
     std::vector<char>* getDiffuseSprayBlurData();
+    std::vector<char>* getDiffuseDustBlurData();
     std::vector<char>* getFluidParticleData();
     std::vector<char>* getInternalObstacleMeshData();
     std::vector<char>* getLogFileData();
@@ -1065,9 +1096,11 @@ private:
         std::vector<char> diffuseFoamData;
         std::vector<char> diffuseBubbleData;
         std::vector<char> diffuseSprayData;
+        std::vector<char> diffuseDustData;
         std::vector<char> diffuseFoamBlurData;
         std::vector<char> diffuseBubbleBlurData;
         std::vector<char> diffuseSprayBlurData;
+        std::vector<char> diffuseDustBlurData;
         std::vector<char> fluidParticleData;
         std::vector<char> internalObstacleMeshData;
         std::vector<char> logfileData;

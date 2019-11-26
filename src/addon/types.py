@@ -55,13 +55,19 @@ display_modes = (
     )
 
 whitewater_view_settings_modes = (
-    ('VIEW_SETTINGS_WHITEWATER',        "Whitewater",        "Adjust view settings for all whitewater particles"),
-    ('VIEW_SETTINGS_FOAM_BUBBLE_SPRAY', "Spray Bubble Foam", "Adjust view settings for foam, bubble, and spray particles separately")
+    ('VIEW_SETTINGS_WHITEWATER',        "Whitewater",             "Adjust view settings for all whitewater particles"),
+    ('VIEW_SETTINGS_FOAM_BUBBLE_SPRAY', "Foam Bubble Spray Dust", "Adjust view settings for foam, bubble, spray, and particles separately")
     )
 
 whitewater_object_settings_modes = (
-    ('WHITEWATER_OBJECT_SETTINGS_WHITEWATER',        "Whitewater",        "Adjust particle object settings for all whitewater particles"),
-    ('WHITEWATER_OBJECT_SETTINGS_FOAM_BUBBLE_SPRAY', "Spray Bubble Foam", "Adjust particle object settings for foam, bubble, and spray particles separately")
+    ('WHITEWATER_OBJECT_SETTINGS_WHITEWATER',        "Whitewater",             "Adjust particle object settings for all whitewater particles"),
+    ('WHITEWATER_OBJECT_SETTINGS_FOAM_BUBBLE_SPRAY', "Foam Bubble Spray Dust", "Adjust particle object settings for foam, bubble, spray, and dust particles separately")
+    )
+
+whitewater_particle_object_modes = (
+    ('WHITEWATER_PARTICLE_ICOSPHERE',   "Icosphere",    "Render whitewater particles as a 20 sided icosphere"),
+    ('WHITEWATER_PARTICLE_CUBE',        "Cube",         "Render whitewater particles as a 6 sided cube"),
+    ('WHITEWATER_PARTICLE_CUSTOM',      "Custom",       "Render whitewater particles as a custom blender object")
     )
 
 whitewater_ui_modes = (

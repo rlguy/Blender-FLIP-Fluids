@@ -28,6 +28,7 @@ from .. import types
 from ..utils import version_compatibility_utils as vcu
 
 SAVESTATE_ENUMS = []
+IS_SAVESTATE_ENUMS_INITIALIZED = False
 
 
 class DomainBakeProperties(bpy.types.PropertyGroup):
@@ -120,6 +121,9 @@ class DomainBakeProperties(bpy.types.PropertyGroup):
 
     def get_savestate_enums(self):
         global SAVESTATE_ENUMS
+        global IS_SAVESTATE_ENUMS_INITIALIZED
+        if not IS_SAVESTATE_ENUMS_INITIALIZED:
+            self._update_savestate_enums()
         return SAVESTATE_ENUMS
 
 
@@ -133,7 +137,9 @@ class DomainBakeProperties(bpy.types.PropertyGroup):
 
     def _update_savestate_enums(self):
         global SAVESTATE_ENUMS
+        global IS_SAVESTATE_ENUMS_INITIALIZED
         SAVESTATE_ENUMS = []
+        IS_SAVESTATE_ENUMS_INITIALIZED = True
 
         dprops = bpy.context.scene.flip_fluid.get_domain_properties()
         cache_directory = dprops.cache.get_cache_abspath()
@@ -155,7 +161,10 @@ class DomainBakeProperties(bpy.types.PropertyGroup):
         e = (str(autosave_frame), "Resume from frame " + str(autosave_frame + 1) + " (most recent)", "")
         SAVESTATE_ENUMS.append(e)
 
-        dprops.simulation.selected_savestate = str(autosave_frame)
+        try:
+            dprops.simulation.selected_savestate = str(autosave_frame)
+        except:
+            pass
 
 
 def register():

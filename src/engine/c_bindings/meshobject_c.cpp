@@ -139,6 +139,18 @@ extern "C" {
         );
     }
 
+    EXPORTDLL float MeshObject_get_dust_emission_strength(MeshObject* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &MeshObject::getDustEmissionStrength, err
+        );
+    }
+
+    EXPORTDLL void MeshObject_set_dust_emission_strength(MeshObject* obj, float value, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &MeshObject::setDustEmissionStrength, value, err
+        );
+    }
+
     EXPORTDLL float MeshObject_get_sheeting_strength(MeshObject* obj, int *err) {
         return CBindings::safe_execute_method_ret_0param(
             obj, &MeshObject::getSheetingStrength, err

@@ -262,7 +262,18 @@ void ParticleLevelSet::calculateCurvatureGrid(Array3d<float> &surfacePhi,
 
     float width = _curvatureGridExactBand * _dx;
     LevelSetSolver solver;
-    solver.reinitialize(_phi, _dx, width, solverGridCells, surfacePhi);
+    solver.reinitializeUpwind(_phi, _dx, width, solverGridCells, surfacePhi);
+
+    float outOfRangeDist = _outOfRangeDistance * _dx;
+    for (int k = 0; k < _ksize; k++) {
+        for (int j = 0; j < _jsize; j++) {
+            for (int i = 0; i < _isize; i++) {
+                if (!validNodes(i, j, k)) {
+                    surfacePhi.set(i, j, k, outOfRangeDist);
+                }
+            }
+        }
+    }
 
     validNodes.fill(false);
     _getValidCurvatureNodes(surfacePhi, validNodes);

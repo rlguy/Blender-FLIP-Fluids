@@ -166,9 +166,11 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
     foam_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("foam_mesh"))
     bubble_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("bubble_mesh"))
     spray_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("spray_mesh"))
+    dust_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("dust_mesh"))
     foamblur_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("foamblur_mesh"))
     bubbleblur_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("bubbleblur_mesh"))
     sprayblur_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("sprayblur_mesh"))
+    dustblur_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("dustblur_mesh"))
     particle_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("particle_mesh"))
     obstacle_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("obstacle_mesh"))
 
@@ -239,7 +241,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.refresh_stats()
 
 
-    def frame_change_post(self, scene):
+    def frame_change_post(self, scene, depsgraph=None):
         if self.cache_info_type == "FRAME_INFO" and self.lock_info_frame_to_timeline:
             if self.current_info_frame != scene.frame_current:
                 self.current_info_frame = scene.frame_current
@@ -307,11 +309,21 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self._set_mesh_stats_data(self.foam_mesh,         data['foam'])
         self._set_mesh_stats_data(self.bubble_mesh,       data['bubble'])
         self._set_mesh_stats_data(self.spray_mesh,        data['spray'])
-        self._set_mesh_stats_data(self.foamblur_mesh,  data['foamblur'])
-        self._set_mesh_stats_data(self.bubbleblur_mesh,  data['bubbleblur'])
+
+        if 'dust' in data:
+            # If statement to support older caches that do not have a dust entry
+            self._set_mesh_stats_data(self.dust_mesh,         data['dust'])
+
+        self._set_mesh_stats_data(self.foamblur_mesh,   data['foamblur'])
+        self._set_mesh_stats_data(self.bubbleblur_mesh, data['bubbleblur'])
         self._set_mesh_stats_data(self.sprayblur_mesh,  data['sprayblur'])
-        self._set_mesh_stats_data(self.particle_mesh,     data['particles'])
-        self._set_mesh_stats_data(self.obstacle_mesh,     data['obstacle'])
+
+        if 'dustblur' in data:
+            # If statement to support older caches that do not have a dustblur entry
+            self._set_mesh_stats_data(self.dustblur_mesh,   data['dustblur'])
+
+        self._set_mesh_stats_data(self.particle_mesh,   data['particles'])
+        self._set_mesh_stats_data(self.obstacle_mesh,   data['obstacle'])
 
         total_time = max(data['timing']['total'], 1e-6)
         time_other = (total_time - data['timing']['mesh']
@@ -389,12 +401,16 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
                 cache_size += fdata['bubble']['bytes']
             if fdata['spray']['enabled']:
                 cache_size += fdata['spray']['bytes']
+            if 'dust' in fdata and fdata['dust']['enabled']: # If statement to support caches without a dust entry
+                cache_size += fdata['dust']['bytes']
             if fdata['foamblur']['enabled']:
                 cache_size += fdata['foamblur']['bytes']
             if fdata['bubbleblur']['enabled']:
                 cache_size += fdata['bubbleblur']['bytes']
             if fdata['sprayblur']['enabled']:
                 cache_size += fdata['sprayblur']['bytes']
+            if 'dustblur' in fdata and fdata['dustblur']['enabled']: # If statement to support caches without a dustblur entry
+                cache_size += fdata['dustblur']['bytes']
             if fdata['particles']['enabled']:
                 cache_size += fdata['particles']['bytes']
             if fdata['obstacle']['enabled']:
@@ -424,9 +440,11 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         is_foam_enabled = False
         is_bubble_enabled = False
         is_spray_enabled = False
+        is_dust_enabled = False
         is_foamblur_enabled = False
         is_bubbleblur_enabled = False
         is_sprayblur_enabled = False
+        is_dustblur_enabled = False
         is_particles_enabled = False
         is_obstacle_enabled = False
         surface_bytes = 0
@@ -435,9 +453,11 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         foam_bytes = 0
         bubble_bytes = 0
         spray_bytes = 0
+        dust_bytes = 0
         foamblur_bytes = 0
         bubbleblur_bytes = 0
         sprayblur_bytes = 0
+        dustblur_bytes = 0
         particles_bytes = 0
         obstacle_bytes = 0
 
@@ -478,6 +498,9 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             if fdata['spray']['enabled']:
                 is_spray_enabled = True
                 spray_bytes += fdata['spray']['bytes']
+            if 'dust' in fdata and fdata['dust']['enabled']: # If statement to support caches without a dust entry
+                is_dust_enabled = True
+                dust_bytes += fdata['dust']['bytes']
             if fdata['foamblur']['enabled']:
                 is_foamblur_enabled = True
                 foamblur_bytes += fdata['foamblur']['bytes']
@@ -487,6 +510,9 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             if fdata['sprayblur']['enabled']:
                 is_sprayblur_enabled = True
                 sprayblur_bytes += fdata['sprayblur']['bytes']
+            if 'dustblur' in fdata and fdata['sprayblur']['enabled']: # If statement to support caches without a dustblur entry
+                is_dustblur_enabled = True
+                dustblur_bytes += fdata['dustblur']['bytes']
             if fdata['particles']['enabled']:
                 is_particles_enabled = True
                 particles_bytes += fdata['particles']['bytes']
@@ -515,9 +541,11 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.foam_mesh.enabled = is_foam_enabled
         self.bubble_mesh.enabled = is_bubble_enabled
         self.spray_mesh.enabled = is_spray_enabled
+        self.dust_mesh.enabled = is_dust_enabled
         self.foamblur_mesh.enabled = is_foamblur_enabled
         self.bubbleblur_mesh.enabled = is_bubbleblur_enabled
         self.sprayblur_mesh.enabled = is_sprayblur_enabled
+        self.dustblur_mesh.enabled = is_dustblur_enabled
         self.particle_mesh.enabled = is_particles_enabled
         self.obstacle_mesh.enabled = is_obstacle_enabled
 
@@ -527,9 +555,11 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.foam_mesh.bytes.set(foam_bytes)
         self.bubble_mesh.bytes.set(bubble_bytes)
         self.spray_mesh.bytes.set(spray_bytes)
+        self.dust_mesh.bytes.set(dust_bytes)
         self.foamblur_mesh.bytes.set(foamblur_bytes)
         self.bubbleblur_mesh.bytes.set(bubbleblur_bytes)
         self.sprayblur_mesh.bytes.set(sprayblur_bytes)
+        self.dustblur_mesh.bytes.set(dustblur_bytes)
         self.particle_mesh.bytes.set(particles_bytes)
         self.obstacle_mesh.bytes.set(obstacle_bytes)
 

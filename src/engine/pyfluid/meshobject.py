@@ -121,6 +121,19 @@ class MeshObject():
         pb.execute_lib_func(libfunc, [self(), value])
 
     @property
+    def dust_emission_strength(self):
+        libfunc = lib.MeshObject_get_dust_emission_strength
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_float)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @dust_emission_strength.setter
+    @decorators.check_ge_zero
+    def dust_emission_strength(self, value):
+        libfunc = lib.MeshObject_set_dust_emission_strength
+        pb.init_lib_func(libfunc, [c_void_p, c_float, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), value])
+
+    @property
     def sheeting_strength(self):
         libfunc = lib.MeshObject_get_sheeting_strength
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_float)

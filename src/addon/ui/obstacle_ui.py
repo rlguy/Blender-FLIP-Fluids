@@ -69,6 +69,9 @@ class FLIPFLUID_PT_ObstacleTypePanel(bpy.types.Panel):
             column.prop(obstacle_props, "whitewater_influence")
 
             column = box.column()
+            column.prop(obstacle_props, "dust_emission_strength")
+
+            column = box.column()
             column.prop(obstacle_props, "sheeting_strength")
 
             column = box.column()

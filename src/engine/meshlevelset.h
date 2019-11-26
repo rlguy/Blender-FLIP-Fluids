@@ -128,6 +128,7 @@ public:
     void setFaceVelocityW(int i, int j, int k, float v);
     void setFaceVelocityW(GridIndex g, float v);
     float trilinearInterpolate(vmath::vec3 pos);
+    void trilinearInterpolatePoints(std::vector<vmath::vec3> &points, std::vector<float> &results);
     void trilinearInterpolateSolidGridPoints(vmath::vec3 offset, double dx, 
                                              Array3d<bool> &grid);
     vmath::vec3 trilinearInterpolateGradient(vmath::vec3 pos);
@@ -315,6 +316,10 @@ private:
     void _calculateUnionThread(int startidx, int endidx, 
                                int triIndexOffset, int meshObjectIndexOffset, 
                                MeshLevelSet *levelset);
+
+    void _trilinearInterpolatePointsThread(int startidx, int endidx,
+                                           std::vector<vmath::vec3> *points, 
+                                           std::vector<float> *results);
     
     template<class T>
     void _trilinearInterpolateSolidPointsThread(int startidx, int endidx, 

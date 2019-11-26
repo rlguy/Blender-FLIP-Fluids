@@ -108,7 +108,9 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
             ); exec(conv("selected_savestate_int"))
     resolution = IntProperty(
             name="Resolution",
-            description="Domain resolution",
+            description="Domain grid resolution. This value specifies the number of"
+                " grid cells on the longest side of the domain. See Debug Panel for"
+                " grid visualization tools",
             min =1,
             default=65,
             update=lambda self, context: self._update_resolution(context),
@@ -116,16 +118,28 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
             ); exec(conv("resolution"))
     preview_resolution = IntProperty(
             name="Preview Resolution",
-            description="Preview resolution",
+            description="The resolution to use for generating lower quality meshes for"
+                " the preview fluid surface. Increasing this value will take no extra time"
+                " to simulate, but will increase cache size",
             min=1, soft_max=150,
             default=45,
             update=lambda self, context: self._update_preview_resolution(context),
             options={'HIDDEN'},
             ); exec(conv("preview_resolution"))
+    auto_preview_resolution = BoolProperty(
+            name="Recommended",
+            description="Set recommended preview resolution based on domain resolution and"
+                " mesh generation settings",
+            default=True,
+            update=lambda self, context: self._update_auto_preview_resolution(context),
+            options={'HIDDEN'},
+            ); exec(conv("auto_preview_resolution"))
     lock_cell_size = BoolProperty(
             name="Lock Cell Size",
             description="Lock the current grid cell size and update the grid"
-                " resolution as the domain dimensions are changed",
+                " resolution as the domain dimensions are changed. Enable this"
+                " option before resizing the domain to maintain a constant level"
+                " of simulation detail.",
             default=False,
             update=lambda self, context: self._update_lock_cell_size(context),
             options = {'HIDDEN'},
@@ -165,7 +179,9 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
             ); exec(conv("frames_per_second"))
     time_scale = FloatProperty(
             name="Speed", 
-            description="Fluid motion rate (0 = stationary, 1 = normal speed)", 
+            description="Scale the frame timestep by this value. If set to less than"
+                " 1.0, the simulation will appear in slow motion. If set to greater than"
+                " 1.0, the simulation will appear sped up", 
             min=0.0,
             default=1.0,
             precision=3,
@@ -182,14 +198,23 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
 
     def register_preset_properties(self, registry, path):
         add = registry.add_property
-        add(path + ".resolution",           "Resolution",           group_id=0)
-        add(path + ".preview_resolution",   "Preview Resolution",   group_id=0)
-        add(path + ".lock_cell_size",       "Lock Cell Size",       group_id=0)
-        add(path + ".start_time",           "Start Time",           group_id=0)
-        add(path + ".end_time",             "End Time",             group_id=0)
-        add(path + ".use_fps",              "Use FPS",              group_id=0)
-        add(path + ".frames_per_second",    "Frame Rate",           group_id=0)
-        add(path + ".time_scale",           "Time Scale",           group_id=0)
+        add(path + ".resolution",              "Resolution",              group_id=0)
+        add(path + ".preview_resolution",      "Preview Resolution",      group_id=0)
+        add(path + ".auto_preview_resolution", "Auto Preview Resolution", group_id=0)
+        add(path + ".lock_cell_size",          "Lock Cell Size",          group_id=0)
+        add(path + ".start_time",              "Start Time",              group_id=0)
+        add(path + ".end_time",                "End Time",                group_id=0)
+        add(path + ".use_fps",                 "Use FPS",                 group_id=0)
+        add(path + ".frames_per_second",       "Frame Rate",              group_id=0)
+        add(path + ".time_scale",              "Time Scale",              group_id=0)
+
+        add(path + ".frame_range_mode",           "Frame Range Mode",           group_id=1)
+        add(path + ".frame_range_custom",         "Frame Range (Custom)",       group_id=1)
+        add(path + ".update_settings_on_resume",  "Update Settings on Resume",  group_id=1)
+        add(path + ".enable_savestates",          "Enable Savestates",          group_id=1)
+        add(path + ".savestate_interval",         "Savestate Interval",         group_id=1)
+        add(path + ".delete_outdated_savestates", "Delete Outdated Savestates", group_id=1)
+        add(path + ".delete_outdated_meshes",     "Delete Outdated Meshes",     group_id=1)
 
 
     def initialize(self):
@@ -205,6 +230,7 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
         self._update_locked_cell_size_resolution()
         self._update_start_end_time()
         self._update_surface_tension_substeps_info()
+        self._set_recommended_preview_resolution()
 
 
     def get_grid_dimensions(self, resolution=None, lock_cell_size=None):
@@ -279,12 +305,31 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
 
 
     def _update_resolution(self, context):
+        self._set_recommended_preview_resolution(context)
         if self.preview_resolution > self.resolution:
             self.preview_resolution = self.resolution
 
 
     def _update_preview_resolution(self, context):
         self._update_resolution(context)
+
+
+    def _update_auto_preview_resolution(self, context):
+        self._set_recommended_preview_resolution(context)
+
+
+    def _set_recommended_preview_resolution(self, context=None):
+        if not self.auto_preview_resolution:
+            return
+        if context is None:
+            context = bpy.context
+        dprops = context.scene.flip_fluid.get_domain_properties()
+        if dprops.surface.subdivisions > 1:
+            preview = self.resolution
+        else:
+            preview = self.resolution // 2
+        if self.preview_resolution != preview:
+            self.preview_resolution = preview
 
 
     def _update_lock_cell_size(self, context):

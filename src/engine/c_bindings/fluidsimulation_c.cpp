@@ -725,6 +725,42 @@ extern "C" {
         );
     }
 
+    EXPORTDLL void FluidSimulation_enable_diffuse_dust(FluidSimulation* obj, int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableDiffuseDust, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_diffuse_dust(FluidSimulation* obj, int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableDiffuseDust, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_diffuse_dust_enabled(FluidSimulation* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isDiffuseDustEnabled, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_enable_boundary_diffuse_dust_emission(FluidSimulation* obj, int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableBoundaryDiffuseDustEmission, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_boundary_diffuse_dust_emission(FluidSimulation* obj, int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableBoundaryDiffuseDustEmission, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_boundary_diffuse_dust_emission_enabled(FluidSimulation* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isBoundaryDustDiffuseEmissionEnabled, err
+        );
+    }
+
     EXPORTDLL void FluidSimulation_enable_bubble_diffuse_material(FluidSimulation* obj,
                                                                   int *err) {
         CBindings::safe_execute_method_void_0param(
@@ -1008,6 +1044,21 @@ extern "C" {
         );
     }
 
+    EXPORTDLL double FluidSimulation_get_dust_particle_lifetime_modifier(FluidSimulation* obj,
+                                                                         int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getDustParticleLifetimeModifier, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_set_dust_particle_lifetime_modifier(FluidSimulation* obj,
+                                                                       double modifier, 
+                                                                       int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setDustParticleLifetimeModifier, modifier, err
+        );
+    }
+
     EXPORTDLL double FluidSimulation_get_max_diffuse_particle_lifetime(FluidSimulation* obj,
                                                                        int *err) {
         return CBindings::safe_execute_method_ret_0param(
@@ -1048,6 +1099,20 @@ extern "C" {
             FluidSimulation* obj, double rate, int *err) {
         CBindings::safe_execute_method_void_1param(
             obj, &FluidSimulation::setDiffuseParticleTurbulenceEmissionRate, rate, err
+        );
+    }
+
+    EXPORTDLL double FluidSimulation_get_diffuse_particle_dust_emission_rate(
+            FluidSimulation* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getDiffuseParticleDustEmissionRate, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_set_diffuse_particle_dust_emission_rate(
+            FluidSimulation* obj, double rate, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setDiffuseParticleDustEmissionRate, rate, err
         );
     }
 
@@ -1182,6 +1247,34 @@ extern "C" {
         );
     }
 
+    EXPORTDLL double FluidSimulation_get_diffuse_dust_drag_coefficient(FluidSimulation* obj, 
+                                                                         int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getDiffuseDustDragCoefficient, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_set_diffuse_dust_drag_coefficient(FluidSimulation* obj, 
+                                                                       double d, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setDiffuseDustDragCoefficient, d, err
+        );
+    }
+
+    EXPORTDLL double FluidSimulation_get_diffuse_dust_bouyancy_coefficient(FluidSimulation* obj, 
+                                                                             int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getDiffuseDustBouyancyCoefficient, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_set_diffuse_dust_bouyancy_coefficient(FluidSimulation* obj, 
+                                                                           double b, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setDiffuseDustBouyancyCoefficient, b, err
+        );
+    }
+
     EXPORTDLL double FluidSimulation_get_diffuse_spray_drag_coefficient(FluidSimulation* obj, 
                                                                         int *err) {
         return CBindings::safe_execute_method_ret_0param(
@@ -1193,6 +1286,20 @@ extern "C" {
                                                                       double d, int *err) {
         CBindings::safe_execute_method_void_1param(
             obj, &FluidSimulation::setDiffuseSprayDragCoefficient, d, err
+        );
+    }
+
+    EXPORTDLL double FluidSimulation_get_diffuse_spray_emission_speed(FluidSimulation* obj, 
+                                                                        int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getDiffuseSprayEmissionSpeed, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_set_diffuse_spray_emission_speed(FluidSimulation* obj, 
+                                                                    double d, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setDiffuseSprayEmissionSpeed, d, err
         );
     }
 
@@ -1301,6 +1408,41 @@ extern "C" {
         );
     }
 
+    EXPORTDLL int FluidSimulation_get_diffuse_dust_limit_behaviour(FluidSimulation* obj, 
+                                                                    int *err) {
+        LimitBehaviour b = CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getDiffuseDustLimitBehaviour, err
+        );
+
+        int enum_value = 0;
+        if (b == LimitBehaviour::kill) {
+            enum_value = 0;
+        } else if (b == LimitBehaviour::ballistic) {
+            enum_value = 1;
+        } else if (b == LimitBehaviour::collide) {
+            enum_value = 2;
+        }
+
+        return enum_value;
+    }
+
+    EXPORTDLL void FluidSimulation_set_diffuse_dust_limit_behaviour(FluidSimulation* obj, 
+                                                                     int enum_value,
+                                                                     int *err) {
+        LimitBehaviour b = LimitBehaviour::kill;
+        if (enum_value == 0) {
+            b = LimitBehaviour::kill;
+        } else if (enum_value == 1) {
+            b = LimitBehaviour::ballistic;
+        } else if (enum_value == 2) {
+            b = LimitBehaviour::collide;
+        }
+
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setDiffuseDustLimitBehaviour, b, err
+        );
+    }
+
     EXPORTDLL void FluidSimulation_get_diffuse_foam_active_boundary_sides(FluidSimulation* obj, 
                                                                           int *result,
                                                                           int *err) {
@@ -1370,6 +1512,30 @@ extern "C" {
 
         CBindings::safe_execute_method_void_1param(
             obj, &FluidSimulation::setDiffuseSprayActiveBoundarySides, boolvect, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_get_diffuse_dust_active_boundary_sides(FluidSimulation* obj, 
+                                                                          int *result,
+                                                                          int *err) {
+        std::vector<bool> boolvect = CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getDiffuseDustActiveBoundarySides, err
+        );
+
+        for (int i = 0; i < 6; i++) {
+            result[i] = (bool)boolvect[i];
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_set_diffuse_dust_active_boundary_sides(FluidSimulation* obj, 
+                                                                          int *active, int *err) {
+        std::vector<bool> boolvect;
+        for (int i = 0; i < 6; i++) {
+            boolvect.push_back(active[i] != 0);
+        }
+
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setDiffuseDustActiveBoundarySides, boolvect, err
         );
     }
 
@@ -2067,6 +2233,19 @@ extern "C" {
         return 0;
     }
 
+    EXPORTDLL int FluidSimulation_get_diffuse_dust_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getDiffuseDustData();
+            return (int)data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
     EXPORTDLL int FluidSimulation_get_diffuse_foam_blur_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
@@ -2097,6 +2276,19 @@ extern "C" {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getDiffuseSprayBlurData();
+            return (int)data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
+    EXPORTDLL int FluidSimulation_get_diffuse_dust_blur_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getDiffuseDustBlurData();
             return (int)data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
@@ -2272,6 +2464,18 @@ extern "C" {
         }
     }
 
+    EXPORTDLL void FluidSimulation_get_diffuse_dust_data(FluidSimulation* obj, 
+                                                          char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getDiffuseDustData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
     EXPORTDLL void FluidSimulation_get_diffuse_foam_blur_data(FluidSimulation* obj, 
                                                               char *c_data, int *err) {
         *err = CBindings::SUCCESS;
@@ -2301,6 +2505,18 @@ extern "C" {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getDiffuseSprayBlurData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_diffuse_dust_blur_data(FluidSimulation* obj, 
+                                                               char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getDiffuseDustBlurData();
             std::memcpy(c_data, data->data(), data->size());
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);

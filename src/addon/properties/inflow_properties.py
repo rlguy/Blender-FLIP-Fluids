@@ -59,7 +59,7 @@ class FlipFluidInflowProperties(bpy.types.PropertyGroup):
     append_object_velocity = BoolProperty(
             name="Add Object Velocity to Infow",
             description="Add the velocity of the object to the inflow fluid"
-                " velocity. Object mesh must be rigid (non-deformable)",
+                " velocity",
             default=False,
             ); exec(conv("append_object_velocity"))
     append_object_velocity_influence = FloatProperty(

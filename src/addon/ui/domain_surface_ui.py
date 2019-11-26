@@ -102,11 +102,15 @@ class FLIPFLUID_PT_DomainTypeFluidSurfacePanel(bpy.types.Panel):
         row.enabled = sprops.enable_meshing_offset
         row.prop(sprops, "obstacle_meshing_mode", expand=True)
 
+        # Removed surface smoothing options. These are better set
+        # using a Blender smooth modifier.
+        """
         box = self.layout.box()
         box.label(text="Smoothing:")
         row = box.row(align=True)
         row.prop(sprops, "smoothing_value")
         row.prop(sprops, "smoothing_iterations")
+        """
 
         # Motion Blur is no longer supported
         #column = self.layout.column(align=True)
