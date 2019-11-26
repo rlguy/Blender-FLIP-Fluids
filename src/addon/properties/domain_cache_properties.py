@@ -34,7 +34,8 @@ class DomainCacheProperties(bpy.types.PropertyGroup):
     
     cache_directory = StringProperty(
             name="",
-            description="Simulation files will be saved to this directory",
+            description="Simulation files will be saved to this directory."
+                " It is recommended to save your .blend file before beginning a simulation",
             default=default_cache_directory_str, 
             subtype='DIR_PATH',
             update=lambda self, context: self._update_cache_directory(context),

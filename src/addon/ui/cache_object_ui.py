@@ -98,7 +98,7 @@ class FLIPFLUID_PT_CacheObjectTypePanel(bpy.types.Panel):
                                                  label_str,
                                                  object_prop,
                                                  scale_prop,
-                                                 use_icosphere_prop,
+                                                 particle_object_mode_prop,
                                                  render_display_prop):
         dprops = self.get_domain_properties()
         rprops = dprops.render
@@ -117,24 +117,20 @@ class FLIPFLUID_PT_CacheObjectTypePanel(bpy.types.Panel):
         row = box.row()
         row.prop(rprops, "whitewater_particle_object_settings_mode", expand=True)
 
+        box = box.box()
         column = box.column()
-        row = column.row()
-        column = row.column()
-        split = vcu.ui_split(column, factor=0.25)
-        column = split.column()
         column.label(text=label_str)
-        column = split.column()
-        split = vcu.ui_split(column, factor=0.5)
-        column = split.column(align = True)
-        row = column.row(align = True)
-        row.enabled = not rprops.whitewater_use_icosphere_object
-        row.prop_search(rprops, object_prop, 
-                        bpy.data, "objects", text = "")
-        row = column.row(align = True)
-        row.prop(rprops, scale_prop)
-        column = split.column(align = True)
-        column.prop(rprops, use_icosphere_prop)
-        column.prop(rprops, render_display_prop)
+        split = vcu.ui_split(column, factor=0.75, align=True)
+        column1 = split.column(align=True)
+        column2 = split.column(align=True)
+        row = column1.row(align=True)
+        row.prop(rprops, particle_object_mode_prop, expand=True)
+        row = column2.row(align=True)
+        row.enabled = getattr(rprops, particle_object_mode_prop) == 'WHITEWATER_PARTICLE_CUSTOM'
+        row.prop_search(rprops, object_prop, bpy.data, "objects", text="")
+        row = column.row()
+        row.prop(rprops, scale_prop, text="Particle Scale")
+        row.prop(rprops, render_display_prop, text="Hide particles in viewport")
 
 
     def draw_whitewater_material_settings(self, domain_props, prop_str, material_prop):
@@ -184,18 +180,18 @@ class FLIPFLUID_PT_CacheObjectTypePanel(bpy.types.Panel):
 
         if rprops.whitewater_particle_object_settings_mode == 'WHITEWATER_OBJECT_SETTINGS_WHITEWATER':
             self.draw_whitewater_particle_object_settings(
-                    "Whitewater:",
+                    "Whitewater Particle Object:",
                     'whitewater_particle_object',
                     'whitewater_particle_scale',
-                    'whitewater_use_icosphere_object',
+                    'whitewater_particle_object_mode',
                     'only_display_whitewater_in_render'
                     )
         else:
             self.draw_whitewater_particle_object_settings(
-                    "Foam:",
+                    "Foam Particle Object:",
                     'foam_particle_object',
                     'foam_particle_scale',
-                    'foam_use_icosphere_object',
+                    'foam_particle_object_mode',
                     'only_display_foam_in_render'
                     )
 
@@ -229,18 +225,18 @@ class FLIPFLUID_PT_CacheObjectTypePanel(bpy.types.Panel):
 
         if rprops.whitewater_particle_object_settings_mode == 'WHITEWATER_OBJECT_SETTINGS_WHITEWATER':
             self.draw_whitewater_particle_object_settings(
-                    "Whitewater:",
+                    "Whitewater Particle Object:",
                     'whitewater_particle_object',
                     'whitewater_particle_scale',
-                    'whitewater_use_icosphere_object',
+                    'whitewater_particle_object_mode',
                     'only_display_whitewater_in_render'
                     )
         else:
             self.draw_whitewater_particle_object_settings(
-                    "Bubble:",
+                    "Bubble Particle Object:",
                     'bubble_particle_object',
                     'bubble_particle_scale',
-                    'bubble_use_icosphere_object',
+                    'bubble_particle_object_mode',
                     'only_display_bubble_in_render'
                     )
 
@@ -274,25 +270,69 @@ class FLIPFLUID_PT_CacheObjectTypePanel(bpy.types.Panel):
 
         if rprops.whitewater_particle_object_settings_mode == 'WHITEWATER_OBJECT_SETTINGS_WHITEWATER':
             self.draw_whitewater_particle_object_settings(
-                    "Whitewater:",
+                    "Whitewater Particle Object:",
                     'whitewater_particle_object',
                     'whitewater_particle_scale',
-                    'whitewater_use_icosphere_object',
+                    'whitewater_particle_object_mode',
                     'only_display_whitewater_in_render'
                     )
         else:
             self.draw_whitewater_particle_object_settings(
-                    "Spray:",
+                    "Spray Particle Object:",
                     'spray_particle_object',
                     'spray_particle_scale',
-                    'spray_use_icosphere_object',
-                    'only_display_foam_in_render'
+                    'spray_particle_object_mode',
+                    'only_display_spray_in_render'
                     )
 
         self.draw_whitewater_material_settings(
                 domain_props, 
                 "Spray", 
                 'whitewater_spray_material'
+                )
+
+    def draw_dust(self, cache_props, domain_props):
+        dprops = self.get_domain_properties()
+        rprops = dprops.render
+
+        column = self.layout.column()
+        column.label(text="Dust")
+        column.separator()
+
+        self.draw_whitewater_viewport_render_display()
+        
+        if rprops.whitewater_view_settings_mode == 'VIEW_SETTINGS_WHITEWATER':
+            self.draw_whitewater_viewport_render_settings(
+                    'render_whitewater_pct',
+                    'viewport_whitewater_pct'
+                    )
+        else:
+            self.draw_whitewater_viewport_render_settings(
+                    'render_dust_pct',
+                    'viewport_dust_pct'
+                    )
+
+        if rprops.whitewater_particle_object_settings_mode == 'WHITEWATER_OBJECT_SETTINGS_WHITEWATER':
+            self.draw_whitewater_particle_object_settings(
+                    "Whitewater Particle Object:",
+                    'whitewater_particle_object',
+                    'whitewater_particle_scale',
+                    'whitewater_particle_object_mode',
+                    'only_display_whitewater_in_render'
+                    )
+        else:
+            self.draw_whitewater_particle_object_settings(
+                    "Dust Particle Object:",
+                    'dust_particle_object',
+                    'dust_particle_scale',
+                    'dust_particle_object_mode',
+                    'only_display_dust_in_render'
+                    )
+
+        self.draw_whitewater_material_settings(
+                domain_props, 
+                "Dust", 
+                'whitewater_dust_material'
                 )
 
 
@@ -312,6 +352,8 @@ class FLIPFLUID_PT_CacheObjectTypePanel(bpy.types.Panel):
             self.draw_bubble(cache_props, dprops)
         elif cache_props.cache_object_type == 'CACHE_OBJECT_TYPE_SPRAY':
             self.draw_spray(cache_props, dprops)
+        elif cache_props.cache_object_type == 'CACHE_OBJECT_TYPE_DUST':
+            self.draw_dust(cache_props, dprops)
     
 
 def register():

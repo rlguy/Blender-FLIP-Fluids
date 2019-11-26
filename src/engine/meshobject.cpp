@@ -59,7 +59,7 @@ void MeshObject::updateMeshAnimated(TriangleMesh meshPrevious,
     _isChangingTopology = false;
 
     _vertexTranslationsCurrent = std::vector<vmath::vec3>(meshCurrent.vertices.size());
-    if (_meshPrevious.vertices.size() == _meshCurrent.vertices.size()) {
+    if (_isTopologyConsistent(meshPrevious, meshCurrent)) {
         for (size_t i = 0; i < meshCurrent.vertices.size(); i++) {
             _vertexTranslationsCurrent[i] = _meshCurrent.vertices[i] - _meshPrevious.vertices[i];
         }
@@ -68,7 +68,7 @@ void MeshObject::updateMeshAnimated(TriangleMesh meshPrevious,
     }
 
     _vertexTranslationsNext = std::vector<vmath::vec3>(meshNext.vertices.size());
-    if (_meshNext.vertices.size() == _meshCurrent.vertices.size()) {
+    if (_isTopologyConsistent(meshNext, meshCurrent)) {
         for (size_t i = 0; i < meshCurrent.vertices.size(); i++) {
             _vertexTranslationsNext[i] = _meshNext.vertices[i] - _meshCurrent.vertices[i];
         }
@@ -259,6 +259,14 @@ bool MeshObject::isEnabled() {
     return _isEnabled;
 }
 
+void MeshObject::setAsDomainObject() {
+    _isDomainObject = true;
+}
+
+bool MeshObject::isDomainObject() {
+    return _isDomainObject;
+}
+
 void MeshObject::inverse() {
     _isInversed = !_isInversed;
 }
@@ -284,6 +292,19 @@ void MeshObject::setWhitewaterInfluence(float value) {
 
 float MeshObject::getWhitewaterInfluence() {
     return _whitewaterInfluence;
+}
+
+void MeshObject::setDustEmissionStrength(float value) {
+    value = fmax(value, 0.0f);
+    _dustEmissionStrength = value;
+}
+
+float MeshObject::getDustEmissionStrength() {
+    return _dustEmissionStrength;
+}
+
+bool MeshObject::isDustEmissionEnabled() {
+    return _dustEmissionStrength > 1e-6;
 }
 
 void MeshObject::setSheetingStrength(float value) {
@@ -648,4 +669,24 @@ bool MeshObject::_isMeshChanged() {
     }
 
     return isMeshChanged;
+}
+
+bool MeshObject::_isTopologyConsistent(TriangleMesh &m1, TriangleMesh &m2) {
+    if (m1.vertices.size() != m2.vertices.size()) {
+        return false;
+    }
+
+    if (m1.triangles.size() != m2.triangles.size()) {
+        return false;
+    }
+
+    for (size_t i = 0; i < m1.triangles.size(); i++) {
+        Triangle t1 = m1.triangles[i];
+        Triangle t2 = m2.triangles[i];
+        if (t1.tri[0] != t2.tri[0] || t1.tri[1] != t2.tri[1] || t1.tri[2] != t2.tri[2]) {
+            return false;
+        }
+    }
+
+    return true;
 }

@@ -630,6 +630,36 @@ class FluidSimulation(object):
         pb.execute_lib_func(libfunc, [self()])
 
     @property
+    def enable_diffuse_dust(self):
+        libfunc = lib.FluidSimulation_is_diffuse_dust_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_diffuse_dust.setter
+    def enable_diffuse_dust(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_diffuse_dust
+        else:
+            libfunc = lib.FluidSimulation_disable_diffuse_dust
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_boundary_diffuse_dust_emission(self):
+        libfunc = lib.FluidSimulation_is_boundary_diffuse_dust_emission_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_boundary_diffuse_dust_emission.setter
+    def enable_boundary_diffuse_dust_emission(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_boundary_diffuse_dust_emission
+        else:
+            libfunc = lib.FluidSimulation_disable_boundary_diffuse_dust_emission
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
     def enable_bubble_diffuse_material(self):
         libfunc = lib.FluidSimulation_is_bubble_diffuse_material_enabled
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
@@ -882,6 +912,19 @@ class FluidSimulation(object):
         pb.execute_lib_func(libfunc, [self(), modifier])
 
     @property
+    def dust_particle_lifetime_modifier(self):
+        libfunc = lib.FluidSimulation_get_dust_particle_lifetime_modifier
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @dust_particle_lifetime_modifier.setter
+    @decorators.check_ge_zero
+    def dust_particle_lifetime_modifier(self, modifier):
+        libfunc = lib.FluidSimulation_set_dust_particle_lifetime_modifier
+        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), modifier])
+
+    @property
     def diffuse_particle_wavecrest_emission_rate(self):
         libfunc = lib.FluidSimulation_get_diffuse_particle_wavecrest_emission_rate
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
@@ -904,6 +947,19 @@ class FluidSimulation(object):
     @decorators.check_ge_zero
     def diffuse_particle_turbulence_emission_rate(self, rate):
         libfunc = lib.FluidSimulation_set_diffuse_particle_turbulence_emission_rate
+        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), rate])
+
+    @property
+    def diffuse_particle_dust_emission_rate(self):
+        libfunc = lib.FluidSimulation_get_diffuse_particle_dust_emission_rate
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @diffuse_particle_dust_emission_rate.setter
+    @decorators.check_ge_zero
+    def diffuse_particle_dust_emission_rate(self, rate):
+        libfunc = lib.FluidSimulation_set_diffuse_particle_dust_emission_rate
         pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), rate])
 
@@ -1029,6 +1085,32 @@ class FluidSimulation(object):
         pb.execute_lib_func(libfunc, [self(), b])
 
     @property
+    def diffuse_dust_drag_coefficient(self):
+        libfunc = lib.FluidSimulation_get_diffuse_dust_drag_coefficient
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @diffuse_dust_drag_coefficient.setter
+    @decorators.check_ge_zero
+    @decorators.check_le(1.0)
+    def diffuse_dust_drag_coefficient(self, d):
+        libfunc = lib.FluidSimulation_set_diffuse_dust_drag_coefficient
+        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), d])
+
+    @property
+    def diffuse_dust_bouyancy_coefficient(self):
+        libfunc = lib.FluidSimulation_get_diffuse_dust_bouyancy_coefficient
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @diffuse_dust_bouyancy_coefficient.setter
+    def diffuse_dust_bouyancy_coefficient(self, b):
+        libfunc = lib.FluidSimulation_set_diffuse_dust_bouyancy_coefficient
+        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), b])
+
+    @property
     def diffuse_spray_drag_coefficient(self):
         libfunc = lib.FluidSimulation_get_diffuse_spray_drag_coefficient
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
@@ -1037,6 +1119,19 @@ class FluidSimulation(object):
     @diffuse_spray_drag_coefficient.setter
     def diffuse_spray_drag_coefficient(self, d):
         libfunc = lib.FluidSimulation_set_diffuse_spray_drag_coefficient
+        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), d])
+
+    @property
+    def diffuse_spray_emission_speed(self):
+        libfunc = lib.FluidSimulation_get_diffuse_spray_emission_speed
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @diffuse_spray_emission_speed.setter
+    @decorators.check_ge(1.0)
+    def diffuse_spray_emission_speed(self, d):
+        libfunc = lib.FluidSimulation_set_diffuse_spray_emission_speed
         pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), d])
 
@@ -1073,6 +1168,18 @@ class FluidSimulation(object):
     @diffuse_spray_limit_behaviour.setter
     def diffuse_spray_limit_behaviour(self, behaviour):
         libfunc = lib.FluidSimulation_set_diffuse_spray_limit_behaviour
+        pb.init_lib_func(libfunc, [c_void_p, c_int, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), int(behaviour)])
+
+    @property
+    def diffuse_dust_limit_behaviour(self):
+        libfunc = lib.FluidSimulation_get_diffuse_dust_limit_behaviour
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @diffuse_dust_limit_behaviour.setter
+    def diffuse_dust_limit_behaviour(self, behaviour):
+        libfunc = lib.FluidSimulation_set_diffuse_dust_limit_behaviour
         pb.init_lib_func(libfunc, [c_void_p, c_int, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), int(behaviour)])
 
@@ -1142,6 +1249,29 @@ class FluidSimulation(object):
             c_active[i] = int(active[i])
 
         libfunc = lib.FluidSimulation_set_diffuse_spray_active_boundary_sides
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), c_active])
+
+    @property
+    def diffuse_dust_active_boundary_sides(self):
+        active = (c_int * 6)()
+        libfunc = lib.FluidSimulation_get_diffuse_dust_active_boundary_sides
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p, c_void_p], c_int)
+        pb.execute_lib_func(libfunc, [self(), active])
+
+        result = []
+        for v in active:
+            result.append(bool(v))
+
+        return result
+
+    @diffuse_dust_active_boundary_sides.setter
+    def diffuse_dust_active_boundary_sides(self, active):
+        c_active = (c_int * 6)()
+        for i in range(6):
+            c_active[i] = int(active[i])
+
+        libfunc = lib.FluidSimulation_set_diffuse_dust_active_boundary_sides
         pb.init_lib_func(libfunc, [c_void_p, c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), c_active])
 
@@ -1670,6 +1800,10 @@ class FluidSimulation(object):
         return self._get_output_data(lib.FluidSimulation_get_diffuse_spray_data_size,
                                      lib.FluidSimulation_get_diffuse_spray_data)
 
+    def get_diffuse_dust_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_diffuse_dust_data_size,
+                                     lib.FluidSimulation_get_diffuse_dust_data)
+
     def get_diffuse_foam_blur_data(self):
         return self._get_output_data(lib.FluidSimulation_get_diffuse_foam_blur_data_size,
                                      lib.FluidSimulation_get_diffuse_foam_blur_data)
@@ -1681,6 +1815,10 @@ class FluidSimulation(object):
     def get_diffuse_spray_blur_data(self):
         return self._get_output_data(lib.FluidSimulation_get_diffuse_spray_blur_data_size,
                                      lib.FluidSimulation_get_diffuse_spray_blur_data)
+
+    def get_diffuse_dust_blur_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_diffuse_dust_blur_data_size,
+                                     lib.FluidSimulation_get_diffuse_dust_blur_data)
 
     def get_fluid_particle_data(self):
         return self._get_output_data(lib.FluidSimulation_get_fluid_particle_data_size,
@@ -1832,9 +1970,11 @@ class FluidSimulationFrameStats_t(ctypes.Structure):
                 ("foam", FluidSimulationMeshStats_t),
                 ("bubble", FluidSimulationMeshStats_t),
                 ("spray", FluidSimulationMeshStats_t),
+                ("dust", FluidSimulationMeshStats_t),
                 ("foamblur", FluidSimulationMeshStats_t),
                 ("bubbleblur", FluidSimulationMeshStats_t),
                 ("sprayblur", FluidSimulationMeshStats_t),
+                ("dustblur", FluidSimulationMeshStats_t),
                 ("particles", FluidSimulationMeshStats_t),
                 ("obstacle", FluidSimulationMeshStats_t),
                 ("timing", FluidSimulationTimingStats_t)]

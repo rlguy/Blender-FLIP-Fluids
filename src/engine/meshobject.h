@@ -89,12 +89,18 @@ public:
     void disable();
     bool isEnabled();
 
+    void setAsDomainObject();
+    bool isDomainObject();
+
     void inverse();
     bool isInversed();
     void setFriction(float f);
     float getFriction();
     void setWhitewaterInfluence(float value);
     float getWhitewaterInfluence();
+    void setDustEmissionStrength(float value);
+    float getDustEmissionStrength();
+    bool isDustEmissionEnabled();
     void setSheetingStrength(float value);
     float getSheetingStrength();
     void setMeshExpansion(float exp);
@@ -138,6 +144,8 @@ private:
                                            int exactBand);
     bool _isMeshChanged();
 
+    bool _isTopologyConsistent(TriangleMesh &m1, TriangleMesh &m2);
+
     int _isize = 0;
     int _jsize = 0;
     int _ksize = 0;
@@ -161,11 +169,13 @@ private:
     bool _isChangingTopology = false;
     float _friction = 0.0f;
     float _whitewaterInfluence = 1.0f;
+    float _dustEmissionStrength = 1.0f;
     float _sheetingStrength = 1.0f;
     float _meshExpansion = 0.0f;
     bool _isAppendObjectVelocityEnabled = false;
     float _objectVelocityInfluence = 1.0f;
     bool _isObjectStateChanged = false;
+    bool _isDomainObject = false;
 
 
     int _numIslandsForFractureOptimizationTrigger = 25;

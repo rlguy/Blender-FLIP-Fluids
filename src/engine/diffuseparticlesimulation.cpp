@@ -32,6 +32,7 @@ SOFTWARE.
 #include "markerparticle.h"
 #include "meshlevelset.h"
 #include "particlelevelset.h"
+#include "meshobject.h"
 
 DiffuseParticleSimulation::DiffuseParticleSimulation() {
     double inf = std::numeric_limits<float>::infinity();
@@ -63,7 +64,7 @@ void DiffuseParticleSimulation::update(DiffuseParticleSimulationParameters param
     _nearSolidGridCellSize = params.nearSolidGridCellSize;
 
 
-    bool isParticlesEnabled = _isFoamEnabled || _isBubblesEnabled || _isSprayEnabled;
+    bool isParticlesEnabled = _isFoamEnabled || _isBubblesEnabled || _isSprayEnabled || _isDustEnabled;
     bool emitParticles = _isDiffuseParticleEmissionEnabled && 
                          _diffuseParticles.size() < _maxNumDiffuseParticles &&
                          !_markerParticles->empty() &&
@@ -72,9 +73,11 @@ void DiffuseParticleSimulation::update(DiffuseParticleSimulationParameters param
     _initializeMaterialGrid();
 
     if (emitParticles) {
-        std::vector<DiffuseParticleEmitter> emitters;
-        _getDiffuseParticleEmitters(emitters);
-        _emitDiffuseParticles(emitters, params.deltaTime);
+        std::vector<DiffuseParticleEmitter> normalEmitters;
+        std::vector<DiffuseParticleEmitter> dustEmitters;
+        _getDiffuseParticleEmitters(normalEmitters, dustEmitters);
+        _emitNormalDiffuseParticles(normalEmitters, params.deltaTime);
+        _emitDustDiffuseParticles(dustEmitters, params.deltaTime);
     }
 
     if (_diffuseParticles.size() == 0.0) {
@@ -88,8 +91,8 @@ void DiffuseParticleSimulation::update(DiffuseParticleSimulationParameters param
 }
 
 void DiffuseParticleSimulation::
-        getDiffuseParticleTypeCounts(int *numfoam, int *numbubble, int *numspray) {
-    _getDiffuseParticleTypeCounts(numfoam, numbubble, numspray);
+        getDiffuseParticleTypeCounts(int *numfoam, int *numbubble, int *numspray, int *numdust) {
+    _getDiffuseParticleTypeCounts(numfoam, numbubble, numspray, numdust);
 }
 
 int DiffuseParticleSimulation::getNumSprayParticles() {
@@ -102,6 +105,10 @@ int DiffuseParticleSimulation::getNumBubbleParticles() {
 
 int DiffuseParticleSimulation::getNumFoamParticles() {
     return _getNumFoamParticles();
+}
+
+int DiffuseParticleSimulation::getNumDustParticles() {
+    return _getNumDustParticles();
 }
 
 void DiffuseParticleSimulation::enableDiffuseParticleEmission() {
@@ -150,6 +157,30 @@ void DiffuseParticleSimulation::disableSpray() {
 
 bool DiffuseParticleSimulation::isSprayEnabled() {
     return _isSprayEnabled;
+}
+
+void DiffuseParticleSimulation::enableDust() {
+    _isDustEnabled = true;
+}
+
+void DiffuseParticleSimulation::disableDust() {
+    _isDustEnabled = false;
+}
+
+bool DiffuseParticleSimulation::isDustEnabled() {
+    return _isDustEnabled;
+}
+
+void DiffuseParticleSimulation::enableBoundaryDustEmission() {
+    _isBoundaryDustEmissionEnabled = true;
+}
+
+void DiffuseParticleSimulation::disableBoundaryDustEmission() {
+    _isBoundaryDustEmissionEnabled = false;
+}
+
+bool DiffuseParticleSimulation::isBoundaryDustEmissionEnabled() {
+    return _isBoundaryDustEmissionEnabled;
 }
 
 FragmentedVector<DiffuseParticle>* DiffuseParticleSimulation::getDiffuseParticles() {
@@ -323,6 +354,14 @@ void DiffuseParticleSimulation::setSprayParticleLifetimeModifier(double modifier
     _sprayParticleLifetimeModifier = modifier;
 }
 
+double DiffuseParticleSimulation::getDustParticleLifetimeModifier() {
+    return _dustParticleLifetimeModifier;
+}
+
+void DiffuseParticleSimulation::setDustParticleLifetimeModifier(double modifier) {
+    _dustParticleLifetimeModifier = modifier;
+}
+
 double DiffuseParticleSimulation::getDiffuseParticleWavecrestEmissionRate() {
     return _wavecrestEmissionRate;
 }
@@ -341,21 +380,13 @@ void DiffuseParticleSimulation::setDiffuseParticleTurbulenceEmissionRate(double 
     _turbulenceEmissionRate = r;
 }
 
-void DiffuseParticleSimulation::getDiffuseParticleEmissionRates(double *rwc, 
-                                                                  double *rt) {
-    *rwc = _wavecrestEmissionRate;
-    *rt  = _turbulenceEmissionRate;
+double DiffuseParticleSimulation::getDiffuseParticleDustEmissionRate() {
+    return _dustEmissionRate;
 }
 
-void DiffuseParticleSimulation::setDiffuseParticleEmissionRates(double r) {
-    setDiffuseParticleWavecrestEmissionRate(r);
-    setDiffuseParticleTurbulenceEmissionRate(r);
-}
-
-void DiffuseParticleSimulation::setDiffuseParticleEmissionRates(double rwc, 
-                                                                double rt) {
-    setDiffuseParticleWavecrestEmissionRate(rwc);
-    setDiffuseParticleTurbulenceEmissionRate(rt);
+void DiffuseParticleSimulation::setDiffuseParticleDustEmissionRate(double r) {
+    FLUIDSIM_ASSERT(r >= 0);
+    _dustEmissionRate = r;
 }
 
 double DiffuseParticleSimulation::getFoamAdvectionStrength() {
@@ -444,12 +475,40 @@ void DiffuseParticleSimulation::setBubbleBouyancyCoefficient(double b) {
     _bubbleBouyancyCoefficient = b;
 }
 
+
+double DiffuseParticleSimulation::getDustDragCoefficient() {
+    return _dustDragCoefficient;
+}
+
+void DiffuseParticleSimulation::setDustDragCoefficient(double d) {
+    d = fmax(d, 0.0);
+    d = fmin(d, 1.0);
+    _dustDragCoefficient = d;
+}
+
+double DiffuseParticleSimulation::getDustBouyancyCoefficient() {
+    return _dustBouyancyCoefficient;
+}
+
+void DiffuseParticleSimulation::setDustBouyancyCoefficient(double b) {
+    _dustBouyancyCoefficient = b;
+}
+
+
 double DiffuseParticleSimulation::getSprayDragCoefficient() {
     return _sprayDragCoefficient;
 }
 
 void DiffuseParticleSimulation::setSprayDragCoefficient(double d) {
     _sprayDragCoefficient = d;
+}
+
+double DiffuseParticleSimulation::getSprayEmissionSpeed() {
+    return _sprayEmissionSpeedFactor;
+}
+
+void DiffuseParticleSimulation::setSprayEmissionSpeed(double d) {
+    _sprayEmissionSpeedFactor = d;
 }
 
 LimitBehaviour DiffuseParticleSimulation::getFoamLimitBehaviour() {
@@ -474,6 +533,14 @@ LimitBehaviour DiffuseParticleSimulation::getSprayLimitBehaviour() {
 
 void DiffuseParticleSimulation::setSprayLimitBehavour(LimitBehaviour b) {
     _sprayLimitBehaviour = b;
+}
+
+LimitBehaviour DiffuseParticleSimulation::getDustLimitBehaviour() {
+    return _dustLimitBehaviour;
+}
+
+void DiffuseParticleSimulation::setDustLimitBehavour(LimitBehaviour b) {
+    _dustLimitBehaviour = b;
 }
 
 std::vector<bool> DiffuseParticleSimulation::getFoamActiveBoundarySides() {
@@ -501,6 +568,15 @@ std::vector<bool> DiffuseParticleSimulation::getSprayActiveBoundarySides() {
 void DiffuseParticleSimulation::setSprayActiveBoundarySides(std::vector<bool> active) {
     FLUIDSIM_ASSERT(active.size() == 6);
     _sprayActiveSides = active;
+}
+
+std::vector<bool> DiffuseParticleSimulation::getDustActiveBoundarySides() {
+    return _dustActiveSides;
+}
+
+void DiffuseParticleSimulation::setDustActiveBoundarySides(std::vector<bool> active) {
+    FLUIDSIM_ASSERT(active.size() == 6);
+    _dustActiveSides = active;
 }
 
 void DiffuseParticleSimulation::setDomainOffset(vmath::vec3 offset) {
@@ -632,6 +708,35 @@ void DiffuseParticleSimulation::getSprayParticleFileDataWWP(std::vector<char> &d
     _getDiffuseParticleFileDataWWP(positions, ids, data);
 }
 
+void DiffuseParticleSimulation::getDustParticleFileDataWWP(std::vector<char> &data) {
+    std::vector<vmath::vec3> positions;
+    std::vector<unsigned char> ids;
+    positions.reserve(_diffuseParticles.size());
+    ids.reserve(_diffuseParticles.size());
+    if (_isMeshingVolumeSet) {
+        std::vector<bool> isSolid;
+        _meshingVolumeSDF->trilinearInterpolateSolidPoints(_diffuseParticles, isSolid);
+        for (int i = 0; i < (int)_diffuseParticles.size(); i++) {
+            if (isSolid[i]) {
+                continue;
+            }
+            if (_diffuseParticles[i].type == DiffuseParticleType::dust) {
+                positions.push_back(_diffuseParticles[i].position * _domainScale + _domainOffset);
+                ids.push_back(_diffuseParticles[i].id);
+            }
+        }
+    } else {
+        for (int i = 0; i < (int)_diffuseParticles.size(); i++) {
+            if (_diffuseParticles[i].type == DiffuseParticleType::dust) {
+                positions.push_back(_diffuseParticles[i].position * _domainScale + _domainOffset);
+                ids.push_back(_diffuseParticles[i].id);
+            }
+        }
+    }
+
+    _getDiffuseParticleFileDataWWP(positions, ids, data);
+}
+
 void DiffuseParticleSimulation::getFoamParticleBlurFileDataWWP(std::vector<char> &data, double dt) {
     std::vector<vmath::vec3> translations;
     std::vector<unsigned char> ids;
@@ -731,6 +836,39 @@ void DiffuseParticleSimulation::getSprayParticleBlurFileDataWWP(std::vector<char
     _getDiffuseParticleFileDataWWP(translations, ids, data);
 }
 
+void DiffuseParticleSimulation::getDustParticleBlurFileDataWWP(std::vector<char> &data, double dt) {
+    std::vector<vmath::vec3> translations;
+    std::vector<unsigned char> ids;
+    translations.reserve(_diffuseParticles.size());
+    ids.reserve(_diffuseParticles.size());
+    if (_isMeshingVolumeSet) {
+        std::vector<bool> isSolid;
+        _meshingVolumeSDF->trilinearInterpolateSolidPoints(_diffuseParticles, isSolid);
+        for (int i = 0; i < (int)_diffuseParticles.size(); i++) {
+            if (isSolid[i]) {
+                continue;
+            }
+            if (_diffuseParticles[i].type == DiffuseParticleType::dust) {
+                vmath::vec3 p = _diffuseParticles[i].position;
+                vmath::vec3 t = _vfield->evaluateVelocityAtPositionLinear(p) * _domainScale * dt;
+                translations.push_back(t);
+                ids.push_back(_diffuseParticles[i].id);
+            }
+        }
+    } else {
+        for (int i = 0; i < (int)_diffuseParticles.size(); i++) {
+            if (_diffuseParticles[i].type == DiffuseParticleType::dust) {
+                vmath::vec3 p = _diffuseParticles[i].position;
+                vmath::vec3 t = _vfield->evaluateVelocityAtPositionLinear(p) * _domainScale * dt;
+                translations.push_back(t);
+                ids.push_back(_diffuseParticles[i].id);
+            }
+        }
+    }
+
+    _getDiffuseParticleFileDataWWP(translations, ids, data);
+}
+
 void DiffuseParticleSimulation::loadDiffuseParticles(FragmentedVector<DiffuseParticle> &particles) {
     _diffuseParticles.reserve(_diffuseParticles.size() + particles.size());
     for (size_t i = 0; i < particles.size(); i++) {
@@ -741,16 +879,25 @@ void DiffuseParticleSimulation::loadDiffuseParticles(FragmentedVector<DiffusePar
 }
 
 void DiffuseParticleSimulation::
-        _getDiffuseParticleEmitters(std::vector<DiffuseParticleEmitter> &emitters) {
+        _getDiffuseParticleEmitters(std::vector<DiffuseParticleEmitter> &normalEmitters,
+                                    std::vector<DiffuseParticleEmitter> &dustEmitters) {
 
     _turbulenceField.calculateTurbulenceField(_vfield, *_liquidSDF);
 
     std::vector<vmath::vec3> surfaceParticles;
     std::vector<vmath::vec3> insideParticles;
+    std::vector<vmath::vec3> allParticles;
     _sortMarkerParticlePositions(surfaceParticles, insideParticles);
-    _getSurfaceDiffuseParticleEmitters(surfaceParticles, emitters);
-    _getInsideDiffuseParticleEmitters(insideParticles, emitters);
-    _shuffleDiffuseParticleEmitters(emitters);
+
+    allParticles.reserve(surfaceParticles.size() + insideParticles.size());
+    allParticles.insert(allParticles.end(), surfaceParticles.begin(), surfaceParticles.end());
+    allParticles.insert(allParticles.end(), insideParticles.begin(), insideParticles.end());
+
+    _getSurfaceDiffuseParticleEmitters(surfaceParticles, normalEmitters);
+    _getInsideDiffuseParticleEmitters(insideParticles, normalEmitters);
+    _getDiffuseDustParticleEmitters(allParticles, dustEmitters);
+    _shuffleDiffuseParticleEmitters(normalEmitters);
+    _shuffleDiffuseParticleEmitters(dustEmitters);
 }
 
 void DiffuseParticleSimulation::_trilinearInterpolate(std::vector<vmath::vec3> &input, 
@@ -918,11 +1065,22 @@ void DiffuseParticleSimulation::
     std::vector<vmath::vec3> velocities(surface.size());
     _trilinearInterpolate(surface, _vfield, velocities);
 
-    vmath::vec3 p, v;
+    int count1 = 0;
+    int count2 = 0;
+
+    vmath::vec3 hdx(0.5*_dx, 0.5*_dx, 0.5*_dx);
     double eps = 1e-6;
     for (size_t i = 0; i < surface.size(); i++) {
-        p = surface[i];
-        v = velocities[i];
+        vmath::vec3 p = surface[i];
+        vmath::vec3 v = velocities[i];
+
+        count1++;
+
+        double dist = Interpolation::trilinearInterpolate(p - hdx, _dx, *_surfaceSDF);
+        if (dist > -0.75 * _dx) {
+            v *= _randomDouble(1.0f, _sprayEmissionSpeedFactor);
+            count2++;
+        }
 
         double Ie = _getEnergyPotential(v);
         if (Ie < eps) {
@@ -931,7 +1089,7 @@ void DiffuseParticleSimulation::
 
         double Iwc = _getWavecrestPotential(p, v);
         if (Iwc > 0.0 && _randomDouble(0.0, 1.0) < _emitterGenerationRate) {
-            emitters.push_back(DiffuseParticleEmitter(p, v, Ie, Iwc, 0.0));
+            emitters.push_back(DiffuseParticleEmitter(p, v, Ie, Iwc, 0.0, 0.0));
         }
     }
 }
@@ -966,14 +1124,24 @@ double DiffuseParticleSimulation::
     return (k - _minWavecrestCurvature) / (_maxWavecrestCurvature - _minWavecrestCurvature);
 }
 
-double DiffuseParticleSimulation::
-        _getTurbulencePotential(vmath::vec3 p, TurbulenceField &tfield) {
+double DiffuseParticleSimulation::_getTurbulencePotential(vmath::vec3 p, TurbulenceField &tfield) {
 
     double t = tfield.evaluateTurbulenceAtPosition(p);
     t = fmax(t, _minTurbulence);
     t = fmin(t, _maxTurbulence);
 
     return (t - _minTurbulence) / (_maxTurbulence - _minTurbulence);
+}
+
+double DiffuseParticleSimulation::_getDustTurbulencePotential(vmath::vec3 p, double emissionStrength, TurbulenceField &tfield) {
+
+    double t = tfield.evaluateTurbulenceAtPosition(p);
+    double mint = _minDustTurbulenceFactor * _minTurbulence;
+    double maxt = _maxDustTurbulenceFactor * _maxTurbulence;
+    t = fmax(t, mint);
+    t = fmin(t, maxt);
+
+    return emissionStrength * ((t - mint) / (maxt - mint));
 }
 
 double DiffuseParticleSimulation::
@@ -986,9 +1154,8 @@ double DiffuseParticleSimulation::
     return (e - _minParticleEnergy) / (_maxParticleEnergy - _minParticleEnergy);
 }
 
-void DiffuseParticleSimulation::
-        _getInsideDiffuseParticleEmitters(std::vector<vmath::vec3> &inside, 
-                                          std::vector<DiffuseParticleEmitter> &emitters) {
+void DiffuseParticleSimulation::_getInsideDiffuseParticleEmitters(std::vector<vmath::vec3> &inside, 
+                                                                  std::vector<DiffuseParticleEmitter> &emitters) {
 
     std::vector<vmath::vec3> velocities(inside.size());
     _trilinearInterpolate(inside, _vfield, velocities);
@@ -1006,7 +1173,59 @@ void DiffuseParticleSimulation::
 
         double It = _getTurbulencePotential(p, _turbulenceField);
         if (It > 0.0 && _randomDouble(0.0, 1.0) < _emitterGenerationRate) {
-            emitters.push_back(DiffuseParticleEmitter(p, v, Ie, 0.0, It));
+            emitters.push_back(DiffuseParticleEmitter(p, v, Ie, 0.0, It, 0.0));
+        }
+    }
+}
+
+void DiffuseParticleSimulation::_getDiffuseDustParticleEmitters(std::vector<vmath::vec3> &particles, 
+                                                                std::vector<DiffuseParticleEmitter> &dustEmitters) {
+    if (!_isDustEnabled) {
+        return;
+    }
+
+    std::vector<vmath::vec3> velocities(particles.size());
+    _trilinearInterpolate(particles, _vfield, velocities);
+
+    std::vector<float> sdfDistances;
+    _solidSDF->trilinearInterpolatePoints(particles, sdfDistances);
+
+    AABB boundary = _getBoundaryAABB();
+
+    double eps = 1e-6;
+    double maxDist = _maxDustEmitterToObstacleDistance * _dx;
+    double maxFloorDist = (_maxDustEmitterToObstacleDistance + 0.5) * _dx;
+    for (unsigned int i = 0; i < particles.size(); i++) {
+        float dist = sdfDistances[i];
+        if (dist < 0.0f || dist > maxDist) {
+            continue;
+        }
+
+        vmath::vec3 p = particles[i];
+        GridIndex g = Grid3d::positionToGridIndex(p, _dx);
+        MeshObject *obj = _solidSDF->getClosestMeshObject(g);
+        if (obj == nullptr || !obj->isDustEmissionEnabled()) {
+            continue;
+        }
+
+        if (obj->isDomainObject() && !_isBoundaryDustEmissionEnabled) {
+            continue;
+        }
+
+        if (obj->isDomainObject() && p.z > maxFloorDist) {
+            continue;
+        }
+
+        vmath::vec3 v = velocities[i];
+        double Ie = _getEnergyPotential(v);
+        if (Ie < eps) {
+            continue;
+        }
+
+        double dustEmissionStrength = obj->getDustEmissionStrength();
+        double Id = _getDustTurbulencePotential(p, dustEmissionStrength, _turbulenceField);
+        if (Id > 0.0 && _randomDouble(0.0, 1.0) < _emitterGenerationRate) {
+            dustEmitters.push_back(DiffuseParticleEmitter(p, v, Ie, 0.0, 0.0, Id));
         }
     }
 }
@@ -1023,9 +1242,7 @@ void DiffuseParticleSimulation::
     }
 }
 
-void DiffuseParticleSimulation::
-        _emitDiffuseParticles(std::vector<DiffuseParticleEmitter> &emitters, double dt) {
-
+void DiffuseParticleSimulation::_emitNormalDiffuseParticles(std::vector<DiffuseParticleEmitter> &emitters, double dt) {
     std::vector<DiffuseParticle> newdps;
     for (size_t i = 0; i < emitters.size(); i++) {
         if (_diffuseParticles.size() >= _maxNumDiffuseParticles) {
@@ -1044,10 +1261,32 @@ void DiffuseParticleSimulation::
     }
 }
 
-void DiffuseParticleSimulation::
-        _emitDiffuseParticles(DiffuseParticleEmitter &emitter, 
-                              double dt,
-                              std::vector<DiffuseParticle> &particles) {
+void DiffuseParticleSimulation::_emitDustDiffuseParticles(std::vector<DiffuseParticleEmitter> &emitters, double dt) {
+    std::vector<DiffuseParticle> newdps;
+    for (size_t i = 0; i < emitters.size(); i++) {
+        if (_diffuseParticles.size() >= _maxNumDiffuseParticles) {
+            return;
+        }
+
+        _emitDiffuseParticles(emitters[i], dt, newdps);
+    }
+
+    for (size_t i = 0; i < newdps.size(); i++) {
+        newdps[i].type = DiffuseParticleType::dust;
+    }
+
+    _computeNewDiffuseParticleVelocities(newdps);
+
+    unsigned int totalSize = (unsigned int)(_diffuseParticles.size() + newdps.size());
+    _diffuseParticles.reserve(totalSize);
+    for (size_t i = 0; i < newdps.size(); i++) {
+        _diffuseParticles.push_back(newdps[i]);
+    }
+}
+
+void DiffuseParticleSimulation::_emitDiffuseParticles(DiffuseParticleEmitter &emitter, 
+                                                      double dt,
+                                                      std::vector<DiffuseParticle> &particles) {
 
     int n = _getNumberOfEmissionParticles(emitter, dt);
     if (_diffuseParticles.size() + n >= _maxNumDiffuseParticles) {
@@ -1128,9 +1367,10 @@ int DiffuseParticleSimulation::
 
     GridIndex g = Grid3d::positionToGridIndex(emitter.position, _dx);
     double iscale = _influenceGrid->get(g);
-    double wc = _wavecrestEmissionRate*emitter.wavecrestPotential;
-    double t = _turbulenceEmissionRate*emitter.turbulencePotential;
-    double n = iscale * emitter.energyPotential * (wc + t) * dt;
+    double wc = _wavecrestEmissionRate * emitter.wavecrestPotential;
+    double t = _turbulenceEmissionRate * emitter.turbulencePotential;
+    double d = _dustEmissionRate * emitter.dustPotential;
+    double n = iscale * emitter.energyPotential * (wc + t + d) * dt;
 
     if (n < 0.0) {
         return 0;
@@ -1145,8 +1385,7 @@ unsigned char DiffuseParticleSimulation::_getDiffuseParticleID() {
     return (unsigned char)id;
 }
 
-void DiffuseParticleSimulation::
-        _computeNewDiffuseParticleVelocities(std::vector<DiffuseParticle> &particles) {
+void DiffuseParticleSimulation::_computeNewDiffuseParticleVelocities(std::vector<DiffuseParticle> &particles) {
 
     std::vector<vmath::vec3> data;
     data.reserve(particles.size());
@@ -1156,8 +1395,16 @@ void DiffuseParticleSimulation::
 
     _trilinearInterpolate(data, _vfield, data);
 
+    int count = 0;
+
     for (size_t i = 0; i < particles.size(); i++) {
-        particles[i].velocity = data[i];
+        vmath::vec3 v = data[i];
+        if (particles[i].type == DiffuseParticleType::spray) {
+            v *= _randomDouble(1.0, _sprayEmissionSpeedFactor);
+            count++;
+        }
+
+        particles[i].velocity = v;
     }
 }
 
@@ -1168,6 +1415,10 @@ void DiffuseParticleSimulation::_updateDiffuseParticleTypes() {
     DiffuseParticle dp;
     DiffuseParticleType oldtype, newtype;
     for (int i = 0; i < (int)_diffuseParticles.size(); i++) {
+        if (_diffuseParticles[i].type == DiffuseParticleType::dust) {
+            continue;
+        }
+
         dp = _diffuseParticles[i];
         oldtype = dp.type;
         newtype = _getDiffuseParticleType(dp, boundary);
@@ -1181,8 +1432,7 @@ void DiffuseParticleSimulation::_updateDiffuseParticleTypes() {
     }
 }
 
-DiffuseParticleType DiffuseParticleSimulation::
-        _getDiffuseParticleType(DiffuseParticle &dp, AABB &boundary) {
+DiffuseParticleType DiffuseParticleSimulation::_getDiffuseParticleType(DiffuseParticle &dp, AABB &boundary) {
 
     if (!boundary.isPointInside(dp.position)) {
         return DiffuseParticleType::spray;
@@ -1240,6 +1490,8 @@ void DiffuseParticleSimulation::_updateDiffuseParticleLifetimes(double dt) {
             modifier = _bubbleParticleLifetimeModifier;
         } else if (dp.type == DiffuseParticleType::foam) {
             modifier = _foamParticleLifetimeModifier;
+        } else if (dp.type == DiffuseParticleType::dust) {
+            modifier = _dustParticleLifetimeModifier;
         }
 
         _diffuseParticles[i].lifetime = dp.lifetime - (float)(modifier * dt);
@@ -1277,6 +1529,7 @@ void DiffuseParticleSimulation::_advanceDiffuseParticles(double dt) {
     _advanceSprayParticles(dt);
     _advanceBubbleParticles(dt);
     _advanceFoamParticles(dt);
+    _advanceDustParticles(dt);
 }
 
 AABB DiffuseParticleSimulation::_getBoundaryAABB() {
@@ -1349,6 +1602,27 @@ void DiffuseParticleSimulation::_advanceFoamParticles(double dt) {
     }
 }
 
+void DiffuseParticleSimulation::_advanceDustParticles(double dt) {
+
+    int dustcount = _getNumDustParticles();
+    if (dustcount == 0) {
+        return;
+    }
+
+    int numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)fmin(numCPU, _diffuseParticles.size());
+    std::vector<std::thread> threads(numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, _diffuseParticles.size(), numthreads);
+    for (int i = 0; i < numthreads; i++) {
+        threads[i] = std::thread(&DiffuseParticleSimulation::_advanceDustParticlesThread, this,
+                                 intervals[i], intervals[i + 1], dt);
+    }
+
+    for (int i = 0; i < numthreads; i++) {
+        threads[i].join();
+    }
+}
+
 void DiffuseParticleSimulation::_advanceSprayParticlesThread(int startidx, int endidx, double dt) {
     AABB boundary = _getBoundaryAABB();
     boundary.expand(-_solidBufferWidth * _dx);
@@ -1361,7 +1635,12 @@ void DiffuseParticleSimulation::_advanceSprayParticlesThread(int startidx, int e
             continue;
         }
 
-        vmath::vec3 dragvec = -_sprayDragCoefficient * dp.velocity * (float)dt;
+        double factor = (double)dp.id / (double)(_diffuseParticleIDLimit - 1);
+        double mind = std::max(_sprayDragCoefficient - _sprayDragCoefficient * _sprayDragVarianceFactor, 0.0);
+        double maxd = _sprayDragCoefficient + _sprayDragCoefficient * _sprayDragVarianceFactor;
+        double dragCoefficient = mind + (1.0 - factor) * (maxd - mind);
+
+        vmath::vec3 dragvec = -dragCoefficient * dp.velocity * (float)dt;
         vmath::vec3 nextv = dp.velocity + _bodyForce * (float)dt + dragvec;
         vmath::vec3 nextp = dp.position + nextv * (float)dt;
         nextp = _resolveCollision(dp.position, nextp, dp, boundary);
@@ -1432,6 +1711,45 @@ void DiffuseParticleSimulation::_advanceFoamParticlesThread(int startidx, int en
     }
 }
 
+void DiffuseParticleSimulation::_advanceDustParticlesThread(int startidx, int endidx, double dt) {
+    AABB boundary = _getBoundaryAABB();
+    boundary.expand(-_solidBufferWidth * _dx);
+
+    float invdt = 1.0f / (float)dt;
+    for (int i = startidx; i < endidx; i++) {
+        DiffuseParticle dp = _diffuseParticles[i];
+        if (dp.type != DiffuseParticleType::dust) {
+            continue;
+        }
+
+        double factor = (double)dp.id / (double)(_diffuseParticleIDLimit - 1);
+        double minb = _dustBouyancyCoefficient - _dustBouyancyCoefficient * _dustBouyancyVarianceFactor;
+        double maxb = _dustBouyancyCoefficient + _dustBouyancyCoefficient * _dustBouyancyVarianceFactor;
+        double buoyancyCoefficient = minb + factor * (maxb - minb);
+
+        double mind = std::max(_dustDragCoefficient - _dustDragCoefficient * _dustDragVarianceFactor, 0.0);
+        double maxd = std::min(_dustDragCoefficient + _dustDragCoefficient * _dustDragVarianceFactor, 1.0);
+        double dragCoefficient = mind + (1.0 - factor) * (maxd - mind);
+
+        vmath::vec3 vmac = _vfield->evaluateVelocityAtPositionLinear(dp.position);
+        vmath::vec3 vbub = dp.velocity;
+        vmath::vec3 bouyancyVelocity = (float)-buoyancyCoefficient * _bodyForce;
+        vmath::vec3 dragVelocity = (float)dragCoefficient * (vmac - vbub) / (float)dt;
+
+        vmath::vec3 nextv = dp.velocity + (float)dt * (bouyancyVelocity + dragVelocity);
+        vmath::vec3 nextp = dp.position + nextv * (float)dt;
+        nextp = _resolveCollision(dp.position, nextp, dp, boundary);
+
+        float maxv  = (float)_maxVelocityFactor * vmath::length(nextv);
+        if (vmath::length(nextp - dp.position) * invdt > maxv) {
+            _markParticleForRemoval(i);
+        } 
+
+        _diffuseParticles[i].position = nextp;
+        _diffuseParticles[i].velocity = nextv;
+    }
+}
+
 vmath::vec3 DiffuseParticleSimulation::_resolveCollision(vmath::vec3 oldp, 
                                                          vmath::vec3 newp,
                                                          DiffuseParticle &dp,
@@ -1452,6 +1770,10 @@ vmath::vec3 DiffuseParticleSimulation::_resolveCollision(vmath::vec3 oldp,
 
     GridIndex oldg = Grid3d::positionToGridIndex(oldp, _nearSolidGridCellSize);
     GridIndex newg = Grid3d::positionToGridIndex(newp, _nearSolidGridCellSize);
+    if (!_nearSolidGrid->isIndexInRange(oldg) || !_nearSolidGrid->isIndexInRange(newg)) {
+        return newp;
+    }
+
     if (_nearSolidGrid->isIndexInRange(newg) && (!_nearSolidGrid->get(oldg) && !_nearSolidGrid->get(newg))) {
         return newp;
     }
@@ -1526,6 +1848,8 @@ LimitBehaviour DiffuseParticleSimulation::_getLimitBehaviour(DiffuseParticle &dp
         return _bubbleLimitBehaviour;
     } else if (dp.type == DiffuseParticleType::spray) {
         return _sprayLimitBehaviour;
+    } else if (dp.type == DiffuseParticleType::dust) {
+        return _dustLimitBehaviour;
     }
 
     return _sprayLimitBehaviour;
@@ -1538,6 +1862,8 @@ std::vector<bool>* DiffuseParticleSimulation::_getActiveSides(DiffuseParticle &d
         return &_bubbleActiveSides;
     } else if (dp.type == DiffuseParticleType::spray) {
         return &_sprayActiveSides;
+    } else if (dp.type == DiffuseParticleType::dust) {
+        return &_dustActiveSides;
     }
 
     return &_sprayActiveSides;
@@ -1576,11 +1902,12 @@ void DiffuseParticleSimulation::_markParticleForRemoval(unsigned int index) {
 }
 
 void DiffuseParticleSimulation::
-        _getDiffuseParticleTypeCounts(int *numfoam, int *numbubble, int *numspray) {
+        _getDiffuseParticleTypeCounts(int *numfoam, int *numbubble, int *numspray, int *numdust) {
 
     int foam = 0;
     int bubble = 0;
     int spray = 0;
+    int dust = 0;
     for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
         DiffuseParticleType type = _diffuseParticles[i].type;
         if (type == DiffuseParticleType::foam) {
@@ -1589,12 +1916,15 @@ void DiffuseParticleSimulation::
             bubble++;
         } else if (type == DiffuseParticleType::spray) {
             spray++;
+        }else if (type == DiffuseParticleType::dust) {
+            dust++;
         }
     }
 
     *numfoam = foam;
     *numbubble = bubble;
     *numspray = spray;
+    *numdust = dust;
 }
 
 int DiffuseParticleSimulation::_getNumSprayParticles() {
@@ -1630,6 +1960,17 @@ int DiffuseParticleSimulation::_getNumFoamParticles() {
     return foamcount;
 }
 
+int DiffuseParticleSimulation::_getNumDustParticles() {
+    int dustcount = 0;
+    for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
+        if (_diffuseParticles[i].type == DiffuseParticleType::dust) {
+            dustcount++;
+        }
+    }
+
+    return dustcount;
+}
+
 void DiffuseParticleSimulation::_removeDiffuseParticles() {
 
     AABB boundary = _getBoundaryAABB();
@@ -1644,7 +1985,8 @@ void DiffuseParticleSimulation::_removeDiffuseParticles() {
         DiffuseParticle dp = _diffuseParticles[i];
         if ((!_isFoamEnabled && dp.type == DiffuseParticleType::foam) ||
                 (!_isBubblesEnabled && dp.type == DiffuseParticleType::bubble) ||
-                (!_isSprayEnabled && dp.type == DiffuseParticleType::spray) ) {
+                (!_isSprayEnabled && dp.type == DiffuseParticleType::spray) ||
+                (!_isDustEnabled && dp.type == DiffuseParticleType::dust) ) {
             isRemoved[i] = true;
             continue;
         }

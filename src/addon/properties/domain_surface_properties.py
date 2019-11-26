@@ -32,14 +32,18 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
     
     subdivisions = IntProperty(
             name="Subdivisions",
-            description="Number of isosurface subdivisions",
+            description="The level of detail of the generated surface mesh."
+                " This value is the number of times that the simulation grid"
+                " cells are split. Subdivision of 1 splits each grid cell into 2x2x2 blocks."
+                " Subdivision of 2 splits into 3x3x3 blocks. A value of 1 is recommended for"
+                " final simulation",
             min=0,
             soft_max=2,
             default=0,
             ); exec(conv("subdivisions"))
     compute_chunks_auto = IntProperty(
             name="Compute Chunks",
-            description="Number of chunks to break up isosurface into during"
+            description="Number of chunks to break up mesh into during"
                 " computation. Increase to reduce memory usage",
             min=1,
             default=1,
@@ -128,8 +132,8 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
             ); exec(conv("smoothing_iterations"))
     particle_scale = FloatProperty(
             name="Particle Scale", 
-            description = "Size of particles for isosurface generation", 
-            min=0.0, soft_min=1.0,
+            description = "Size of particles for mesh generation", 
+            min=1.0, soft_max=3.0,
             default=1.0,
             precision=2,
             ); exec(conv("particle_scale"))

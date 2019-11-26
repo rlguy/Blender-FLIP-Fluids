@@ -34,11 +34,13 @@ SOFTWARE.
 LevelSetSolver::LevelSetSolver() {
 }
 
-void LevelSetSolver::reinitialize(Array3d<float> &inputSDF, 
-                                  float dx, 
-                                  float maxDistance, 
-                                  std::vector<GridIndex> &solverCells, 
-                                  Array3d<float> &outputSDF) {
+void LevelSetSolver::reinitializeEno(Array3d<float> &inputSDF, 
+                                     float dx, 
+                                     float maxDistance, 
+                                     std::vector<GridIndex> &solverCells, 
+                                     Array3d<float> &outputSDF) {
+
+    _maxCFL = 0.25;
 
     float dtau = _getPseudoTimeStep(inputSDF, dx);
     int numIterations = _getNumberOfIterations(maxDistance, dtau);
@@ -58,7 +60,7 @@ void LevelSetSolver::reinitialize(Array3d<float> &inputSDF,
         std::vector<std::thread> threads(numthreads);
         std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, solverCells.size(), numthreads);
         for (int i = 0; i < numthreads; i++) {
-            threads[i] = std::thread(&LevelSetSolver::_stepSolverThread, this,
+            threads[i] = std::thread(&LevelSetSolver::_stepSolverThreadEno, this,
                                      intervals[i], intervals[i + 1], tempPtr, outputPtr, dx, dtau, &solverCells);
         }
 
@@ -67,6 +69,64 @@ void LevelSetSolver::reinitialize(Array3d<float> &inputSDF,
         }
 
         std::swap(tempPtr, outputPtr);
+    }
+
+    float *rawarraysrc = outputPtr->getRawArray();
+    float *rawarraydst = outputSDF.getRawArray();
+    int n = outputSDF.getNumElements();
+    for (int i = 0; i < n; i++) {
+        rawarraydst[i] = rawarraysrc[i];
+    }
+}
+
+void LevelSetSolver::reinitializeUpwind(Array3d<float> &inputSDF, 
+                                        float dx, 
+                                        float maxDistance, 
+                                        std::vector<GridIndex> &solverCells, 
+                                        Array3d<float> &outputSDF) {
+
+    _maxCFL = 0.5;
+
+    float dtau = _getPseudoTimeStep(inputSDF, dx);
+    int numIterations = _getNumberOfIterations(maxDistance, dtau);
+
+    int isize = inputSDF.width;
+    int jsize = inputSDF.height;
+    int ksize = inputSDF.depth;
+    outputSDF = inputSDF;
+
+    Array3d<float> tempSDF(isize, jsize, ksize);
+    Array3d<float> *tempPtr = &tempSDF;
+    Array3d<float> *outputPtr = &outputSDF;
+
+    float lastMaxDiff = -1.0f;
+    for (int n = 0; n < numIterations; n++) {
+        int numCPU = ThreadUtils::getMaxThreadCount();
+        int numthreads = (int)fmin(numCPU, solverCells.size());
+        std::vector<std::thread> threads(numthreads);
+        std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, solverCells.size(), numthreads);
+        for (int i = 0; i < numthreads; i++) {
+            threads[i] = std::thread(&LevelSetSolver::_stepSolverThreadUpwind, this,
+                                     intervals[i], intervals[i + 1], tempPtr, outputPtr, dx, dtau, &solverCells);
+        }
+
+        for (int i = 0; i < numthreads; i++) {
+            threads[i].join();
+        }
+
+        float maxDiff = 0;
+        for (size_t cidx = 0; cidx < solverCells.size(); cidx++) {
+            GridIndex g = solverCells[cidx];
+            float diff = std::abs(tempPtr->get(g) - outputPtr->get(g));
+            maxDiff = std::max(diff, maxDiff);
+        }
+
+        std::swap(tempPtr, outputPtr);
+
+        if (std::abs(maxDiff - lastMaxDiff) < _upwindErrorThreshold * dx) {
+            break;
+        }
+        lastMaxDiff = maxDiff;
     }
 
     float *rawarraysrc = outputPtr->getRawArray();
@@ -110,7 +170,7 @@ int LevelSetSolver::_getNumberOfIterations(float maxDistance, float dtau) {
     return static_cast<int>(std::ceil(maxDistance / dtau));
 }
 
-void LevelSetSolver::_stepSolverThread(int startidx, int endidx, 
+void LevelSetSolver::_stepSolverThreadEno(int startidx, int endidx, 
                                        Array3d<float> *tempPtr,
                                        Array3d<float> *outputPtr, 
                                        float dx,
@@ -122,7 +182,7 @@ void LevelSetSolver::_stepSolverThread(int startidx, int endidx,
         GridIndex g = solverCells->at(idx);
 
         float s = _sign(*outputPtr, dx, g.i, g.j, g.k);
-        _getDerivatives(outputPtr, g.i, g.j, g.k, dx, &derx, &dery, &derz);
+        _getDerivativesEno(outputPtr, g.i, g.j, g.k, dx, &derx, &dery, &derz);
 
         float val = outputPtr->get(g)
             - dtau * std::max(s, 0.0f)
@@ -144,11 +204,11 @@ void LevelSetSolver::_stepSolverThread(int startidx, int endidx,
     }
 }
 
-void LevelSetSolver::_getDerivatives(Array3d<float> *grid,
-                                     int i, int j, int k, float dx, 
-                                     std::array<float, 2> *derx,
-                                     std::array<float, 2> *dery,
-                                     std::array<float, 2> *derz) {
+void LevelSetSolver::_getDerivativesEno(Array3d<float> *grid,
+                                        int i, int j, int k, float dx, 
+                                        std::array<float, 2> *derx,
+                                        std::array<float, 2> *dery,
+                                        std::array<float, 2> *derz) {
     float D0[7];
     int isize = grid->width;
     int jsize = grid->height;
@@ -251,5 +311,81 @@ std::array<float, 2> LevelSetSolver::_eno3(float *D0, float dx) {
         dfx[K] = dQ1 + dQ2 + dQ3;
     }
 
+    return dfx;
+}
+
+void LevelSetSolver::_stepSolverThreadUpwind(int startidx, int endidx, 
+                                       Array3d<float> *tempPtr,
+                                       Array3d<float> *outputPtr, 
+                                       float dx,
+                                       float dtau,
+                                       std::vector<GridIndex> *solverCells) {
+
+    std::array<float, 2> derx, dery, derz;
+    for (int idx = startidx; idx < endidx; idx++) {
+        GridIndex g = solverCells->at(idx);
+
+        float s = _sign(*outputPtr, dx, g.i, g.j, g.k);
+        _getDerivativesUpwind(outputPtr, g.i, g.j, g.k, dx, &derx, &dery, &derz);
+
+        float val = outputPtr->get(g)
+            - dtau * std::max(s, 0.0f)
+                * (std::sqrt(_square(std::max(derx[0], 0.0f))
+                           + _square(std::min(derx[1], 0.0f))
+                           + _square(std::max(dery[0], 0.0f))
+                           + _square(std::min(dery[1], 0.0f))
+                           + _square(std::max(derz[0], 0.0f))
+                           + _square(std::min(derz[1], 0.0f))) - 1.0f)
+            - dtau * std::min(s, 0.0f)
+                * (std::sqrt(_square(std::min(derx[0], 0.0f))
+                           + _square(std::max(derx[1], 0.0f))
+                           + _square(std::min(dery[0], 0.0f))
+                           + _square(std::max(dery[1], 0.0f))
+                           + _square(std::min(derz[0], 0.0f))
+                           + _square(std::max(derz[1], 0.0f))) - 1.0f);
+
+        tempPtr->set(g, val);
+    }
+}
+
+void LevelSetSolver::_getDerivativesUpwind(Array3d<float> *grid,
+                                        int i, int j, int k, float dx, 
+                                        std::array<float, 2> *derx,
+                                        std::array<float, 2> *dery,
+                                        std::array<float, 2> *derz) {
+    
+    float D0[3];
+    int isize = grid->width;
+    int jsize = grid->height;
+    int ksize = grid->depth;
+
+    int im1 = (i < 1) ? 0 : i - 1;
+    int ip1 = std::min(i + 1, isize - 1);
+    int jm1 = (j < 1) ? 0 : j - 1;
+    int jp1 = std::min(j + 1, jsize - 1);
+    int km1 = (k < 1) ? 0 : k - 1;
+    int kp1 = std::min(k + 1, ksize - 1);
+
+    D0[0] = grid->get(im1, j, k);
+    D0[1] = grid->get(i, j, k);
+    D0[2] = grid->get(ip1, j, k);
+    *derx = _upwind1(D0, dx);
+
+    D0[0] = grid->get(i, jm1, k);
+    D0[1] = grid->get(i, j, k);
+    D0[2] = grid->get(i, jp1, k);
+    *dery = _upwind1(D0, dx);
+
+    D0[0] = grid->get(i, j, km1);
+    D0[1] = grid->get(i, j, k);
+    D0[2] = grid->get(i, j, kp1);
+    *derz = _upwind1(D0, dx);
+}
+
+std::array<float, 2> LevelSetSolver::_upwind1(float *D0, float dx) {
+    float invdx = 1.0f / dx;
+    std::array<float, 2> dfx;
+    dfx[0] = invdx * (D0[1] - D0[0]);
+    dfx[1] = invdx * (D0[2] - D0[1]);
     return dfx;
 }

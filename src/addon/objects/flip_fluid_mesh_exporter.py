@@ -386,11 +386,8 @@ class MeshExporter():
                              str(errframeno - 1) + ": " + str(num_verts1) +
                              "\nFrame " + str(errframeno) + ": " + str(num_verts2))
 
-                    # Allowing changing topology does not seem stable enough
-                    """
                     errmsg += ("\n\nDisable this warning in the Advanced Settings panel. Warning: " +
                               "mesh velocity data will not be computed for meshes with changing topology.")
-                    """
 
                     self._set_error(errmsg)
                     is_finished = True

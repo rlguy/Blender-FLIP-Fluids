@@ -135,6 +135,7 @@ private:
 
     int _curvatureGridExactBand = 3;
     int _curvatureGridExtrapolationLayers = 3;
+    float _outOfRangeDistance = 5.0f;  // in # of grid cells
 
     int _blockwidth = 10;
     int _numComputeBlocksPerJob = 10;

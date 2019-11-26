@@ -29,7 +29,8 @@ enum class DiffuseParticleType : char {
     bubble = 0x00, 
     foam = 0x01, 
     spray = 0x02,
-    notset = 0x03
+    dust = 0x03,
+    notset = 0x04
 };
 
 struct DiffuseParticle {

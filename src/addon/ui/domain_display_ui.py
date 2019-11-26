@@ -35,6 +35,7 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
 
 
     def draw_render_settings(self, context):
+        self.layout.separator()
         box = self.layout.box()
         box.label(text="Render Tools:")
         column = box.column(align=True)
@@ -55,11 +56,10 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
         rprops = domain_object.flip_fluid.domain.render
         show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
 
-        column = self.layout.column()
-        column.label(text="Surface Display Settings:")
-
         box = self.layout.box()
         column = box.column()
+        column.label(text="Surface Display Settings:")
+        column.separator()
 
         split = vcu.ui_split(column, factor=0.5)
         column_left = split.column()
@@ -95,10 +95,19 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
         show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
 
         self.layout.separator()
-        column = self.layout.column()
+
+        master_box = self.layout.box()
+        column = master_box.column()
         split = column.split()
         left_column = split.column()
-        left_column.label(text="Whitewater Display Settings:")
+
+        row = left_column.row(align=True)
+        row.prop(rprops, "whitewater_display_settings_expanded",
+            icon="TRIA_DOWN" if rprops.whitewater_display_settings_expanded else "TRIA_RIGHT",
+            icon_only=True, 
+            emboss=False
+        )
+        row.label(text="Whitewater Display Settings:")
 
         right_column = split.column()
         if not is_whitewater_enabled:
@@ -110,7 +119,9 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
             row.operator("flip_fluid_operators.display_enable_whitewater_tooltip", 
                          text="", icon="QUESTION", emboss=False)
 
-        master_box = self.layout.column()
+        if not rprops.whitewater_display_settings_expanded:
+            return
+
         box = master_box.box()
         box.enabled = is_whitewater_enabled
 
@@ -158,6 +169,7 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
             column.prop(rprops, "render_foam_pct", slider=True)
             column.prop(rprops, "render_bubble_pct", slider=True)
             column.prop(rprops, "render_spray_pct", slider=True)
+            column.prop(rprops, "render_dust_pct", slider=True)
 
         column = split.column(align=True)
         column.label(text="Preview Display Settings:")
@@ -167,6 +179,7 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
             column.prop(rprops, "viewport_foam_pct", slider=True)
             column.prop(rprops, "viewport_bubble_pct", slider=True)
             column.prop(rprops, "viewport_spray_pct", slider=True)
+            column.prop(rprops, "viewport_dust_pct", slider=True)
         master_box.separator()
 
         if not show_advanced:
@@ -189,79 +202,84 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
 
         box_column = box.column()
         if rprops.whitewater_particle_object_settings_mode == 'WHITEWATER_OBJECT_SETTINGS_WHITEWATER':
-            row = box_column.row()
-            column = row.column()
-            split = vcu.ui_split(column, factor=0.25)
-            column = split.column()
-            column.label(text="Whitewater:")
-            column = split.column()
-            split = vcu.ui_split(column, factor=0.5)
-            column = split.column(align=True)
-            row = column.row(align=True)
-            row.enabled = not rprops.whitewater_use_icosphere_object
+            column = box_column.column()
+            column.label(text="Particle Object:")
+            split = vcu.ui_split(column, factor=0.75, align=True)
+            column1 = split.column(align=True)
+            column2 = split.column(align=True)
+            row = column1.row(align=True)
+            row.prop(rprops, "whitewater_particle_object_mode", expand=True)
+            row = column2.row(align=True)
+            row.enabled = rprops.whitewater_particle_object_mode == 'WHITEWATER_PARTICLE_CUSTOM'
             row.prop_search(rprops, "whitewater_particle_object", 
-                               bpy.data, "objects", text="")
-            row = column.row(align=True)
-            row.prop(rprops, "whitewater_particle_scale")
-            column = split.column(align=True)
-            column.prop(rprops, "whitewater_use_icosphere_object")
-            column.prop(rprops, "only_display_whitewater_in_render")
+                            bpy.data, "objects", text="")
+            row = column.row()
+            row.prop(rprops, "whitewater_particle_scale", text="Particle Scale")
+            row.prop(rprops, "only_display_whitewater_in_render", text="Hide particles in viewport")
         else:
-            row = box_column.row()
-            column = row.column()
-            split = vcu.ui_split(column, factor=0.25)
-            column = split.column()
-            column.label(text="Foam:")
-            column = split.column()
-            split = vcu.ui_split(column, factor=0.5)
-            column = split.column(align=True)
-            row = column.row(align=True)
-            row.enabled = not rprops.foam_use_icosphere_object
+            particle_box = box_column.box()
+            column = particle_box.column()
+            column.label(text="Foam Particle Object:")
+            split = vcu.ui_split(column, factor=0.75, align=True)
+            column1 = split.column(align=True)
+            column2 = split.column(align=True)
+            row = column1.row(align=True)
+            row.prop(rprops, "foam_particle_object_mode", expand=True)
+            row = column2.row(align=True)
+            row.enabled = rprops.foam_particle_object_mode == 'WHITEWATER_PARTICLE_CUSTOM'
             row.prop_search(rprops, "foam_particle_object", 
-                               bpy.data, "objects", text="")
-            row = column.row(align=True)
-            row.prop(rprops, "foam_particle_scale")
-            column = split.column()
-            column.prop(rprops, "foam_use_icosphere_object")
-            column.prop(rprops, "only_display_foam_in_render")
-            row = box_column.row()
+                            bpy.data, "objects", text="")
+            row = column.row()
+            row.prop(rprops, "foam_particle_scale", text="Particle Scale")
+            row.prop(rprops, "only_display_foam_in_render", text="Hide particles in viewport")
 
-            row = box_column.row()
-            column = row.column()
-            split = vcu.ui_split(column, factor=0.25)
-            column = split.column()
-            column.label(text="Bubble:")
-            column = split.column()
-            split = vcu.ui_split(column, factor=0.5)
-            column = split.column(align=True)
-            row = column.row(align=True)
-            row.enabled = not rprops.bubble_use_icosphere_object
+            particle_box = box_column.box()
+            column = particle_box.column()
+            column.label(text="Bubble Particle Object:")
+            split = vcu.ui_split(column, factor=0.75, align=True)
+            column1 = split.column(align=True)
+            column2 = split.column(align=True)
+            row = column1.row(align=True)
+            row.prop(rprops, "bubble_particle_object_mode", expand=True)
+            row = column2.row(align=True)
+            row.enabled = rprops.bubble_particle_object_mode == 'WHITEWATER_PARTICLE_CUSTOM'
             row.prop_search(rprops, "bubble_particle_object", 
-                               bpy.data, "objects", text="")
-            row = column.row(align=True)
-            row.prop(rprops, "bubble_particle_scale")
-            column = split.column(align=True)
-            column.prop(rprops, "bubble_use_icosphere_object")
-            column.prop(rprops, "only_display_bubble_in_render")
-            row = box_column.row()
+                            bpy.data, "objects", text="")
+            row = column.row()
+            row.prop(rprops, "bubble_particle_scale", text="Particle Scale")
+            row.prop(rprops, "only_display_bubble_in_render", text="Hide particles in viewport")
 
-            row = box_column.row()
-            column = row.column()
-            split = vcu.ui_split(column, factor=0.25)
-            column = split.column()
-            column.label(text="Spray:")
-            column = split.column()
-            split = vcu.ui_split(column, factor=0.5)
-            column = split.column(align=True)
-            row = column.row(align=True)
-            row.enabled = not rprops.spray_use_icosphere_object
+            particle_box = box_column.box()
+            column = particle_box.column()
+            column.label(text="Spray Particle Object:")
+            split = vcu.ui_split(column, factor=0.75, align=True)
+            column1 = split.column(align=True)
+            column2 = split.column(align=True)
+            row = column1.row(align=True)
+            row.prop(rprops, "spray_particle_object_mode", expand=True)
+            row = column2.row(align=True)
+            row.enabled = rprops.spray_particle_object_mode == 'WHITEWATER_PARTICLE_CUSTOM'
             row.prop_search(rprops, "spray_particle_object", 
-                               bpy.data, "objects", text="")
-            row = column.row(align=True)
-            row.prop(rprops, "spray_particle_scale")
-            column = split.column(align=True)
-            column.prop(rprops, "spray_use_icosphere_object")
-            column.prop(rprops, "only_display_spray_in_render")
+                            bpy.data, "objects", text="")
+            row = column.row()
+            row.prop(rprops, "spray_particle_scale", text="Particle Scale")
+            row.prop(rprops, "only_display_spray_in_render", text="Hide particles in viewport")
+
+            particle_box = box_column.box()
+            column = particle_box.column()
+            column.label(text="Dust Particle Object:")
+            split = vcu.ui_split(column, factor=0.75, align=True)
+            column1 = split.column(align=True)
+            column2 = split.column(align=True)
+            row = column1.row(align=True)
+            row.prop(rprops, "dust_particle_object_mode", expand=True)
+            row = column2.row(align=True)
+            row.enabled = rprops.dust_particle_object_mode == 'WHITEWATER_PARTICLE_CUSTOM'
+            row.prop_search(rprops, "dust_particle_object", 
+                            bpy.data, "objects", text="")
+            row = column.row()
+            row.prop(rprops, "dust_particle_scale", text="Particle Scale")
+            row.prop(rprops, "only_display_dust_in_render", text="Hide particles in viewport")
 
 
     def draw(self, context):

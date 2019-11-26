@@ -74,6 +74,17 @@ class FlipFluidObstacleProperties(bpy.types.PropertyGroup):
             default=1.0,
             precision=2,
             ); exec(conv("whitewater_influence"))
+    dust_emission_strength = FloatProperty(
+            name="Dust Emission Strength",
+            description="Scale the amount of whitewater dust particles generated"
+                " near this obstacle by this value. A value of 1.0 will generate the"
+                " normal amount of dust, a value greater than 1.0 will"
+                " generate more, a value less than 1.0 will generate less. Whitewater"
+                " dust particle simulation must be enabled for this setting to take effect",
+            min=0.0,
+            default=1.0,
+            precision=2,
+            ); exec(conv("dust_emission_strength"))
     sheeting_strength = FloatProperty(
             name="Sheeting Strength Multiplier",
             description="Scale the amount of fluid sheeting strength against this"
@@ -84,12 +95,12 @@ class FlipFluidObstacleProperties(bpy.types.PropertyGroup):
             precision=2,
             ); exec(conv("sheeting_strength"))
     mesh_expansion = FloatProperty(
-            name="Expand",
-            description="Expand the obstacle mesh by some value. This setting"
+            name="Expand Geometry",
+            description="Expand the obstacle mesh by this value. This setting"
                 " can be used to prevent fluid from slipping through small"
-                " cracks between touching obstacles. If the object is composed"
-                " of multiple mesh pieces, each piece will be expanded"
-                " individually",
+                " cracks between touching obstacles. This setting is meant only to be"
+                " used to prevent leakage in fractured objects and only small values"
+                " should be used.",
             default=0.0,
             soft_min=-0.05, soft_max=0.05,
             step=0.01,
@@ -110,6 +121,7 @@ class FlipFluidObstacleProperties(bpy.types.PropertyGroup):
         add("obstacle.export_animated_mesh", "")
         add("obstacle.friction", "")
         add("obstacle.whitewater_influence", "")
+        add("obstacle.dust_emission_strength", "")
         add("obstacle.sheeting_strength", "")
         add("obstacle.mesh_expansion", "")
         self._validate_property_registry()

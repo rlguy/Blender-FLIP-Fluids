@@ -20,6 +20,7 @@ from bpy.props import (
         )
 
 from ..utils import version_compatibility_utils as vcu
+from .. import render
 
 
 def _select_make_active(context, active_object):
@@ -209,6 +210,10 @@ class FlipFluidHelperLoadLastFrame(bpy.types.Operator):
 
 
     def execute(self, context):
+        if render.is_rendering():
+            # Setting a frame during render will disrupt the render process
+            return {'CANCELLED'}
+
         dprops = context.scene.flip_fluid.get_domain_properties()
         cache_dir = dprops.cache.get_cache_abspath()
         bakefiles_dir = os.path.join(cache_dir, "bakefiles")
@@ -246,6 +251,8 @@ class FlipFluidEnableWhitewaterSimulation(bpy.types.Operator):
     def execute(self, context):
         dprops = context.scene.flip_fluid.get_domain_properties()
         dprops.whitewater.enable_whitewater_simulation = True
+        if not dprops.render.whitewater_display_settings_expanded:
+            dprops.render.whitewater_display_settings_expanded = True
         return {'FINISHED'}
 
 

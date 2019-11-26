@@ -61,7 +61,13 @@ class LevelSetSolver
 public:
     LevelSetSolver();
 
-    void reinitialize(Array3d<float> &inputSDF, 
+    void reinitializeEno(Array3d<float> &inputSDF, 
+                      float dx,
+                      float maxDistance,
+                      std::vector<GridIndex> &solverCells, 
+                      Array3d<float> &outputSDF);
+
+    void reinitializeUpwind(Array3d<float> &inputSDF, 
                       float dx,
                       float maxDistance,
                       std::vector<GridIndex> &solverCells, 
@@ -70,23 +76,39 @@ public:
 private:
 
     float _maxCFL = 0.25;
+    float _upwindErrorThreshold = 0.01;
 
     float _getPseudoTimeStep(Array3d<float> &sdf, float dx);
     float _sign(Array3d<float> &sdf, float dx, int i, int j, int k);
     int _getNumberOfIterations(float maxDistance, float dtau);
-    void _stepSolverThread(int startidx, int endidx, 
+
+    void _stepSolverThreadEno(int startidx, int endidx, 
                            Array3d<float> *tempPtr,
                            Array3d<float> *outputPtr, 
                            float dx,
                            float dtau,
                            std::vector<GridIndex> *solverCells);
-    void _getDerivatives(Array3d<float> *grid,
+    void _getDerivativesEno(Array3d<float> *grid,
                         int i, int j, int k, float dx, 
                         std::array<float, 2> *derx,
                         std::array<float, 2> *dery,
                         std::array<float, 2> *derz);
-
     std::array<float, 2> _eno3(float *D0, float dx);
+
+    void _stepSolverThreadUpwind(int startidx, int endidx, 
+                             Array3d<float> *tempPtr,
+                             Array3d<float> *outputPtr, 
+                             float dx,
+                             float dtau,
+                             std::vector<GridIndex> *solverCells);
+    void _getDerivativesUpwind(Array3d<float> *grid,
+                               int i, int j, int k, float dx, 
+                               std::array<float, 2> *derx,
+                               std::array<float, 2> *dery,
+                               std::array<float, 2> *derz);
+    std::array<float, 2> _upwind1(float *D0, float dx);
+
+
     inline float _square(float s) { return s * s; }
 };
 

@@ -52,16 +52,23 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
             items=material_library.get_whitewater_material_enums_ui,
             update=lambda self, context: self._update_whitewater_spray_material(context),
             ); exec(conv("whitewater_spray_material"))
+    whitewater_dust_material = EnumProperty(
+            name="Whitewater Dust",
+            description="Whitewater Dust Material",
+            items=material_library.get_whitewater_material_enums_ui,
+            update=lambda self, context: self._update_whitewater_dust_material(context),
+            ); exec(conv("whitewater_dust_material"))
     material_import = EnumProperty(
             name="Import",
             description="Import materials into this scene",
             items=material_library.get_material_import_enums_ui,
             ); exec(conv("material_import"))
 
-    last_surface_material = StringProperty(default = ""); exec(conv("last_surface_material"))
-    last_whitewater_foam_material = StringProperty(default = ""); exec(conv("last_whitewater_foam_material"))
-    last_whitewater_bubble_material = StringProperty(default = ""); exec(conv("last_whitewater_bubble_material"))
-    last_whitewater_spray_material = StringProperty(default = ""); exec(conv("last_whitewater_spray_material"))
+    last_surface_material = StringProperty(default=""); exec(conv("last_surface_material"))
+    last_whitewater_foam_material = StringProperty(default=""); exec(conv("last_whitewater_foam_material"))
+    last_whitewater_bubble_material = StringProperty(default=""); exec(conv("last_whitewater_bubble_material"))
+    last_whitewater_spray_material = StringProperty(default=""); exec(conv("last_whitewater_spray_material"))
+    last_whitewater_dust_material = StringProperty(default=""); exec(conv("last_whitewater_dust_material"))
 
 
     def load_post(self):
@@ -74,6 +81,7 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
         add(path + ".whitewater_foam_material",   "Foam Material",    group_id=0)
         add(path + ".whitewater_bubble_material", "Bubble Material",  group_id=0)
         add(path + ".whitewater_spray_material",  "Spray Material",   group_id=0)
+        add(path + ".whitewater_dust_material",   "Dust Material",   group_id=0)
 
 
     def initialize(self):
@@ -81,6 +89,7 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
         self.whitewater_foam_material = 'MATERIAL_NONE'
         self.whitewater_bubble_material = 'MATERIAL_NONE'
         self.whitewater_spray_material = 'MATERIAL_NONE'
+        self.whitewater_dust_material = 'MATERIAL_NONE'
         self.material_import = 'ALL_MATERIALS'
 
 
@@ -149,6 +158,18 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
             'whitewater_spray_material', 'last_whitewater_spray_material'
         )
         dprops.mesh_cache.spray.apply_duplivert_object_material()
+
+
+    def _update_whitewater_dust_material(self, context):
+        if not self._is_domain_set():
+            return
+        dprops = self._get_domain_properties()
+        dust_object = dprops.mesh_cache.dust.get_cache_object()
+        self._update_cache_object_material(
+            dust_object,
+            'whitewater_dust_material', 'last_whitewater_dust_material'
+        )
+        dprops.mesh_cache.dust.apply_duplivert_object_material()
 
 
     def _remove_cache_object_material(self, cache_object, enum_ident):
@@ -221,6 +242,11 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
             self.whitewater_spray_material = 'MATERIAL_NONE'
 
         try:
+            self.whitewater_dust_material = self.whitewater_dust_material
+        except:
+            self.whitewater_dust_material = 'MATERIAL_NONE'
+
+        try:
             self.material_import = self.material_import
         except:
             self.material_import = 'ALL_MATERIALS'
@@ -233,6 +259,7 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
         self._check_foam_material()
         self._check_bubble_material()
         self._check_spray_material()
+        self._check_dust_material()
 
 
     def _check_surface_material(self):
@@ -271,6 +298,11 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
     def _check_spray_material(self):
         dprops = self._get_domain_properties()
         self._check_whitewater_material(dprops.mesh_cache.spray, "whitewater_spray_material")
+
+
+    def _check_dust_material(self):
+        dprops = self._get_domain_properties()
+        self._check_whitewater_material(dprops.mesh_cache.dust, "whitewater_dust_material")
 
 
     def _check_whitewater_material(self, mesh_cache_object, material_prop):
@@ -335,7 +367,8 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
             self.surface_material,
             self.whitewater_foam_material,
             self.whitewater_bubble_material,
-            self.whitewater_spray_material
+            self.whitewater_spray_material,
+            self.whitewater_dust_material
         ]
         material_ids = [x for x in material_ids if x is not 'MATERIAL_NONE']
         for mid in material_ids:

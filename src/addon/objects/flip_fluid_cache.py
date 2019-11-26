@@ -35,16 +35,16 @@ GL_POINT_CACHE_DATA = {}
 
 class FLIPFluidMeshBounds(bpy.types.PropertyGroup):
     conv = vcu.convert_attribute_to_28
-    x = FloatProperty(0.0); exec(conv("x"))
-    y = FloatProperty(0.0); exec(conv("y"))
-    z = FloatProperty(0.0); exec(conv("z"))
-    width = FloatProperty(1.0); exec(conv("width"))
-    height = FloatProperty(1.0); exec(conv("height"))
-    depth = FloatProperty(1.0); exec(conv("depth"))
-    dx = FloatProperty(1.0); exec(conv("dx"))
-    isize = IntProperty(0); exec(conv("isize"))
-    jsize = IntProperty(0); exec(conv("jsize"))
-    ksize = IntProperty(0); exec(conv("ksize"))
+    x =      FloatProperty(0.0);  exec(conv("x"))
+    y =      FloatProperty(0.0);  exec(conv("y"))
+    z =      FloatProperty(0.0);  exec(conv("z"))
+    width =  FloatProperty(1.0);  exec(conv("width"))
+    height = FloatProperty(1.0);  exec(conv("height"))
+    depth =  FloatProperty(1.0);  exec(conv("depth"))
+    dx =     FloatProperty(1.0);  exec(conv("dx"))
+    isize =  IntProperty(0);      exec(conv("isize"))
+    jsize =  IntProperty(0);      exec(conv("jsize"))
+    ksize =  IntProperty(0);      exec(conv("ksize"))
     is_set = BoolProperty(False); exec(conv("is_set"))
 
 
@@ -71,40 +71,86 @@ class FLIPFluidMeshBounds(bpy.types.PropertyGroup):
 
 class FlipFluidLoadedMeshData(bpy.types.PropertyGroup):
     conv = vcu.convert_attribute_to_28
-    mesh_prefix = StringProperty(default="mesh_prefix"); exec(conv("mesh_prefix"))
-    enable_motion_blur = BoolProperty(default=False); exec(conv("enable_motion_blur"))
-    motion_blur_scale = FloatProperty(default=-1.0); exec(conv("motion_blur_scale"))
-    wwp_import_percentage = IntProperty(default=0); exec(conv("wwp_import_percentage"))
-    duplivert_scale = FloatProperty(default=1.0); exec(conv("duplivert_scale"))
-    is_rendering = BoolProperty(default=True); exec(conv("is_rendering"))
-    frame = IntProperty(default=-1); exec(conv("frame"))
+    mesh_prefix =           StringProperty(default="mesh_prefix"); exec(conv("mesh_prefix"))
+    enable_motion_blur =    BoolProperty(default=False);           exec(conv("enable_motion_blur"))
+    motion_blur_scale =     FloatProperty(default=-1.0);           exec(conv("motion_blur_scale"))
+    wwp_import_percentage = IntProperty(default=0);                exec(conv("wwp_import_percentage"))
+    duplivert_scale =       FloatProperty(default=1.0);            exec(conv("duplivert_scale"))
+    duplivert_vertices =    IntProperty(default=-1);               exec(conv("duplivert_vertices"))
+    duplivert_faces =       IntProperty(default=-1);               exec(conv("duplivert_faces"))
+    is_rendering =          BoolProperty(default=True);            exec(conv("is_rendering"))
+    frame =                 IntProperty(default=-1);               exec(conv("frame"))
+
+
+    def reset(self):
+        self.property_unset("mesh_prefix")
+        self.property_unset("enable_motion_blur")
+        self.property_unset("motion_blur_scale")
+        self.property_unset("wwp_import_percentage")
+        self.property_unset("duplivert_scale")
+        self.property_unset("is_rendering")
+        self.property_unset("frame")
 
 
 class FlipFluidMeshCache(bpy.types.PropertyGroup):
     conv = vcu.convert_attribute_to_28
 
-    mesh_prefix = StringProperty(default=""); exec(conv("mesh_prefix"))
-    mesh_display_name_prefix = StringProperty(default=""); exec(conv("mesh_display_name_prefix"))
-    mesh_file_extension = StringProperty(default=""); exec(conv("mesh_file_extension"))
-    enable_motion_blur = BoolProperty(default=False); exec(conv("enable_motion_blur"))
-    motion_blur_scale = FloatProperty(default=1.0); exec(conv("motion_blur_scale"))
-    cache_object_default_name = StringProperty(default=""); exec(conv("cache_object_default_name"))
-    cache_object_name = StringProperty(default=""); exec(conv("cache_object_name"))
-    is_mesh_shading_smooth = BoolProperty(default=False); exec(conv("is_mesh_shading_smooth"))
-    current_loaded_frame = IntProperty(default=-1); exec(conv("current_loaded_frame"))
-    import_function_name = StringProperty(default="import_empty"); exec(conv("import_function_name"))
-    wwp_import_percentage = IntProperty(default=100); exec(conv("wwp_import_percentage"))
-    duplivert_scale = FloatProperty(default=1.0); exec(conv("duplivert_scale"))
-    cache_object_type = StringProperty(default="CACHE_OBJECT_TYPE_NONE"); exec(conv("cache_object_type"))
+    # Mesh properties
+    mesh_prefix =               StringProperty(default="");                       exec(conv("mesh_prefix"))
+    mesh_display_name_prefix =  StringProperty(default="");                       exec(conv("mesh_display_name_prefix"))
+    mesh_file_extension =       StringProperty(default="");                       exec(conv("mesh_file_extension"))
+    enable_motion_blur =        BoolProperty(default=False);                      exec(conv("enable_motion_blur"))
+    motion_blur_scale =         FloatProperty(default=1.0);                       exec(conv("motion_blur_scale"))
+    cache_object_default_name = StringProperty(default="");                       exec(conv("cache_object_default_name"))
+    cache_object =              PointerProperty(type=bpy.types.Object);           exec(conv("cache_object"))
+    is_mesh_shading_smooth =    BoolProperty(default=True);                       exec(conv("is_mesh_shading_smooth"))
+    current_loaded_frame =      IntProperty(default=-1);                          exec(conv("current_loaded_frame"))
+    import_function_name =      StringProperty(default="import_empty");           exec(conv("import_function_name"))
+    wwp_import_percentage =     IntProperty(default=100);                         exec(conv("wwp_import_percentage"))
+    duplivert_scale =           FloatProperty(default=1.0);                       exec(conv("duplivert_scale"))
+    cache_object_type =         StringProperty(default="CACHE_OBJECT_TYPE_NONE"); exec(conv("cache_object_type"))
 
-    is_duplivert_object_set = BoolProperty(default=False); exec(conv("is_duplivert_object_set"))
-    current_duplivert_loaded_frame = IntProperty(default=-1); exec(conv("current_duplivert_loaded_frame"))
-    duplivert_object_default_name = StringProperty(default="_particle"); exec(conv("duplivert_object_default_name"))
-    duplivert_object_name = StringProperty(default=""); exec(conv("duplivert_object_name"))
-    bounds = PointerProperty(type=FLIPFluidMeshBounds); exec(conv("bounds"))
+    # Duplivert properties
+    current_duplivert_loaded_frame = IntProperty(default=-1);                exec(conv("current_duplivert_loaded_frame"))
+    duplivert_object_default_name =  StringProperty(default="_particle");    exec(conv("duplivert_object_default_name"))
+    duplivert_object =               PointerProperty(type=bpy.types.Object); exec(conv("duplivert_object"))
 
-    loaded_frame_data = PointerProperty(type=FlipFluidLoadedMeshData); exec(conv("loaded_frame_data"))
+    # Loaded data properties
+    loaded_frame_data =           PointerProperty(type=FlipFluidLoadedMeshData); exec(conv("loaded_frame_data"))
     loaded_duplivert_frame_data = PointerProperty(type=FlipFluidLoadedMeshData); exec(conv("loaded_duplivert_frame_data"))
+    bounds =                      PointerProperty(type=FLIPFluidMeshBounds);     exec(conv("bounds"))
+
+    # Deprecated properties - only needed to migrate FLIP Fluids v1.0.6 or lower to newer versions
+    # These properties should not be used unless for updating scene for newer versions
+    cache_object_name =       StringProperty(default="");  exec(conv("cache_object_name"))
+    duplivert_object_name =   StringProperty(default="");  exec(conv("duplivert_object_name"))
+    is_duplivert_object_set = BoolProperty(default=False); exec(conv("is_duplivert_object_set"))
+
+
+    def update_deprecated_mesh_storage(self):
+        # In FLIP Fluids version 1.0.6 or lower, mesh cache objects were stored by name
+        # In later versions, these objects are stored in a PointerProperty. The purpose
+        # of this method is to update older .blend files to the new system by initializing
+        # the PointerProperty if necessary.
+
+        domain_object = self._get_domain_object()
+        if domain_object is None:
+            return
+
+        if self.cache_object_name != "" and self.cache_object is None:
+            cache_name = self.cache_object_name
+            cache_object = None
+            for obj in bpy.data.objects:
+                if obj.name == cache_name and obj.parent == domain_object:
+                    cache_object = obj
+                    break
+            if cache_object is not None:
+                self.cache_object = cache_object
+
+        if self.is_duplivert_object_set and self.duplivert_object is None:
+            duplivert_object = bpy.data.objects.get(self.duplivert_object_name)
+            if duplivert_object is not None:
+                self.duplivert_object = duplivert_object
 
 
     def initialize_cache_object(self):
@@ -127,16 +173,19 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         smooth_mod = cache_object.modifiers.new("Smooth", "SMOOTH")
         smooth_mod.iterations = 0
 
-        self.cache_object_name = cache_object.name
         self._initialize_cache_object_octane(cache_object)
 
+        self.cache_object = cache_object
 
-    def delete_cache_object(self, domain_object):
-        if not self._is_cache_object_initialized(domain_object):
+
+    def delete_cache_object(self):
+        if not self._is_cache_object_initialized():
             return
-        cache_object = self.get_cache_object(domain_object)
+        self.unload_duplivert_object()
+        cache_object = self.get_cache_object()
         vcu.delete_object(cache_object)
-        self.cache_object_name = ""
+        self.cache_object = None
+        self.loaded_frame_data.reset()
 
 
     def reset_cache_object(self):
@@ -251,7 +300,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
             shape_key.value = 0
 
 
-    def load_frame(self, frameno, force_load=False):
+    def load_frame(self, frameno, force_load=False, depsgraph=None):
         if not self._is_load_frame_valid(frameno, force_load):
             return
 
@@ -267,7 +316,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
         frame_string = self._frame_number_to_string(frameno)
         new_mesh_data_name = (self.mesh_display_name_prefix + 
-                              self.cache_object_name + 
+                              cache_object.name + 
                               frame_string)
         is_smooth = self._is_mesh_smooth(cache_object.data)
         octane_mesh_type = self._get_octane_mesh_type(cache_object.data)
@@ -287,7 +336,10 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
         if vcu.is_blender_279() or render.is_rendering():
             # This statement causes crashes if exporting Alembic in Blender 2.8x.
-            vcu.depsgraph_update()
+            if depsgraph is not None:
+                depsgraph.update()
+            else:
+                vcu.depsgraph_update()
 
 
     def update_transforms(self):
@@ -315,11 +367,10 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         cache_object.location = domain_pos
 
 
-    def apply_duplivert_object_material(self, duplivert_object=None):
+    def apply_duplivert_object_material(self):
+        duplivert_object = self.get_duplivert_object()
         if duplivert_object is None:
-            duplivert_object = bpy.data.objects.get(self.duplivert_object_name)
-            if duplivert_object is None:
-                return
+            return
 
         cache_object = self.get_cache_object()
         cache_object_materials = cache_object.data.materials
@@ -340,6 +391,8 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
                     self.motion_blur_scale     != d.motion_blur_scale or
                     self.wwp_import_percentage != d.wwp_import_percentage or
                     self.duplivert_scale       != d.duplivert_scale or
+                    self.duplivert_vertices    != d.duplivert_vertices or
+                    self.duplivert_faces       != d.duplivert_faces or
                     render.is_rendering()      != d.is_rendering or
                     self.current_loaded_frame  != frameno)
 
@@ -350,7 +403,9 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         d.enable_motion_blur    = self.enable_motion_blur
         d.motion_blur_scale     = self.motion_blur_scale
         d.wwp_import_percentage = self.wwp_import_percentage
-        d.dupliver_scale        = self.duplivert_scale
+        d.duplivert_scale       = self.duplivert_scale
+        d.duplivert_vertices    = self.duplivert_vertices
+        d.duplivert_faces       = self.duplivert_faces
         d.is_rendering          = render.is_rendering()
         d.current_loaded_frame  = frameno
 
@@ -381,10 +436,10 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
             self.initialize_cache_object()
         cache_object = self.get_cache_object()
 
-        if self.is_duplivert_object_set and self.get_duplivert_object() is not None:
+        if self._is_duplivert_object_initialized():
             return
 
-        duplivert_object_name = self.cache_object_name + self.duplivert_object_default_name
+        duplivert_object_name = cache_object.name + self.duplivert_object_default_name
         duplivert_mesh_name = duplivert_object_name + "_mesh"
         duplivert_mesh_data = bpy.data.meshes.new(duplivert_mesh_name)
         duplivert_mesh_data.from_pydata([], [], [])
@@ -395,23 +450,25 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         self._initialize_duplivert_object_octane(cache_object, duplivert_object)
         vcu.set_object_instance_type(cache_object, 'VERTS')
 
-        self.is_duplivert_object_set = True
-        self.duplivert_object_name = duplivert_object.name
+        self.duplivert_object = duplivert_object
 
 
 
-    def load_duplivert_object(self, vertices, faces, scale=1.0, force_load=False):
+    def load_duplivert_object(self, vertices, faces, scale=1.0, force_load=False, depsgraph=None):
+        self.duplivert_scale = scale
+        self.duplivert_vertices = len(vertices)
+        self.duplivert_faces = len(faces)
         if not self._is_load_duplivert_object_valid(force_load):
             return
 
         if not self._is_cache_object_initialized():
             self.initialize_cache_object()
-        if not self.is_duplivert_object_set:
+        if not self._is_duplivert_object_initialized():
             self.initialize_duplivert_object()
 
         cache_object = self.get_cache_object()
         duplivert_object = self.get_duplivert_object()
-        duplivert_mesh_name = self.cache_object_name + self.duplivert_object_default_name + "_mesh"
+        duplivert_mesh_name = cache_object.name + self.duplivert_object_default_name + "_mesh"
         is_smooth = True
         octane_mesh_type = self._get_octane_mesh_type(cache_object.data)
 
@@ -423,17 +480,15 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
                 octane_mesh_type
             )
 
+        self.duplivert_object = duplivert_object
+
         duplivert_object.location = (0, 0, 0)
         duplivert_object.scale[0] = scale
         duplivert_object.scale[1] = scale
         duplivert_object.scale[2] = scale
 
-        self.apply_duplivert_object_material(duplivert_object)
+        self.apply_duplivert_object_material()
         vcu.set_object_instance_type(cache_object, 'VERTS')
-
-        self.is_duplivert_object_set = True
-        self.duplivert_scale = scale
-        self.duplivert_object_name = duplivert_object.name
 
         current_frame = bpy.context.scene.frame_current
         self.current_duplivert_loaded_frame = current_frame
@@ -441,44 +496,38 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
         if vcu.is_blender_279() or render.is_rendering():
             # This statement causes crashes if exporting Alembic in Blender 2.8x.
-            vcu.depsgraph_update()
+            if depsgraph is not None:
+                depsgraph.update()
+            else:
+                vcu.depsgraph_update()
 
 
     def unload_duplivert_object(self):
-        if not self.is_duplivert_object_set:
+        if not self._is_duplivert_object_initialized():
             return
 
-        duplivert_object = bpy.data.objects.get(self.duplivert_object_name)
+        duplivert_object = self.get_duplivert_object()
         if duplivert_object is not None:
             vcu.delete_object(duplivert_object)
 
         cache_object = self.get_cache_object()
         vcu.set_object_instance_type(cache_object, 'NONE')
 
-        self.is_duplivert_object_set = False
-        self.duplivert_object_name = ""
+        self.duplivert_object = None
         self.current_duplivert_loaded_frame = -1
-        self._commit_loaded_duplivert_frame_data(-1)
+        self.loaded_duplivert_frame_data.reset()
 
 
-    def get_cache_object(self, domain_object = None):
-        if domain_object is None and not self._is_domain_set():
-            return None
-
-        if domain_object is None:
-            domain_object = self._get_domain_object()
-
-        cache_name = self.cache_object_name
-        for obj in bpy.data.objects:
-            if obj.name == cache_name and obj.parent == domain_object:
-                return obj
-        return None
+    def get_cache_object(self):
+        return self.cache_object
 
 
-    def get_duplivert_object(self, domain_object = None):
-        if not self.is_duplivert_object_set or not self._is_domain_set():
-            return None
-        return bpy.data.objects.get(self.duplivert_object_name)
+    def _is_duplivert_object_initialized(self):
+        return self.duplivert_object is not None
+
+
+    def get_duplivert_object(self):
+        return self.duplivert_object
 
 
     def import_bobj(self, filename):
@@ -601,18 +650,8 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
             cache_object.data.octane.mesh_type = SCATTER
 
 
-    def _is_cache_object_initialized(self, domain_object = None):
-        if domain_object is None and not self._is_domain_set():
-            return False
-
-        if domain_object is None:
-            domain_object = self._get_domain_object()
-
-        cache_name = self.cache_object_name
-        for obj in bpy.data.objects:
-            if obj.name == cache_name and obj.parent == domain_object:
-                return True
-        return False
+    def _is_cache_object_initialized(self):
+        return self.cache_object is not None
 
 
     def _transfer_mesh_materials(self, src_mesh_data, dst_mesh_data):
@@ -881,6 +920,7 @@ class FlipFluidCache(bpy.types.PropertyGroup):
     foam = PointerProperty(type=FlipFluidMeshCache); exec(conv("foam"))
     bubble = PointerProperty(type=FlipFluidMeshCache); exec(conv("bubble"))
     spray = PointerProperty(type=FlipFluidMeshCache); exec(conv("spray"))
+    dust = PointerProperty(type=FlipFluidMeshCache); exec(conv("dust"))
     gl_particles = PointerProperty(type=FlipFluidGLPointCache); exec(conv("gl_particles"))
     obstacle = PointerProperty(type=FlipFluidMeshCache); exec(conv("obstacle"))
 
@@ -912,6 +952,12 @@ class FlipFluidCache(bpy.types.PropertyGroup):
         self.spray.import_function_name = "import_wwp"
         self.spray.cache_object_type = "CACHE_OBJECT_TYPE_SPRAY"
 
+        self.dust.mesh_prefix = "dust"
+        self.dust.mesh_file_extension = "wwp"
+        self.dust.cache_object_default_name = "whitewater_dust"
+        self.dust.import_function_name = "import_wwp"
+        self.dust.cache_object_type = "CACHE_OBJECT_TYPE_DUST"
+
         self.gl_particles.mesh_prefix = "particles"
         self.gl_particles.mesh_file_extension = "fpd"
 
@@ -920,6 +966,10 @@ class FlipFluidCache(bpy.types.PropertyGroup):
         self.obstacle.cache_object_default_name = "debug_obstacle"
         self.obstacle.import_function_name = "import_bobj"
         self.obstacle.cache_object_type = "CACHE_OBJECT_TYPE_OBSTACLE"
+
+
+    def load_post(self):
+        self._update_deprecated_mesh_storage()
 
 
     def initialize_cache_objects(self):
@@ -934,29 +984,32 @@ class FlipFluidCache(bpy.types.PropertyGroup):
             self.foam.initialize_cache_object()
             self.bubble.initialize_cache_object()
             self.spray.initialize_cache_object()
+            self.dust.initialize_cache_object()
 
         if dprops.debug.export_internal_obstacle_mesh:
             self.obstacle.initialize_cache_object()
 
 
-    def delete_cache_objects(self, domain_object):
+    def delete_cache_objects(self):
         self.initialize_cache_settings()
-        self.surface.delete_cache_object(domain_object)
-        self.foam.delete_cache_object(domain_object)
-        self.bubble.delete_cache_object(domain_object)
-        self.spray.delete_cache_object(domain_object)
-        self.obstacle.delete_cache_object(domain_object)
+        self.surface.delete_cache_object()
+        self.foam.delete_cache_object()
+        self.bubble.delete_cache_object()
+        self.spray.delete_cache_object()
+        self.dust.delete_cache_object()
+        self.obstacle.delete_cache_object()
 
 
-    def delete_whitewater_cache_objects(self, domain_object):
+    def delete_whitewater_cache_objects(self):
         self.initialize_cache_settings()
-        self.foam.delete_cache_object(domain_object)
-        self.bubble.delete_cache_object(domain_object)
-        self.spray.delete_cache_object(domain_object)
+        self.foam.delete_cache_object()
+        self.bubble.delete_cache_object()
+        self.spray.delete_cache_object()
+        self.dust.delete_cache_object()
 
 
-    def delete_obstacle_cache_object(self, domain_object):
-        self.obstacle.delete_cache_object(domain_object)
+    def delete_obstacle_cache_object(self):
+        self.obstacle.delete_cache_object()
 
 
     def reset_cache_objects(self):
@@ -967,12 +1020,13 @@ class FlipFluidCache(bpy.types.PropertyGroup):
         self.foam.reset_cache_object()
         self.bubble.reset_cache_object()
         self.spray.reset_cache_object()
+        self.dust.reset_cache_object()
         self.obstacle.reset_cache_object()
         self.gl_particles.reset_cache()
 
 
     def is_cache_object(self, obj):
-        cache_objects = [self.surface, self.foam, self.bubble, self.spray]
+        cache_objects = [self.surface, self.foam, self.bubble, self.spray, self.dust]
         for c in cache_objects:
             cache_object = c.get_cache_object()
             if cache_object and cache_object.name == obj.name:
@@ -981,7 +1035,7 @@ class FlipFluidCache(bpy.types.PropertyGroup):
 
 
     def get_mesh_cache_from_blender_object(self, obj):
-        cache_objects = [self.surface, self.foam, self.bubble, self.spray]
+        cache_objects = [self.surface, self.foam, self.bubble, self.spray, self.dust]
         for c in cache_objects:
             cache_object = c.get_cache_object()
             if cache_object and cache_object.name == obj.name:
@@ -1006,6 +1060,15 @@ class FlipFluidCache(bpy.types.PropertyGroup):
             return
         dprops = self._get_domain_properties()
         return os.path.normpath(dprops.cache.get_cache_abspath())
+
+
+    def _update_deprecated_mesh_storage(self):
+        self.surface.update_deprecated_mesh_storage()
+        self.foam.update_deprecated_mesh_storage()
+        self.bubble.update_deprecated_mesh_storage()
+        self.spray.update_deprecated_mesh_storage()
+        self.dust.update_deprecated_mesh_storage()
+        self.obstacle.update_deprecated_mesh_storage()
 
 
 def register():

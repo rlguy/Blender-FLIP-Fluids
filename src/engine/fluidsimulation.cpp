@@ -649,6 +649,43 @@ bool FluidSimulation::isDiffuseSprayEnabled() {
     return _diffuseMaterial.isSprayEnabled();
 }
 
+
+void FluidSimulation::enableDiffuseDust() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " enableDiffuseDust" << std::endl);
+
+    _diffuseMaterial.enableDust();
+}
+
+void FluidSimulation::disableDiffuseDust() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " disableDiffuseDust" << std::endl);
+
+    _diffuseMaterial.disableDust();
+}
+
+bool FluidSimulation::isDiffuseDustEnabled() {
+    return _diffuseMaterial.isDustEnabled();
+}
+
+void FluidSimulation::enableBoundaryDiffuseDustEmission() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " enableBoundaryDiffuseDustEmission" << std::endl);
+
+    _diffuseMaterial.enableBoundaryDustEmission();
+}
+
+void FluidSimulation::disableBoundaryDiffuseDustEmission() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " disableBoundaryDiffuseDustEmission" << std::endl);
+
+    _diffuseMaterial.disableBoundaryDustEmission();
+}
+
+bool FluidSimulation::isBoundaryDustDiffuseEmissionEnabled() {
+    return _diffuseMaterial.isBoundaryDustEmissionEnabled();
+}
+
 void FluidSimulation::enableBubbleDiffuseMaterial() {
     _logfile.log(std::ostringstream().flush() << 
                  _logfile.getTime() << " enableBubbleDiffuseMaterial" << std::endl);
@@ -960,6 +997,23 @@ void FluidSimulation::setSprayParticleLifetimeModifier(double modifier) {
     _diffuseMaterial.setSprayParticleLifetimeModifier(modifier);
 }
 
+double FluidSimulation::getDustParticleLifetimeModifier() {
+    return _diffuseMaterial.getDustParticleLifetimeModifier();
+}
+
+void FluidSimulation::setDustParticleLifetimeModifier(double modifier) {
+    if (modifier < 0) {
+        std::string msg = "Error: dust lifetime modifier must be greater than or equal to 0.\n";
+        msg += "modifier: " + _toString(modifier) + "\n";
+        throw std::domain_error(msg);
+    }
+
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " setDustParticleLifetimeModifier: " << modifier << std::endl);
+
+    _diffuseMaterial.setDustParticleLifetimeModifier(modifier);
+}
+
 double FluidSimulation::getDiffuseParticleWavecrestEmissionRate() {
     return _diffuseMaterial.getDiffuseParticleWavecrestEmissionRate();
 }
@@ -994,38 +1048,21 @@ void FluidSimulation::setDiffuseParticleTurbulenceEmissionRate(double r) {
     _diffuseMaterial.setDiffuseParticleTurbulenceEmissionRate(r);
 }
 
-void FluidSimulation::getDiffuseParticleEmissionRates(double *rwc, 
-                                                      double *rt) {
-    _diffuseMaterial.getDiffuseParticleEmissionRates(rwc, rt);
+double FluidSimulation::getDiffuseParticleDustEmissionRate() {
+    return _diffuseMaterial.getDiffuseParticleDustEmissionRate();
 }
 
-void FluidSimulation::setDiffuseParticleEmissionRates(double r) {
+void FluidSimulation::setDiffuseParticleDustEmissionRate(double r) {
     if (r < 0) {
-        std::string msg = "Error: emission rate must be greater than or equal to 0.\n";
+        std::string msg = "Error: dust emission rate must be greater than or equal to 0.\n";
         msg += "rate: " + _toString(r) + "\n";
         throw std::domain_error(msg);
     }
 
     _logfile.log(std::ostringstream().flush() << 
-                 _logfile.getTime() << " setDiffuseParticleEmissionRates: " << r << std::endl);
+                 _logfile.getTime() << " setDiffuseParticleDustEmissionRate: " << r << std::endl);
 
-    _diffuseMaterial.setDiffuseParticleEmissionRates(r);
-}
-
-void FluidSimulation::setDiffuseParticleEmissionRates(double rwc, 
-                                                      double rt) {
-    if (rwc < 0 || rt < 0) {
-        std::string msg = "Error: emission rates must be greater than or equal to 0.\n";
-        msg += "wavecrest emission rate: " + _toString(rwc) + "\n";
-        msg += "turbulence emission rate: " + _toString(rt) + "\n";
-        throw std::domain_error(msg);
-    }
-
-    _logfile.log(std::ostringstream().flush() << 
-                 _logfile.getTime() << " setDiffuseParticleEmissionRates: " << 
-                 rwc << " " << rt << std::endl);
-
-    _diffuseMaterial.setDiffuseParticleEmissionRates(rwc, rt);
+    _diffuseMaterial.setDiffuseParticleDustEmissionRate(r);
 }
 
 double FluidSimulation::getDiffuseFoamAdvectionStrength() {
@@ -1160,6 +1197,23 @@ void FluidSimulation::setDiffuseBubbleDragCoefficient(double d) {
     _diffuseMaterial.setBubbleDragCoefficient(d);
 }
 
+double FluidSimulation::getDiffuseDustDragCoefficient() {
+    return _diffuseMaterial.getDustDragCoefficient();
+}
+
+void FluidSimulation::setDiffuseDustDragCoefficient(double d) {
+    if (d < 0.0 || d > 1.0) {
+        std::string msg = "Error: drag coefficient must be in range [0.0, 1.0].\n";
+        msg += "coefficient: " + _toString(d) + "\n";
+        throw std::domain_error(msg);
+    }
+
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " setDiffuseDustDragCoefficient: " << d << std::endl);
+
+    _diffuseMaterial.setDustDragCoefficient(d);
+}
+
 double FluidSimulation::getDiffuseBubbleBouyancyCoefficient() {
     return _diffuseMaterial.getBubbleBouyancyCoefficient();
 }
@@ -1171,6 +1225,17 @@ void FluidSimulation::setDiffuseBubbleBouyancyCoefficient(double b) {
     _diffuseMaterial.setBubbleBouyancyCoefficient(b);
 }
 
+double FluidSimulation::getDiffuseDustBouyancyCoefficient() {
+    return _diffuseMaterial.getDustBouyancyCoefficient();
+}
+
+void FluidSimulation::setDiffuseDustBouyancyCoefficient(double b) {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " setDiffuseDustBouyancyCoefficient: " << b << std::endl);
+
+    _diffuseMaterial.setDustBouyancyCoefficient(b);
+}
+
 double FluidSimulation::getDiffuseSprayDragCoefficient() {
     return _diffuseMaterial.getSprayDragCoefficient();
 }
@@ -1180,6 +1245,23 @@ void FluidSimulation::setDiffuseSprayDragCoefficient(double d) {
                  _logfile.getTime() << " setDiffuseSprayDragCoefficient: " << d << std::endl);
 
     _diffuseMaterial.setSprayDragCoefficient(d);
+}
+
+double FluidSimulation::getDiffuseSprayEmissionSpeed() {
+    return _diffuseMaterial.getSprayEmissionSpeed();
+}
+
+void FluidSimulation::setDiffuseSprayEmissionSpeed(double d) {
+    if (d < 1.0) {
+        std::string msg = "Error: spray emission speed must be greater than or equal to 1.0.\n";
+        msg += "speed: " + _toString(d) + "\n";
+        throw std::domain_error(msg);
+    }
+
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " setDiffuseSprayEmissionSpeed: " << d << std::endl);
+
+    _diffuseMaterial.setSprayEmissionSpeed(d);
 }
 
 LimitBehaviour FluidSimulation::getDiffuseFoamLimitBehaviour() {
@@ -1242,6 +1324,26 @@ void FluidSimulation::setDiffuseSprayLimitBehaviour(LimitBehaviour b) {
     _diffuseMaterial.setSprayLimitBehavour(b);
 }
 
+LimitBehaviour FluidSimulation::getDiffuseDustLimitBehaviour() {
+    return _diffuseMaterial.getDustLimitBehaviour();
+}
+
+void FluidSimulation::setDiffuseDustLimitBehaviour(LimitBehaviour b) {
+    std::string typestr;
+    if (b == LimitBehaviour::collide) {
+        typestr = "collide";
+    } else if (b == LimitBehaviour::ballistic) {
+        typestr = "ballistic";
+    } else if (b == LimitBehaviour::kill) {
+        typestr = "kill";
+    }
+
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " setDiffuseDustLimitBehaviour: " << typestr << std::endl);
+
+    _diffuseMaterial.setDustLimitBehavour(b);
+}
+
 std::vector<bool> FluidSimulation::getDiffuseFoamActiveBoundarySides() {
     return _diffuseMaterial.getFoamActiveBoundarySides();
 }
@@ -1297,6 +1399,25 @@ void FluidSimulation::setDiffuseSprayActiveBoundarySides(std::vector<bool> activ
                  active[3] << " " << active[4] << " " << active[5] << std::endl);
 
     _diffuseMaterial.setSprayActiveBoundarySides(active);
+}
+
+std::vector<bool> FluidSimulation::getDiffuseDustActiveBoundarySides() {
+    return _diffuseMaterial.getDustActiveBoundarySides();
+}
+
+void FluidSimulation::setDiffuseDustActiveBoundarySides(std::vector<bool> active) {
+    if (active.size() != 6) {
+        std::string msg = "Error: dust active boundary vector must be of length 6.\n";
+        msg += "length: " + _toString(active.size()) + "\n";
+        throw std::domain_error(msg);
+    }
+
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " setDiffuseDustActiveBoundarySides: " << 
+                 active[0] << " " << active[1] << " " << active[2] << " " << 
+                 active[3] << " " << active[4] << " " << active[5] << std::endl);
+
+    _diffuseMaterial.setDustActiveBoundarySides(active);
 }
 
 double FluidSimulation::getDiffuseObstacleInfluenceBaseLevel() {
@@ -2052,6 +2173,10 @@ std::vector<char>* FluidSimulation::getDiffuseSprayData() {
     return &_outputData.diffuseSprayData;
 }
 
+std::vector<char>* FluidSimulation::getDiffuseDustData() {
+    return &_outputData.diffuseDustData;
+}
+
 std::vector<char>* FluidSimulation::getDiffuseFoamBlurData() {
     return &_outputData.diffuseFoamBlurData;
 }
@@ -2062,6 +2187,10 @@ std::vector<char>* FluidSimulation::getDiffuseBubbleBlurData() {
 
 std::vector<char>* FluidSimulation::getDiffuseSprayBlurData() {
     return &_outputData.diffuseSprayBlurData;
+}
+
+std::vector<char>* FluidSimulation::getDiffuseDustBlurData() {
+    return &_outputData.diffuseDustBlurData;
 }
 
 std::vector<char>* FluidSimulation::getFluidParticleData() {
@@ -2257,6 +2386,9 @@ void FluidSimulation::_initializeSimulationGrids(int isize, int jsize, int ksize
     _domainMeshObject = MeshObject(isize, jsize, ksize, dx);
     _domainMeshObject.updateMeshStatic(domainBoundaryMesh);
     _domainMeshObject.setFriction(_domainBoundaryFriction);
+    _domainMeshObject.setWhitewaterInfluence(1.0);
+    _domainMeshObject.setDustEmissionStrength(1.0);
+    _domainMeshObject.setAsDomainObject();
     t.stop();
 
     _logfile.log("Constructing Level Sets:       \t", t.getTime(), 4, 1);
@@ -4645,11 +4777,13 @@ void FluidSimulation::_outputDiffuseMaterial() {
         _diffuseMaterial.getFoamParticleFileDataWWP(_outputData.diffuseFoamData);
         _diffuseMaterial.getBubbleParticleFileDataWWP(_outputData.diffuseBubbleData);
         _diffuseMaterial.getSprayParticleFileDataWWP(_outputData.diffuseSprayData);
+        _diffuseMaterial.getDustParticleFileDataWWP(_outputData.diffuseDustData);
 
-        int nspray, nbubble, nfoam;
+        int nspray, nbubble, nfoam, ndust;
         _diffuseMaterial.getDiffuseParticleTypeCounts(&nfoam, 
                                                       &nbubble, 
-                                                      &nspray);
+                                                      &nspray,
+                                                      &ndust);
         _outputData.frameData.foam.enabled = 1;
         _outputData.frameData.foam.vertices = nfoam;
         _outputData.frameData.foam.triangles = 0;
@@ -4665,11 +4799,17 @@ void FluidSimulation::_outputDiffuseMaterial() {
         _outputData.frameData.spray.triangles = 0;
         _outputData.frameData.spray.bytes = _outputData.diffuseSprayData.size();
 
+        _outputData.frameData.dust.enabled = 1;
+        _outputData.frameData.dust.vertices = ndust;
+        _outputData.frameData.dust.triangles = 0;
+        _outputData.frameData.dust.bytes = _outputData.diffuseDustData.size();
+
         if (_isWhitewaterMotionBlurEnabled) {
             double dt = _currentFrameDeltaTime;
             _diffuseMaterial.getFoamParticleBlurFileDataWWP(_outputData.diffuseFoamBlurData, dt);
             _diffuseMaterial.getBubbleParticleBlurFileDataWWP(_outputData.diffuseBubbleBlurData, dt);
             _diffuseMaterial.getSprayParticleBlurFileDataWWP(_outputData.diffuseSprayBlurData, dt);
+            _diffuseMaterial.getDustParticleBlurFileDataWWP(_outputData.diffuseDustBlurData, dt);
 
             _outputData.frameData.foamblur.enabled = 1;
             _outputData.frameData.foamblur.vertices = nfoam;
@@ -4685,6 +4825,11 @@ void FluidSimulation::_outputDiffuseMaterial() {
             _outputData.frameData.sprayblur.vertices = nspray;
             _outputData.frameData.sprayblur.triangles = 0;
             _outputData.frameData.sprayblur.bytes = (unsigned int)_outputData.diffuseSprayBlurData.size();
+
+            _outputData.frameData.dustblur.enabled = 1;
+            _outputData.frameData.dustblur.vertices = ndust;
+            _outputData.frameData.dustblur.triangles = 0;
+            _outputData.frameData.dustblur.bytes = (unsigned int)_outputData.diffuseDustBlurData.size();
         }
 
     } else {
@@ -5071,15 +5216,17 @@ void FluidSimulation::_logStepInfo() {
     _logfile.logString(ss.str());
 
     if (_isDiffuseMaterialOutputEnabled) {
-        int spraycount, bubblecount, foamcount;
+        int spraycount, bubblecount, foamcount, dustcount;
         _diffuseMaterial.getDiffuseParticleTypeCounts(&foamcount, 
                                                       &bubblecount, 
-                                                      &spraycount);
+                                                      &spraycount,
+                                                      &dustcount);
         std::stringstream dss;
         dss << "Diffuse Particles: " << getNumDiffuseParticles() << std::endl << 
           "    Foam:          " << foamcount << std::endl << 
           "    Bubble:        " << bubblecount << std::endl << 
-          "    Spray:         " << spraycount;
+          "    Spray:         " << spraycount << std::endl << 
+          "    Dust:          " << dustcount;
         _logfile.newline();
         _logfile.logString(dss.str());
     }
