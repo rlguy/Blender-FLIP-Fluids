@@ -49,7 +49,8 @@ class ExportFluidSimulation(bpy.types.Operator):
         objects = (simprops.get_fluid_objects() +
                    simprops.get_obstacle_objects() +
                    simprops.get_inflow_objects() + 
-                   simprops.get_outflow_objects())
+                   simprops.get_outflow_objects() + 
+                   simprops.get_force_field_objects())
         object_names = [obj.name for obj in objects]
 
         export_dir = self._get_export_directory()

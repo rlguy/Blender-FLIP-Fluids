@@ -97,14 +97,16 @@ def set_object_display_type(obj, display_type):
 
 def set_object_hide_viewport(obj, display_bool):
     if is_blender_28():
-        obj.hide_viewport = display_bool
+        if obj.hide_get() != display_bool:
+                obj.hide_set(display_bool)
     else:
-        obj.hide = display_bool
+        if obj.hide != display_bool:
+            obj.hide = display_bool
 
 
 def get_object_hide_viewport(obj):
     if is_blender_28():
-        return obj.hide_viewport
+        return obj.hide_get()
     else:
         return obj.hide
 
@@ -230,19 +232,38 @@ def depsgraph_update(context=None):
 
 
 def object_to_triangle_mesh(obj, matrix_world=None):
+    is_b3d_28 = is_blender_28()
+
+    # To ensure the modifier stack is processed in 2.8, the object's 'hide in viewport'
+    # must be False. This is a limitation of how meshes or exported in Blender.
+    # The 'hide in viewport' status will be set back to the original value at the
+    # end of this method.
+    #
+    # More info: https://developer.blender.org/T71556
+    if is_b3d_28:
+        hide_viewport_status = obj.hide_viewport
+        if hide_viewport_status:
+            obj.hide_viewport = False
+
+    # The 'Edge Split' modifier will disconnect faces from eachother, resulting in
+    # a non-manifold mesh. Disable the edge split modifier from the modifier stack
+    # before exporting. Original value will be set back at the end of this method
     edge_split_show_render_values = []
+    edge_split_show_viewport_values = []
     for m in obj.modifiers:
         if m.type == 'EDGE_SPLIT':
             edge_split_show_render_values.append(m.show_render)
+            edge_split_show_viewport_values.append(m.show_viewport)
             m.show_render = False
+            m.show_viewport = False
 
     triangulation_mod = obj.modifiers.new("flip_triangulate", "TRIANGULATE")
+    triangulation_mod.quad_method = 'FIXED'
 
-    is_28 = is_blender_28()
-    if is_28:
+    if is_b3d_28:
         depsgraph = bpy.context.evaluated_depsgraph_get()
         obj_eval = obj.evaluated_get(depsgraph)
-        new_mesh = obj_eval.to_mesh()
+        new_mesh = obj_eval.to_mesh(preserve_all_data_layers=True, depsgraph=depsgraph)
     else:
         new_mesh = obj.to_mesh(scene=bpy.context.scene, 
                                apply_modifiers=True, 
@@ -256,7 +277,7 @@ def object_to_triangle_mesh(obj, matrix_world=None):
             vertex_components.append(v.y)
             vertex_components.append(v.z)
     else:
-        if is_28:
+        if is_b3d_28:
             for mv in new_mesh.vertices:
                 v = matrix_world @ mv.co
                 vertex_components.append(v.x)
@@ -278,7 +299,7 @@ def object_to_triangle_mesh(obj, matrix_world=None):
     tmesh.vertices = array.array('f', vertex_components)
     tmesh.triangles = array.array('i', triangle_indices)
 
-    if is_28:
+    if is_b3d_28:
         obj_eval.to_mesh_clear()
     else:
         new_mesh.user_clear()
@@ -289,6 +310,11 @@ def object_to_triangle_mesh(obj, matrix_world=None):
     for m in obj.modifiers:
         if m.type == 'EDGE_SPLIT':
             m.show_render = edge_split_show_render_values.pop(0)
+            m.show_viewport = edge_split_show_viewport_values.pop(0)
+
+    if is_b3d_28:
+        if hide_viewport_status != obj.hide_viewport:
+            obj.hide_viewport = hide_viewport_status
 
     return tmesh
 

@@ -75,12 +75,16 @@ class FLIPFLUID_PT_DomainTypeAdvancedPanel(bpy.types.Panel):
             elif aprops.threading_mode == 'THREADING_MODE_FIXED':
                 row.prop(aprops, "num_threads_fixed")
             
+            # Performance and optimization settings are hidden from the UI.
+            # These should always be enabled for performance.
+            """
             column = self.layout.column(align=True)
             column.separator()
             column.label(text="Performance and Optimization:")
             column.prop(aprops, "enable_asynchronous_meshing")
             column.prop(aprops, "precompute_static_obstacles")
             column.prop(aprops, "reserve_temporary_grids")
+            """
 
             column = self.layout.column(align=True)
             column.separator()

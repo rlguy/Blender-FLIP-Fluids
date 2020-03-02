@@ -40,31 +40,15 @@ class FLIPFLUID_PT_DomainTypeFluidSurfacePanel(bpy.types.Panel):
         box = self.layout.box()
         column = box.column(align=True)
 
+        column.label(text="Surface Mesh:")
+        column.prop(sprops, "subdivisions")
+        row = column.row(align=True)
+        if sprops.particle_scale < 0.999:
+            row.alert = True
+        row.prop(sprops, "particle_scale")
+
         if not show_advanced:
-            column.label(text="Surface Mesh:")
-            column.prop(sprops, "subdivisions")
-            column.prop(sprops, "particle_scale")
             return
-
-        split = column.split()
-        column_surface = split.column(align=True)
-        column_chunks = split.column(align=True)
-
-        column_surface.label(text="Surface Mesh:")
-        column_surface.prop(sprops, "subdivisions")
-        column_surface.prop(sprops, "particle_scale")
-
-        split = column_chunks.split(align=True)
-        column_left = split.column(align=True)
-        column_left.label(text="Compute Chunks:")
-        row = column_left.row(align=True)
-        row.prop(sprops, "compute_chunk_mode", expand=True)
-        row = column_left.row(align=True)
-        if sprops.compute_chunk_mode == 'COMPUTE_CHUNK_MODE_AUTO':
-            row.enabled = False
-            row.prop(sprops, "compute_chunks_auto")
-        elif sprops.compute_chunk_mode == 'COMPUTE_CHUNK_MODE_FIXED':
-            row.prop(sprops, "compute_chunks_fixed")
 
         object_collection = vcu.get_scene_collection()
         if vcu.is_blender_28():

@@ -66,6 +66,11 @@ class DomainCacheProperties(bpy.types.PropertyGroup):
             description="Also delete log files when freeing cache directory",
             default=False,
             ); exec(conv("clear_cache_directory_logs"))
+    clear_cache_directory_export = BoolProperty(
+            name="Clear export files",
+            description="Also delete exported settings and objects when freeing cache directory",
+            default=False,
+            ); exec(conv("clear_cache_directory_export"))
     logfile_name = StringProperty(
             default=os.path.join(temp_directory, "flip_fluid_log.txt"), 
             subtype='FILE_NAME',

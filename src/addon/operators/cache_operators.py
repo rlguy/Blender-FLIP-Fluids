@@ -56,10 +56,20 @@ class FlipFluidFreeCache(bpy.types.Operator):
         self.delete_cache_directory(bakefiles_dir, ".bobj")
         self.delete_cache_directory(bakefiles_dir, ".wwp")
         self.delete_cache_directory(bakefiles_dir, ".fpd")
+        self.delete_cache_directory(bakefiles_dir, ".ffd")
 
-        if dprops.cache.clear_cache_directory_logs:
+        logs_dir = os.path.join(cache_dir, "logs")
+        if os.path.isdir(logs_dir) and dprops.cache.clear_cache_directory_logs:
             logs_dir = os.path.join(cache_dir, "logs")
             self.delete_cache_directory(logs_dir, ".txt")
+
+        export_dir = os.path.join(cache_dir, "export")
+        if os.path.isdir(export_dir) and dprops.cache.clear_cache_directory_export:
+            for subdir in os.listdir(export_dir):
+                object_dir = os.path.join(export_dir, subdir)
+                self.delete_cache_directory(object_dir, ".info")
+                self.delete_cache_directory(object_dir, ".bobj")
+            self.delete_cache_directory(export_dir, ".sim")
 
         temp_dir = os.path.join(cache_dir, "temp")
         self.delete_cache_directory(temp_dir, ".data")
@@ -150,6 +160,7 @@ class FlipFluidFreeUnheldCacheFiles(bpy.types.Operator):
         self.delete_unheld_cache_directory(bakefiles_dir, ".bobj")
         self.delete_unheld_cache_directory(bakefiles_dir, ".wwp")
         self.delete_unheld_cache_directory(bakefiles_dir, ".fpd")
+        self.delete_unheld_cache_directory(bakefiles_dir, ".ffd")
 
 
     def count_directory_bytes(self, dirpath):
@@ -374,7 +385,12 @@ class FlipFluidRelativeCacheDirectory(bpy.types.Operator):
             return {'CANCELLED'}
 
         cache_directory = dprops.cache.get_cache_abspath()
-        relpath = os.path.relpath(cache_directory, blend_filepath)
+
+        try:
+            relpath = os.path.relpath(cache_directory, blend_filepath)
+        except ValueError:
+            self.report({"ERROR"}, "Relative path requires Blend file and cache directory to be on the same drive")
+            return {'CANCELLED'}
 
         relprefix = "//"
         dprops.cache.cache_directory = relprefix + relpath

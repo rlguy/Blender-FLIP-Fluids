@@ -38,6 +38,7 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             name="Playback Offset",
             description="Frame offset for simulation playback",
             default=0,
+            options={'HIDDEN'},
             ); exec(conv("playback_frame_offset"))
 
 

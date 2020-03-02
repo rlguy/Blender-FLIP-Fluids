@@ -240,8 +240,21 @@ class FLIPFLUID_PT_DomainTypePanel(bpy.types.Panel):
         show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
 
         column = box.column(align=True)
-        column.label(text="Timing:")
+        column.label(text="Frame Rate:")
 
+        row = column.row(align=True)
+        row.prop(sprops, "frame_rate_mode", expand=True)
+        column = column.column(align=True)
+        column.enabled = sprops.frame_rate_mode == 'FRAME_RATE_MODE_CUSTOM'
+        if sprops.frame_rate_mode == 'FRAME_RATE_MODE_SCENE':
+            column.prop(context.scene.render, "fps", text="Scene Frame Rate")
+        else:
+            column.prop(sprops, "frame_rate_custom", text="Custom Frame Rate")
+
+        column = box.column()
+        column.prop(sprops, "time_scale")
+
+        """
         split = vcu.ui_split(column, factor=0.5)
 
         if show_advanced:
@@ -262,6 +275,7 @@ class FLIPFLUID_PT_DomainTypePanel(bpy.types.Panel):
             column = box.column(align=False)
             column.prop(sprops, "frames_per_second")
             column.prop(sprops, "time_scale")
+        """
 
 
     def draw(self, context):

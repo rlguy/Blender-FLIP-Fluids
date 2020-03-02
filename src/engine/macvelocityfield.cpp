@@ -63,6 +63,10 @@ double MACVelocityField::getGridCellSize() {
     return _dx;
 }
 
+void MACVelocityField::setOutOfRangeVector(vmath::vec3 v) {
+    _outOfRangeVector = v;
+}
+
 void MACVelocityField::clearU() {
     _u.fill(0.0);
 }
@@ -107,7 +111,7 @@ float* MACVelocityField::getRawArrayW() {
 
 float MACVelocityField::U(int i, int j, int k) {
     if (!isIndexInRangeU(i, j, k)) {
-        return _default_out_of_range_value;
+        return _outOfRangeVector.x;
     }
 
     return _u(i, j, k);
@@ -115,7 +119,7 @@ float MACVelocityField::U(int i, int j, int k) {
 
 float MACVelocityField::V(int i, int j, int k) {
     if (!isIndexInRangeV(i, j, k)) {
-        return _default_out_of_range_value;
+        return _outOfRangeVector.y;
     }
 
     return _v(i, j, k);
@@ -123,7 +127,7 @@ float MACVelocityField::V(int i, int j, int k) {
 
 float MACVelocityField::W(int i, int j, int k) {
     if (!isIndexInRangeW(i, j, k)) {
-        return _default_out_of_range_value;
+        return _outOfRangeVector.z;
     }
 
     return _w(i, j, k);
@@ -131,7 +135,7 @@ float MACVelocityField::W(int i, int j, int k) {
 
 float MACVelocityField::U(GridIndex g) {
     if (!isIndexInRangeU(g)) {
-        return _default_out_of_range_value;
+        return _outOfRangeVector.x;
     }
 
     return _u(g);
@@ -139,7 +143,7 @@ float MACVelocityField::U(GridIndex g) {
 
 float MACVelocityField::V(GridIndex g) {
     if (!isIndexInRangeV(g)) {
-        return _default_out_of_range_value;
+        return _outOfRangeVector.y;
     }
 
     return _v(g);
@@ -147,7 +151,7 @@ float MACVelocityField::V(GridIndex g) {
 
 float MACVelocityField::W(GridIndex g) {
     if (!isIndexInRangeW(g)) {
-        return _default_out_of_range_value;
+        return _outOfRangeVector.z;
     }
 
     return _w(g);
@@ -530,7 +534,8 @@ double MACVelocityField::_interpolateLinearU(double x, double y, double z) {
     double iy = (y - gy)*inv_dx;
     double iz = (z - gz)*inv_dx;
 
-    double points[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    double oor = (double)_outOfRangeVector.x;
+    double points[8] = {oor, oor, oor, oor, oor, oor, oor, oor};
     if (_u.isIndexInRange(i,   j,   k))   { points[0] = _u(i,   j,   k); }
     if (_u.isIndexInRange(i+1, j,   k))   { points[1] = _u(i+1, j,   k); }
     if (_u.isIndexInRange(i,   j+1, k))   { points[2] = _u(i,   j+1, k); }
@@ -561,7 +566,8 @@ double MACVelocityField::_interpolateLinearV(double x, double y, double z) {
     double iy = (y - gy)*inv_dx;
     double iz = (z - gz)*inv_dx;
 
-    double points[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    double oor = (double)_outOfRangeVector.y;
+    double points[8] = {oor, oor, oor, oor, oor, oor, oor, oor};
     if (_v.isIndexInRange(i,   j,   k))   { points[0] = _v(i,   j,   k); }
     if (_v.isIndexInRange(i+1, j,   k))   { points[1] = _v(i+1, j,   k); }
     if (_v.isIndexInRange(i,   j+1, k))   { points[2] = _v(i,   j+1, k); }
@@ -592,7 +598,8 @@ double MACVelocityField::_interpolateLinearW(double x, double y, double z) {
     double iy = (y - gy)*inv_dx;
     double iz = (z - gz)*inv_dx;
 
-    double points[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    double oor = (double)_outOfRangeVector.z;
+    double points[8] = {oor, oor, oor, oor, oor, oor, oor, oor};
     if (_w.isIndexInRange(i,   j,   k))   { points[0] = _w(i,   j,   k); }
     if (_w.isIndexInRange(i+1, j,   k))   { points[1] = _w(i+1, j,   k); }
     if (_w.isIndexInRange(i,   j+1, k))   { points[2] = _w(i,   j+1, k); }
@@ -635,6 +642,30 @@ vmath::vec3 MACVelocityField::evaluateVelocityAtPositionLinear(double x, double 
     double zvel = _interpolateLinearW(x, y, z);
 
     return vmath::vec3(xvel, yvel, zvel);
+}
+
+float MACVelocityField::evaluateVelocityAtPositionLinearU(double x, double y, double z) {
+    if (!Grid3d::isPositionInGrid(x, y, z, _dx, _isize, _jsize, _ksize)) {
+        return 0.0f;
+    }
+
+    return _interpolateLinearU(x, y, z);
+}
+
+float MACVelocityField::evaluateVelocityAtPositionLinearV(double x, double y, double z) {
+    if (!Grid3d::isPositionInGrid(x, y, z, _dx, _isize, _jsize, _ksize)) {
+        return 0.0f;
+    }
+
+    return _interpolateLinearV(x, y, z);
+}
+
+float MACVelocityField::evaluateVelocityAtPositionLinearW(double x, double y, double z) {
+    if (!Grid3d::isPositionInGrid(x, y, z, _dx, _isize, _jsize, _ksize)) {
+        return 0.0f;
+    }
+
+    return _interpolateLinearW(x, y, z);
 }
 
 void MACVelocityField::extrapolateVelocityField(ValidVelocityComponentGrid &validGrid, 

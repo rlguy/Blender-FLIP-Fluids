@@ -65,6 +65,8 @@ public:
     MeshObject(int i, int j, int k, double dx);
     ~MeshObject();
     
+    void resizeGrid(int isize, int jsize, int ksize, double dx);
+
     void getGridDimensions(int *i, int *j, int *k);
     void updateMeshStatic(TriangleMesh meshCurrent);
     void updateMeshAnimated(TriangleMesh meshPrevious, 
@@ -126,7 +128,8 @@ private:
     MeshLevelSet _getMeshIslandLevelSet(TriangleMesh &m, 
                                         std::vector<vmath::vec3> &velocities, 
                                         MeshLevelSet &domainLevelSet,
-                                        int exactBand);
+                                        int exactBand,
+                                        bool *success);
     void _expandMeshIslands(std::vector<TriangleMesh> &islands);
     void _expandMeshIsland(TriangleMesh &m);
     void _addMeshIslandsToLevelSet(std::vector<TriangleMesh> &islands,
@@ -144,6 +147,8 @@ private:
                                            int exactBand);
     bool _isMeshChanged();
 
+    void _sortTriangleIndices(Triangle &t);
+    bool _isTriangleEqual(Triangle &t1, Triangle &t2);
     bool _isTopologyConsistent(TriangleMesh &m1, TriangleMesh &m2);
 
     int _isize = 0;

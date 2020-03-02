@@ -22,6 +22,7 @@ if "bpy" in locals():
         'obstacle_properties',
         'inflow_properties',
         'outflow_properties',
+        'force_field_properties',
         'domain_properties',
     ]
     for module_name in reloadable_modules:
@@ -44,7 +45,8 @@ from . import (
         fluid_properties,
         obstacle_properties,
         inflow_properties,
-        outflow_properties
+        outflow_properties,
+        force_field_properties
         )
 from .. import types
 from ..utils import version_compatibility_utils as vcu
@@ -86,14 +88,19 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
             description="",
             type=outflow_properties.FlipFluidOutflowProperties,
             ); exec(conv("outflow"))
+    force_field = PointerProperty(
+            name="Flip Fluid Force Field Properties",
+            description="",
+            type=force_field_properties.FlipFluidForceFieldProperties,
+            ); exec(conv("force_field"))
     object_type = EnumProperty(
             name="Type",
             description="Type of participation in the FLIP fluid simulation",
             items=types.object_types,
-            default='TYPE_NONE',
             get=lambda self: self._get_object_type(),
             set=lambda self, value: self._set_object_type(value),
             update=lambda self, context: self._update_object_type(context),
+            options={'HIDDEN'},
             ); exec(conv("object_type"))
     saved_view_settings = PointerProperty(
             name="Saved View Settings",
@@ -155,6 +162,10 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
         return self.object_type == 'TYPE_OUTFLOW'
 
 
+    def is_force_field(self):
+        return self.object_type == 'TYPE_FORCE_FIELD'
+
+
     def get_property_group(self):
         if self.is_domain():
             return self.domain
@@ -166,6 +177,8 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
             return self.inflow
         if self.is_outflow():
             return self.outflow
+        if self.is_force_field():
+            return self.force_field
 
 
     def _get_object_type(self):
@@ -209,6 +222,8 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
             newtype = 'TYPE_INFLOW'
         elif value == 5:
             newtype = 'TYPE_OUTFLOW'
+        elif value == 6:
+            newtype = 'TYPE_FORCE_FIELD'
         else:
             newtype = 'TYPE_NONE'
 
@@ -241,6 +256,9 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
             if newtype == 'TYPE_OUTFLOW':
                 active_object.flip_fluid.outflow.initialize()
                 self._toggle_cycles_ray_visibility(active_object, False)
+            if newtype == 'TYPE_FORCE_FIELD':
+                active_object.flip_fluid.force_field.initialize()
+                self._toggle_cycles_ray_visibility(active_object, False)
 
 
     def _update_object_type(self, context):
@@ -248,7 +266,31 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
         primary_layer = 0
         object_layer = 14
 
-        errmsg = ""
+        if obj.type == 'EMPTY' and self.object_type != 'TYPE_FORCE_FIELD' and self.object_type != 'TYPE_NONE':
+            flip_type = ""
+            if self.object_type == 'TYPE_DOMAIN':
+                flip_type = "Domain"
+            elif self.object_type == 'TYPE_FLUID':
+                flip_type = "Fluid"
+            elif self.object_type == 'TYPE_OBSTACLE':
+                flip_type = "Obstacle"
+            elif self.object_type == 'TYPE_INFLOW':
+                flip_type = "Inflow"
+            elif self.object_type == 'TYPE_OUTFLOW':
+                flip_type = "Outflow"
+
+            self.object_type = 'TYPE_NONE'
+
+            errmsg = "Empty type objects cannot be set as a FLIP Fluid " + flip_type + "."
+            errdesc = "Empty type objects are only supported as a FLIP Fluid Force Field."
+            bpy.ops.flip_fluid_operators.display_error(
+                'INVOKE_DEFAULT',
+                error_message=errmsg,
+                error_description=errdesc,
+                popup_width=600
+                )
+            return
+
         if self.object_type == 'TYPE_DOMAIN':
             obj.hide_render = True
             vcu.set_object_display_type(obj, 'BOUNDS')
@@ -319,6 +361,13 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
                         )
                 return
 
+            obj.hide_render = True
+            vcu.set_object_display_type(obj, 'WIRE')
+            obj.show_name = True
+            self._set_object_layer(obj, object_layer)
+            self._set_scene_layer(context.scene, object_layer)
+
+        elif self.object_type == 'TYPE_FORCE_FIELD':
             obj.hide_render = True
             vcu.set_object_display_type(obj, 'WIRE')
             obj.show_name = True
@@ -416,6 +465,7 @@ def load_post():
     fluid_properties.load_post()
     inflow_properties.load_post()
     outflow_properties.load_post()
+    force_field_properties.load_post()
 
 
 def save_pre():
@@ -432,6 +482,7 @@ def register():
     fluid_properties.register()
     inflow_properties.register()
     outflow_properties.register()
+    force_field_properties.register()
     bpy.utils.register_class(ObjectViewSettings)
     bpy.utils.register_class(FlipFluidObjectProperties)
 
@@ -442,5 +493,6 @@ def unregister():
     fluid_properties.unregister()
     inflow_properties.unregister()
     outflow_properties.unregister()
+    force_field_properties.unregister()
     bpy.utils.unregister_class(ObjectViewSettings)
     bpy.utils.unregister_class(FlipFluidObjectProperties)

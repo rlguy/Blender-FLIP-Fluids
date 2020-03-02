@@ -39,6 +39,53 @@ def is_bake_operator_running():
     return _IS_BAKE_OPERATOR_RUNNING
 
 
+def _delete_cache_file(filepath):
+    try:
+        os.remove(filepath)
+    except OSError:
+        pass
+
+
+def _update_stats(context):
+    dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+    cache_dir = dprops.cache.get_cache_abspath()
+    statsfilepath = os.path.join(cache_dir, dprops.stats.stats_filename)
+    if not os.path.isfile(statsfilepath):
+        with open(statsfilepath, 'w') as f:
+            f.write(json.dumps({}, sort_keys=True, indent=4))
+
+    temp_dir = os.path.join(cache_dir, "temp")
+    match_str = "framestats" + "[0-9]"*6 + ".data"
+    stat_files = glob.glob(os.path.join(temp_dir, match_str))
+    if not stat_files:
+        return
+
+    with open(statsfilepath, 'r') as f:
+        stats_dict = json.loads(f.read())
+
+    for statpath in stat_files:
+        filename = os.path.basename(statpath)
+        frameno = int(filename[len("framestats"):-len(".data")])
+        with open(statpath, 'r') as frame_stats:
+            try:
+                frame_stats_dict = json.loads(frame_stats.read())
+            except:
+                # stats data may not be finished writing which could
+                # result in a decode error. Skip this data for now and
+                # process the next time stats are updated.
+                continue
+            stats_dict[str(frameno)] = frame_stats_dict
+        _delete_cache_file(statpath)
+
+    with open(statsfilepath, 'w') as f:
+            f.write(json.dumps(stats_dict, sort_keys=True, indent=4))
+
+    dprops.stats.is_stats_current = False
+    context.scene.flip_fluid_helper.frame_complete_callback()
+    dprops.bake.frame_complete_callback()
+
+
+
 class BakeData(object):
     def __init__(self):
         self.reset()
@@ -129,42 +176,7 @@ class BakeFluidSimulation(bpy.types.Operator):
 
 
     def _update_stats(self, context):
-        dprops = self._get_domain_properties()
-        cache_dir = dprops.cache.get_cache_abspath()
-        statsfilepath = os.path.join(cache_dir, dprops.stats.stats_filename)
-        if not os.path.isfile(statsfilepath):
-            with open(statsfilepath, 'w') as f:
-                f.write(json.dumps({}, sort_keys=True, indent=4))
-
-        temp_dir = os.path.join(cache_dir, "temp")
-        match_str = "framestats" + "[0-9]"*6 + ".data"
-        stat_files = glob.glob(os.path.join(temp_dir, match_str))
-        if not stat_files:
-            return
-
-        with open(statsfilepath, 'r') as f:
-            stats_dict = json.loads(f.read())
-
-        for statpath in stat_files:
-            filename = os.path.basename(statpath)
-            frameno = int(filename[len("framestats"):-len(".data")])
-            with open(statpath, 'r') as frame_stats:
-                try:
-                    frame_stats_dict = json.loads(frame_stats.read())
-                except:
-                    # stats data may not be finished writing which could
-                    # result in a decode error. Skip this data for now and
-                    # process the next time stats are updated.
-                    continue
-                stats_dict[str(frameno)] = frame_stats_dict
-            self._delete_cache_file(statpath)
-
-        with open(statsfilepath, 'w') as f:
-                f.write(json.dumps(stats_dict, sort_keys=True, indent=4))
-
-        dprops.stats.is_stats_current = False
-        context.scene.flip_fluid_helper.frame_complete_callback()
-        dprops.bake.frame_complete_callback()
+        _update_stats(context)
 
 
     def _update_status(self, context):
@@ -406,7 +418,8 @@ class BakeFluidSimulationCommandLine(bpy.types.Operator):
         objects = (simprops.get_fluid_objects() +
                    simprops.get_obstacle_objects() +
                    simprops.get_inflow_objects() + 
-                   simprops.get_outflow_objects())
+                   simprops.get_outflow_objects() +
+                   simprops.get_force_field_objects())
         object_names = [obj.name for obj in objects]
 
         export_dir = self._get_export_directory()
@@ -510,40 +523,7 @@ class BakeFluidSimulationCommandLine(bpy.types.Operator):
 
 
     def _update_simulation_stats(self, context):
-        dprops = self._get_domain_properties()
-        cache_dir = dprops.cache.get_cache_abspath()
-        statsfilepath = os.path.join(cache_dir, dprops.stats.stats_filename)
-        if not os.path.isfile(statsfilepath):
-            with open(statsfilepath, 'w') as f:
-                f.write(json.dumps({}, sort_keys=True, indent=4))
-
-        temp_dir = os.path.join(cache_dir, "temp")
-        match_str = "framestats" + "[0-9]"*6 + ".data"
-        stat_files = glob.glob(os.path.join(temp_dir, match_str))
-        if not stat_files:
-            return
-
-        with open(statsfilepath, 'r') as f:
-            stats_dict = json.loads(f.read())
-
-        for statpath in stat_files:
-            filename = os.path.basename(statpath)
-            frameno = int(filename[len("framestats"):-len(".data")])
-            with open(statpath, 'r') as frame_stats:
-                try:
-                    frame_stats_dict = json.loads(frame_stats.read())
-                except:
-                    # stats data may not be finished writing which could
-                    # result in a decode error. Skip this data for now and
-                    # process the next time stats are updated.
-                    continue
-                stats_dict[str(frameno)] = frame_stats_dict
-            self._delete_cache_file(statpath)
-
-        with open(statsfilepath, 'w') as f:
-                f.write(json.dumps(stats_dict, sort_keys=True, indent=4))
-
-        dprops.stats.is_stats_current = False
+        _update_stats(context)
 
 
     def _run_fluid_simulation(self, context):
@@ -554,6 +534,7 @@ class BakeFluidSimulationCommandLine(bpy.types.Operator):
         dprops.bake.export_filepath = self._get_export_filepath()
         self.data.progress = 0.0
         self.data.is_console_output_enabled = True
+        self._update_simulation_stats(context)
         bake.bake(dprops.bake.export_filepath, cache_directory, self.data, savestate_id)
         self._update_simulation_stats(context)
 
@@ -660,6 +641,7 @@ class FlipFluidResetBake(bpy.types.Operator):
         self._delete_cache_directory(bakefiles_dir, ".bobj")
         self._delete_cache_directory(bakefiles_dir, ".wwp")
         self._delete_cache_directory(bakefiles_dir, ".fpd")
+        self._delete_cache_directory(bakefiles_dir, ".ffd")
 
         temp_dir = os.path.join(cache_dir, "temp")
         self._delete_cache_directory(temp_dir, ".data")

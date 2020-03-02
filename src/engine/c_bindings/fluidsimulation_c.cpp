@@ -629,6 +629,27 @@ extern "C" {
         );
     }
 
+    EXPORTDLL void FluidSimulation_enable_force_field_debug_output(FluidSimulation* obj,
+                                                                   int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableForceFieldDebugOutput, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_force_field_debug_output(FluidSimulation* obj,
+                                                                    int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableForceFieldDebugOutput, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_force_field_debug_output_enabled(FluidSimulation* obj,
+                                                                      int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isForceFieldDebugOutputEnabled, err
+        );
+    }
+
     EXPORTDLL void FluidSimulation_enable_diffuse_material_output(FluidSimulation* obj,
                                                                   int *err) {
         CBindings::safe_execute_method_void_0param(
@@ -1679,6 +1700,43 @@ extern "C" {
         );
     }
 
+    EXPORTDLL void FluidSimulation_enable_force_fields(FluidSimulation* obj, int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableForceFields, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_force_fields(FluidSimulation* obj, int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableForceFields, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_force_fields_enabled(FluidSimulation* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isForceFieldsEnabled, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_get_force_field_reduction_level(FluidSimulation* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getForceFieldReductionLevel, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_set_force_field_reduction_level(FluidSimulation* obj, 
+                                                                   int level, int *err) {
+        return CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setForceFieldReductionLevel, level, err
+        );
+    }
+
+    EXPORTDLL ForceFieldGrid* FluidSimulation_get_force_field_grid(FluidSimulation* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getForceFieldGrid, err
+        );
+    }
+
     EXPORTDLL double FluidSimulation_get_viscosity(FluidSimulation* obj, int *err) {
         return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getViscosity, err
@@ -2325,6 +2383,20 @@ extern "C" {
         return 0;
     }
 
+    EXPORTDLL int FluidSimulation_get_force_field_debug_data_size(FluidSimulation* obj, 
+                                                                  int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getForceFieldDebugData();
+            return (int)data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
     EXPORTDLL int FluidSimulation_get_logfile_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
@@ -2548,6 +2620,18 @@ extern "C" {
         }
     }
 
+    EXPORTDLL void FluidSimulation_get_force_field_debug_data(FluidSimulation* obj, 
+                                                                   char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getForceFieldDebugData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
     EXPORTDLL void FluidSimulation_get_logfile_data(FluidSimulation* obj, 
                                                     char *c_data, int *err) {
         *err = CBindings::SUCCESS;
@@ -2565,6 +2649,83 @@ extern "C" {
         return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getFrameStatsData, err
         );
+    }
+
+    EXPORTDLL void FluidSimulation_get_marker_particle_position_data_range(FluidSimulation* obj, 
+                                                                           int start_idx, int end_idx, char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            obj->getMarkerParticlePositionDataRange(start_idx, end_idx, c_data);
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_marker_particle_velocity_data_range(FluidSimulation* obj, 
+                                                                           int start_idx, int end_idx, char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            obj->getMarkerParticleVelocityDataRange(start_idx, end_idx, c_data);
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_diffuse_particle_position_data_range(FluidSimulation* obj, 
+                                                                            int start_idx, int end_idx, char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            obj->getDiffuseParticlePositionDataRange(start_idx, end_idx, c_data);
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_diffuse_particle_velocity_data_range(FluidSimulation* obj, 
+                                                                            int start_idx, int end_idx, char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            obj->getDiffuseParticleVelocityDataRange(start_idx, end_idx, c_data);
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_diffuse_particle_lifetime_data_range(FluidSimulation* obj, 
+                                                                            int start_idx, int end_idx, char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            obj->getDiffuseParticleLifetimeDataRange(start_idx, end_idx, c_data);
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_diffuse_particle_type_data_range(FluidSimulation* obj, 
+                                                                        int start_idx, int end_idx, char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            obj->getDiffuseParticleTypeDataRange(start_idx, end_idx, c_data);
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_diffuse_particle_id_data_range(FluidSimulation* obj, 
+                                                                      int start_idx, int end_idx, char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            obj->getDiffuseParticleIdDataRange(start_idx, end_idx, c_data);
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
     }
 
     EXPORTDLL void FluidSimulation_get_marker_particle_position_data(FluidSimulation* obj, 

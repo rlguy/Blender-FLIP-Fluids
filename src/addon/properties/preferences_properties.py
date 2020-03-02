@@ -152,6 +152,11 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         column_left.label(text="Info and Links:")
         column_left.operator(
                 "wm.url_open", 
+                text="Recommended Documentation Topics", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki#the-most-important-documentation-topics"
+        column_left.operator(
+                "wm.url_open", 
                 text="Frequently Asked Questions", 
                 icon="WORLD"
             ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Frequently-Asked-Questions"
@@ -165,6 +170,11 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
                 text="Tutorials and Learning Resources", 
                 icon="WORLD"
             ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Video-Learning-Series"
+        column_left.operator(
+                "wm.url_open", 
+                text="Development Blog", 
+                icon="WORLD"
+            ).url = "http://flipfluids.com/blog/"
 
         column_left.separator()
         row = column_left.row(align=True)

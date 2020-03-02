@@ -36,6 +36,13 @@ MeshObject::MeshObject(int i, int j, int k, double dx) :
 MeshObject::~MeshObject() {
 }
 
+void MeshObject::resizeGrid(int isize, int jsize, int ksize, double dx) {
+    _isize = isize;
+    _jsize = jsize;
+    _ksize = ksize;
+    _dx = dx;
+}
+
 void MeshObject::getGridDimensions(int *i, int *j, int *k) { 
     *i = _isize; *j = _jsize; *k = _ksize; 
 }
@@ -234,7 +241,11 @@ void MeshObject::getMeshLevelSet(double dt, float frameInterpolation, int exactB
     _expandMeshIslands(islands);
 
     if ((int)islands.size() < _numIslandsForFractureOptimizationTrigger) {
-        _addMeshIslandsToLevelSet(islands, islandVertexVelocities, exactBand, levelset);
+        std::vector<TriangleMesh> combinedIslands;
+        std::vector<std::vector<vmath::vec3> > combinedIslandVertexVelocities;
+        combinedIslands.push_back(m);
+        combinedIslandVertexVelocities.push_back(vertexVelocities);
+        _addMeshIslandsToLevelSet(combinedIslands, combinedIslandVertexVelocities, exactBand, levelset);
     } else {
         _addMeshIslandsToLevelSetFractureOptimization(
                                   islands, islandVertexVelocities, exactBand, levelset);
@@ -496,8 +507,7 @@ void MeshObject::_getMeshIslands(TriangleMesh &m,
 MeshLevelSet MeshObject::_getMeshIslandLevelSet(TriangleMesh &m, 
                                                 std::vector<vmath::vec3> &velocities, 
                                                 MeshLevelSet &domainLevelSet,
-                                                int exactBand) {
-    
+                                                int exactBand, bool *success) {
     int isize, jsize, ksize;
     domainLevelSet.getGridDimensions(&isize, &jsize, &ksize);
     double dx = domainLevelSet.getCellSize();
@@ -516,10 +526,17 @@ MeshLevelSet MeshObject::_getMeshIslandLevelSet(TriangleMesh &m,
     int gheight = gmax.j - gmin.j;
     int gdepth = gmax.k - gmin.k;
 
+    if (gwidth <= 0 || gheight <= 0 || gdepth <= 0) {
+        *success = false;
+        MeshLevelSet emptylevelset;
+        return emptylevelset;
+    }
+
     MeshLevelSet islandLevelSet(gwidth, gheight, gdepth, dx, this);
     islandLevelSet.setGridOffset(gmin);
     islandLevelSet.fastCalculateSignedDistanceField(m, velocities, exactBand);
 
+    *success = true;
     return islandLevelSet;
 }
 
@@ -563,11 +580,16 @@ void MeshObject::_addMeshIslandsToLevelSet(std::vector<TriangleMesh> &islands,
                                            int exactBand,
                                            MeshLevelSet &levelset) {
     for (size_t i = 0; i < islands.size(); i++) {
+        bool success = true;
         MeshLevelSet islandLevelSet = _getMeshIslandLevelSet(
-                islands[i], islandVertexVelocities[i], levelset, exactBand
+                islands[i], islandVertexVelocities[i], levelset, exactBand, &success
         );
 
-        levelset.calculateUnion(islandLevelSet);
+        // If not successful, this will be caused by the mesh island being outside of the
+        // domain range and will not be computed, should not be unioned
+        if (success) {
+            levelset.calculateUnion(islandLevelSet);
+        }
     }
 }
 
@@ -671,6 +693,23 @@ bool MeshObject::_isMeshChanged() {
     return isMeshChanged;
 }
 
+void MeshObject::_sortTriangleIndices(Triangle &t) {
+    if (t.tri[1] < t.tri[0]) {
+       std::swap(t.tri[0], t.tri[1]); 
+    }
+  
+    if (t.tri[2] < t.tri[1]) { 
+        std::swap(t.tri[1], t.tri[2]); 
+        if (t.tri[1] < t.tri[0]) {
+            std::swap(t.tri[1], t.tri[0]); 
+        } 
+    }
+}
+
+bool MeshObject::_isTriangleEqual(Triangle &t1, Triangle &t2) {
+    return t1.tri[0] == t2.tri[0] && t1.tri[1] == t2.tri[1] && t1.tri[2] == t2.tri[2];
+}
+
 bool MeshObject::_isTopologyConsistent(TriangleMesh &m1, TriangleMesh &m2) {
     if (m1.vertices.size() != m2.vertices.size()) {
         return false;
@@ -680,11 +719,57 @@ bool MeshObject::_isTopologyConsistent(TriangleMesh &m1, TriangleMesh &m2) {
         return false;
     }
 
-    for (size_t i = 0; i < m1.triangles.size(); i++) {
-        Triangle t1 = m1.triangles[i];
-        Triangle t2 = m2.triangles[i];
-        if (t1.tri[0] != t2.tri[0] || t1.tri[1] != t2.tri[1] || t1.tri[2] != t2.tri[2]) {
-            return false;
+    TriangleMesh tempm1 = m1;
+    TriangleMesh tempm2 = m2;
+    std::vector<int> indexcounts1(tempm1.vertices.size(), 0);
+    std::vector<int> indexcounts2(tempm2.vertices.size(), 0);
+    for (size_t i = 0; i < tempm1.triangles.size(); i++) {
+        Triangle t1 = tempm1.triangles[i];
+        Triangle t2 = tempm2.triangles[i];
+        _sortTriangleIndices(t1);
+        _sortTriangleIndices(t2);
+        tempm1.triangles[i] = t1;
+        tempm2.triangles[i] = t2;
+        indexcounts1[tempm1.triangles[i].tri[0]]++;
+        indexcounts2[tempm2.triangles[i].tri[0]]++;
+    }
+
+    std::vector<int> binstarts1(indexcounts1.size());
+    std::vector<int> binstarts2(indexcounts2.size());
+    int currentcount1 = 0;
+    int currentcount2 = 0;
+    for (size_t i = 0; i < indexcounts1.size(); i++) {
+        binstarts1[i] = currentcount1;
+        binstarts2[i] = currentcount2;
+        currentcount1 += indexcounts1[i];
+        currentcount2 += indexcounts2[i];
+    }
+
+    std::vector<Triangle> sortedtris1(tempm1.triangles.size());
+    std::vector<Triangle> sortedtris2(tempm2.triangles.size());
+    std::vector<int> origbinstarts2 = binstarts2;
+    for (size_t i = 0; i < tempm1.triangles.size(); i++) {
+        Triangle t1 = tempm1.triangles[i];
+        Triangle t2 = tempm2.triangles[i];
+        sortedtris1[binstarts1[t1.tri[0]]] = t1;
+        sortedtris2[binstarts2[t2.tri[0]]] = t2;
+        binstarts1[t1.tri[0]]++;
+        binstarts2[t2.tri[0]]++;
+    }
+
+    for (size_t i = 0; i < sortedtris1.size(); i++) {
+        Triangle t1 = sortedtris1[i];
+        int searchidx = t1.tri[0];
+        int startidx = origbinstarts2[searchidx];
+        for (size_t j = startidx; j < sortedtris2.size(); j++) {
+            Triangle t2 = sortedtris2[j];
+            if (t2.tri[0] != searchidx) {
+                return false;
+            }
+
+            if (_isTriangleEqual(t1, t2)) {
+                break;
+            }
         }
     }
 

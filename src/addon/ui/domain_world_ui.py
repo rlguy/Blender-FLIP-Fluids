@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy
+import bpy, math
 
 from ..utils import version_compatibility_utils as vcu
 
@@ -32,56 +32,111 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
         obj_props = vcu.get_active_object(context).flip_fluid
         return obj_props.is_active and obj_props.object_type == "TYPE_DOMAIN"
 
-    def get_domain_size(self, context):
-        domain = vcu.get_active_object(context)
-        minx = miny = minz = float("inf")
-        maxx = maxy = maxz = -float("inf")
-        for v in domain.data.vertices:
-            p = vcu.element_multiply(v.co, domain.matrix_world)
-            minx, miny, minz = min(p.x, minx), min(p.y, miny), min(p.z, minz)
-            maxx, maxy, maxz = max(p.x, maxx), max(p.y, maxy), max(p.z, maxz)
-        return max(maxx - minx, maxy - miny, maxz - minz)
 
     def draw(self, context):
         obj = vcu.get_active_object(context)
+        sprops = obj.flip_fluid.domain.simulation
         wprops = obj.flip_fluid.domain.world
         aprops = obj.flip_fluid.domain.advanced
         show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
 
         if show_advanced:
             box = self.layout.box()
-            box.label(text="World Size:")
+            box.label(text="World Scaling Mode:")
+            row = box.row(align=True)
+            row.prop(wprops, "world_scale_mode", expand=True)
+
             column = box.column(align=True)
             split = column.split(align=True)
             column_left = split.column()
-            column_left.prop(wprops, "enable_real_world_size", 
-                                     text='Enable World Scaling')
-
             column_right = split.column()
-            column_right.enabled = wprops.enable_real_world_size
-            column_right.prop(wprops, "real_world_size")
 
-            column_right_split = vcu.ui_split(column_right, factor=0.66)
-            column_right_left = column_right_split.column()
-            column_right_left.label(text="Size In Viewport:")
+            if wprops.world_scale_mode == 'WORLD_SCALE_MODE_RELATIVE':
+                row = column_left.row(align=True)
+                row.alignment = 'RIGHT'
+                row.label(text="1 Blender Unit = ")
+                column_right.prop(wprops, "world_scale_relative")
+            else:
+                row = column_left.row(align=True)
+                row.alignment = 'RIGHT'
+                row.label(text="Domain Length = ")
+                column_right.prop(wprops, "world_scale_absolute")
 
-            column_right_right = column_right_split.column()
-            size_str = str(round(self.get_domain_size(context), 1)) + "m"
-            column_right_right.label(text=size_str)
+            row = column_left.row(align=True)
+            row.alignment = 'RIGHT'
+            row.label(text="Simulation dimensions:  X = ")
+            row = column_left.row(align=True)
+            row.alignment = 'RIGHT'
+            row.label(text="Y = ")
+            row = column_left.row(align=True)
+            row.alignment = 'RIGHT'
+            row.label(text="Z = ")
+
+            xdims, ydims, zdims = wprops.get_simulation_dimensions(context)
+            xdims_str = '{:.2f}'.format(round(xdims, 2)) + " m"
+            ydims_str = '{:.2f}'.format(round(ydims, 2)) + " m"
+            zdims_str = '{:.2f}'.format(round(zdims, 2)) + " m"
+
+            column_right.label(text=xdims_str)
+            column_right.label(text=ydims_str)
+            column_right.label(text=zdims_str)
 
             box = self.layout.box()
             box.label(text="Gravity:")
+            row = box.row(align=True)
+            row.prop(wprops, "gravity_type", expand=True)
+
             column = box.column(align=True)
             split = column.split(align=True)
             column_left = split.column()
-            column_left.prop(wprops, "gravity_type", text="")
-
             column_right = split.column()
+
+            gvector = wprops.get_gravity_vector()
+            magnitude = (gvector[0] * gvector[0] + gvector[1] * gvector[1] + gvector[2] * gvector[2])**(1.0/2.0)
+            gforce = magnitude / 9.81
+            mag_str = '{:.2f}'.format(round(magnitude, 2))
+            gforce_str = '{:.2f}'.format(round(gforce, 2))
+
+            row = column_left.row(align=True)
+            row.alignment = 'RIGHT'
+            row.label(text="magnitude = " + mag_str)
+            row = column_left.row(align=True)
+            row.alignment = 'RIGHT'
+            row.label(text="g-force = " + gforce_str)
+
             column_right.enabled = not (wprops.gravity_type == 'GRAVITY_TYPE_SCENE')
+
             if wprops.gravity_type == 'GRAVITY_TYPE_SCENE':
                 column_right.prop(context.scene, "gravity", text="")
             elif wprops.gravity_type == 'GRAVITY_TYPE_CUSTOM':
                 column_right.prop(wprops, "gravity", text="")
+
+            # Force field features currently hidden from UI
+            """
+            box.label(text="Force Field Resolution:")
+            column = box.column(align=True)
+            row = column.row(align=True)
+            row.prop(wprops, "force_field_resolution", expand=True)
+
+            column = box.column(align=True)
+            split = column.split(align=True)
+            column_left = split.column(align=True)
+            column_right = split.column(align=True)
+
+            field_resolution = sprops.resolution
+            if wprops.force_field_resolution == 'FORCE_FIELD_RESOLUTION_LOW':
+                field_resolution = int(math.ceil(field_resolution / 4))
+            elif wprops.force_field_resolution == 'FORCE_FIELD_RESOLUTION_NORMAL':
+                field_resolution = int(math.ceil(field_resolution / 3))
+            elif wprops.force_field_resolution == 'FORCE_FIELD_RESOLUTION_HIGH':
+                field_resolution = int(math.ceil(field_resolution / 2))
+
+            row = column_left.row()
+            row.prop(wprops, "force_field_resolution_tooltip", icon="QUESTION", emboss=False, text="")
+            row.label(text="Grid resolution: ")
+            column_right.label(text=str(field_resolution))
+            """
+
 
         box = self.layout.box()
         box.label(text="Viscosity:")

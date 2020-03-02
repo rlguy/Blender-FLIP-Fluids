@@ -60,6 +60,8 @@ public:
     void getGridDimensions(int *i, int *j, int *k);
     double getGridCellSize();
 
+    void setOutOfRangeVector(vmath::vec3 v);
+
     float U(int i, int j, int k);
     float V(int i, int j, int k);
     float W(int i, int j, int k);
@@ -128,6 +130,9 @@ public:
     vmath::vec3 evaluateVelocityAtPosition(double x, double y, double z);
     vmath::vec3 evaluateVelocityAtPosition(vmath::vec3 pos);
     vmath::vec3 evaluateVelocityAtPositionLinear(double x, double y, double z);
+    float evaluateVelocityAtPositionLinearU(double x, double y, double z);
+    float evaluateVelocityAtPositionLinearV(double x, double y, double z);
+    float evaluateVelocityAtPositionLinearW(double x, double y, double z);
     vmath::vec3 evaluateVelocityAtPositionLinear(vmath::vec3 pos);
 
     vmath::vec3 velocityIndexToPositionU(int i, int j, int k);
@@ -151,7 +156,7 @@ private:
     int _jsize = 10;
     int _ksize = 10;
     double _dx = 0.1;
-    float _default_out_of_range_value = 0.0f;
+    vmath::vec3 _outOfRangeVector;
 
     Array3d<float> _u;
     Array3d<float> _v;

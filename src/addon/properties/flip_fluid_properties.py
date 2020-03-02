@@ -160,6 +160,22 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
         return objects
 
 
+    def get_num_force_field_objects(self):
+        n = 0
+        for obj in vcu.get_all_scene_objects():
+            if obj.flip_fluid.is_force_field():
+                n += 1
+        return n
+
+
+    def get_force_field_objects(self):
+        objects = []
+        for obj in vcu.get_all_scene_objects():
+            if obj.flip_fluid.is_force_field():
+                objects.append(obj)
+        return objects
+
+
     def get_logo_icon(self):
         return self.custom_icons.get(self.logo_name)
 

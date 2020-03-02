@@ -486,7 +486,6 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
 
         if self.enable_whitewater_simulation:
             dprops.mesh_cache.initialize_cache_objects()
-            m = dprops.materials.whitewater_foam_material
             dprops.materials.whitewater_foam_material = dprops.materials.whitewater_foam_material
             dprops.materials.whitewater_bubble_material = dprops.materials.whitewater_bubble_material
             dprops.materials.whitewater_spray_material = dprops.materials.whitewater_spray_material

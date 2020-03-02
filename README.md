@@ -9,7 +9,7 @@ Want to try FLIP Fluids addon before buying the full [Blender Market Product](ht
 
 ### Getting Started
 
-Download the latest FLIP Fluids Demo installation file here: [flip_fluids_addon-0.0.7_demo_27-nov-2019.zip](https://github.com/rlguy/Blender-FLIP-Fluids/releases/download/v0.07/flip_fluids_addon-0.0.7_demo_27-nov-2019.zip)
+Download the latest FLIP Fluids Demo installation file here: [flip_fluids_addon-0.0.8_demo_02-mar-2020.zip](https://github.com/rlguy/Blender-FLIP-Fluids/releases/download/v0.08/flip_fluids_addon-0.0.8_demo_02-mar-2020.zip)
 
 After downloading the demo addon, follow our [Installation Instructions](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Addon-Installation-and-Uninstallation). The instructions are similar to installing any other Blender addon.
 
