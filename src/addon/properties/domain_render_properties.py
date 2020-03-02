@@ -263,41 +263,41 @@ class DomainRenderProperties(bpy.types.PropertyGroup):
             name="Scale",
             description="Scale of the whitewater particle object",
             min=0.0,
-            default=0.04,
-            step=0.1,
-            precision=3,
+            default=0.008,
+            step=0.01,
+            precision=4,
             ); exec(conv("whitewater_particle_scale"))
     foam_particle_scale = FloatProperty(
             name="Scale",
             description="Scale of the foam particle object",
             min=0.0,
-            default=0.04,
-            step=0.1,
-            precision=3,
+            default=0.008,
+            step=0.01,
+            precision=4,
             ); exec(conv("foam_particle_scale"))
     bubble_particle_scale = FloatProperty(
             name="Scale",
             description="Scale of the bubble particle object",
             min=0.0,
-            default=0.04,
-            step=0.1,
-            precision=3,
+            default=0.008,
+            step=0.01,
+            precision=4,
             ); exec(conv("bubble_particle_scale"))
     spray_particle_scale = FloatProperty(
             name="Scale",
             description="Scale of the spray particle object",
             min=0.0,
-            default=0.04,
-            step=0.1,
-            precision=3,
+            default=0.008,
+            step=0.01,
+            precision=4,
             ); exec(conv("spray_particle_scale"))
     dust_particle_scale = FloatProperty(
             name="Scale",
             description="Scale of the dust particle object",
             min=0.0,
-            default=0.04,
-            step=0.1,
-            precision=3,
+            default=0.008,
+            step=0.01,
+            precision=4,
             ); exec(conv("dust_particle_scale"))
     whitewater_particle_object_settings_mode = EnumProperty(
             name="Particle Object Settings Mode",

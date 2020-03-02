@@ -14,18 +14,59 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-object_types = (
-    ('TYPE_NONE',     "None",     "", 0),
-    ('TYPE_DOMAIN',   "Domain",   "Bounding box of this object represents the computational domain of the fluid simulation", 1),
-    ('TYPE_FLUID',    "Fluid",    "Object represents a volume of fluid in the simulation", 2),
-    ('TYPE_OBSTACLE', "Obstacle", "Object represents an obstacle", 3),
-    ('TYPE_INFLOW',   "Inflow",   "Object adds fluid to the simulation", 4),
-    ('TYPE_OUTFLOW',  "Outflow",  "Object removes fluid from the simulation", 5)
+from .utils import version_compatibility_utils as vcu
+
+
+def object_types(self, context):
+    return object_types_mesh
+
+object_types_mesh = (
+    ('TYPE_NONE',        "None",        "", 0),
+    ('TYPE_DOMAIN',      "Domain",      "Bounding box of this object represents the computational domain of the fluid simulation", 1),
+    ('TYPE_FLUID',       "Fluid",       "Object represents a volume of fluid in the simulation", 2),
+    ('TYPE_OBSTACLE',    "Obstacle",    "Object represents an obstacle", 3),
+    ('TYPE_INFLOW',      "Inflow",      "Object adds fluid to the simulation", 4),
+    ('TYPE_OUTFLOW',     "Outflow",     "Object removes fluid from the simulation", 5),
+    )
+
+# Force field features currently hidden from UI
+"""
+object_types_mesh = (
+    ('TYPE_NONE',        "None",        "", 0),
+    ('TYPE_DOMAIN',      "Domain",      "Bounding box of this object represents the computational domain of the fluid simulation", 1),
+    ('TYPE_FLUID',       "Fluid",       "Object represents a volume of fluid in the simulation", 2),
+    ('TYPE_OBSTACLE',    "Obstacle",    "Object represents an obstacle", 3),
+    ('TYPE_INFLOW',      "Inflow",      "Object adds fluid to the simulation", 4),
+    ('TYPE_OUTFLOW',     "Outflow",     "Object removes fluid from the simulation", 5),
+    ('TYPE_FORCE_FIELD', "Force Field", "Object acts as a force field to push fluid within the simulation", 6)
+    )
+"""
+
+object_types_empty = (
+    ('TYPE_NONE',        "None",        "", 0),
+    ('TYPE_FORCE_FIELD', "Force Field", "Object acts as a force field to push fluid within the simulation", 6)
+    )
+
+force_field_types = (
+    ('FORCE_FIELD_TYPE_POINT',   "Point Force",   "Force field directed towards a single point", 0),
+    ('FORCE_FIELD_TYPE_SURFACE', "Surface Force", "Force field directed towards a surface", 1),
+    )
+
+force_field_resolution_modes = (
+    ('FORCE_FIELD_RESOLUTION_LOW',    "Low",    "Low resolution force field grid. Domain resolution divided by 4."),
+    ('FORCE_FIELD_RESOLUTION_NORMAL', "Normal", "Normal resolution force field grid. Domain resolution divided by 3."),
+    ('FORCE_FIELD_RESOLUTION_HIGH',   "High",   "High resolution force field grid. Domain resolution divided by 2."),
+    ('FORCE_FIELD_RESOLUTION_ULTRA',  "Ultra",  "Very high resolution force field grid. Matches domain resolution."),
     )
 
 frame_range_modes = (
     ('FRAME_RANGE_TIMELINE', "Timeline", "Use the start and end frame range from the timeline"),
     ('FRAME_RANGE_CUSTOM',   "Custom",   "Use a custom start and end frame range")
+    )
+
+frame_rate_modes = (
+    ('FRAME_RATE_MODE_SCENE',  "Scene",  "Use the frame rate specified in the scene render properties"),
+    ('FRAME_RATE_MODE_CUSTOM', "Custom", "Use a custom frame rate")
     )
 
 frame_offset_types = (
@@ -91,9 +132,14 @@ boundary_behaviours = (
     ('BEHAVIOUR_COLLIDE',   "Collide",   "Collide with boundary limits")
     )
 
+world_scale_mode = (
+    ('WORLD_SCALE_MODE_RELATIVE',  "Relative", "Set the physics scale of the domain relative to the size of a Blender Unit"),
+    ('WORLD_SCALE_MODE_ABSOLUTE',  "Absolute", "Set the physics scale of the domain by specifying the size of the longest side of the domain")
+    )
+
 gravity_types = (
-    ('GRAVITY_TYPE_CUSTOM', "Custom", "Use custom gravity values"),
-    ('GRAVITY_TYPE_SCENE',  "Scene",  "Use scene gravity values")
+    ('GRAVITY_TYPE_SCENE',  "Scene",  "Use scene gravity values"),
+    ('GRAVITY_TYPE_CUSTOM', "Custom", "Use custom gravity values")
     )
 
 surface_compute_chunk_modes = (
@@ -117,11 +163,22 @@ threading_modes = (
     ('THREADING_MODE_FIXED',       "Fixed",       "Manually determine the number of threads")
     )
 
+
 grid_display_modes = (
-    ('GRID_DISPLAY_SIMULATION', "Simulation Grid",   "Display the domain simulation grid"),
-    ('GRID_DISPLAY_MESH',       "Final Mesh Grid",   "Display the domain surface mesh grid"),
-    ('GRID_DISPLAY_PREVIEW',    "Preview Mesh Grid", "Display the domain surface preview mesh grid"),
+    ('GRID_DISPLAY_SIMULATION',  "Simulation Grid",   "Display the domain simulation grid"),
+    ('GRID_DISPLAY_MESH',        "Final Mesh Grid",   "Display the domain surface mesh grid"),
+    ('GRID_DISPLAY_PREVIEW',     "Preview Mesh Grid", "Display the domain surface preview mesh grid"),
     )
+
+# Force field features currently hidden from UI
+"""
+grid_display_modes = (
+    ('GRID_DISPLAY_SIMULATION',  "Simulation Grid",   "Display the domain simulation grid"),
+    ('GRID_DISPLAY_MESH',        "Final Mesh Grid",   "Display the domain surface mesh grid"),
+    ('GRID_DISPLAY_PREVIEW',     "Preview Mesh Grid", "Display the domain surface preview mesh grid"),
+    ('GRID_DISPLAY_FORCE_FIELD', "Force Field Grid",  "Display the domain force field grid"),
+    )
+"""
 
 gradient_interpolation_modes = (
     ('GRADIENT_NONE', "No Gradient",  "Do not interpolate between colors"),

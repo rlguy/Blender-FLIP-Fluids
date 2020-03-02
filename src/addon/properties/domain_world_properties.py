@@ -31,21 +31,32 @@ from ..objects.flip_fluid_aabb import AABB
 
 class DomainWorldProperties(bpy.types.PropertyGroup):
     conv = vcu.convert_attribute_to_28
-
-    enable_real_world_size = BoolProperty(
-            name="Real World Size",
-            description="Enable domain to be scaled to a size in meters",
-            default = False,
-            options = {'HIDDEN'},
-            ); exec(conv("enable_real_world_size"))
-    real_world_size = FloatProperty(
+    
+    world_scale_mode = EnumProperty(
+            name="World Scaling Mode",
+            description="Scaling mode for the physical size of the domain",
+            items=types.world_scale_mode,
+            default='WORLD_SCALE_MODE_RELATIVE',
+            options={'HIDDEN'},
+            ); exec(conv("world_scale_mode"))
+    world_scale_relative = FloatProperty(
             name="Meters", 
-            description="Size of the simulation domain in meters", 
+            description="Size of a Blender unit in meters. If set to 1.0, each blender unit will be equal to 1.0 meter in the simulation", 
+            min=0.0001,
+            default=1.0,
+            precision=3,
+            update=lambda self, context: self._update_world_scale_relative(context),
+            options={'HIDDEN'},
+            ); exec(conv("world_scale_relative"))
+    world_scale_absolute = FloatProperty(
+            name="Meters", 
+            description="Size of the longest side of the domain in meters", 
             min=0.001,
             default=10.0,
             precision=3,
+            update=lambda self, context: self._update_world_scale_absolute(context),
             options={'HIDDEN'},
-            ); exec(conv("real_world_size"))
+            ); exec(conv("world_scale_absolute"))
     gravity_type = EnumProperty(
             name="Gravity Type",
             description="Gravity Type",
@@ -61,6 +72,22 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
             size=3,
             subtype='VELOCITY',
             ); exec(conv("gravity"))
+    force_field_resolution = EnumProperty(
+            name="Force Field Resolution",
+            description="Amount of grid resolution to use when evaluating force fields."
+                " Higher resolution improves force field accuracy at the cost of speed"
+                " and RAM. Increase to resolve smaller/sharper details in your force"
+                " field setup.",
+            items=types.force_field_resolution_modes,
+            default='FORCE_FIELD_RESOLUTION_NORMAL',
+            options={'HIDDEN'},
+            ); exec(conv("force_field_resolution"))
+    force_field_resolution_tooltip = BoolProperty(
+            name="Force Field Grid Resolution", 
+            description="Exact force field grid resolution calculated from the domain"
+                " resolution. See Debug Panel for force field visualization tools.", 
+            default=True,
+            ); exec(conv("force_field_resolution_tooltip"))
     enable_viscosity = BoolProperty(
             name="Enable Viscosity",
             description="Enable viscosity solver",
@@ -152,14 +179,18 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
 
     def scene_update_post(self, scene):
         self._update_surface_tension_info()
+        self._update_world_scale_relative(bpy.context)
+        self._update_world_scale_absolute(bpy.context)
 
 
     def register_preset_properties(self, registry, path):
         add = registry.add_property
-        add(path + ".enable_real_world_size",    "Enable World Scaling",      group_id=0)
-        add(path + ".real_world_size",           "World Size",                group_id=0)
+        add(path + ".world_scale_mode",          "World Scaling Mode",        group_id=0)
+        add(path + ".world_scale_relative",      "Relative Scale",            group_id=0)
+        add(path + ".world_scale_absolute",      "Absolute Scale",            group_id=0)
         add(path + ".gravity_type",              "Gravity Type",              group_id=0)
         add(path + ".gravity",                   "Gravity",                   group_id=0)
+        add(path + ".force_field_resolution",    "Force Field Resolution",    group_id=0)
         add(path + ".enable_viscosity",          "Enable Viscosity",          group_id=0)
         add(path + ".viscosity",                 "Viscosity",                 group_id=0)
         add(path + ".enable_surface_tension",    "Enable Surface Tension",    group_id=0)
@@ -180,19 +211,57 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
             return export_utils.get_vector_property_data_dict(domain_object, self, 'gravity')
 
 
+    def get_gravity_vector(self):
+        if self.gravity_type == 'GRAVITY_TYPE_SCENE':
+            return bpy.context.scene.gravity
+        elif self.gravity_type == 'GRAVITY_TYPE_CUSTOM':
+            return self.gravity
+
+
     def get_world_scale(self):
-        domain_object = bpy.context.scene.flip_fluid.get_domain_object()
-        if domain_object is None:
-            return 1.0
-        dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+        return self.world_scale_relative
 
-        world_scale = 1.0
-        if self.enable_real_world_size:
-            domain_bbox = AABB.from_blender_object(domain_object)
-            max_dim = max(domain_bbox.xdim, domain_bbox.ydim, domain_bbox.zdim)
-            world_scale = self.real_world_size / max_dim
 
-        return world_scale
+    def get_viewport_dimensions(self, context):
+        domain = context.scene.flip_fluid.get_domain_object()
+        minx = miny = minz = float("inf")
+        maxx = maxy = maxz = -float("inf")
+        for v in domain.data.vertices:
+            p = vcu.element_multiply(v.co, domain.matrix_world)
+            minx, miny, minz = min(p.x, minx), min(p.y, miny), min(p.z, minz)
+            maxx, maxy, maxz = max(p.x, maxx), max(p.y, maxy), max(p.z, maxz)
+
+        return maxx - minx, maxy - miny, maxz - minz
+
+
+    def get_simulation_dimensions(self, context):
+        view_x, view_y, view_z = self.get_viewport_dimensions(context)
+        if self.world_scale_mode == 'WORLD_SCALE_MODE_RELATIVE':
+            scale = self.world_scale_relative
+        else:
+            longest_side = max(view_x, view_y, view_z, 1e-6)
+            scale = self.world_scale_absolute / longest_side
+        
+        return view_x * scale, view_y * scale, view_z * scale
+
+
+    def _update_world_scale_relative(self, context):
+        if self.world_scale_mode == 'WORLD_SCALE_MODE_ABSOLUTE':
+            return
+        xdims, ydims, zdims = self.get_simulation_dimensions(context)
+        absolute_scale = max(xdims, ydims, zdims)
+        if self.world_scale_absolute != absolute_scale:
+            self.world_scale_absolute = absolute_scale
+
+
+    def _update_world_scale_absolute(self, context):
+        if self.world_scale_mode == 'WORLD_SCALE_MODE_RELATIVE':
+            return
+        xdims, ydims, zdims = self.get_simulation_dimensions(context)
+        xview, yview, zview = self.get_viewport_dimensions(context)
+        relative_scale = max(xdims, ydims, zdims, 1e-6) / max(xview, yview, zview)
+        if self.world_scale_relative != relative_scale:
+            self.world_scale_relative = relative_scale
 
 
     def _update_surface_tension_info(self):
@@ -201,31 +270,11 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
             return
         dprops = bpy.context.scene.flip_fluid.get_domain_properties()
 
-        bbox = AABB.from_blender_object(domain)
-        max_dim = max(bbox.xdim, bbox.ydim, bbox.zdim)
-        if dprops.simulation.lock_cell_size:
-            unlocked_dx = max_dim / dprops.simulation.resolution
-            locked_dx = dprops.simulation.locked_cell_size
-            dx = locked_dx
-            if abs(locked_dx - unlocked_dx) < 1e-6:
-                dx = unlocked_dx
-        else:
-            dx = max_dim / dprops.simulation.resolution
-
-        world_scale = 1.0
-        if dprops.world.enable_real_world_size:
-            world_scale = dprops.world.real_world_size / max_dim
-        dx = world_scale * dx
+        _, _, _, dx = dprops.simulation.get_simulation_grid_dimensions()
 
         time_scale = dprops.simulation.time_scale
-        use_fps = dprops.simulation.use_fps
-        if use_fps:
-            dt = (1.0 / dprops.simulation.frames_per_second) * time_scale
-        else:
-            frame_start, frame_end = dprops.simulation.get_frame_range()
-            num_frames = frame_end - frame_start + 1
-            sim_time = dprops.simulation.end_time - dprops.simulation.start_time
-            dt = (sim_time / num_frames) * time_scale
+        frame_rate = dprops.simulation.get_frame_rate()
+        dt = (1.0 / frame_rate) * time_scale
 
         mincfl, maxcfl = dprops.world.minimum_surface_tension_cfl, dprops.world.maximum_surface_tension_cfl
         accuracy_pct = dprops.world.surface_tension_accuracy / 100.0

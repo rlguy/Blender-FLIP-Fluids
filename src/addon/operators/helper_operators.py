@@ -198,6 +198,39 @@ class FlipFluidHelperRemoveObjects(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class FlipFluidHelperSetObjectViewportDisplay(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_set_object_viewport_display"
+    bl_label = "Object Viewport Display"
+    bl_description = "Set how selected objects are displayed in the viewport"
+
+    display_mode = StringProperty("TYPE_NONE")
+    exec(vcu.convert_attribute_to_28("display_mode"))
+
+
+    @classmethod
+    def poll(cls, context):
+        for obj in context.selected_objects:
+            if obj.type == 'MESH':
+                return True
+        return False
+
+
+    def execute(self, context):
+        for obj in context.selected_objects:
+            if not obj.type == 'MESH':
+                continue
+            if self.display_mode == 'DISPLAY_MODE_SOLID':
+                vcu.set_object_display_type(obj, 'TEXTURED')
+                obj.show_wire = False
+                obj.show_all_edges = False
+            elif self.display_mode == 'DISPLAY_MODE_WIREFRAME':
+                vcu.set_object_display_type(obj, 'WIRE')
+                obj.show_wire = True
+                obj.show_all_edges = True
+
+        return {'FINISHED'}
+
+
 class FlipFluidHelperLoadLastFrame(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.helper_load_last_frame"
     bl_label = "Load Last Frame"
@@ -277,12 +310,12 @@ class FlipFluidHelperCommandLineBake(bpy.types.Operator):
     bl_label = "Launch Bake"
     bl_description = ("Launch a new command line window and start baking." +
                      " The .blend file will need to be saved before using" +
-                     " this operator.")
+                     " this operator")
 
 
     @classmethod
     def poll(cls, context):
-        return context.scene.flip_fluid.get_domain_object() is not None
+        return context.scene.flip_fluid.get_domain_object() is not None and bool(bpy.data.filepath)
 
 
     def execute(self, context):
@@ -296,7 +329,14 @@ class FlipFluidHelperCommandLineBake(bpy.types.Operator):
 
         system = platform.system()
         if system == "Windows":
-            command = ["start", "cmd", "/k", "blender.exe", "--background", bpy.data.filepath, "--python", script_path]
+            if vcu.is_blender_28():
+                blender_exe_path = bpy.app.binary_path
+            else:
+                # subproccess.call() in Blender 2.79 Python does not seem to support spaces in the 
+                # executable path, so we'll just use blender.exe and hope that no other addon has
+                # changed Blender's working directory
+                blender_exe_path = "blender.exe"
+            command = ["start", "cmd", "/k", blender_exe_path, "--background", bpy.data.filepath, "--python", script_path]
         elif system == "Darwin":
             # Feature not available on MacOS
             return {'CANCELLED'}
@@ -305,6 +345,67 @@ class FlipFluidHelperCommandLineBake(bpy.types.Operator):
             return {'CANCELLED'}
 
         subprocess.call(command, shell=True)
+
+        command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" --python \"" + script_path + "\""
+
+        info_msg = "Launched command line baking window. If the baking process did not begin,"
+        info_msg += " this may be caused by a conflict with another addon or a security feature of your OS that restricts"
+        info_msg += " automatic command execution. You may try copying the following command manually into a command line window:\n\n"
+        info_msg += command_text + "\n\n"
+        info_msg += "For more information on command line baking, visit our documentation:\n"
+        info_msg += "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Baking-from-the-Command-Line"
+        self.report({'INFO'}, info_msg)
+
+        return {'FINISHED'}
+
+
+class FlipFluidHelperCommandLineBakeToClipboard(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_command_line_bake_to_clipboard"
+    bl_label = "Copy Bake Command to Clipboard"
+    bl_description = ("Copy command for baking to your system clipboard." +
+                     " The .blend file will need to be saved before using" +
+                     " this operator")
+
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.flip_fluid.get_domain_object() is not None and bool(bpy.data.filepath)
+
+
+    def execute(self, context):
+        domain = context.scene.flip_fluid.get_domain_object()
+        if domain is None:
+            return {'CANCELLED'}
+
+        script_path = os.path.dirname(os.path.realpath(__file__))
+        script_path = os.path.dirname(script_path)
+        script_path = os.path.join(script_path, "resources", "command_line_scripts", "run_simulation.py")
+
+        system = platform.system()
+        if system == "Windows":
+            if vcu.is_blender_28():
+                blender_exe_path = bpy.app.binary_path
+            else:
+                # subproccess.call() in Blender 2.79 Python does not seem to support spaces in the 
+                # executable path, so we'll just use blender.exe and hope that no other addon has
+                # changed Blender's working directory
+                blender_exe_path = "blender.exe"
+            command = ["start", "cmd", "/k", blender_exe_path, "--background", bpy.data.filepath, "--python", script_path]
+        elif system == "Darwin":
+            # Feature not available on MacOS
+            return {'CANCELLED'}
+        elif system == "Linux":
+            # Feature not available on Linux
+            return {'CANCELLED'}
+
+        command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" --python \"" + script_path + "\""
+        bpy.context.window_manager.clipboard = command_text
+
+        info_msg = "Copied the following baking command to your clipboard:\n\n"
+        info_msg += command_text + "\n\n"
+        info_msg += "For more information on command line baking, visit our documentation:\n"
+        info_msg += "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Baking-from-the-Command-Line"
+        self.report({'INFO'}, info_msg)
 
         return {'FINISHED'}
 
@@ -313,22 +414,25 @@ class FlipFluidHelperCommandLineRender(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.helper_command_line_render"
     bl_label = "Launch Render"
     bl_description = ("Launch a new command line window and start rendering the animation." +
-                     " The .blend file will need to be saved before using this operator.")
+                     " The .blend file will need to be saved before using this operator")
 
 
     @classmethod
     def poll(cls, context):
-        return context.scene.flip_fluid.get_domain_object() is not None
+        return bool(bpy.data.filepath)
 
 
-    def execute(self, context):
-        domain = context.scene.flip_fluid.get_domain_object()
-        if domain is None:
-            return {'CANCELLED'}
-        
+    def execute(self, context):        
         system = platform.system()
         if system == "Windows":
-            command = ["start", "cmd", "/k", "blender.exe", "--background", bpy.data.filepath, "-a"]
+            if vcu.is_blender_28():
+                blender_exe_path = bpy.app.binary_path
+            else:
+                # subproccess.call() in Blender 2.79 Python does not seem to support spaces in the 
+                # executable path, so we'll just use blender.exe and hope that no other addon has
+                # changed Blender's working directory
+                blender_exe_path = "blender.exe"
+            command = ["start", "cmd", "/k", blender_exe_path, "--background", bpy.data.filepath, "-a"]
         elif system == "Darwin":
             # Feature not available on MacOS
             return {'CANCELLED'}
@@ -337,6 +441,58 @@ class FlipFluidHelperCommandLineRender(bpy.types.Operator):
             return {'CANCELLED'}
 
         subprocess.call(command, shell=True)
+
+        command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" -a"
+
+        info_msg = "Launched command line render window. If the render process did not begin,"
+        info_msg += " this may be caused by a conflict with another addon or a security feature of your OS that restricts"
+        info_msg += " automatic command execution. You may try copying the following command manually into a command line window:\n\n"
+        info_msg += command_text + "\n\n"
+        info_msg += "For more information on command line rendering, visit our documentation:\n"
+        info_msg += "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Rendering-from-the-Command-Line"
+        self.report({'INFO'}, info_msg)
+
+        return {'FINISHED'}
+
+
+class FlipFluidHelperCommandLineRenderToClipboard(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_command_line_render_to_clipboard"
+    bl_label = "Launch Render"
+    bl_description = ("Copy command for rendering to your system clipboard." +
+                     " The .blend file will need to be saved before using this operator")
+
+
+    @classmethod
+    def poll(cls, context):
+        return bool(bpy.data.filepath)
+
+
+    def execute(self, context):
+        system = platform.system()
+        if system == "Windows":
+            if vcu.is_blender_28():
+                blender_exe_path = bpy.app.binary_path
+            else:
+                # subproccess.call() in Blender 2.79 Python does not seem to support spaces in the 
+                # executable path, so we'll just use blender.exe and hope that no other addon has
+                # changed Blender's working directory
+                blender_exe_path = "blender.exe"
+            command = ["start", "cmd", "/k", blender_exe_path, "--background", bpy.data.filepath, "-a"]
+        elif system == "Darwin":
+            # Feature not available on MacOS
+            return {'CANCELLED'}
+        elif system == "Linux":
+            # Feature not available on Linux
+            return {'CANCELLED'}
+
+        command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" -a"
+        bpy.context.window_manager.clipboard = command_text
+
+        info_msg = "Copied the following render command to your clipboard:\n\n"
+        info_msg += command_text + "\n\n"
+        info_msg += "For more information on command line rendering, visit our documentation:\n"
+        info_msg += "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Rendering-from-the-Command-Line"
+        self.report({'INFO'}, info_msg)
 
         return {'FINISHED'}
 
@@ -387,9 +543,12 @@ def register():
     bpy.utils.register_class(FlipFluidHelperSelectSpray)
     bpy.utils.register_class(FlipFluidHelperAddObjects)
     bpy.utils.register_class(FlipFluidHelperRemoveObjects)
+    bpy.utils.register_class(FlipFluidHelperSetObjectViewportDisplay)
     bpy.utils.register_class(FlipFluidHelperLoadLastFrame)
     bpy.utils.register_class(FlipFluidHelperCommandLineBake)
+    bpy.utils.register_class(FlipFluidHelperCommandLineBakeToClipboard)
     bpy.utils.register_class(FlipFluidHelperCommandLineRender)
+    bpy.utils.register_class(FlipFluidHelperCommandLineRenderToClipboard)
     bpy.utils.register_class(FlipFluidHelperStableRendering279)
     bpy.utils.register_class(FlipFluidHelperStableRendering28)
 
@@ -406,9 +565,12 @@ def unregister():
     bpy.utils.unregister_class(FlipFluidHelperSelectSpray)
     bpy.utils.unregister_class(FlipFluidHelperAddObjects)
     bpy.utils.unregister_class(FlipFluidHelperRemoveObjects)
+    bpy.utils.unregister_class(FlipFluidHelperSetObjectViewportDisplay)
     bpy.utils.unregister_class(FlipFluidHelperLoadLastFrame)
     bpy.utils.unregister_class(FlipFluidHelperCommandLineBake)
+    bpy.utils.unregister_class(FlipFluidHelperCommandLineBakeToClipboard)
     bpy.utils.unregister_class(FlipFluidHelperCommandLineRender)
+    bpy.utils.unregister_class(FlipFluidHelperCommandLineRenderToClipboard)
     bpy.utils.unregister_class(FlipFluidHelperStableRendering279)
     bpy.utils.unregister_class(FlipFluidHelperStableRendering28)
 

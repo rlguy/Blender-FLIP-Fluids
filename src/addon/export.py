@@ -22,6 +22,7 @@ from .utils import export_utils as utils
 from .objects.flip_fluid_aabb import AABB
 from .pyfluid import TriangleMesh
 from .utils import version_compatibility_utils as vcu
+from .utils import cache_utils
 
 
 def __get_domain_object():
@@ -48,6 +49,7 @@ def __get_simulation_data_dict(context, simobjects):
     data['obstacle_data'] = __get_obstacle_data(context, simobjects.obstacle_objects)
     data['inflow_data'] = __get_inflow_data(context, simobjects.inflow_objects)
     data['outflow_data'] = __get_outflow_data(context, simobjects.outflow_objects)
+    data['force_field_data'] = __get_force_field_data(context, simobjects.force_field_objects)
     return data
 
 
@@ -59,21 +61,22 @@ def __get_domain_data_dict(context, dobj):
     initialize_properties['name'] = dobj.name
 
     bbox = AABB.from_blender_object(dobj)
-    isize, jsize, ksize, dx = dprops.simulation.get_grid_dimensions()
-    preview_dx = dprops.simulation.get_preview_dx()
+    isize, jsize, ksize, viewport_dx = dprops.simulation.get_viewport_grid_dimensions()
+    _, _, _, simulation_dx = dprops.simulation.get_simulation_grid_dimensions()
+    simulation_preview_dx = dprops.simulation.get_simulation_preview_dx()
 
     initialize_properties['isize'] = isize
     initialize_properties['jsize'] = jsize
     initialize_properties['ksize'] = ksize
 
-    dwidth = initialize_properties['isize'] * dx
-    dheight = initialize_properties['jsize'] * dx
-    ddepth = initialize_properties['ksize'] * dx
+    dwidth = initialize_properties['isize'] * viewport_dx
+    dheight = initialize_properties['jsize'] * viewport_dx
+    ddepth = initialize_properties['ksize'] * viewport_dx
     initialize_properties['bbox'] = AABB(bbox.x, bbox.y, bbox.z, 
                                          dwidth, dheight, ddepth).to_dict()
     initialize_properties['scale'] = dprops.world.get_world_scale()
-    initialize_properties['dx'] = dx * initialize_properties['scale']
-    initialize_properties['preview_dx'] = preview_dx * initialize_properties['scale']
+    initialize_properties['dx'] = simulation_dx
+    initialize_properties['preview_dx'] = simulation_preview_dx
 
     initialize_properties['logfile_name'] = dprops.cache.logfile_name
     initialize_properties['frame_start'] = dprops.simulation.frame_start
@@ -94,6 +97,7 @@ def __get_domain_data_dict(context, dobj):
     d['initialize'] = initialize_properties
 
     d['advanced']['num_threads_auto_detect'] = dprops.advanced.num_threads_auto_detect
+    d['simulation']['frames_per_second'] = dprops.simulation.get_frame_rate_data_dict()
     d['world']['gravity'] = dprops.world.get_gravity_data_dict()
     d['world']['native_surface_tension_scale'] = dprops.world.native_surface_tension_scale
     d['world']['minimum_surface_tension_cfl'] = dprops.world.minimum_surface_tension_cfl
@@ -159,6 +163,16 @@ def __get_outflow_data(context, objects):
     d = []
     for idx, obj in enumerate(objects):
         data = utils.flip_fluid_object_to_dict(obj, obj.flip_fluid.outflow)
+        data['name'] = obj.name
+        d.append(data)
+
+    return d
+
+
+def __get_force_field_data(context, objects):
+    d = []
+    for idx, obj in enumerate(objects):
+        data = utils.flip_fluid_object_to_dict(obj, obj.flip_fluid.force_field)
         data['name'] = obj.name
         d.append(data)
 
@@ -293,7 +307,8 @@ def export_mesh_data(mesh_exporter_data, export_directory):
         if not object_data['data']['mesh_data']:
             continue
 
-        mesh_directory = os.path.join(export_directory, object_name)
+        name_slug = cache_utils.string_to_cache_slug(object_name)
+        mesh_directory = os.path.join(export_directory, name_slug)
         os.makedirs(mesh_directory, exist_ok=True)
 
         mesh_type = object_data['data']['mesh_type']
@@ -310,12 +325,15 @@ def clean_export_directory(export_object_names, export_directory):
     dprops = __get_domain_properties()
 
     subdirs = [x for x in os.listdir(export_directory) if os.path.isdir(os.path.join(export_directory, x))]
+    slugified_object_names = [cache_utils.string_to_cache_slug(x) for x in export_object_names]
+
     for d in subdirs:
-        if not d in export_object_names:
+        if not d in slugified_object_names:
             shutil.rmtree(os.path.join(export_directory, d))
 
     for name in export_object_names:
-        object_dir = os.path.join(export_directory, name)
+        name_slug = cache_utils.string_to_cache_slug(name)
+        object_dir = os.path.join(export_directory, name_slug)
         if not os.path.isdir(object_dir):
             continue
         obj = bpy.data.objects.get(name)
@@ -331,7 +349,8 @@ def get_mesh_exporter_parameter_dict(export_object_names, export_directory):
     frame_start, frame_end = dprops.simulation.get_frame_range()
     mesh_data = {}
     for name in export_object_names:
-        object_dir = os.path.join(export_directory, name)
+        name_slug = cache_utils.string_to_cache_slug(name)
+        object_dir = os.path.join(export_directory, name_slug)
         obj = bpy.data.objects.get(name)
         props = obj.flip_fluid.get_property_group()
 
@@ -372,6 +391,7 @@ def export_simulation_data(context, data_filepath):
     simulation_objects.obstacle_objects = simprops.get_obstacle_objects()
     simulation_objects.inflow_objects = simprops.get_inflow_objects()
     simulation_objects.outflow_objects = simprops.get_outflow_objects()
+    simulation_objects.force_field_objects = simprops.get_force_field_objects()
 
     __export_simulation_data_to_file(context, simulation_objects, data_filepath)
 

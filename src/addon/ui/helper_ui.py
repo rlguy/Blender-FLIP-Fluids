@@ -62,6 +62,18 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
         column.operator("flip_fluid_operators.helper_remove_objects", text="Remove")
 
         box = self.layout.box()
+        box.label(text="Object Display:")
+        row = box.row(align=True)
+        row.operator(
+                "flip_fluid_operators.helper_set_object_viewport_display", 
+                text="Solid"
+                ).display_mode="DISPLAY_MODE_SOLID"
+        row.operator(
+                "flip_fluid_operators.helper_set_object_viewport_display", 
+                text="Wireframe"
+                ).display_mode="DISPLAY_MODE_WIREFRAME"
+
+        box = self.layout.box()
         box.label(text="Quick Select:")
         column = box.column(align=True)
         column.operator("flip_fluid_operators.helper_select_domain", text="Domain")
@@ -76,8 +88,12 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
             box = self.layout.box()
             box.label(text="Command Line Tools:")
             column = box.column(align=True)
-            column.operator("flip_fluid_operators.helper_command_line_bake")
-            column.operator("flip_fluid_operators.helper_command_line_render")
+            row = column.row(align=True)
+            row.operator("flip_fluid_operators.helper_command_line_bake")
+            row.operator("flip_fluid_operators.helper_command_line_bake_to_clipboard", text="", icon='COPYDOWN')
+            row = column.row(align=True)
+            row.operator("flip_fluid_operators.helper_command_line_render")
+            row.operator("flip_fluid_operators.helper_command_line_render_to_clipboard", text="", icon='COPYDOWN')
         
         box = self.layout.box()
         box.label(text="Render Tools:")

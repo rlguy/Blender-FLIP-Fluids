@@ -25,7 +25,11 @@ from .pyfluid import (
         AABB,
         MeshObject,
         MeshFluidSource,
+        ForceFieldPoint,
+        ForceFieldSurface
         )
+
+from .utils import cache_utils
 
 FLUIDSIM_OBJECT = None
 SIMULATION_DATA = None
@@ -74,11 +78,21 @@ def __get_export_directory():
 
 
 def __get_mesh_directory(object_name):
-    return os.path.join(__get_export_directory(), object_name)
+    name_slug = cache_utils.string_to_cache_slug(object_name)
+    export_directory = __get_export_directory()
+    mesh_directory = os.path.join(export_directory, name_slug)
+    if not os.path.isdir(mesh_directory):
+        # This mesh directory naming scheme is deprecated in FLIP Fluids > 1.0.7
+        # See issue #462 for more info
+        deprecated_mesh_directory = os.path.join(export_directory, object_name)
+        if os.path.isdir(deprecated_mesh_directory):
+            mesh_directory = deprecated_mesh_directory
+    return mesh_directory
 
 
 def __get_mesh_info_filepath(object_name):
-    return os.path.join(__get_export_directory(), object_name, "mesh.info")
+    mesh_directory = __get_mesh_directory(object_name)
+    return os.path.join(mesh_directory, "mesh.info")
 
 
 def __get_static_mesh_filepath(object_name):
@@ -389,14 +403,18 @@ def __get_obstacle_meshing_offset(obstacle_meshing_mode):
         return -0.5
 
 
-def __read_save_state_file_data(file_data_path):
+def __read_save_state_file_data(file_data_path, start_byte, end_byte):
     with open(file_data_path, 'rb') as f:
-        data = f.read()
+        f.seek(start_byte)
+        data = f.read(end_byte - start_byte)
     return data
 
 
-def __write_save_state_file_data(file_data_path, data):
-    with open(file_data_path, 'wb') as f:
+def __write_save_state_file_data(file_data_path, data, is_appending_data=False):
+    write_mode = 'wb'
+    if is_appending_data:
+        write_mode = 'ab'
+    with open(file_data_path, write_mode) as f:
         f.write(data)
 
 
@@ -409,10 +427,18 @@ def __load_save_state_marker_particle_data(fluidsim, save_state_directory, autos
     position_data_file = os.path.join(d, autosave_info['marker_particle_position_filedata'])
     velocity_data_file = os.path.join(d, autosave_info['marker_particle_velocity_filedata'])
 
-    position_data = __read_save_state_file_data(position_data_file)
-    velocity_data = __read_save_state_file_data(velocity_data_file)
+    particles_per_read = 2**21
+    bytes_per_vector = 12
+    max_byte = bytes_per_vector * num_particles
+    num_reads = int((num_particles // particles_per_read) + 1)
+    for i in range(num_reads):
+        start_byte = i * bytes_per_vector * particles_per_read
+        end_byte = min((i + 1) * bytes_per_vector * particles_per_read, max_byte)
+        particle_count = int((end_byte - start_byte) // bytes_per_vector)
 
-    fluidsim.load_marker_particle_data(num_particles, position_data, velocity_data)
+        position_data = __read_save_state_file_data(position_data_file, start_byte, end_byte)
+        velocity_data = __read_save_state_file_data(velocity_data_file, start_byte, end_byte)
+        fluidsim.load_marker_particle_data(particle_count, position_data, velocity_data)
 
 
 def __load_save_state_diffuse_particle_data(fluidsim, save_state_directory, autosave_info):
@@ -427,14 +453,39 @@ def __load_save_state_diffuse_particle_data(fluidsim, save_state_directory, auto
     type_data_file = os.path.join(d, autosave_info['diffuse_particle_type_filedata'])
     id_data_file = os.path.join(d, autosave_info['diffuse_particle_id_filedata'])
 
-    position_data = __read_save_state_file_data(position_data_file)
-    velocity_data = __read_save_state_file_data(velocity_data_file)
-    lifetime_data = __read_save_state_file_data(lifetime_data_file)
-    type_data = __read_save_state_file_data(type_data_file)
-    id_data = __read_save_state_file_data(id_data_file)
 
-    fluidsim.load_diffuse_particle_data(num_particles, position_data, velocity_data,
-                                        lifetime_data, type_data, id_data)
+    particles_per_read = 2**21
+    bytes_per_vector = 12
+    bytes_per_lifetime = 4
+    bytes_per_type = 1
+    bytes_per_id = 1
+    max_byte_vector = bytes_per_vector * num_particles
+    max_byte_lifetime = bytes_per_lifetime * num_particles
+    max_byte_type = bytes_per_type * num_particles
+    max_byte_id = bytes_per_id * num_particles
+    num_reads = int((num_particles // particles_per_read) + 1)
+    for i in range(num_reads):
+        start_byte = i * bytes_per_vector * particles_per_read
+        end_byte = min((i + 1) * bytes_per_vector * particles_per_read, max_byte_vector)
+        particle_count = int((end_byte - start_byte) // bytes_per_vector)
+
+        position_data = __read_save_state_file_data(position_data_file, start_byte, end_byte)
+        velocity_data = __read_save_state_file_data(velocity_data_file, start_byte, end_byte)
+
+        start_byte = i * bytes_per_lifetime * particles_per_read
+        end_byte = min((i + 1) * bytes_per_lifetime * particles_per_read, max_byte_lifetime)
+        lifetime_data = __read_save_state_file_data(lifetime_data_file, start_byte, end_byte)
+
+        start_byte = i * bytes_per_type * particles_per_read
+        end_byte = min((i + 1) * bytes_per_type * particles_per_read, max_byte_type)
+        type_data = __read_save_state_file_data(type_data_file, start_byte, end_byte)
+
+        start_byte = i * bytes_per_id * particles_per_read
+        end_byte = min((i + 1) * bytes_per_id * particles_per_read, max_byte_id)
+        id_data = __read_save_state_file_data(id_data_file, start_byte, end_byte)
+
+        fluidsim.load_diffuse_particle_data(particle_count, position_data, velocity_data,
+                                            lifetime_data, type_data, id_data)
 
 
 def __load_save_state_simulator_data(fluidsim, autosave_info):
@@ -656,6 +707,27 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
     world = dprops.world
     fluidsim.add_body_force(__get_parameter_data(world.gravity, frameno))
 
+    # Caches created in older versions may not contain force field data. Ignore these features
+    # if force field data cannot be found in the cache
+    is_force_field_data_available = data.force_field_data is not None
+    if is_force_field_data_available:
+        force_fields_exist = (len(data.force_field_data) > 0)
+        is_debugging_force_fields = __get_parameter_data(dprops.debug.export_force_field, frameno)
+        is_force_fields_enabled = force_fields_exist or is_debugging_force_fields
+        
+        fluidsim.enable_force_fields = is_force_fields_enabled
+        if is_force_fields_enabled:
+            field_quality = __get_parameter_data(world.force_field_resolution, frameno)
+            if field_quality == 'FORCE_FIELD_RESOLUTION_LOW':
+                reduction = 4
+            elif field_quality == 'FORCE_FIELD_RESOLUTION_NORMAL':
+                reduction = 3
+            elif field_quality == 'FORCE_FIELD_RESOLUTION_HIGH':
+                reduction = 2
+            elif field_quality == 'FORCE_FIELD_RESOLUTION_ULTRA':
+                reduction = 1
+            fluidsim.force_field_reduction_level = reduction
+
     is_viscosity_enabled = __get_parameter_data(world.enable_viscosity, frameno)
     if is_viscosity_enabled:
         fluidsim.viscosity = __get_parameter_data(world.viscosity, frameno)
@@ -775,6 +847,10 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
 
     fluidsim.enable_internal_obstacle_mesh_output = \
         __get_parameter_data(dprops.debug.export_internal_obstacle_mesh, frameno)
+
+    if is_force_field_data_available:
+        fluidsim.enable_force_field_debug_output = \
+            __get_parameter_data(dprops.debug.export_force_field, frameno)
 
     # Internal Settings
 
@@ -968,6 +1044,39 @@ def __add_outflow_objects(fluidsim, data, bakedata):
     return outflow_objects
 
 
+def __add_force_field_objects(fluidsim, data, bakedata):
+    force_field_objects = []
+    if not fluidsim.enable_force_fields:
+        return force_field_objects
+
+    init_data = data.domain_data.initialize
+    bbox = init_data.bbox
+    isize, jsize, ksize = init_data.isize, init_data.jsize, init_data.ksize
+    dx = init_data.dx
+
+    force_field_grid = fluidsim.get_force_field_grid()
+    force_field_objects = []
+    for obj in data.force_field_data:
+        field_type = obj.force_field_type.data
+        field_object = None
+        if field_type == 'FORCE_FIELD_TYPE_POINT':
+            field_object = ForceFieldPoint()
+        elif field_type == 'FORCE_FIELD_TYPE_SURFACE':
+            field_object = ForceFieldSurface()
+
+        if not __is_object_dynamic(obj.name):
+            mesh = __extract_static_frame_mesh(obj.name)
+            field_object.update_mesh_static(mesh)
+
+        force_field_grid.add_force_field(field_object)
+        force_field_objects.append(field_object)
+
+        if __check_bake_cancelled(bakedata):
+            return
+
+    return force_field_objects
+
+
 def __initialize_fluid_simulation(fluidsim, data, cache_directory, bakedata, savestate_id):
     set_console_output(bakedata.is_console_output_enabled)
     
@@ -984,6 +1093,7 @@ def __initialize_fluid_simulation(fluidsim, data, cache_directory, bakedata, sav
     data.obstacle_objects = __add_obstacle_objects(fluidsim, data, bakedata)
     data.inflow_objects = __add_inflow_objects(fluidsim, data, bakedata)
     data.outflow_objects = __add_outflow_objects(fluidsim, data, bakedata)
+    data.force_field_objects = __add_force_field_objects(fluidsim, data, bakedata)
 
     fluidsim.initialize()
 
@@ -1038,6 +1148,24 @@ def __update_animatable_outflow_properties(data, frameid):
         outflow.enable = __get_parameter_data(data.is_enabled, frameid)
         outflow.fluid_outflow =  __get_parameter_data(data.remove_fluid, frameid)
         outflow.diffuse_outflow =  __get_parameter_data(data.remove_whitewater, frameid)
+
+
+def __update_animatable_force_field_properties(data, frameid):
+    force_field_objects = data.force_field_objects
+    force_field_data = data.force_field_data
+
+    for idx, force_field in enumerate(force_field_objects):
+        data = force_field_data[idx]
+
+        if __is_object_dynamic(data.name):
+            __update_dynamic_object_mesh(force_field, data)
+
+        force_field.enable = __get_parameter_data(data.is_enabled, frameid)
+        force_field.strength = __get_parameter_data(data.strength, frameid)
+        force_field.falloff_power = __get_parameter_data(data.falloff_power, frameid)
+        force_field.enable_min_distance = __get_parameter_data(data.enable_min_distance, frameid)
+        force_field.enable_max_distance = __get_parameter_data(data.enable_max_distance, frameid)
+        force_field.min_distance, force_field.max_distance = __get_parameter_data(data.min_max_distance, frameid)
 
 
 def __update_animatable_obstacle_properties(data, frameid):
@@ -1389,10 +1517,18 @@ def __update_animatable_domain_properties(fluidsim, data, frameno):
     export_internal_obstacle_mesh = __get_parameter_data(debug.export_internal_obstacle_mesh, frameno)
     __set_property(fluidsim, 'enable_internal_obstacle_mesh_output', export_internal_obstacle_mesh)
 
+    # Caches created in older versions may not contain force field data. Ignore these features
+    # if force field data cannot be found in the cache
+    is_force_field_data_available = data.force_field_data is not None
+    if is_force_field_data_available: 
+        export_force_field = __get_parameter_data(debug.export_force_field, frameno)
+        __set_property(fluidsim, 'enable_force_field_debug_output', export_force_field)
+
 
 def __update_animatable_properties(fluidsim, data, frameno):
     __update_animatable_inflow_properties(data, frameno)
     __update_animatable_outflow_properties(data, frameno)
+    __update_animatable_force_field_properties(data, frameno)
     __update_animatable_obstacle_properties(data, frameno)
     __update_animatable_meshing_volume_properties(data, frameno)
     __update_animatable_domain_properties(fluidsim, data, frameno)
@@ -1522,6 +1658,16 @@ def __write_internal_obstacle_mesh_data(cache_directory, fluidsim, frameno):
         f.write(filedata)
 
 
+def __write_force_field_debug_data(cache_directory, fluidsim, frameno):
+    fstring = __frame_number_to_string(frameno)
+
+    force_field_filename = "forcefield" + fstring + ".ffd"
+    force_field_filepath = os.path.join(cache_directory, "bakefiles", force_field_filename)
+    filedata = fluidsim.get_force_field_debug_data()
+    with open(force_field_filepath, 'wb') as f:
+        f.write(filedata)
+
+
 def __write_logfile_data(cache_directory, logfile_name, fluidsim):
     filedata = fluidsim.get_logfile_data()
     logpath = os.path.join(cache_directory, "logs", logfile_name)
@@ -1597,64 +1743,121 @@ def __write_autosave_data(domain_data, cache_directory, fluidsim, frameno):
         os.makedirs(autosave_dir)
 
     position_data_path = os.path.join(autosave_dir, "marker_particle_position.data")
-    data = fluidsim.get_marker_particle_position_data()
-    __write_save_state_file_data(position_data_path, data)
-
     velocity_data_path = os.path.join(autosave_dir, "marker_particle_velocity.data")
-    data = fluidsim.get_marker_particle_velocity_data()
-    __write_save_state_file_data(velocity_data_path, data)
-
-    if fluidsim.get_num_diffuse_particles() > 0:
-        diffuse_position_data_path = os.path.join(autosave_dir, "diffuse_particle_position.data")
-        data = fluidsim.get_diffuse_particle_position_data()
-        __write_save_state_file_data(diffuse_position_data_path, data)
-
-        diffuse_velocity_data_path = os.path.join(autosave_dir, "diffuse_particle_velocity.data")
-        data = fluidsim.get_diffuse_particle_velocity_data()
-        __write_save_state_file_data(diffuse_velocity_data_path, data)
-
-        diffuse_lifetime_data_path = os.path.join(autosave_dir, "diffuse_particle_lifetime.data")
-        data = fluidsim.get_diffuse_particle_lifetime_data()
-        __write_save_state_file_data(diffuse_lifetime_data_path, data)
-
-        diffuse_type_data_path = os.path.join(autosave_dir, "diffuse_particle_type.data")
-        data = fluidsim.get_diffuse_particle_type_data()
-        __write_save_state_file_data(diffuse_type_data_path, data)
-
-        diffuse_id_data_path = os.path.join(autosave_dir, "diffuse_particle_id.data")
-        data = fluidsim.get_diffuse_particle_id_data()
-        __write_save_state_file_data(diffuse_id_data_path, data)
-
-
-    frame_start, frame_end = domain_data.initialize.frame_start, domain_data.initialize.frame_end
-    autosave_info = {}
-    autosave_info['frame'] = frameno
-    autosave_info['frame_start'] = frame_start
-    autosave_info['frame_end'] = frame_end
-    autosave_info['frame_id'] = fluidsim.get_current_frame() - 1
-    autosave_info['last_frame_id'] = frame_end - frame_start
-    autosave_info['num_marker_particles'] = fluidsim.get_num_marker_particles()
-    autosave_info['marker_particle_position_filedata'] = "marker_particle_position.data"
-    autosave_info['marker_particle_velocity_filedata'] = "marker_particle_velocity.data"
-    autosave_info['num_diffuse_particles'] = fluidsim.get_num_diffuse_particles()
-
-    if fluidsim.get_num_diffuse_particles() > 0:
-        autosave_info['diffuse_particle_position_filedata'] = "diffuse_particle_position.data"
-        autosave_info['diffuse_particle_velocity_filedata'] = "diffuse_particle_velocity.data"
-        autosave_info['diffuse_particle_lifetime_filedata'] = "diffuse_particle_lifetime.data"
-        autosave_info['diffuse_particle_type_filedata'] = "diffuse_particle_type.data"
-        autosave_info['diffuse_particle_id_filedata'] = "diffuse_particle_id.data"
-    else:
-        autosave_info['diffuse_particle_position_filedata'] = ""
-        autosave_info['diffuse_particle_velocity_filedata'] = ""
-        autosave_info['diffuse_particle_lifetime_filedata'] = ""
-        autosave_info['diffuse_particle_type_filedata'] = ""
-        autosave_info['diffuse_particle_id_filedata'] = ""
-
-    autosave_json = json.dumps(autosave_info, sort_keys=True, indent=4)
+    diffuse_position_data_path = os.path.join(autosave_dir, "diffuse_particle_position.data")
+    diffuse_velocity_data_path = os.path.join(autosave_dir, "diffuse_particle_velocity.data")
+    diffuse_lifetime_data_path = os.path.join(autosave_dir, "diffuse_particle_lifetime.data")
+    diffuse_type_data_path = os.path.join(autosave_dir, "diffuse_particle_type.data")
+    diffuse_id_data_path = os.path.join(autosave_dir, "diffuse_particle_id.data")
     autosave_info_path = os.path.join(autosave_dir, "autosave.state")
-    with open(autosave_info_path, 'w') as f:
-        f.write(autosave_json)
+    temp_extension = ".backup"
+
+    autosave_default_filepaths = [
+            position_data_path,
+            velocity_data_path,
+            autosave_info_path
+            ]
+    autosave_diffuse_filepaths = [
+            diffuse_position_data_path,
+            diffuse_velocity_data_path,
+            diffuse_lifetime_data_path,
+            diffuse_type_data_path,
+            diffuse_id_data_path
+            ]
+
+    num_particles = fluidsim.get_num_marker_particles()
+    particles_per_write = 2**21
+    num_writes = (num_particles // particles_per_write) + 1
+    try:
+        for i in range(num_writes):
+            start_idx = i * particles_per_write
+            end_idx = min((i + 1) * particles_per_write, num_particles)
+            is_appending = i != 0
+
+            data = fluidsim.get_marker_particle_position_data_range(start_idx, end_idx)
+            __write_save_state_file_data(position_data_path + temp_extension, data, is_appending_data=is_appending)
+            data = fluidsim.get_marker_particle_velocity_data_range(start_idx, end_idx)
+            __write_save_state_file_data(velocity_data_path + temp_extension, data, is_appending_data=is_appending)
+
+        if fluidsim.get_num_diffuse_particles() > 0:
+            num_particles = fluidsim.get_num_diffuse_particles()
+            particles_per_write = 2**21
+            num_writes = (num_particles // particles_per_write) + 1
+            for i in range(num_writes):
+                start_idx = i * particles_per_write
+                end_idx = min((i + 1) * particles_per_write, num_particles)
+                is_appending = i != 0
+
+                data = fluidsim.get_diffuse_particle_position_data_range(start_idx, end_idx)
+                __write_save_state_file_data(diffuse_position_data_path + temp_extension, data, is_appending_data=is_appending)
+                data = fluidsim.get_diffuse_particle_velocity_data_range(start_idx, end_idx)
+                __write_save_state_file_data(diffuse_velocity_data_path + temp_extension, data, is_appending_data=is_appending)
+                data = fluidsim.get_diffuse_particle_lifetime_data_range(start_idx, end_idx)
+                __write_save_state_file_data(diffuse_lifetime_data_path + temp_extension, data, is_appending_data=is_appending)
+                data = fluidsim.get_diffuse_particle_type_data_range(start_idx, end_idx)
+                __write_save_state_file_data(diffuse_type_data_path + temp_extension, data, is_appending_data=is_appending)
+                data = fluidsim.get_diffuse_particle_id_data_range(start_idx, end_idx)
+                __write_save_state_file_data(diffuse_id_data_path + temp_extension, data, is_appending_data=is_appending)
+
+        frame_start, frame_end = domain_data.initialize.frame_start, domain_data.initialize.frame_end
+        autosave_info = {}
+        autosave_info['frame'] = frameno
+        autosave_info['frame_start'] = frame_start
+        autosave_info['frame_end'] = frame_end
+        autosave_info['frame_id'] = fluidsim.get_current_frame() - 1
+        autosave_info['last_frame_id'] = frame_end - frame_start
+        autosave_info['num_marker_particles'] = fluidsim.get_num_marker_particles()
+        autosave_info['marker_particle_position_filedata'] = "marker_particle_position.data"
+        autosave_info['marker_particle_velocity_filedata'] = "marker_particle_velocity.data"
+        autosave_info['num_diffuse_particles'] = fluidsim.get_num_diffuse_particles()
+
+        if fluidsim.get_num_diffuse_particles() > 0:
+            autosave_info['diffuse_particle_position_filedata'] = "diffuse_particle_position.data"
+            autosave_info['diffuse_particle_velocity_filedata'] = "diffuse_particle_velocity.data"
+            autosave_info['diffuse_particle_lifetime_filedata'] = "diffuse_particle_lifetime.data"
+            autosave_info['diffuse_particle_type_filedata'] = "diffuse_particle_type.data"
+            autosave_info['diffuse_particle_id_filedata'] = "diffuse_particle_id.data"
+        else:
+            autosave_info['diffuse_particle_position_filedata'] = ""
+            autosave_info['diffuse_particle_velocity_filedata'] = ""
+            autosave_info['diffuse_particle_lifetime_filedata'] = ""
+            autosave_info['diffuse_particle_type_filedata'] = ""
+            autosave_info['diffuse_particle_id_filedata'] = ""
+
+        autosave_json = json.dumps(autosave_info, sort_keys=True, indent=4)
+        with open(autosave_info_path + temp_extension, 'w') as f:
+            f.write(autosave_json)
+    except Exception as e:
+        print("FLIP Fluids: OS/Filesystem Error: Unable to write autosave files to storage")
+        print("Error Message: ", e)
+        print("Backup of the last successful autosave located here: <" + autosave_dir + ">")
+        return
+
+    try:
+        for filepath in autosave_default_filepaths:
+            if os.path.exists(filepath):
+                os.remove(filepath)
+        if fluidsim.get_num_diffuse_particles() > 0:
+            for filepath in autosave_diffuse_filepaths:
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+    except Exception as e:
+        print("FLIP Fluids: OS/Filesystem Error: Unable to delete older autosave files from storage")
+        print("Error Message: ", e)
+        print("Backup of the last successful autosave located here: <" + autosave_dir + ">")
+        return
+
+    try:
+        for filepath in autosave_default_filepaths:
+            os.rename(filepath + temp_extension, filepath)
+        if fluidsim.get_num_diffuse_particles() > 0:
+            for filepath in autosave_diffuse_filepaths:
+                os.rename(filepath + temp_extension, filepath)
+    except Exception as e:
+        print("FLIP Fluids: OS/Filesystem Error: Unable to rename autosave files in storage")
+        print("Error Message: ", e)
+        print("Backup of the last successful autosave located here: <" + autosave_dir + ">")
+        return
 
     init_data = domain_data.initialize
     if init_data.enable_savestates:
@@ -1680,6 +1883,9 @@ def __write_simulation_output(domain_data, fluidsim, frameno, cache_directory):
     if fluidsim.enable_internal_obstacle_mesh_output:
         __write_internal_obstacle_mesh_data(cache_directory, fluidsim, frameno)
 
+    if fluidsim.enable_force_field_debug_output:
+        __write_force_field_debug_data(cache_directory, fluidsim, frameno)
+
     __write_logfile_data(cache_directory, domain_data.initialize.logfile_name, fluidsim)
     __write_frame_stats_data(cache_directory, fluidsim, frameno)
     __write_autosave_data(domain_data, cache_directory, fluidsim, frameno)
@@ -1689,15 +1895,8 @@ def __get_current_frame_delta_time(domain_data, frameno):
     simdata = domain_data.simulation
     init_data = domain_data.initialize
     time_scale = __get_parameter_data(simdata.time_scale, frameno)
-    use_fps = __get_parameter_data(simdata.use_fps, frameno)
-    if use_fps:
-        fps = __get_parameter_data(simdata.frames_per_second, frameno)
-        dt = (1.0 / fps) * time_scale
-    else:
-        num_frames = init_data.frame_end - init_data.frame_start + 1
-        sim_time = simdata.end_time.data - simdata.start_time.data
-        dt = (sim_time / num_frames) * time_scale
-
+    fps = __get_parameter_data(simdata.frames_per_second, frameno)
+    dt = (1.0 / fps) * time_scale
     return dt
 
 

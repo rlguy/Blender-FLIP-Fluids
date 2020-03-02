@@ -25,6 +25,7 @@ from ctypes import c_void_p, c_char_p, c_char, c_int, c_uint, c_float, c_double,
 import numbers
 
 from .pyfluid import pyfluid as lib
+from .forcefieldgrid import ForceFieldGrid
 from .vector3 import Vector3, Vector3_t
 from .gridindex import GridIndex, GridIndex_t
 from .aabb import AABB, AABB_t
@@ -551,6 +552,21 @@ class FluidSimulation(object):
             libfunc = lib.FluidSimulation_enable_internal_obstacle_mesh_output
         else:
             libfunc = lib.FluidSimulation_disable_internal_obstacle_mesh_output
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_force_field_debug_output(self):
+        libfunc = lib.FluidSimulation_is_force_field_debug_output_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_force_field_debug_output.setter
+    def enable_force_field_debug_output(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_force_field_debug_output
+        else:
+            libfunc = lib.FluidSimulation_disable_force_field_debug_output
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self()])
 
@@ -1391,6 +1407,40 @@ class FluidSimulation(object):
         pb.execute_lib_func(libfunc, [self()])
 
     @property
+    def enable_force_fields(self):
+        libfunc = lib.FluidSimulation_is_force_fields_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_force_fields.setter
+    def enable_force_fields(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_force_fields
+        else:
+            libfunc = lib.FluidSimulation_disable_force_fields
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def force_field_reduction_level(self):
+        libfunc = lib.FluidSimulation_get_force_field_reduction_level
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @force_field_reduction_level.setter
+    @decorators.check_gt_zero
+    def force_field_reduction_level(self, level):
+        libfunc = lib.FluidSimulation_set_force_field_reduction_level
+        pb.init_lib_func(libfunc, [c_void_p, c_int, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), int(level)])
+
+    def get_force_field_grid(self):
+        libfunc = lib.FluidSimulation_get_force_field_grid
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_void_p)
+        pointer = pb.execute_lib_func(libfunc, [self()])
+        return ForceFieldGrid(pointer)
+
+    @property
     def viscosity(self):
         libfunc = lib.FluidSimulation_get_viscosity
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
@@ -1828,6 +1878,10 @@ class FluidSimulation(object):
         return self._get_output_data(lib.FluidSimulation_get_internal_obstacle_mesh_data_size,
                                      lib.FluidSimulation_get_internal_obstacle_mesh_data)
 
+    def get_force_field_debug_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_force_field_debug_data_size,
+                                     lib.FluidSimulation_get_force_field_debug_data)
+
     def get_logfile_data(self):
         byte_str = self._get_output_data(lib.FluidSimulation_get_logfile_data_size,
                                          lib.FluidSimulation_get_logfile_data)
@@ -1877,6 +1931,51 @@ class FluidSimulation(object):
         libfunc = data_libfunc
         pb.init_lib_func(libfunc, [c_void_p, c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), c_data])
+
+        return bytes(c_data)
+
+    def get_marker_particle_position_data_range(self, start_idx, end_idx):
+        size_of_vector = 12
+        return self._get_output_data_range(lib.FluidSimulation_get_marker_particle_position_data_range,
+                                           start_idx, end_idx, size_of_vector)
+
+    def get_marker_particle_velocity_data_range(self, start_idx, end_idx):
+        size_of_vector = 12
+        return self._get_output_data_range(lib.FluidSimulation_get_marker_particle_velocity_data_range,
+                                           start_idx, end_idx, size_of_vector)
+
+    def get_diffuse_particle_position_data_range(self, start_idx, end_idx):
+        size_of_vector = 12
+        return self._get_output_data_range(lib.FluidSimulation_get_diffuse_particle_position_data_range,
+                                           start_idx, end_idx, size_of_vector)
+
+    def get_diffuse_particle_velocity_data_range(self, start_idx, end_idx):
+        size_of_vector = 12
+        return self._get_output_data_range(lib.FluidSimulation_get_diffuse_particle_velocity_data_range,
+                                           start_idx, end_idx, size_of_vector)
+
+    def get_diffuse_particle_lifetime_data_range(self, start_idx, end_idx):
+        size_of_float = 4
+        return self._get_output_data_range(lib.FluidSimulation_get_diffuse_particle_lifetime_data_range,
+                                           start_idx, end_idx, size_of_float)
+
+    def get_diffuse_particle_type_data_range(self, start_idx, end_idx):
+        size_of_char = 1
+        return self._get_output_data_range(lib.FluidSimulation_get_diffuse_particle_type_data_range,
+                                           start_idx, end_idx, size_of_char)
+
+    def get_diffuse_particle_id_data_range(self, start_idx, end_idx):
+        size_of_char = 1
+        return self._get_output_data_range(lib.FluidSimulation_get_diffuse_particle_id_data_range,
+                                           start_idx, end_idx, size_of_char)
+
+    def _get_output_data_range(self, data_libfunc, start_idx, end_idx, size_of_element):
+        data_size = (end_idx - start_idx) * size_of_element
+        c_data = (c_char * data_size)()
+
+        libfunc = data_libfunc
+        pb.init_lib_func(libfunc, [c_void_p, c_int, c_int, c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), start_idx, end_idx, c_data])
 
         return bytes(c_data)
 
@@ -1977,6 +2076,7 @@ class FluidSimulationFrameStats_t(ctypes.Structure):
                 ("dustblur", FluidSimulationMeshStats_t),
                 ("particles", FluidSimulationMeshStats_t),
                 ("obstacle", FluidSimulationMeshStats_t),
+                ("forcefield", FluidSimulationMeshStats_t),
                 ("timing", FluidSimulationTimingStats_t)]
 
 class FluidSimulationMarkerParticleData_t(ctypes.Structure):

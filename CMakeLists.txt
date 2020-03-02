@@ -39,8 +39,8 @@ set(CMAKE_BUILD_TYPE Release)
 
 set(FLUIDENGINE_VERSION_MAJOR 1)
 set(FLUIDENGINE_VERSION_MINOR 0)
-set(FLUIDENGINE_VERSION_REVISION 7)
-set(FLUIDENGINE_VERSION_LABEL "1.0.7 GitHub Release 27-NOV-2019")
+set(FLUIDENGINE_VERSION_REVISION 8)
+set(FLUIDENGINE_VERSION_LABEL "1.0.8 GitHub Release 02-MAR-2020")
 
 # Configure OpenCL
 if(WITH_OPENCL)
@@ -68,7 +68,7 @@ endif()
 
 # Configure compiler/OS specific flags
 if(MSVC)
-    message(FATAL_ERROR "Error: Compilation using MSVC (Microsoft Visual Studio) is not officially supported. Building with MSVC may result in errors and performance issues. Change this FATAL_ERROR to WARNING in the CMake script to continue at your own risk.")
+    message(FATAL_ERROR "Error: Compilation using MSVC (Microsoft Visual Studio) is not supported. Building with MSVC will result in errors, performance issues, and broken simulation features. Change this FATAL_ERROR to WARNING in the CMake script to continue at your own risk.")
     add_definitions(-DCL_USE_DEPRECATED_OPENCL_1_1_APIS -DNOMINMAX -D_CRT_SECURE_NO_WARNINGS)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /O2 /W4 /EHsc /wd4244")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LARGEADDRESSAWARE")

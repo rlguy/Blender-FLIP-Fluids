@@ -22,6 +22,7 @@ if "bpy" in locals():
         'obstacle_ui',
         'inflow_ui',
         'outflow_ui',
+        'force_field_ui',
         'domain_ui',
         'cache_object_ui',
         'helper_ui'
@@ -38,6 +39,7 @@ from . import(
         obstacle_ui,
         inflow_ui,
         outflow_ui,
+        force_field_ui,
         domain_ui,
         cache_object_ui,
         helper_ui
@@ -49,7 +51,7 @@ from ..utils import installation_utils
 
 def append_to_PHYSICS_PT_add_panel(self, context):
     obj = vcu.get_active_object(context)
-    if not obj.type == 'MESH':
+    if not (obj.type == 'MESH' or obj.type == 'EMPTY'):
         return
 
     column = self.layout.column(align=True)
@@ -64,8 +66,10 @@ def append_to_PHYSICS_PT_add_panel(self, context):
                  text="FLIP Fluid", 
                  icon='X'
                 )
-        row.prop(context.scene.flip_fluid, "show_render", icon="RESTRICT_RENDER_OFF", text="")
-        row.prop(context.scene.flip_fluid, "show_viewport", icon="RESTRICT_VIEW_OFF", text="")
+
+        if obj.flip_fluid.is_domain():
+            row.prop(context.scene.flip_fluid, "show_render", icon="RESTRICT_RENDER_OFF", text="")
+            row.prop(context.scene.flip_fluid, "show_viewport", icon="RESTRICT_VIEW_OFF", text="")
     else:
         if not installation_utils.is_installation_complete():
             column_right.operator(
@@ -102,6 +106,7 @@ def register():
     obstacle_ui.register()
     inflow_ui.register()
     outflow_ui.register()
+    force_field_ui.register()
     domain_ui.register()
     cache_object_ui.register()
     helper_ui.register()
@@ -115,6 +120,7 @@ def unregister():
     obstacle_ui.unregister()
     inflow_ui.unregister()
     outflow_ui.unregister()
+    force_field_ui.unregister()
     domain_ui.unregister()
     cache_object_ui.unregister()
     helper_ui.unregister()

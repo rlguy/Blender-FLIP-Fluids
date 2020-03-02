@@ -48,6 +48,7 @@ def execute_lib_func(libfunc, params):
     result = None
     if libfunc.restype:
         funcresult = libfunc(*args)
+        check_success(success, libfunc.__name__ + " - ")
         try:
             return libfunc.restype(funcresult).value
         except:

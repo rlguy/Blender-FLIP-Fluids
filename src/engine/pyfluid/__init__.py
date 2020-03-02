@@ -24,6 +24,10 @@ from .aabb import AABB, AABB_t
 from .fluidsimulation import FluidSimulation, MarkerParticle_t, DiffuseParticle_t
 from .meshobject import MeshObject
 from .meshfluidsource import MeshFluidSource
+from .forcefieldgrid import ForceFieldGrid
+from .forcefield import ForceField
+from .forcefieldpoint import ForceFieldPoint
+from .forcefieldsurface import ForceFieldSurface
 from .trianglemesh import TriangleMesh, TriangleMesh_t
 from .gridindex import GridIndex, GridIndex_t
 from .vector3 import Vector3, Vector3_t

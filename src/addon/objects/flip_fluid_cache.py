@@ -26,11 +26,13 @@ from bpy.props import (
 
 from .flip_fluid_aabb import AABB
 from .. import render
-from ..operators import draw_operators
+from ..operators import draw_particles_operators
+from ..operators import draw_force_field_operators
 from ..utils import version_compatibility_utils as vcu
 
 DISABLE_MESH_CACHE_LOAD = False
 GL_POINT_CACHE_DATA = {}
+GL_FORCE_FIELD_CACHE_DATA = {}
 
 
 class FLIPFluidMeshBounds(bpy.types.PropertyGroup):
@@ -179,10 +181,10 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
 
     def delete_cache_object(self):
-        if not self._is_cache_object_initialized():
+        if self.cache_object is None:
             return
         self.unload_duplivert_object()
-        cache_object = self.get_cache_object()
+        cache_object = self.cache_object
         vcu.delete_object(cache_object)
         self.cache_object = None
         self.loaded_frame_data.reset()
@@ -250,7 +252,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         if not self._is_domain_set():
             return False
 
-        current_frame = bpy.context.scene.frame_current
+        current_frame = render.get_current_frame()
         if current_frame == self.current_loaded_frame and not force_load:
             return False
 
@@ -270,7 +272,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
         cache_object = self.get_cache_object()
         frame_string = self._frame_number_to_string(frameno)
-        current_frame = bpy.context.scene.frame_current
+        current_frame = render.get_current_frame()
 
         if vcu.is_blender_281() and cache_object.data.shape_keys is not None:
             for idx,key in enumerate(cache_object.data.shape_keys.key_blocks):
@@ -331,7 +333,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         if self.enable_motion_blur:
             self._update_motion_blur(frameno)
 
-        self.current_loaded_frame = bpy.context.scene.frame_current
+        self.current_loaded_frame = render.get_current_frame()
         self._commit_loaded_frame_data(frameno)
 
         if vcu.is_blender_279() or render.is_rendering():
@@ -354,7 +356,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         domain_pos = mathutils.Vector((domain_bounds.x, domain_bounds.y, domain_bounds.z))
 
         resolution = max(self.bounds.isize, self.bounds.jsize, self.bounds.ksize)
-        isize, jsize, ksize, dx = dprops.simulation.get_grid_dimensions(resolution=resolution)
+        isize, jsize, ksize, dx = dprops.simulation.get_viewport_grid_dimensions(resolution=resolution)
 
         scalex = (isize * dx) / self.bounds.width
         scaley = (jsize * dx) / self.bounds.height
@@ -413,7 +415,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
     def _is_load_duplivert_object_valid(self, force_load=False):
         if not self._is_domain_set():
             return False
-        current_frame = bpy.context.scene.frame_current
+        current_frame = render.get_current_frame()
         if current_frame == self.current_duplivert_loaded_frame and not force_load:
             return False
         if self._is_loaded_duplivert_frame_up_to_date(current_frame):
@@ -431,7 +433,21 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         duplivert_object.data.octane.mesh_type = cache_object.data.octane.mesh_type
 
 
-    def initialize_duplivert_object(self):
+    def set_duplivert_instance_type(self, instance_type):
+        cache_object = self.get_cache_object()
+        if not cache_object:
+            return
+        vcu.set_object_instance_type(cache_object, instance_type)
+
+
+    def set_duplivert_hide_viewport(self, display_bool):
+        duplivert_object = self.get_duplivert_object()
+        if not duplivert_object:
+            return
+        vcu.set_object_hide_viewport(duplivert_object, display_bool)
+
+
+    def initialize_duplivert_object(self, vertices=[], polygons=[], scale=1.0, instance_type='VERTS'):
         if not self._is_cache_object_initialized():
             self.initialize_cache_object()
         cache_object = self.get_cache_object()
@@ -442,16 +458,17 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         duplivert_object_name = cache_object.name + self.duplivert_object_default_name
         duplivert_mesh_name = duplivert_object_name + "_mesh"
         duplivert_mesh_data = bpy.data.meshes.new(duplivert_mesh_name)
-        duplivert_mesh_data.from_pydata([], [], [])
+        duplivert_mesh_data.from_pydata(vertices, [], polygons)
         duplivert_object = bpy.data.objects.new(duplivert_object_name, duplivert_mesh_data)
+        duplivert_object.scale = (scale, scale, scale)
         duplivert_object.parent = cache_object
         vcu.link_fluid_mesh_object(duplivert_object)
 
         self._initialize_duplivert_object_octane(cache_object, duplivert_object)
-        vcu.set_object_instance_type(cache_object, 'VERTS')
+        vcu.set_object_instance_type(cache_object, instance_type)
+        vcu.set_object_hide_viewport(duplivert_object, True)
 
         self.duplivert_object = duplivert_object
-
 
 
     def load_duplivert_object(self, vertices, faces, scale=1.0, force_load=False, depsgraph=None):
@@ -490,7 +507,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         self.apply_duplivert_object_material()
         vcu.set_object_instance_type(cache_object, 'VERTS')
 
-        current_frame = bpy.context.scene.frame_current
+        current_frame = render.get_current_frame()
         self.current_duplivert_loaded_frame = current_frame
         self._commit_loaded_duplivert_frame_data(current_frame)
 
@@ -519,6 +536,16 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
 
     def get_cache_object(self):
+        if self.cache_object is None:
+            return None
+            
+        if vcu.is_blender_28():
+            object_collection = bpy.context.scene.collection.all_objects
+        else:
+            object_collection = bpy.context.scene.objects
+
+        if object_collection.get(self.cache_object.name) is None:
+            self.delete_cache_object()
         return self.cache_object
 
 
@@ -645,13 +672,24 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         RESHAPEABLE_PROXY = '3'
 
         if self.mesh_file_extension == 'bobj':
-            cache_object.data.octane.mesh_type = GLOBAL
+            cache_object.data.octane.mesh_type = RESHAPEABLE_PROXY
         elif self.mesh_file_extension == 'wwp':
             cache_object.data.octane.mesh_type = SCATTER
 
 
     def _is_cache_object_initialized(self):
-        return self.cache_object is not None
+        if self.cache_object is None:
+                return False
+
+        if vcu.is_blender_28():
+            object_collection = bpy.context.scene.collection.all_objects
+        else:
+            object_collection = bpy.context.scene.objects
+
+        if object_collection.get(self.cache_object.name) is None:
+            self.delete_cache_object()
+            return False
+        return True
 
 
     def _transfer_mesh_materials(self, src_mesh_data, dst_mesh_data):
@@ -798,7 +836,7 @@ class FlipFluidGLPointCache(bpy.types.PropertyGroup):
         global GL_POINT_CACHE_DATA
         if self.uid != -1 and self.uid in GL_POINT_CACHE_DATA:
             del GL_POINT_CACHE_DATA[self.uid]
-        draw_operators.update_debug_particle_geometry(bpy.context)
+        draw_particles_operators.update_debug_particle_geometry(bpy.context)
 
 
     def get_point_cache_data(self):
@@ -814,7 +852,7 @@ class FlipFluidGLPointCache(bpy.types.PropertyGroup):
         if not self._is_domain_set() or not self.is_enabled:
             return
 
-        current_frame = bpy.context.scene.frame_current
+        current_frame = render.get_current_frame()
         if current_frame == self.current_loaded_frame and not force_load:
             return
 
@@ -830,7 +868,7 @@ class FlipFluidGLPointCache(bpy.types.PropertyGroup):
         GL_POINT_CACHE_DATA[self.uid] = d
 
         self.current_loaded_frame = current_frame
-        draw_operators.update_debug_particle_geometry(bpy.context)
+        draw_particles_operators.update_debug_particle_geometry(bpy.context)
 
 
     def import_fpd(self, filename):
@@ -914,6 +952,143 @@ class FlipFluidGLPointCache(bpy.types.PropertyGroup):
         return self.import_fpd(filepath)
 
 
+class FlipFluidGLForceFieldCache(bpy.types.PropertyGroup):
+    conv = vcu.convert_attribute_to_28
+    mesh_prefix = StringProperty(default=""); exec(conv("mesh_prefix"))
+    mesh_file_extension = StringProperty(default=""); exec(conv("mesh_file_extension"))
+    current_loaded_frame = IntProperty(default=-1); exec(conv("current_loaded_frame"))
+    uid = IntProperty(default=-1); exec(conv("uid"))
+    is_enabled = BoolProperty(default=False); exec(conv("is_enabled"))
+
+
+    def enable(self):
+        global GL_FORCE_FIELD_CACHE_DATA
+        if self.is_enabled:
+            return
+
+        self.uid = 0
+        for i in range(1024):
+            if i not in GL_FORCE_FIELD_CACHE_DATA:
+                self.uid = i
+                GL_FORCE_FIELD_CACHE_DATA[i] = None
+                break
+        self.is_enabled = True
+
+
+    def disable(self):
+        global GL_FORCE_FIELD_CACHE_DATA
+        if self.uid in GL_FORCE_FIELD_CACHE_DATA:
+            del GL_FORCE_FIELD_CACHE_DATA[self.uid]
+            self.uid = -1
+        self.is_enabled = False
+
+
+    def reset_cache(self):
+        global GL_FORCE_FIELD_CACHE_DATA
+        if self.uid != -1 and self.uid in GL_FORCE_FIELD_CACHE_DATA:
+            del GL_FORCE_FIELD_CACHE_DATA[self.uid]
+        draw_force_field_operators.update_debug_force_field_geometry(bpy.context)
+
+
+    def get_force_field_data(self):
+        global GL_FORCE_FIELD_CACHE_DATA
+        if self.uid in GL_FORCE_FIELD_CACHE_DATA:
+            return GL_FORCE_FIELD_CACHE_DATA[self.uid]
+        return None
+
+
+    def load_frame(self, frameno, force_load = False):
+        global GL_FORCE_FIELD_CACHE_DATA
+
+        if not self._is_domain_set() or not self.is_enabled:
+            return
+
+        current_frame = render.get_current_frame()
+        if current_frame == self.current_loaded_frame and not force_load:
+            return
+
+        vertices = self._import_frame_mesh(frameno)
+        d = {
+            'vertices': vertices
+        }
+        GL_FORCE_FIELD_CACHE_DATA[self.uid] = d
+
+        self.current_loaded_frame = current_frame
+
+        draw_force_field_operators.update_debug_force_field_geometry(bpy.context)
+
+
+    def import_ffd(self, filename):
+        with open(filename, "rb") as f:
+            ffd_data = f.read()
+
+        if len(ffd_data) == 0:
+            return None
+
+        data_offset = 0
+        num_vertices = struct.unpack_from('i', ffd_data, data_offset)[0]
+        data_offset += 4
+
+        if num_vertices == 0:
+            return None
+
+        num_floats = 4 * num_vertices
+        num_bytes = 4 * num_floats
+        it = iter(struct.unpack_from('{0}f'.format(num_floats), ffd_data, data_offset))
+        vertices = list(zip(it, it, it, it))
+        data_offset += num_bytes
+
+        return vertices
+
+
+    def _is_domain_set(self):
+        return bpy.context.scene.flip_fluid.get_num_domain_objects() != 0
+
+
+    def _get_domain_object(self):
+        return bpy.context.scene.flip_fluid.get_domain_object()
+
+
+    def _get_domain_properties(self):
+        return bpy.context.scene.flip_fluid.get_domain_properties()
+
+    
+    def _get_cache_directory(self):
+        if not self._is_domain_set():
+            return
+        dprops = self._get_domain_properties()
+        return os.path.normpath(dprops.cache.get_cache_abspath())
+
+
+    def _get_bakefiles_directory(self):
+        cache_directory = self._get_cache_directory()
+        return os.path.join(cache_directory, 'bakefiles')
+
+
+    def _frame_number_to_string(self, frameno):
+        return str(frameno).zfill(6)
+
+
+    def _get_mesh_filepath(self, frameno):
+        filename = (self.mesh_prefix + 
+                    self._frame_number_to_string(frameno) + 
+                    "." + self.mesh_file_extension)
+        bakefiles_directory = self._get_bakefiles_directory()
+        return os.path.join(bakefiles_directory, filename)
+
+
+    def _is_frame_cached(self, frameno):
+        path = self._get_mesh_filepath(frameno)
+        return os.path.isfile(path)
+
+
+    def _import_frame_mesh(self, frameno):
+        if not self._is_domain_set() or not self._is_frame_cached(frameno):
+            return None
+        filepath = self._get_mesh_filepath(frameno)
+        return self.import_ffd(filepath)
+
+
 class FlipFluidCache(bpy.types.PropertyGroup):
     conv = vcu.convert_attribute_to_28
     surface = PointerProperty(type=FlipFluidMeshCache); exec(conv("surface"))
@@ -922,6 +1097,7 @@ class FlipFluidCache(bpy.types.PropertyGroup):
     spray = PointerProperty(type=FlipFluidMeshCache); exec(conv("spray"))
     dust = PointerProperty(type=FlipFluidMeshCache); exec(conv("dust"))
     gl_particles = PointerProperty(type=FlipFluidGLPointCache); exec(conv("gl_particles"))
+    gl_force_field = PointerProperty(type=FlipFluidGLForceFieldCache); exec(conv("gl_force_field"))
     obstacle = PointerProperty(type=FlipFluidMeshCache); exec(conv("obstacle"))
 
 
@@ -961,6 +1137,9 @@ class FlipFluidCache(bpy.types.PropertyGroup):
         self.gl_particles.mesh_prefix = "particles"
         self.gl_particles.mesh_file_extension = "fpd"
 
+        self.gl_force_field.mesh_prefix = "forcefield"
+        self.gl_force_field.mesh_file_extension = "ffd"
+
         self.obstacle.mesh_prefix = "obstacle"
         self.obstacle.mesh_file_extension = "bobj"
         self.obstacle.cache_object_default_name = "debug_obstacle"
@@ -985,6 +1164,20 @@ class FlipFluidCache(bpy.types.PropertyGroup):
             self.bubble.initialize_cache_object()
             self.spray.initialize_cache_object()
             self.dust.initialize_cache_object()
+
+            foam_vertices, foam_polygons = render.get_whitewater_particle_object_geometry('FOAM')
+            bubble_vertices, bubble_polygons = render.get_whitewater_particle_object_geometry('BUBBLE')
+            spray_vertices, spray_polygons = render.get_whitewater_particle_object_geometry('SPRAY')
+            dust_vertices, dust_polygons = render.get_whitewater_particle_object_geometry('DUST')
+            foam_scale = render.get_whitewater_particle_object_scale('FOAM')
+            bubble_scale = render.get_whitewater_particle_object_scale('BUBBLE')
+            spray_scale = render.get_whitewater_particle_object_scale('SPRAY')
+            dust_scale = render.get_whitewater_particle_object_scale('DUST')
+
+            self.foam.initialize_duplivert_object(vertices=foam_vertices, polygons=foam_polygons, scale=foam_scale, instance_type='NONE')
+            self.bubble.initialize_duplivert_object(vertices=bubble_vertices, polygons=bubble_polygons, scale=bubble_scale, instance_type='NONE')
+            self.spray.initialize_duplivert_object(vertices=spray_vertices, polygons=spray_polygons, scale=spray_scale, instance_type='NONE')
+            self.dust.initialize_duplivert_object(vertices=dust_vertices, polygons=dust_polygons, scale=dust_scale, instance_type='NONE')
 
         if dprops.debug.export_internal_obstacle_mesh:
             self.obstacle.initialize_cache_object()
@@ -1023,6 +1216,7 @@ class FlipFluidCache(bpy.types.PropertyGroup):
         self.dust.reset_cache_object()
         self.obstacle.reset_cache_object()
         self.gl_particles.reset_cache()
+        self.gl_force_field.reset_cache()
 
 
     def is_cache_object(self, obj):
@@ -1076,6 +1270,7 @@ def register():
     bpy.utils.register_class(FlipFluidLoadedMeshData)
     bpy.utils.register_class(FlipFluidMeshCache)
     bpy.utils.register_class(FlipFluidGLPointCache)
+    bpy.utils.register_class(FlipFluidGLForceFieldCache)
     bpy.utils.register_class(FlipFluidCache)
 
 
@@ -1084,7 +1279,11 @@ def unregister():
     bpy.utils.unregister_class(FlipFluidLoadedMeshData)
     bpy.utils.unregister_class(FlipFluidMeshCache)
     bpy.utils.unregister_class(FlipFluidGLPointCache)
+    bpy.utils.unregister_class(FlipFluidGLForceFieldCache)
     bpy.utils.unregister_class(FlipFluidCache)
 
     global GL_POINT_CACHE_DATA
     GL_POINT_CACHE_DATA = {}
+
+    global GL_FORCE_FIELD_CACHE_DATA
+    GL_FORCE_FIELD_CACHE_DATA = {}

@@ -216,7 +216,7 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
         domain_object = bpy.context.scene.flip_fluid.get_domain_object()
         if domain_object is None:
             return
-        self.mesh_cache.delete_cache_objects(domain_object)
+        self.mesh_cache.delete_cache_objects()
 
 
     def _initialize_property_registry(self):

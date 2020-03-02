@@ -31,6 +31,7 @@ from .custom_properties import (
 from .. import types
 from ..objects.flip_fluid_aabb import AABB
 from ..utils import version_compatibility_utils as vcu
+from ..utils import export_utils
 
 
 class DomainSimulationProperties(bpy.types.PropertyGroup):
@@ -110,7 +111,7 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
             description="Domain grid resolution. This value specifies the number of"
                 " grid cells on the longest side of the domain. See Debug Panel for"
                 " grid visualization tools",
-            min =1,
+            min=10,
             default=65,
             update=lambda self, context: self._update_resolution(context),
             options={'HIDDEN'},
@@ -143,39 +144,20 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
             update=lambda self, context: self._update_lock_cell_size(context),
             options = {'HIDDEN'},
             ); exec(conv("lock_cell_size"))
-    start_time = bpy.props.FloatProperty(
-            name="Start Time", 
-            description="Simulation time of the first blender frame (in seconds)", 
-            min=0.0,
-            default=0.0,
-            precision=3,
-            update=lambda self, context: self._update_start_time(context),
+    frame_rate_mode = EnumProperty(
+            name="Frame Rate Mode",
+            description="Select the frame rate for the simulation animation",
+            items=types.frame_rate_modes,
+            default='FRAME_RATE_MODE_SCENE',
             options={'HIDDEN'},
-            ); exec(conv("start_time"))
-    end_time = bpy.props.FloatProperty(
-            name="End Time", 
-            description="Simulation time of the last blender frame (in seconds)", 
-            min=0.0,
-            default=4.0,
-            precision=3,
-            update=lambda self, context: self._update_end_time(context),
-            options = {'HIDDEN'},
-            ); exec(conv("end_time"))
-    use_fps = BoolProperty(
-            name="Use Frame Rate",
-            description="Calculate simulation time using rate of frames per second",
-            default=True,
-            update=lambda self, context: self._update_use_fps(context),
-            options={'HIDDEN'},
-            ); exec(conv("use_fps"))
-    frames_per_second = FloatProperty(
+            ); exec(conv("frame_rate_mode"))
+    frame_rate_custom = FloatProperty(
             name="Frame Rate", 
-            description="Frames per second", 
+            description="Frame rate in frames per second", 
             min=0.001,
             default=60.0,
             precision=1,
-            update=lambda self, context: self._update_frames_per_second(context),
-            ); exec(conv("frames_per_second"))
+            ); exec(conv("frame_rate_custom"))
     time_scale = FloatProperty(
             name="Speed", 
             description="Scale the frame timestep by this value. If set to less than"
@@ -201,10 +183,8 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
         add(path + ".preview_resolution",      "Preview Resolution",      group_id=0)
         add(path + ".auto_preview_resolution", "Auto Preview Resolution", group_id=0)
         add(path + ".lock_cell_size",          "Lock Cell Size",          group_id=0)
-        add(path + ".start_time",              "Start Time",              group_id=0)
-        add(path + ".end_time",                "End Time",                group_id=0)
-        add(path + ".use_fps",                 "Use FPS",                 group_id=0)
-        add(path + ".frames_per_second",       "Frame Rate",              group_id=0)
+        add(path + ".frame_rate_mode",         "Frame Rate Mode",         group_id=0)
+        add(path + ".frame_rate_custom",       "Frame Rate",              group_id=0)
         add(path + ".time_scale",              "Time Scale",              group_id=0)
 
         add(path + ".frame_range_mode",           "Frame Range Mode",           group_id=1)
@@ -217,22 +197,16 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
 
 
     def initialize(self):
-        self.frames_per_second = bpy.context.scene.render.fps
-        frame_start, frame_end = self.get_frame_range()
-        num_frames = frame_end - frame_start + 1
-        duration = num_frames / self.frames_per_second
-        self.start_time = 0.0
-        self.end_time = duration
+        self.frame_rate_custom = bpy.context.scene.render.fps
 
 
     def scene_update_post(self, scene):
         self._update_locked_cell_size_resolution()
-        self._update_start_end_time()
-        self._update_surface_tension_substeps_info()
         self._set_recommended_preview_resolution()
 
 
-    def get_grid_dimensions(self, resolution=None, lock_cell_size=None):
+    # World scale is not applied to dx, which will match dimensions within viewport
+    def get_viewport_grid_dimensions(self, resolution=None, lock_cell_size=None):
         domain_object = bpy.context.scene.flip_fluid.get_domain_object()
         dprops = bpy.context.scene.flip_fluid.get_domain_properties()
         if dprops is None or resolution == 0:
@@ -264,7 +238,15 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
         return isize, jsize, ksize, dx
 
 
-    def get_preview_dx(self):
+    # World scale will be applied to dx, which will match dimensions within the simulation
+    def get_simulation_grid_dimensions(self, resolution=None, lock_cell_size=None):
+        dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+        isize, jsize, ksize, dx = self.get_viewport_grid_dimensions(resolution, lock_cell_size)
+        dx *= dprops.world.get_world_scale()
+        return isize, jsize, ksize, dx
+
+
+    def get_viewport_preview_dx(self):
         domain_object = bpy.context.scene.flip_fluid.get_domain_object()
         dprops = bpy.context.scene.flip_fluid.get_domain_properties()
         if dprops is None:
@@ -272,6 +254,12 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
         domain_bbox = AABB.from_blender_object(domain_object)
         max_dim = max(domain_bbox.xdim, domain_bbox.ydim, domain_bbox.zdim)
         return max_dim / self.preview_resolution
+
+
+    def get_simulation_preview_dx(self):
+        dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+        preview_dx = self.get_viewport_preview_dx()
+        return preview_dx * dprops.world.get_world_scale()
 
 
     def get_frame_range(self):
@@ -301,6 +289,22 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
 
     def get_num_savestate_enums(self):
         return len(self._get_savestate_enums())
+
+
+    def get_frame_rate(self):
+        if self.frame_rate_mode == 'FRAME_RATE_MODE_SCENE':
+            return bpy.context.scene.render.fps
+        elif self.frame_rate_mode == 'FRAME_RATE_MODE_CUSTOM':
+            return self.frame_rate_custom
+
+
+    def get_frame_rate_data_dict(self):
+        if self.frame_rate_mode == 'FRAME_RATE_MODE_SCENE':
+            prop_group = bpy.context.scene.render
+            return export_utils.get_property_data_dict(bpy.context.scene, prop_group, 'fps')
+        elif self.frame_rate_mode == 'FRAME_RATE_MODE_CUSTOM':
+            domain_object = bpy.context.scene.flip_fluid.get_domain_object()
+            return export_utils.get_property_data_dict(domain_object, self, 'frame_rate_custom')
 
 
     def _update_resolution(self, context):
@@ -355,49 +359,6 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
         resolution = math.ceil(ratio)
         if self.resolution != resolution:
             self.resolution = resolution
-
-
-    def _update_start_time(self, context):
-        if self.start_time > self.end_time:
-            self.end_time = self.start_time
-
-
-    def _update_end_time(self, context):
-        if self.end_time < self.start_time:
-            self.start_time = self.end_time
-
-
-    def _update_start_end_time(self):
-        if self.use_fps:
-            frame_start, frame_end = self.get_frame_range()
-            num_frames = frame_end - frame_start + 1
-            duration = num_frames / self.frames_per_second
-            eps = 1e-4
-            if abs(self.start_time - 0.0) > eps:
-                self.start_time = 0.0
-            if abs(self.end_time - duration) > eps:
-                self.end_time = duration
-
-
-    def _update_use_fps(self, context):
-        if self.use_fps:
-            frame_start, frame_end = self.get_frame_range()
-            num_frames = frame_end - frame_start + 1
-            duration = num_frames / self.frames_per_second
-            self.start_time = 0.0
-            self.end_time = duration
-
-
-    def _update_frames_per_second(self, context):
-        frame_start, frame_end = self.get_frame_range()
-        num_frames = frame_end - frame_start + 1
-        duration = num_frames / self.frames_per_second
-        self.start_time = 0.0
-        self.end_time = duration
-
-
-    def _update_surface_tension_substeps_info(self):
-        self.surface_tension_substeps_info = 5
 
 
     def _get_savestate_enums(self, context=None):

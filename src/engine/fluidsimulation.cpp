@@ -559,6 +559,24 @@ bool FluidSimulation::isInternalObstacleMeshOutputEnabled() {
     return _isInternalObstacleMeshOutputEnabled;
 }
 
+void FluidSimulation::enableForceFieldDebugOutput() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " enableForceFieldDebugOutput" << std::endl);
+
+    _isForceFieldDebugOutputEnabled = true;
+}
+
+void FluidSimulation::disableForceFieldDebugOutput() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " disableForceFieldDebugOutput" << std::endl);
+
+    _isForceFieldDebugOutputEnabled = false;
+}
+
+bool FluidSimulation::isForceFieldDebugOutputEnabled() {
+    return _isForceFieldDebugOutputEnabled;
+}
+
 void FluidSimulation::enableDiffuseMaterialOutput() {
     _logfile.log(std::ostringstream().flush() << 
                  _logfile.getTime() << " enableDiffuseMaterialOutput" << std::endl);
@@ -1567,6 +1585,51 @@ void FluidSimulation::resetBodyForce() {
     _constantBodyForces.clear();
 }
 
+void FluidSimulation::enableForceFields() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " enableForceFields" << std::endl);
+
+    _isForceFieldsEnabled = true;
+}
+
+void FluidSimulation::disableForceFields() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " disableForceFields" << std::endl);
+
+    _isForceFieldsEnabled = false;
+}
+
+bool FluidSimulation::isForceFieldsEnabled() {
+    return _isForceFieldsEnabled;
+}
+
+int FluidSimulation::getForceFieldReductionLevel() {
+    return _currentFrame;
+}
+
+void FluidSimulation::setForceFieldReductionLevel(int level) {
+    if (level < 1) {
+        std::string msg = "Error: reduction level must be greater than or equal to 1.\n";
+        msg += "reduction level: " + _toString(level) + "\n";
+        throw std::domain_error(msg);
+    }
+
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " setForceFieldReductionLevel: " << level << std::endl);
+
+    _forceFieldReductionLevel = level;
+}
+
+ForceFieldGrid* FluidSimulation::getForceFieldGrid() {
+    if (!_isForceFieldsEnabled) {
+        std::string msg = "Error: force fields must be enabled before using this method.\n";
+        msg += "is force fields enabled: " + _toString(_isForceFieldsEnabled) + "\n";
+        throw std::domain_error(msg);
+    }
+
+    return &_forceFieldGrid;
+}
+
 double FluidSimulation::getViscosity() {
     return _constantViscosityValue;
 }
@@ -2201,12 +2264,110 @@ std::vector<char>* FluidSimulation::getInternalObstacleMeshData() {
     return &_outputData.internalObstacleMeshData;
 }
 
+std::vector<char>* FluidSimulation::getForceFieldDebugData() {
+    return &_outputData.forceFieldDebugData;
+}
+
 std::vector<char>* FluidSimulation::getLogFileData() {
     return &_outputData.logfileData;
 }
 
 FluidSimulationFrameStats FluidSimulation::getFrameStatsData() {
     return _outputData.frameData;
+}
+
+void FluidSimulation::getMarkerParticlePositionDataRange(int start_idx, int end_idx, char *data) {
+    if (start_idx < 0 || end_idx > (int)_markerParticles.size() || start_idx > end_idx) {
+        std::string msg = "Error: invalid range.\n";
+        msg += "range: [" + _toString(start_idx) + ", " + _toString(end_idx) + "]\n";
+        throw std::domain_error(msg);
+    }
+
+    vmath::vec3 *positions = (vmath::vec3*)data;
+    for (int i = start_idx; i < end_idx; i++) {
+        positions[i - start_idx] = _markerParticles[i].position * _domainScale + _domainOffset;
+    }
+}
+
+void FluidSimulation::getMarkerParticleVelocityDataRange(int start_idx, int end_idx, char *data) {
+    if (start_idx < 0 || end_idx > (int)_markerParticles.size() || start_idx > end_idx) {
+        std::string msg = "Error: invalid range.\n";
+        msg += "range: [" + _toString(start_idx) + ", " + _toString(end_idx) + "]\n";
+        throw std::domain_error(msg);
+    }
+
+    vmath::vec3 *velocities = (vmath::vec3*)data;
+    for (int i = start_idx; i < end_idx; i++) {
+        velocities[i - start_idx] = _markerParticles[i].velocity;
+    }
+}
+
+void FluidSimulation::getDiffuseParticlePositionDataRange(int start_idx, int end_idx, char *data) {
+    FragmentedVector<DiffuseParticle>* dps = _diffuseMaterial.getDiffuseParticles();
+    if (start_idx < 0 || end_idx > (int)dps->size() || start_idx > end_idx) {
+        std::string msg = "Error: invalid range.\n";
+        msg += "range: [" + _toString(start_idx) + ", " + _toString(end_idx) + "]\n";
+        throw std::domain_error(msg);
+    }
+
+    vmath::vec3 *positions = (vmath::vec3*)data;
+    for (int i = start_idx; i < end_idx; i++) {
+        positions[i - start_idx] = dps->at(i).position * _domainScale + _domainOffset;
+    }
+}
+
+void FluidSimulation::getDiffuseParticleVelocityDataRange(int start_idx, int end_idx, char *data) {
+    FragmentedVector<DiffuseParticle>* dps = _diffuseMaterial.getDiffuseParticles();
+    if (start_idx < 0 || end_idx > (int)dps->size() || start_idx > end_idx) {
+        std::string msg = "Error: invalid range.\n";
+        msg += "range: [" + _toString(start_idx) + ", " + _toString(end_idx) + "]\n";
+        throw std::domain_error(msg);
+    }
+
+    vmath::vec3 *velocities = (vmath::vec3*)data;
+    for (int i = start_idx; i < end_idx; i++) {
+        velocities[i - start_idx] = dps->at(i).velocity;
+    }
+}
+
+void FluidSimulation::getDiffuseParticleLifetimeDataRange(int start_idx, int end_idx, char *data) {
+    FragmentedVector<DiffuseParticle>* dps = _diffuseMaterial.getDiffuseParticles();
+    if (start_idx < 0 || end_idx > (int)dps->size() || start_idx > end_idx) {
+        std::string msg = "Error: invalid range.\n";
+        msg += "range: [" + _toString(start_idx) + ", " + _toString(end_idx) + "]\n";
+        throw std::domain_error(msg);
+    }
+
+    float *lifetimes = (float*)data;
+    for (int i = start_idx; i < end_idx; i++) {
+        lifetimes[i - start_idx] = dps->at(i).lifetime;
+    }
+}
+
+void FluidSimulation::getDiffuseParticleTypeDataRange(int start_idx, int end_idx, char *data) {
+    FragmentedVector<DiffuseParticle>* dps = _diffuseMaterial.getDiffuseParticles();
+    if (start_idx < 0 || end_idx > (int)dps->size() || start_idx > end_idx) {
+        std::string msg = "Error: invalid range.\n";
+        msg += "range: [" + _toString(start_idx) + ", " + _toString(end_idx) + "]\n";
+        throw std::domain_error(msg);
+    }
+
+    for (int i = start_idx; i < end_idx; i++) {
+        data[i - start_idx] = (char)(dps->at(i).type);
+    }
+}
+
+void FluidSimulation::getDiffuseParticleIdDataRange(int start_idx, int end_idx, char *data) {
+    FragmentedVector<DiffuseParticle>* dps = _diffuseMaterial.getDiffuseParticles();
+    if (start_idx < 0 || end_idx > (int)dps->size() || start_idx > end_idx) {
+        std::string msg = "Error: invalid range.\n";
+        msg += "range: [" + _toString(start_idx) + ", " + _toString(end_idx) + "]\n";
+        throw std::domain_error(msg);
+    }
+
+    for (int i = start_idx; i < end_idx; i++) {
+        data[i - start_idx] = (char)(dps->at(i).id);
+    }
 }
 
 void FluidSimulation::getMarkerParticlePositionData(char *data) {
@@ -2399,6 +2560,24 @@ void FluidSimulation::_initializeSimulationGrids(int isize, int jsize, int ksize
     t.stop();
 
     _logfile.log("Constructing Weight Grid:      \t", t.getTime(), 4, 1);
+
+    if (_isForceFieldsEnabled) {
+        t.reset();
+        t.start();
+        _initializeForceFieldGrid(isize, jsize, ksize, dx);
+        t.stop();
+
+        _logfile.log("Constructing Force Field Grid: \t", t.getTime(), 4, 1);
+    }
+}
+
+void FluidSimulation::_initializeForceFieldGrid(int isize, int jsize, int ksize, double dx) {
+    int reduction = _forceFieldReductionLevel;
+    int isizeff = (int)std::ceil((double)isize / (double)reduction);
+    int jsizeff = (int)std::ceil((double)jsize / (double)reduction); ;
+    int ksizeff = (int)std::ceil((double)ksize / (double)reduction); ;
+    double dxff = dx * reduction;
+    _forceFieldGrid.initialize(isizeff, jsizeff, ksizeff, dxff);
 }
 
 double FluidSimulation::_getMarkerParticleJitter() {
@@ -2595,6 +2774,8 @@ void FluidSimulation::_addAnimatedObjectsToSolidSDF(double dt) {
         tempSolidInversedSDF.enableVelocityData();
         tempSolidInversedSDF.negate();
         _solidSDF.calculateUnion(tempSolidInversedSDF);
+
+        _tempSolidSDF.enableVelocityData();
     }
 
     if (!_isTempSolidLevelSetEnabled) {
@@ -2652,6 +2833,8 @@ void FluidSimulation::_addStaticObjectsToSDF(double dt, MeshLevelSet &sdf){
         tempSolidInversedSDF.enableVelocityData();
         tempSolidInversedSDF.negate();
         sdf.calculateUnion(tempSolidInversedSDF);
+
+        _tempSolidSDF.enableVelocityData();
     }
 }
 
@@ -3114,6 +3297,11 @@ void FluidSimulation::_getInflowConstrainedVelocityComponents(ValidVelocityCompo
     }
 }
 
+void FluidSimulation::_updateForceFieldGrid(double dt) {
+    _forceFieldGrid.setGravityVector(_getConstantBodyForce());
+    _forceFieldGrid.update(dt);
+}
+
 void FluidSimulation::_applyConstantBodyForces(ValidVelocityComponentGrid &ex, double dt) {
     vmath::vec3 bodyForce = _getConstantBodyForce();
     float eps = 1e-6;
@@ -3155,18 +3343,101 @@ void FluidSimulation::_applyConstantBodyForces(ValidVelocityComponentGrid &ex, d
     }
 }
 
+void FluidSimulation::_applyForceFieldGridForces(ValidVelocityComponentGrid &ex, double dt) {
+    int U = 0; int V = 1; int W = 2;
+    _applyForceFieldGridForcesMT(ex, dt, U);
+    _applyForceFieldGridForcesMT(ex, dt, V);
+    _applyForceFieldGridForcesMT(ex, dt, W);
+
+}
+
+void FluidSimulation::_applyForceFieldGridForcesMT(ValidVelocityComponentGrid &ex, double dt, int dir) {
+
+    int U = 0; int V = 1; int W = 2;
+
+    int gridsize = 0;
+    if (dir == U) {
+        gridsize = (_isize + 1) * _jsize * _ksize;
+    } else if (dir == V) {
+        gridsize = _isize * (_jsize + 1) * _ksize;
+    } else if (dir == W) {
+        gridsize = _isize * _jsize * (_ksize + 1);
+    }
+
+    int numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)fmin(numCPU, gridsize);
+    std::vector<std::thread> threads(numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
+    for (int i = 0; i < numthreads; i++) {
+        threads[i] = std::thread(&FluidSimulation::_applyForceFieldGridForcesThread, this,
+                                 intervals[i], intervals[i + 1], &ex, dt, dir);
+    }
+
+    for (int i = 0; i < numthreads; i++) {
+        threads[i].join();
+    }
+}
+
+void FluidSimulation::_applyForceFieldGridForcesThread(int startidx, int endidx, 
+                                                       ValidVelocityComponentGrid *ex, double dt, int dir) {
+    int U = 0; int V = 1; int W = 2;
+
+    if (dir == U) {
+
+        for (int idx = startidx; idx < endidx; idx++) {
+            GridIndex g = Grid3d::getUnflattenedIndex(idx, _isize + 1, _jsize);
+            if (!ex->validU(g)) {
+                vmath::vec3 p = Grid3d::FaceIndexToPositionU(g, _dx);
+                float xvel = _forceFieldGrid.evaluateForceAtPositionU(p);
+                _MACVelocity.addU(g, xvel * dt);
+            }
+        }
+
+    } else if (dir == V) {
+
+        for (int idx = startidx; idx < endidx; idx++) {
+            GridIndex g = Grid3d::getUnflattenedIndex(idx, _isize, _jsize + 1);
+            if (!ex->validV(g)) {
+                vmath::vec3 p = Grid3d::FaceIndexToPositionV(g, _dx);
+                float yvel = _forceFieldGrid.evaluateForceAtPositionV(p);
+                _MACVelocity.addV(g, yvel * dt);
+            }
+        }
+
+    } else if (dir == W) {
+
+        for (int idx = startidx; idx < endidx; idx++) {
+            GridIndex g = Grid3d::getUnflattenedIndex(idx, _isize, _jsize);
+            if (!ex->validW(g)) {
+                vmath::vec3 p = Grid3d::FaceIndexToPositionW(g, _dx);
+                float zvel = _forceFieldGrid.evaluateForceAtPositionW(p);
+                _MACVelocity.addW(g, zvel * dt);
+            }
+        }
+
+    }
+}
+
 void FluidSimulation::_applyBodyForcesToVelocityField(double dt) {
-    _logfile.logString(_logfile.getTime() + " BEGIN       Apply Body Forces");
+    _logfile.logString(_logfile.getTime() + " BEGIN       Apply Force Fields");
 
     StopWatch t;
     t.start();
+
     ValidVelocityComponentGrid ex(_isize, _jsize, _ksize);
     _getInflowConstrainedVelocityComponents(ex);
-    _applyConstantBodyForces(ex, dt);
+
+    if (_isForceFieldsEnabled) {
+        _updateForceFieldGrid(dt);
+        _applyForceFieldGridForces(ex, dt);
+    } else {
+        _applyConstantBodyForces(ex, dt);
+    }
+
     t.stop();
     _timingData.applyBodyForcesToVelocityField += t.getTime();
 
-    _logfile.logString(_logfile.getTime() + " COMPLETE    Apply Body Forces");
+    _logfile.logString(_logfile.getTime() + " COMPLETE    Apply Force Fields");
 }
 
 /********************************************************************************
@@ -4376,6 +4647,34 @@ void FluidSimulation::_getTriangleMeshFileData(TriangleMesh &mesh, std::vector<c
     }
 }
 
+void FluidSimulation::_getForceFieldDebugFileData(std::vector<ForceFieldDebugNode> &debugNodes, 
+                                                  std::vector<char> &data) {
+
+    std::vector<float> values;
+    for (size_t i = 0; i < debugNodes.size(); i++) {
+        values.push_back(debugNodes[i].x);
+        values.push_back(debugNodes[i].y);
+        values.push_back(debugNodes[i].z);
+        values.push_back(debugNodes[i].strength);
+    }
+
+    int numVertices = (int)debugNodes.size();
+    int vertexDataSize = 4 * numVertices * sizeof(float);
+    int dataSize = sizeof(int) + vertexDataSize;
+
+    data.clear();
+    data.resize(dataSize);
+    data.shrink_to_fit();
+
+    int byteOffset = 0;
+    std::memcpy(data.data() + byteOffset, &numVertices, sizeof(int));
+    byteOffset += sizeof(int);
+
+    std::memcpy(data.data() + byteOffset, (char *)values.data(), vertexDataSize);
+    byteOffset += vertexDataSize;
+}
+
+
 void FluidSimulation::_getFluidParticleFileData(std::vector<vmath::vec3> &particles, 
                                                 std::vector<int> &binStarts, 
                                                 std::vector<float> &binSpeeds, 
@@ -4942,6 +5241,30 @@ void FluidSimulation::_outputInternalObstacleMesh() {
     _outputData.frameData.obstacle.bytes = _outputData.internalObstacleMeshData.size();
 }
 
+void FluidSimulation::_outputForceFieldDebugData() {
+    if (!_isForceFieldDebugOutputEnabled) { 
+        return; 
+    }
+
+    std::vector<ForceFieldDebugNode> debugNodes;
+    _forceFieldGrid.generateDebugNodes(debugNodes);
+
+    for (size_t i = 0; i < debugNodes.size(); i++) {
+        ForceFieldDebugNode n = debugNodes[i];
+        n.x = n.x * _domainScale + _domainOffset.x;
+        n.y = n.y * _domainScale + _domainOffset.y;
+        n.z = n.z * _domainScale + _domainOffset.z;
+        debugNodes[i] = n;
+    }
+
+    _getForceFieldDebugFileData(debugNodes, _outputData.forceFieldDebugData);
+
+    _outputData.frameData.obstacle.enabled = 1;
+    _outputData.frameData.obstacle.vertices = (int)debugNodes.size();
+    _outputData.frameData.obstacle.triangles = 0;
+    _outputData.frameData.forcefield.bytes = _outputData.forceFieldDebugData.size();
+}
+
 void FluidSimulation::_outputSimulationLogFile() {
     _outputData.logfileData = _logfile.flush();
 }
@@ -4956,6 +5279,7 @@ void FluidSimulation::_outputSimulationData() {
         _outputDiffuseMaterial();
         _outputFluidParticles();
         _outputInternalObstacleMesh();
+        _outputForceFieldDebugData();
         t.stop();
 
         _timingData.outputNonMeshSimulationData += t.getTime();
@@ -5157,7 +5481,7 @@ void FluidSimulation::_logFrameInfo() {
         PrintData("Advect Velocity Field                ", tdata.advectVelocityField),
         PrintData("Save Velocity Field                  ", tdata.saveVelocityField),
         PrintData("Calculate Surface Curvature          ", tdata.calculateFluidCurvatureGrid),
-        PrintData("Apply Body Forces                    ", tdata.applyBodyForcesToVelocityField),
+        PrintData("Apply Force Fields                   ", tdata.applyBodyForcesToVelocityField),
         PrintData("Apply Viscosity                      ", tdata.applyViscosityToVelocityField),
         PrintData("Solve Pressure System                ", tdata.pressureSolve),
         PrintData("Constrain Velocity Fields            ", tdata.constrainVelocityFields),

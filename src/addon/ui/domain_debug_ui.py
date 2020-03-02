@@ -76,7 +76,7 @@ class FLIPFLUID_PT_DomainTypeDebugPanel(bpy.types.Panel):
 
         if show_advanced:
             column = split.column(align=True)
-            column.enabled = gprops.display_simulation_grid
+            column.enabled = gprops.display_simulation_grid or gprops.display_domain_bounds
             column.prop(gprops, "domain_bounds_color", text="")
 
         if show_advanced:
@@ -98,15 +98,45 @@ class FLIPFLUID_PT_DomainTypeDebugPanel(bpy.types.Panel):
             column.enabled = gprops.export_fluid_particles
             split = vcu.ui_split(column, factor=0.33)
             column = split.column()
-            if not vcu.is_blender_28():
-                # custom drawing particle size does not seem to work in Blender 2.80
-                column.label(text="Particle Size:")
+            column.label(text="Particle Size:")
             column.label(text="Draw Bounds:")
             column = split.column()
+            column.prop(gprops, "particle_size", text="")
+            column.prop_search(gprops, "particle_draw_aabb", bpy.data, "objects", text="")
+
+        # Force field features currently hidden from UI
+        """
+        if show_advanced:
+            box = self.layout.box()
+            box.prop(gprops, "export_force_field")
+            column = box.column(align=True)
+            column.enabled = gprops.export_force_field
+            column.label(text="Force Field Display Settings:")
+
+            row = column.row(align=True)
+            row.prop(gprops, "min_gradient_force")
+            row.prop(gprops, "max_gradient_force")
+            row = column.row(align=True)
+            row.prop(gprops, "low_force_field_color", text="")
+            row.prop(gprops, "high_force_field_color", text="")
+            row = column.row(align=True)
+            row.prop(gprops, "force_field_gradient_mode", expand=True)
+
+            column = box.column()
+            column.enabled = gprops.export_force_field
+            split = vcu.ui_split(column, factor=0.33)
+            column = split.column()
+            column.label(text="Display Amount:")
             if not vcu.is_blender_28():
                 # custom drawing particle size does not seem to work in Blender 2.80
-                column.prop(gprops, "particle_size", text="")
-            column.prop_search(gprops, "particle_draw_aabb", bpy.data, "objects", text="")
+                column.label(text="Line Size:")
+            column = split.column()
+
+            column.prop(gprops, "force_field_display_amount", text="")
+            if not vcu.is_blender_28():
+                # custom drawing particle size does not seem to work in Blender 2.80
+                column.prop(gprops, "force_field_line_size", text="")
+        """
 
         column = self.layout.column(align=True)
         column.prop(gprops, "export_internal_obstacle_mesh")

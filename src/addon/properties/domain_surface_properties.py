@@ -132,8 +132,9 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
             ); exec(conv("smoothing_iterations"))
     particle_scale = FloatProperty(
             name="Particle Scale", 
-            description = "Size of particles for mesh generation", 
-            min=1.0, soft_max=3.0,
+            description = "Size of particles for mesh generation. A value less than 1.0"
+                " is not recommended and may result in an incomplete mesh", 
+            soft_min=1.0, soft_max=3.0,
             default=1.0,
             precision=2,
             ); exec(conv("particle_scale"))

@@ -57,6 +57,7 @@ extern "C" {
             MeshObject* obj, 
             MeshUtils::TriangleMesh_t mesh_data, int *err) {
 
+        *err = CBindings::SUCCESS;
         try {
             TriangleMesh mesh;
             MeshUtils::structToTriangleMesh(mesh_data, mesh);
@@ -73,6 +74,7 @@ extern "C" {
             MeshUtils::TriangleMesh_t mesh_data_current,
             MeshUtils::TriangleMesh_t mesh_data_next, int *err) {
 
+        *err = CBindings::SUCCESS;
         try {
             TriangleMesh meshPrevious, meshCurrent, meshNext;
             MeshUtils::structToTriangleMesh(mesh_data_previous, meshPrevious);

@@ -72,6 +72,12 @@ class FLIPFLUID_PT_DomainTypeCachePanel(bpy.types.Panel):
 
         column = self.layout.column(align=True)
         column.label(text="Cache Operators:")
+
+        # The move, rename, and copy cache operations should not be performed
+        # in Blender and are removed from the UI. There is a potential for Blender 
+        # to crash, which could lead to loss of data. It is best to perform these 
+        # operations through the OS filesystem which is cabable of handling failures.
+        """
         row = column.row(align=True)
         row.operator("flip_fluid_operators.move_cache", text="Move")
         row.prop(cprops, "move_cache_directory")
@@ -83,15 +89,19 @@ class FLIPFLUID_PT_DomainTypeCachePanel(bpy.types.Panel):
         row = column.row(align=True)
         row.operator("flip_fluid_operators.copy_cache", text="Copy")
         row.prop(cprops, "copy_cache_directory")
+        """
 
         if dprops.stats.is_cache_info_available:
             free_text = "Free (" + self.format_bytes(dprops.stats.cache_bytes.get()) + ")"
         else:
             free_text = "Free"
 
-        row = column.row(align = True)
-        row.operator("flip_fluid_operators.free_cache", text = free_text)
-        row.prop(cprops, "clear_cache_directory_logs")
+        split = column.split(align=True)
+        column_left = split.column(align=True)
+        column_right = split.column(align=True)
+        column_left.operator("flip_fluid_operators.free_cache", text=free_text)
+        column_right.prop(cprops, "clear_cache_directory_logs")
+        column_right.prop(cprops, "clear_cache_directory_export")
     
 
 def register():

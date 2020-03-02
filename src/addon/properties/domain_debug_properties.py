@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, os, sys
+import bpy, os, sys, platform
 from bpy.props import (
         BoolProperty,
         BoolVectorProperty,
@@ -36,7 +36,9 @@ from .. import (
         bake
         )
 
-from ..operators import draw_operators
+from ..operators import draw_grid_operators
+from ..operators import draw_particles_operators
+from ..operators import draw_force_field_operators
 from ..utils import version_compatibility_utils as vcu
 
 
@@ -45,10 +47,11 @@ class VersionHistoryItem(bpy.types.PropertyGroup):
     blender_version = StringProperty(default="-1"); exec(conv("blender_version"))
     flip_fluids_version = StringProperty(default="-1"); exec(conv("flip_fluids_version"))
     flip_fluids_label = StringProperty(default="-1"); exec(conv("flip_fluids_label"))
+    operating_system = StringProperty(default="-1"); exec(conv("operating_system"))
 
 
     def get_info_string(self):
-        return self.blender_version + "\t" + self.flip_fluids_version + "\t" + self.flip_fluids_label
+        return self.blender_version + "\t" + self.flip_fluids_version + "\t" + self.flip_fluids_label + "\t" + self.operating_system
 
 
 class DomainDebugProperties(bpy.types.PropertyGroup):
@@ -138,6 +141,7 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
            description="Color of the domain bounds visualization",
            update=lambda self, context: self._update_debug_grid_geometry(context),
            ); exec(conv("domain_bounds_color"))
+
     export_fluid_particles = BoolProperty(
             name="Enable Fluid Particle Debugging",
             description="Enable to export simulator fluid particle data and to"
@@ -199,6 +203,70 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
             type=bpy.types.Object,
             update=lambda self, context: self._update_debug_particle_geometry(context),
             ); exec(conv("particle_draw_aabb"))
+
+    export_force_field = BoolProperty(
+            name="Enable Force Field Debugging",
+            description="Enable to export simulator force field data and to"
+                " visualize force field lines. Enable this option before baking"
+                " a simulation to use this feature",
+            default=False,
+            update=lambda self, context: self._update_export_force_field(context),
+            ); exec(conv("export_force_field"))
+    low_force_field_color = FloatVectorProperty(  
+           name="Low Force Color",
+           subtype='COLOR',
+           default=(1.0, 1.0, 1.0),
+           min=0.0, max=1.0,
+           description="Color for low strength forces",
+           update=lambda self, context: self._update_export_force_field(context),
+           ); exec(conv("low_force_field_color"))
+    high_force_field_color = FloatVectorProperty(  
+           name="High Force Color",
+           subtype='COLOR',
+           default=(1.0, 0.0, 0.0),
+           min=0.0, max=1.0,
+           description="Color for high strength forces",
+           update=lambda self, context: self._update_export_force_field(context),
+           ); exec(conv("high_force_field_color"))
+    min_gradient_force = FloatProperty(
+            name="Low Color Force", 
+            description="Low force strength value for visualizing force field lines", 
+            min=0,
+            default=0.0,
+            precision=2,
+            update=lambda self, context: self._update_min_gradient_force(context),
+            ); exec(conv("min_gradient_force"))
+    max_gradient_force = FloatProperty(
+            name="High Color Force", 
+            description="High force strength value for visualizing force field lines", 
+            min=0,
+            default=15.0,
+            precision=2,
+            update=lambda self, context: self._update_max_gradient_force(context),
+            ); exec(conv("max_gradient_force"))
+    force_field_gradient_mode = EnumProperty(
+            name="Gradient Mode",
+            description="Type of color gradient",
+            items=types.gradient_interpolation_modes,
+            default='GRADIENT_RGB',
+            update=lambda self, context: self._update_max_gradient_force(context),
+            ); exec(conv("force_field_gradient_mode"))
+    force_field_display_amount = IntProperty(
+            name="Display Amount", 
+            description="Amount of force field lines to display in the viewport.", 
+            min=0, max=100,
+            default=25,
+            subtype='PERCENTAGE',
+            update=lambda self, context: self._update_force_field_geometry(context),
+            ); exec(conv("force_field_display_amount"))
+    force_field_line_size = IntProperty(
+            name="Line Size", 
+            description="Line thickness for force field visualization", 
+            min=1, soft_max=10,
+            default=2,
+            update=lambda self, context: self._update_force_field_geometry(context),
+            ); exec(conv("force_field_line_size"))
+
     export_internal_obstacle_mesh = BoolProperty(
             name="Enable Obstacle Debugging",
             description="Enable to export simulator obstacle data"
@@ -208,6 +276,7 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
             default=False,
             update=lambda self, context: self._update_export_internal_obstacle_mesh(context),
             ); exec(conv("export_internal_obstacle_mesh"))
+
     display_console_output = BoolProperty(
             name="Display Console Output",
             description="Display simulation info in the Blender system console",
@@ -218,6 +287,7 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
 
     is_draw_debug_grid_operator_running = BoolProperty(default=False); exec(conv("is_draw_debug_grid_operator_running"))
     is_draw_gl_particles_operator_running = BoolProperty(default=False); exec(conv("is_draw_gl_particles_operator_running"))
+    is_draw_gl_force_field_operator_running = BoolProperty(default=False); exec(conv("is_draw_gl_force_field_operator_running"))
 
     version_history = CollectionProperty(type=VersionHistoryItem); exec(conv("version_history"))
 
@@ -240,8 +310,15 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
         add(path + ".max_gradient_speed",              "Low-High Particle Velocities",    group_id=1)
         add(path + ".fluid_particle_gradient_mode",    "Fluid Speed Gradient Mode",       group_id=1)
         add(path + ".particle_size",                   "Particle Size",                   group_id=1)
-        add(path + ".export_internal_obstacle_mesh",   "Enable Obstacle Debugging",       group_id=2)
-        add(path + ".display_console_output",          "Display Console Output",          group_id=2)
+        add(path + ".low_force_field_color",           "Low Force Field Color",           group_id=2)
+        add(path + ".high_force_field_color",          "High Force Field Color",          group_id=2)
+        add(path + ".min_gradient_force",              "Low-High Force Strength",         group_id=2)
+        add(path + ".max_gradient_force",              "Low-High Force Strength",         group_id=2)
+        add(path + ".force_field_gradient_mode",       "Fluid Speed Gradient Mode",       group_id=2)
+        add(path + ".export_force_field",              "Enable Force Field Debugging",    group_id=2)
+        add(path + ".force_field_line_size",           "Line Size",                       group_id=2)
+        add(path + ".export_internal_obstacle_mesh",   "Enable Obstacle Debugging",       group_id=3)
+        add(path + ".display_console_output",          "Display Console Output",          group_id=3)
 
 
     def load_post(self):
@@ -254,6 +331,9 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
         if self.is_simulation_grid_debugging_enabled():
             self._update_debug_grid_geometry(bpy.context)
             bpy.ops.flip_fluid_operators.draw_debug_grid('INVOKE_DEFAULT')
+        if self.export_force_field:
+            self._update_force_field_geometry(bpy.context)
+            bpy.ops.flip_fluid_operators.draw_force_field('INVOKE_DEFAULT')
 
 
     def scene_update_post(self, scene):
@@ -266,6 +346,7 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
         vdata.blender_version = bpy.app.version_string
         vdata.flip_fluids_version = str(bl_info.get('version', (-1, -1, -1)))
         vdata.flip_fluids_label = bl_info.get('description', "-1")
+        vdata.operating_system = platform.system()
         if len(self.version_history) > 250:
             self.version_history.remove(0)
 
@@ -329,12 +410,26 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
             bpy.ops.flip_fluid_operators.draw_debug_grid('INVOKE_DEFAULT')
 
 
+    def _update_export_force_field(self, context):
+        dprops = context.scene.flip_fluid.get_domain_properties()
+        if dprops is None:
+            return
+
+        if self.export_force_field:
+            self._update_force_field_geometry(context)
+            dprops.mesh_cache.gl_force_field.enable()
+            if not self.is_draw_gl_force_field_operator_running:
+                bpy.ops.flip_fluid_operators.draw_force_field('INVOKE_DEFAULT')
+        else:
+            dprops.mesh_cache.gl_force_field.disable()
+
+
     def _update_display_domain_bounds(self, context):
         self._update_display_simulation_grid(context)
 
 
     def _update_debug_grid_geometry(self, context):
-        draw_operators.update_debug_grid_geometry(context)
+        draw_grid_operators.update_debug_grid_geometry(context)
 
 
     def _update_min_gradient_speed(self, context):
@@ -350,7 +445,23 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
 
 
     def _update_debug_particle_geometry(self, context):
-        draw_operators.update_debug_particle_geometry(context)
+        draw_particles_operators.update_debug_particle_geometry(context)
+
+
+    def _update_force_field_geometry(self, context):
+        draw_force_field_operators.update_debug_force_field_geometry(context)
+
+
+    def _update_min_gradient_force(self, context):
+        if self.min_gradient_force > self.max_gradient_force:
+            self.max_gradient_force = self.min_gradient_force
+        self._update_force_field_geometry(context)
+
+
+    def _update_max_gradient_force(self, context):
+        if self.max_gradient_force < self.min_gradient_force:
+            self.min_gradient_force = self.max_gradient_force
+        self._update_force_field_geometry(context)
 
 
     def _update_display_console_output(self, context):

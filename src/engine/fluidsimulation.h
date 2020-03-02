@@ -46,6 +46,7 @@ SOFTWARE.
 #include "velocityadvector.h"
 #include "meshfluidsource.h"
 #include "influencegrid.h"
+#include "forcefieldgrid.h"
 
 class AABB;
 class MeshFluidSource;
@@ -94,6 +95,7 @@ struct FluidSimulationFrameStats {
     FluidSimulationMeshStats dustblur;
     FluidSimulationMeshStats particles;
     FluidSimulationMeshStats obstacle;
+    FluidSimulationMeshStats forcefield;
     FluidSimulationTimingStats timing;
 };
 
@@ -386,6 +388,15 @@ public:
     void enableInternalObstacleMeshOutput();
     void disableInternalObstacleMeshOutput();
     bool isInternalObstacleMeshOutputEnabled();
+
+    /*
+        Enable/disable the simulation from saving internal force field data
+
+        Disabled by default.
+    */
+    void enableForceFieldDebugOutput();
+    void disableForceFieldDebugOutput();
+    bool isForceFieldDebugOutputEnabled();
 
     /*
         Enable/disable the simulation from simulating diffuse 
@@ -755,6 +766,26 @@ public:
     void resetBodyForce();
 
     /*
+        Enable/Disable force field features
+    */
+    void enableForceFields();
+    void disableForceFields();
+    bool isForceFieldsEnabled();
+
+    /*
+        Get/Set reduction level for force field grid. Force field
+        grid resolution is ceil(domain_resolution / reduction_level).
+        Value must be >= 1.
+    */
+    int getForceFieldReductionLevel();
+    void setForceFieldReductionLevel(int level);
+
+    /*
+        Return pointer to ForceFieldGrid object
+    */
+    ForceFieldGrid* getForceFieldGrid();
+
+    /*
         Viscosity of the fluid. 
         Must be greater than or equal to zero. 
     */
@@ -1053,8 +1084,17 @@ public:
     std::vector<char>* getDiffuseDustBlurData();
     std::vector<char>* getFluidParticleData();
     std::vector<char>* getInternalObstacleMeshData();
+    std::vector<char>* getForceFieldDebugData();
     std::vector<char>* getLogFileData();
     FluidSimulationFrameStats getFrameStatsData();
+
+    void getMarkerParticlePositionDataRange(int start_idx, int end_idx, char *data);
+    void getMarkerParticleVelocityDataRange(int start_idx, int end_idx, char *data);
+    void getDiffuseParticlePositionDataRange(int start_idx, int end_idx, char *data);
+    void getDiffuseParticleVelocityDataRange(int start_idx, int end_idx, char *data);
+    void getDiffuseParticleLifetimeDataRange(int start_idx, int end_idx, char *data);
+    void getDiffuseParticleTypeDataRange(int start_idx, int end_idx, char *data);
+    void getDiffuseParticleIdDataRange(int start_idx, int end_idx, char *data);
 
     void getMarkerParticlePositionData(char *data);
     void getMarkerParticleVelocityData(char *data);
@@ -1103,6 +1143,7 @@ private:
         std::vector<char> diffuseDustBlurData;
         std::vector<char> fluidParticleData;
         std::vector<char> internalObstacleMeshData;
+        std::vector<char> forceFieldDebugData;
         std::vector<char> logfileData;
         FluidSimulationFrameStats frameData;
         bool isInitialized = false;
@@ -1184,6 +1225,7 @@ private:
     */
     void _initializeLogFile();
     void _initializeSimulationGrids(int isize, int jsize, int ksize, double dx);
+    void _initializeForceFieldGrid(int isize, int jsize, int ksize, double dx);
     void _initializeSimulation();
     void _initializeParticleRadii();
     double _getMarkerParticleJitter();
@@ -1260,7 +1302,12 @@ private:
     void _applyBodyForcesToVelocityField(double dt);
     vmath::vec3 _getConstantBodyForce();
     void _getInflowConstrainedVelocityComponents(ValidVelocityComponentGrid &ex);
+    void _updateForceFieldGrid(double dt);
     void _applyConstantBodyForces(ValidVelocityComponentGrid &ex, double dt);
+    void _applyForceFieldGridForces(ValidVelocityComponentGrid &ex, double dt);
+    void _applyForceFieldGridForcesMT(ValidVelocityComponentGrid &ex, double dt, int dir);
+    void _applyForceFieldGridForcesThread(int startidx, int endidx, 
+                                          ValidVelocityComponentGrid *ex, double dt, int dir);
 
     /*
         Viscosity Solve
@@ -1369,9 +1416,12 @@ private:
     float _calculateParticleSpeedPercentileThreshold(float pct);
     void _outputFluidParticles();
     void _outputInternalObstacleMesh();
+    void _outputForceFieldDebugData();
     std::string _numberToString(int number);
     std::string _getFrameString(int number);
     void _getTriangleMeshFileData(TriangleMesh &mesh, std::vector<char> &data);
+    void _getForceFieldDebugFileData(std::vector<ForceFieldDebugNode> &debugNodes, 
+                                     std::vector<char> &data);
     void _getFluidParticleFileData(std::vector<vmath::vec3> &particles, 
                                    std::vector<int> &binStarts, 
                                    std::vector<float> &binSpeeds, 
@@ -1520,6 +1570,7 @@ private:
     double _previewdx = 0.0;
     bool _isFluidParticleOutputEnabled = false;
     bool _isInternalObstacleMeshOutputEnabled = false;
+    bool _isForceFieldDebugOutputEnabled = false;
     bool _isDiffuseMaterialOutputEnabled = false;
     bool _isBubbleDiffuseMaterialEnabled = true;
     bool _isSprayDiffuseMaterialEnabled = true;
@@ -1559,8 +1610,10 @@ private:
 
     // Apply body forces
     std::vector<vmath::vec3> _constantBodyForces;
-    bool _isSurfaceTensionEnabled = false;
-    double _surfaceTensionConstant = 0.0;
+
+    bool _isForceFieldsEnabled = false;
+    int _forceFieldReductionLevel = 1;
+    ForceFieldGrid _forceFieldGrid;
 
     // Viscosity solve
     Array3d<float> _viscosity;
@@ -1571,6 +1624,8 @@ private:
     // Pressure solve
     WeightGrid _weightGrid;
     bool _isWeightGridUpToDate = false;
+    bool _isSurfaceTensionEnabled = false;
+    double _surfaceTensionConstant = 0.0;
     double _density = 20.0;
     double _minfrac = 0.01;
     double _pressureSolveTolerance = 1e-9;

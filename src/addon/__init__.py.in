@@ -102,6 +102,11 @@ def frame_change_post(scene, depsgraph=None):
 
 
 @bpy.app.handlers.persistent
+def render_pre(scene, depsgraph=None):
+    render.render_pre(scene)
+
+
+@bpy.app.handlers.persistent
 def load_pre(nonedata):
     properties.load_pre()
 
@@ -151,6 +156,7 @@ def register():
     bpy.app.handlers.render_complete.append(render_complete)
     bpy.app.handlers.render_cancel.append(render_cancel)
     bpy.app.handlers.frame_change_post.append(frame_change_post)
+    bpy.app.handlers.render_pre.append(render_pre)
     bpy.app.handlers.load_pre.append(load_pre)
     bpy.app.handlers.load_post.append(load_post)
     bpy.app.handlers.save_pre.append(save_pre)
@@ -175,6 +181,7 @@ def unregister():
     bpy.app.handlers.render_complete.remove(render_complete)
     bpy.app.handlers.render_cancel.remove(render_cancel)
     bpy.app.handlers.frame_change_post.remove(frame_change_post)
+    bpy.app.handlers.render_pre.remove(render_pre)
     bpy.app.handlers.load_pre.remove(load_pre)
     bpy.app.handlers.load_post.remove(load_post)
     bpy.app.handlers.save_pre.remove(save_pre)

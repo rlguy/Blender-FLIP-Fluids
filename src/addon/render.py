@@ -20,6 +20,7 @@ from .utils import version_compatibility_utils as vcu
 
 IS_RENDERING = False
 IS_FRAME_REQUIRING_RELOAD = False
+RENDER_PRE_FRAME_NUMBER = 0
 
 
 def __get_domain_properties():
@@ -30,7 +31,23 @@ def __is_domain_set():
     return bpy.context.scene.flip_fluid.get_domain_object() is not None
 
 
-def __get_current_frame():
+def get_current_frame():
+    dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+    if dprops is None:
+        return 0 
+
+    if is_rendering():
+        global RENDER_PRE_FRAME_NUMBER
+        return RENDER_PRE_FRAME_NUMBER
+
+    if dprops.render.hold_frame:
+        current_frame = dprops.render.hold_frame_number
+    else:
+        current_frame = bpy.context.scene.frame_current
+    return current_frame - bpy.context.scene.flip_fluid_helper.playback_frame_offset
+
+
+def __get_render_pre_current_frame():
     dprops = bpy.context.scene.flip_fluid.get_domain_properties()
     if dprops is None:
         return 0 
@@ -292,6 +309,10 @@ def __get_whitewater_particle_object_geometry(whitewater_type):
             return [], []
 
 
+def get_whitewater_particle_object_geometry(whitewater_type):
+    return __get_whitewater_particle_object_geometry(whitewater_type)
+
+
 def __get_whitewater_particle_object_scale(whitewater_type):
     dprops = __get_domain_properties()
     rprops = dprops.render
@@ -310,6 +331,9 @@ def __get_whitewater_particle_object_scale(whitewater_type):
     else:
         return particle_object_scale
 
+
+def get_whitewater_particle_object_scale(whitewater_type):
+    return __get_whitewater_particle_object_scale(whitewater_type)
 
 def __get_whitewater_particle_object_display_bool(whitewater_type):
     global IS_RENDERING
@@ -363,8 +387,15 @@ def __load_whitewater_particle_object_frame(frameno, force_reload=False, depsgra
                 force_load,
                 depsgraph
                 )
+        dprops.mesh_cache.foam.set_duplivert_instance_type('VERTS')
+        if vcu.is_blender_279():
+            # In Blender 2.79, the duplivert object must not be hidden
+            # in the viewport in order to be displayed in the viewport.
+            dprops.mesh_cache.foam.set_duplivert_hide_viewport(False)
     else:
-        dprops.mesh_cache.foam.unload_duplivert_object()
+        dprops.mesh_cache.foam.set_duplivert_instance_type('NONE')
+        if vcu.is_blender_279():
+            dprops.mesh_cache.foam.set_duplivert_hide_viewport(True)
         
     if bubble_verts and display_bubble_particle:
         dprops.mesh_cache.bubble.load_duplivert_object(
@@ -373,8 +404,13 @@ def __load_whitewater_particle_object_frame(frameno, force_reload=False, depsgra
                 force_load,
                 depsgraph
                 )
+        dprops.mesh_cache.bubble.set_duplivert_instance_type('VERTS')
+        if vcu.is_blender_279():
+            dprops.mesh_cache.bubble.set_duplivert_hide_viewport(False)
     else:
-        dprops.mesh_cache.bubble.unload_duplivert_object()
+        dprops.mesh_cache.bubble.set_duplivert_instance_type('NONE')
+        if vcu.is_blender_279():
+            dprops.mesh_cache.bubble.set_duplivert_hide_viewport(True)
 
     if spray_verts and display_spray_particle:
         dprops.mesh_cache.spray.load_duplivert_object(
@@ -383,8 +419,13 @@ def __load_whitewater_particle_object_frame(frameno, force_reload=False, depsgra
                 force_load,
                 depsgraph
                 )
+        dprops.mesh_cache.spray.set_duplivert_instance_type('VERTS')
+        if vcu.is_blender_279():
+            dprops.mesh_cache.spray.set_duplivert_hide_viewport(False)
     else:
-        dprops.mesh_cache.spray.unload_duplivert_object()
+        dprops.mesh_cache.spray.set_duplivert_instance_type('NONE')
+        if vcu.is_blender_279():
+            dprops.mesh_cache.spray.set_duplivert_hide_viewport(True)
 
     if dust_verts and display_dust_particle:
         dprops.mesh_cache.dust.load_duplivert_object(
@@ -393,8 +434,13 @@ def __load_whitewater_particle_object_frame(frameno, force_reload=False, depsgra
                 force_load,
                 depsgraph
                 )
+        dprops.mesh_cache.dust.set_duplivert_instance_type('VERTS')
+        if vcu.is_blender_279():
+            dprops.mesh_cache.dust.set_duplivert_hide_viewport(False)
     else:
-        dprops.mesh_cache.dust.unload_duplivert_object()
+        dprops.mesh_cache.dust.set_duplivert_instance_type('NONE')
+        if vcu.is_blender_279():
+            dprops.mesh_cache.dust.set_duplivert_hide_viewport(True)
 
 
 def __load_whitewater_frame(frameno, force_reload=False, depsgraph=None):
@@ -428,6 +474,19 @@ def __load_obstacle_debug_frame(frameno, force_reload=False):
     dprops.mesh_cache.obstacle.load_frame(frameno, force_load)
 
 
+def __load_force_field_debug_frame(frameno, force_reload=False):
+    global IS_RENDERING
+    if not __is_domain_set():
+        return
+
+    dprops = __get_domain_properties()
+    if not dprops.debug.export_force_field:
+        return
+
+    force_load = force_reload or IS_RENDERING
+    dprops.mesh_cache.gl_force_field.load_frame(frameno, force_load)
+
+
 def __load_frame(frameno, force_reload=False, depsgraph=None):
     if not __is_domain_set():
         return
@@ -438,6 +497,7 @@ def __load_frame(frameno, force_reload=False, depsgraph=None):
     __load_surface_frame(frameno, force_reload, depsgraph)
     __load_whitewater_frame(frameno, force_reload, depsgraph)
     __load_fluid_particle_debug_frame(frameno, force_reload)
+    __load_force_field_debug_frame(frameno, force_reload)
     __load_obstacle_debug_frame(frameno, force_reload)
 
 
@@ -489,6 +549,11 @@ def render_cancel(scene):
     render_complete(scene)
 
 
+def render_pre(scene):
+    global RENDER_PRE_FRAME_NUMBER
+    RENDER_PRE_FRAME_NUMBER = __get_render_pre_current_frame()
+
+
 def frame_change_post(scene, depsgraph=None):
     if not __is_domain_set():
         return
@@ -500,7 +565,7 @@ def frame_change_post(scene, depsgraph=None):
             print("FLIP FLUIDS WARNING: Blender 2.80 contains a bug that can cause frequent render crashes and incorrect render results. Blender version 2.81 or higher is recommended.")
 
     force_reload = False
-    frameno = __get_current_frame()
+    frameno = get_current_frame()
     __load_frame(frameno, force_reload, depsgraph)
     dprops = __get_domain_properties()
     dprops.render.current_frame = frameno
@@ -514,7 +579,7 @@ def scene_update_post(scene):
     if IS_FRAME_REQUIRING_RELOAD:
         IS_FRAME_REQUIRING_RELOAD = False
 
-        current_frame = __get_current_frame()
+        current_frame = get_current_frame()
         reload_frame(current_frame)
         dprops = bpy.context.scene.flip_fluid.get_domain_properties()
         dprops.render.current_frame = current_frame
