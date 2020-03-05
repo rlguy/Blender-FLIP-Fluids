@@ -1,4 +1,4 @@
-Want to try FLIP Fluids addon before buying the full [Blender Market Product](https://blendermarket.com/products/flipfluids)? Try out the **FLIP Fluids Demo** addon! The FLIP Fluids Demo will let you create, run, and render your own fluid simulations with a few small limitations.
+Want to try FLIP Fluids addon before buying the full [Blender Market Product](https://blendermarket.com/products/flipfluids)? Try out the **[FLIP Fluids Demo](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/FLIP-Fluids-Demo-Addon)** addon! The FLIP Fluids Demo will let you create, run, and render your own fluid simulations with a few small limitations.
 
 ### Limitations
 
@@ -9,7 +9,7 @@ Want to try FLIP Fluids addon before buying the full [Blender Market Product](ht
 
 ### Getting Started
 
-Download the latest FLIP Fluids Demo installation file here: [flip_fluids_addon-0.0.8_demo_02-mar-2020.zip](https://github.com/rlguy/Blender-FLIP-Fluids/releases/download/v0.0.8/flip_fluids_addon-0.0.8_demo_02_mar_2020.zip)
+Download the latest FLIP Fluids Demo installation file here: [flip_fluids_addon-0.0.8a_demo_05-mar-2020.zip](https://github.com/rlguy/Blender-FLIP-Fluids/releases/download/v0.0.8a/flip_fluids_addon-0.0.8a_demo_05_mar_2020.zip)
 
 After downloading the demo addon, follow our [Installation Instructions](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Addon-Installation-and-Uninstallation). The instructions are similar to installing any other Blender addon.
 
