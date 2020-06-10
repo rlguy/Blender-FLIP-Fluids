@@ -29,7 +29,7 @@ This program uses multiple licenses. See the files ```LICENSE_GPLv3.md```, ```LI
 
 - The Blender addon code is licensed under the GPL.
 - The fluid engine is licensed under the MIT license.
-- Some addon content will be using a Standard Royalty Free license. This license may cover content such as media (images/textures/videos), Blend files, materials, presets. This content will only be included within the paid addon and will not be available on the GitHub project page.
+- Some addon content will be using a Standard Royalty Free license. This license may cover content such as media, artwork, and data. This content will only be included within the paid addon and will not be available on the GitHub project page. The addon is still completely usable without this content.
 
 Source code files will state their license at the top of the file. Assets will include a license file and information in their containing directory.
 
