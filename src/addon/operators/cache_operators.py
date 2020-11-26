@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -70,6 +70,7 @@ class FlipFluidFreeCache(bpy.types.Operator):
                 self.delete_cache_directory(object_dir, ".info")
                 self.delete_cache_directory(object_dir, ".bobj")
             self.delete_cache_directory(export_dir, ".sim")
+            self.delete_cache_directory(export_dir, ".sqlite3")
 
         temp_dir = os.path.join(cache_dir, "temp")
         self.delete_cache_directory(temp_dir, ".data")
@@ -418,6 +419,89 @@ class FlipFluidAbsoluteCacheDirectory(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class FlipFluidRelativeLinkedGeometryDirectory(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.relative_linked_geometry_directory"
+    bl_label = "Make Relative"
+    bl_description = "Convert to a filepath relative to the Blend file"
+
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+
+    def execute(self, context):
+        blend_filepath = bpy.path.abspath("//")
+        if not blend_filepath:
+            self.report({"ERROR"}, "Cannot make path relative to unsaved Blend file")
+            return {'CANCELLED'}
+
+        dprops = context.scene.flip_fluid.get_domain_properties()
+        if dprops is None:
+            return {'CANCELLED'}
+
+        linked_directory = dprops.cache.get_linked_geometry_abspath()
+        if not linked_directory:
+            self.report({"ERROR"}, "Linked geometry directory is not set. Set to an existing cache directory and try again.")
+            return {'CANCELLED'}
+
+        try:
+            relpath = os.path.relpath(linked_directory, blend_filepath)
+        except ValueError:
+            self.report({"ERROR"}, "Relative path requires Blend file and cache directory to be on the same drive")
+            return {'CANCELLED'}
+
+        relprefix = "//"
+        dprops.cache.linked_geometry_directory = relprefix + relpath
+
+        return {'FINISHED'}
+
+
+class FlipFluidAbsoluteLinkedGeometryDirectory(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.absolute_linked_geometry_directory"
+    bl_label = "Make Absolute"
+    bl_description = "Convert to an absolute filepath location"
+
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+
+    def execute(self, context):
+        dprops = context.scene.flip_fluid.get_domain_properties()
+        if dprops is None:
+            return {'CANCELLED'}
+
+        linked_directory = dprops.cache.get_linked_geometry_abspath()
+        if not linked_directory:
+            self.report({"ERROR"}, "Linked geometry directory is not set. Set to an existing cache directory and try again.")
+            return {'CANCELLED'}
+
+        dprops.cache.linked_geometry_directory = linked_directory
+        return {'FINISHED'}
+
+
+class FlipFluidClearLinkedGeometryDirectory(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.clear_linked_geometry_directory"
+    bl_label = "Clear"
+    bl_description = "Clear the linked geometry directory field. No files will be deleted"
+
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+
+    def execute(self, context):
+        dprops = context.scene.flip_fluid.get_domain_properties()
+        if dprops is None:
+            return {'CANCELLED'}
+
+        dprops.cache.linked_geometry_directory = ""
+        return {'FINISHED'}
+
+
 def register():
     bpy.utils.register_class(FlipFluidFreeCache)
     bpy.utils.register_class(FlipFluidFreeUnheldCacheFiles)
@@ -426,6 +510,9 @@ def register():
     bpy.utils.register_class(FlipFluidCopyCache)
     bpy.utils.register_class(FlipFluidRelativeCacheDirectory)
     bpy.utils.register_class(FlipFluidAbsoluteCacheDirectory)
+    bpy.utils.register_class(FlipFluidRelativeLinkedGeometryDirectory)
+    bpy.utils.register_class(FlipFluidAbsoluteLinkedGeometryDirectory)
+    bpy.utils.register_class(FlipFluidClearLinkedGeometryDirectory)
 
 
 def unregister():
@@ -436,3 +523,6 @@ def unregister():
     bpy.utils.unregister_class(FlipFluidCopyCache)
     bpy.utils.unregister_class(FlipFluidRelativeCacheDirectory)
     bpy.utils.unregister_class(FlipFluidAbsoluteCacheDirectory)
+    bpy.utils.unregister_class(FlipFluidRelativeLinkedGeometryDirectory)
+    bpy.utils.unregister_class(FlipFluidAbsoluteLinkedGeometryDirectory)
+    bpy.utils.unregister_class(FlipFluidClearLinkedGeometryDirectory)

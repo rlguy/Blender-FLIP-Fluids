@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,12 +14,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, os, subprocess, platform
+import bpy, os, subprocess, platform, mathutils
 from bpy.props import (
+        BoolProperty,
         StringProperty
         )
 
 from ..utils import version_compatibility_utils as vcu
+from ..utils import export_utils
+from ..objects import flip_fluid_aabb
 from .. import render
 
 
@@ -145,6 +148,371 @@ class FlipFluidHelperSelectSpray(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class FlipFluidHelperSelectDust(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_select_dust"
+    bl_label = "Select Dust"
+    bl_description = "Select the whitewater dust object"
+
+
+    @classmethod
+    def poll(cls, context):
+        dprops = context.scene.flip_fluid.get_domain_properties()
+        return dprops is not None and dprops.whitewater.enable_whitewater_simulation
+
+
+    def execute(self, context):
+        dprops = context.scene.flip_fluid.get_domain_properties()
+        if dprops is None:
+            return {'CANCELLED'}
+        dprops.mesh_cache.initialize_cache_objects()
+        dust_object = dprops.mesh_cache.dust.get_cache_object()
+        if dust_object is None:
+            return {'CANCELLED'}
+        _select_make_active(context, dust_object)
+        return {'FINISHED'}
+
+
+class FlipFluidHelperSelectObjects(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_select_objects"
+    bl_label = "Select Objects"
+    bl_description = "Select all FLIP Fluid objects of this type"
+
+    object_type = StringProperty("TYPE_NONE")
+    exec(vcu.convert_attribute_to_28("object_type"))
+
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+
+    def execute(self, context):
+        bl_objects = []
+        if self.object_type == 'TYPE_OBSTACLE':
+            bl_objects = context.scene.flip_fluid.get_obstacle_objects()
+        elif self.object_type == 'TYPE_FLUID':
+            bl_objects = context.scene.flip_fluid.get_fluid_objects()
+        elif self.object_type == 'TYPE_INFLOW':
+            bl_objects = context.scene.flip_fluid.get_inflow_objects()
+        elif self.object_type == 'TYPE_OUTFLOW':
+            bl_objects = context.scene.flip_fluid.get_outflow_objects()
+        elif self.object_type == 'TYPE_FORCE_FIELD':
+            bl_objects = context.scene.flip_fluid.get_force_field_objects()
+
+        for obj in bpy.context.selected_objects:
+            vcu.select_set(obj, False)
+        for obj in bl_objects:
+            vcu.select_set(obj, True)
+        if bpy.context.selected_objects:
+            vcu.set_active_object(bpy.context.selected_objects[0])
+
+        return {'FINISHED'}
+
+
+class FlipFluidHelperCreateDomain(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_create_domain"
+    bl_label = "Create Domain"
+    bl_description = "Generate a domain object for your scene"
+
+
+    @classmethod
+    def poll(cls, context):
+        return not bpy.context.scene.flip_fluid.is_domain_object_set()
+
+
+    def is_aabb(self, bl_object):
+        if len(bl_object.data.vertices) != 8:
+            return False
+
+        bbox = flip_fluid_aabb.AABB.from_blender_object(bl_object)
+        vertices = [
+            mathutils.Vector((bbox.x,             bbox.y,             bbox.z)),
+            mathutils.Vector((bbox.x + bbox.xdim, bbox.y,             bbox.z)),
+            mathutils.Vector((bbox.x,             bbox.y + bbox.ydim, bbox.z)),
+            mathutils.Vector((bbox.x + bbox.xdim, bbox.y + bbox.ydim, bbox.z)),
+            mathutils.Vector((bbox.x,             bbox.y,             bbox.z + bbox.zdim)),
+            mathutils.Vector((bbox.x + bbox.xdim, bbox.y,             bbox.z + bbox.zdim)),
+            mathutils.Vector((bbox.x,             bbox.y + bbox.ydim, bbox.z + bbox.zdim)),
+            mathutils.Vector((bbox.x + bbox.xdim, bbox.y + bbox.ydim, bbox.z + bbox.zdim)),
+        ]
+
+        result = [False, False, False, False, False, False, False, False]
+        eps = 1e-6
+        for mv in bl_object.data.vertices:
+            v = vcu.element_multiply(bl_object.matrix_world, mv.co)
+            for idx,corner in enumerate(vertices):
+                vect = v - corner
+                if vect.length < eps:
+                    result[idx]= True
+                    break
+
+        return all(result)
+
+
+    def set_object_as_domain(self, active_object):
+        if active_object.flip_fluid.is_active and active_object.flip_fluid.object_type == 'TYPE_DOMAIN':
+            self.report({'ERROR'}, "This object is already set as a FLIP Fluid Domain")
+            return
+        bpy.ops.flip_fluid_operators.flip_fluid_add()
+        active_object.flip_fluid.object_type = 'TYPE_DOMAIN'
+
+        # For object to be highlighted in viewport, depsgraph must be updated and selection
+        # re-enabled on the object
+        vcu.depsgraph_update()
+        vcu.set_active_object(active_object)
+        vcu.select_set(active_object, True)
+
+
+    def set_as_inverse_obstacle_and_generate_domain(self, active_object):
+        bpy.ops.flip_fluid_operators.flip_fluid_add()
+        active_object.flip_fluid.object_type = 'TYPE_OBSTACLE'
+        active_object.flip_fluid.obstacle.is_inversed = True
+        vcu.set_object_display_type(active_object, 'WIRE')
+        active_object.show_wire = True
+        active_object.show_all_edges = True
+
+        default_resolution = 65
+        pad_factor = 3.5
+
+        bbox = flip_fluid_aabb.AABB.from_blender_object(active_object)
+        max_dim = max(bbox.xdim, bbox.ydim, bbox.zdim)
+        dx_estimate = max_dim / default_resolution
+        pad = pad_factor * dx_estimate
+
+        bbox = bbox.expand(pad)
+
+        vertices = [
+            mathutils.Vector((bbox.x,             bbox.y,             bbox.z)),
+            mathutils.Vector((bbox.x + bbox.xdim, bbox.y,             bbox.z)),
+            mathutils.Vector((bbox.x,             bbox.y + bbox.ydim, bbox.z)),
+            mathutils.Vector((bbox.x + bbox.xdim, bbox.y + bbox.ydim, bbox.z)),
+            mathutils.Vector((bbox.x,             bbox.y,             bbox.z + bbox.zdim)),
+            mathutils.Vector((bbox.x + bbox.xdim, bbox.y,             bbox.z + bbox.zdim)),
+            mathutils.Vector((bbox.x,             bbox.y + bbox.ydim, bbox.z + bbox.zdim)),
+            mathutils.Vector((bbox.x + bbox.xdim, bbox.y + bbox.ydim, bbox.z + bbox.zdim)),
+        ]
+        faces = [(0, 2, 6, 4), (1, 3, 7, 5), (0, 1, 5, 4), (2, 3, 7, 6), (0, 1, 3, 2), (4, 5, 7, 6)]
+
+        mesh_data = bpy.data.meshes.new("domain_mesh_data")
+        mesh_data.from_pydata(vertices, [], faces)
+        domain_object = bpy.data.objects.new("FLIP Domain", mesh_data)
+        vcu.link_object(domain_object)
+
+        origin = mathutils.Vector((bbox.x + 0.5 * bbox.xdim, bbox.y + 0.5 * bbox.ydim, bbox.z + 0.5 * bbox.zdim))
+        domain_object.data.transform(mathutils.Matrix.Translation(-origin))
+        domain_object.matrix_world.translation += origin
+
+        bpy.ops.ed.undo_push()
+
+        vcu.set_active_object(domain_object)
+        vcu.select_set(domain_object, True)
+        bpy.ops.flip_fluid_operators.flip_fluid_add()
+        domain_object.flip_fluid.object_type = 'TYPE_DOMAIN'
+
+        # For object to be highlighted in viewport, depsgraph must be updated and selection
+        # re-enabled on the object
+        vcu.depsgraph_update()
+        vcu.set_active_object(domain_object)
+        vcu.select_set(domain_object, True)
+
+        bpy.ops.ed.undo_push()
+
+
+    def create_new_domain(self):
+        bbox = flip_fluid_aabb.AABB(-4, -4, 0, 8, 8, 4)
+        vertices = [
+            mathutils.Vector((bbox.x,             bbox.y,             bbox.z)),
+            mathutils.Vector((bbox.x + bbox.xdim, bbox.y,             bbox.z)),
+            mathutils.Vector((bbox.x,             bbox.y + bbox.ydim, bbox.z)),
+            mathutils.Vector((bbox.x + bbox.xdim, bbox.y + bbox.ydim, bbox.z)),
+            mathutils.Vector((bbox.x,             bbox.y,             bbox.z + bbox.zdim)),
+            mathutils.Vector((bbox.x + bbox.xdim, bbox.y,             bbox.z + bbox.zdim)),
+            mathutils.Vector((bbox.x,             bbox.y + bbox.ydim, bbox.z + bbox.zdim)),
+            mathutils.Vector((bbox.x + bbox.xdim, bbox.y + bbox.ydim, bbox.z + bbox.zdim)),
+        ]
+        faces = [(0, 2, 6, 4), (1, 3, 7, 5), (0, 1, 5, 4), (2, 3, 7, 6), (0, 1, 3, 2), (4, 5, 7, 6)]
+
+        mesh_data = bpy.data.meshes.new("domain_mesh_data")
+        mesh_data.from_pydata(vertices, [], faces)
+        domain_object = bpy.data.objects.new("FLIP Domain", mesh_data)
+        vcu.link_object(domain_object)
+
+        origin = mathutils.Vector((bbox.x + 0.5 * bbox.xdim, bbox.y + 0.5 * bbox.ydim, bbox.z + 0.5 * bbox.zdim))
+        domain_object.data.transform(mathutils.Matrix.Translation(-origin))
+        domain_object.matrix_world.translation += origin
+
+        bpy.ops.ed.undo_push()
+
+        vcu.set_active_object(domain_object)
+        vcu.select_set(domain_object, True)
+        bpy.ops.flip_fluid_operators.flip_fluid_add()
+        domain_object.flip_fluid.object_type = 'TYPE_DOMAIN'
+
+        # For object to be highlighted in viewport, depsgraph must be updated and selection
+        # re-enabled on the object
+        vcu.depsgraph_update()
+        vcu.set_active_object(domain_object)
+        vcu.select_set(domain_object, True)
+
+        bpy.ops.ed.undo_push()
+
+
+    def create_domain_to_contain_objects(self, bl_objects):
+        xmin, ymin, zmin = float('inf'), float('inf'), float('inf')
+        xmax, ymax, zmax = -float('inf'), -float('inf'), -float('inf')
+        for obj in bl_objects:
+            bbox = flip_fluid_aabb.AABB.from_blender_object(obj)
+            xmin = min(bbox.x, xmin)
+            ymin = min(bbox.y, ymin)
+            zmin = min(bbox.z, zmin)
+            xmax = max(bbox.x + bbox.xdim, xmax)
+            ymax = max(bbox.y + bbox.ydim, ymax)
+            zmax = max(bbox.z + bbox.zdim, zmax)
+        bbox = flip_fluid_aabb.AABB(xmin, ymin, zmin, xmax - xmin, ymax - ymin, zmax - zmin)
+        if bbox.is_empty():
+            bbox.expand(1.0)
+
+        default_resolution = 65
+        ceiling_pad_factor = 5.0
+
+        max_dim = max(bbox.xdim, bbox.ydim, bbox.zdim)
+        dx_estimate = max_dim / default_resolution
+
+        xpad = 2.0
+        ypad = 2.0
+        ceiling_pad = ceiling_pad_factor * dx_estimate
+        floor_pad = 1.5
+
+        bbox.x -= 0.5 * xpad
+        bbox.y -= 0.5 * ypad
+        bbox.z -= floor_pad
+        bbox.xdim += xpad
+        bbox.ydim += ypad
+        bbox.zdim += ceiling_pad
+        bbox.zdim += floor_pad
+
+        drop_to_ground_ratio = 0.5
+        if bbox.z > 0.0:
+            dist_to_ground = bbox.z
+            if dist_to_ground < drop_to_ground_ratio * max_dim:
+                bbox.z = 0.0
+                bbox.zdim += dist_to_ground
+
+        vertices = [
+            mathutils.Vector((bbox.x,             bbox.y,             bbox.z)),
+            mathutils.Vector((bbox.x + bbox.xdim, bbox.y,             bbox.z)),
+            mathutils.Vector((bbox.x,             bbox.y + bbox.ydim, bbox.z)),
+            mathutils.Vector((bbox.x + bbox.xdim, bbox.y + bbox.ydim, bbox.z)),
+            mathutils.Vector((bbox.x,             bbox.y,             bbox.z + bbox.zdim)),
+            mathutils.Vector((bbox.x + bbox.xdim, bbox.y,             bbox.z + bbox.zdim)),
+            mathutils.Vector((bbox.x,             bbox.y + bbox.ydim, bbox.z + bbox.zdim)),
+            mathutils.Vector((bbox.x + bbox.xdim, bbox.y + bbox.ydim, bbox.z + bbox.zdim)),
+        ]
+        faces = [(0, 2, 6, 4), (1, 3, 7, 5), (0, 1, 5, 4), (2, 3, 7, 6), (0, 1, 3, 2), (4, 5, 7, 6)]
+
+        mesh_data = bpy.data.meshes.new("domain_mesh_data")
+        mesh_data.from_pydata(vertices, [], faces)
+        domain_object = bpy.data.objects.new("FLIP Domain", mesh_data)
+        vcu.link_object(domain_object)
+
+        origin = mathutils.Vector((bbox.x + 0.5 * bbox.xdim, bbox.y + 0.5 * bbox.ydim, bbox.z + 0.5 * bbox.zdim))
+        domain_object.data.transform(mathutils.Matrix.Translation(-origin))
+        domain_object.matrix_world.translation += origin
+
+        bpy.ops.ed.undo_push()
+
+        vcu.set_active_object(domain_object)
+        vcu.select_set(domain_object, True)
+        bpy.ops.flip_fluid_operators.flip_fluid_add()
+        domain_object.flip_fluid.object_type = 'TYPE_DOMAIN'
+
+        # For object to be highlighted in viewport, depsgraph must be updated and selection
+        # re-enabled on the object
+        vcu.depsgraph_update()
+        vcu.set_active_object(domain_object)
+        vcu.select_set(domain_object, True)
+
+        bpy.ops.ed.undo_push()
+
+
+    def filter_valid_selected_objects(self):
+        valid_selected_objects = []
+        for obj in bpy.context.selected_objects:
+            if obj.type == 'MESH' or obj.type == 'EMPTY' or obj.type == 'CURVE':
+                valid_selected_objects.append(obj)
+        valid_active_object = vcu.get_active_object()
+        if valid_active_object is not None:
+            if valid_active_object.type != 'MESH' or valid_active_object.type != 'EMPTY' or valid_active_object.type != 'CURVE':
+                if valid_selected_objects:
+                    valid_active_object = valid_selected_objects[0]
+                else:
+                    valid_active_object = None
+        if valid_active_object is not None:
+            vcu.set_active_object(valid_active_object)
+
+        return valid_active_object, valid_selected_objects
+
+
+    def adjust_resolution_for_small_objects(self):
+        simulation_objects = bpy.context.scene.flip_fluid.get_simulation_objects()
+        if not simulation_objects:
+            return
+
+        bl_domain = bpy.context.scene.flip_fluid.get_domain_object()
+        if bl_domain is None:
+            return
+        dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+
+        resolution = dprops.simulation.resolution
+        bbox = flip_fluid_aabb.AABB.from_blender_object(bl_domain)
+        max_dim = max(bbox.xdim, bbox.ydim, bbox.zdim)
+        dx_estimate = max_dim / resolution
+
+        min_object_width = float('inf')
+        eps = 0.01
+        for obj in simulation_objects:
+            obj_bbox = flip_fluid_aabb.AABB.from_blender_object(obj)
+            min_width = min(obj_bbox.xdim, obj_bbox.ydim, obj_bbox.zdim)
+            min_width = max(min_width, eps)
+            min_object_width = min(min_width, min_object_width)
+
+        min_coverage_factor = 2.5
+        min_coverage_width = min_coverage_factor * dx_estimate
+        if min_object_width < min_coverage_width:
+            new_resolution = resolution * (min_coverage_width / min_object_width)
+            dprops.simulation.resolution = new_resolution
+
+
+    def execute(self, context):
+        if bpy.context.scene.flip_fluid.is_domain_object_set():
+            self.report({'ERROR'}, "Scene already contains a domain object")
+            return {'CANCELLED'}
+
+        active_object, selected_objects = self.filter_valid_selected_objects()
+        if len(selected_objects) == 0:
+            simulation_objects = bpy.context.scene.flip_fluid.get_simulation_objects()
+            if simulation_objects:
+                self.create_domain_to_contain_objects(simulation_objects)
+            else:
+                self.create_new_domain()
+
+        elif len(selected_objects) == 1:
+            ffprops = active_object.flip_fluid
+            if active_object.type != 'MESH' or (ffprops.is_active and ffprops.object_type != 'TYPE_NONE'):
+                self.create_domain_to_contain_objects(selected_objects)
+            elif self.is_aabb(active_object):
+                self.set_object_as_domain(active_object)
+            else:
+                self.set_as_inverse_obstacle_and_generate_domain(active_object)
+
+        elif len(selected_objects) > 1:
+            self.create_domain_to_contain_objects(selected_objects)
+
+        self.adjust_resolution_for_small_objects()
+
+        return {'FINISHED'}
+
+
 class FlipFluidHelperAddObjects(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.helper_add_objects"
     bl_label = "Add Objects"
@@ -165,11 +533,17 @@ class FlipFluidHelperAddObjects(bpy.types.Operator):
     def execute(self, context):
         original_active_object = vcu.get_active_object(context)
         for obj in context.selected_objects:
-            if not obj.type == 'MESH':
-                continue
+            if self.object_type == 'TYPE_FORCE_FIELD':
+                if not (obj.type == 'MESH' or obj.type == 'EMPTY' or obj.type == 'CURVE'):
+                    continue
+            else:
+                if not obj.type == 'MESH':
+                    continue
+
             vcu.set_active_object(obj, context)
             bpy.ops.flip_fluid_operators.flip_fluid_add()
             obj.flip_fluid.object_type = self.object_type
+
         vcu.set_active_object(original_active_object, context)
         return {'FINISHED'}
 
@@ -195,6 +569,310 @@ class FlipFluidHelperRemoveObjects(bpy.types.Operator):
             vcu.set_active_object(obj, context)
             bpy.ops.flip_fluid_operators.flip_fluid_remove()
         vcu.set_active_object(original_active_object, context)
+        return {'FINISHED'}
+
+
+class FlipFluidHelperOrganizeOutliner(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_organize_outliner"
+    bl_label = "Organize Outliner"
+    bl_description = "Organize simulation objects into separate collections based on FLIP Fluid object type"
+
+
+    @classmethod
+    def poll(cls, context):
+        return vcu.is_blender_28()
+
+
+    def initialize_child_collection(self, context, child_name, parent_collection):
+        child_collection = bpy.data.collections.get(child_name)
+        if child_collection is None:
+            child_collection = bpy.data.collections.new(child_name)
+            parent_collection.children.link(child_collection)
+        return child_collection
+
+
+    def organize_object_type(self, context, bl_objects, collection_name):
+        if not bl_objects:
+            return
+        flip_fluid_collection = vcu.get_flip_fluids_collection(context)
+        object_collection = self.initialize_child_collection(context, collection_name, flip_fluid_collection)
+        for obj in bl_objects:
+            if not obj.name in object_collection.objects:
+                object_collection.objects.link(obj)
+        return object_collection
+
+
+    def execute(self, context):
+        domain_object = context.scene.flip_fluid.get_domain_object()
+        simulation_objects = context.scene.flip_fluid.get_simulation_objects()
+        if not domain_object and not simulation_objects:
+            return {'FINISHED'}
+
+        bpy.ops.flip_fluid_operators.helper_undo_organize_outliner()
+
+        if domain_object:
+            self.organize_object_type(context, [domain_object], "DOMAIN")
+
+        obstacle_objects = context.scene.flip_fluid.get_obstacle_objects()
+        self.organize_object_type(context, obstacle_objects, "OBSTACLE")
+
+        fluid_objects = context.scene.flip_fluid.get_fluid_objects()
+        self.organize_object_type(context, fluid_objects, "FLUID")
+
+        fluid_target_objects = []
+        for obj in fluid_objects:
+            props = obj.flip_fluid.get_property_group()
+            if props.is_target_valid():
+                bl_target = props.get_target_object()
+                if bl_target is not None:
+                    fluid_target_objects.append(bl_target)
+        self.organize_object_type(context, fluid_target_objects, "FLUID")
+
+        inflow_objects = context.scene.flip_fluid.get_inflow_objects()
+        self.organize_object_type(context, inflow_objects, "INFLOW")
+
+        inflow_target_objects = []
+        for obj in inflow_objects:
+            props = obj.flip_fluid.get_property_group()
+            if props.is_target_valid():
+                bl_target = props.get_target_object()
+                if bl_target is not None:
+                    inflow_target_objects.append(bl_target)
+        self.organize_object_type(context, inflow_target_objects, "INFLOW")
+
+        outflow_objects = context.scene.flip_fluid.get_outflow_objects()
+        self.organize_object_type(context, outflow_objects, "OUTFLOW")
+
+        force_objects = context.scene.flip_fluid.get_force_field_objects()
+        self.organize_object_type(context, force_objects, "FORCE")
+
+        meshing_volume_objects = []
+        if domain_object:
+            dprops = context.scene.flip_fluid.get_domain_properties()
+            if dprops.surface.is_meshing_volume_object_valid():
+                bl_meshing_volume = dprops.surface.get_meshing_volume_object()
+                if bl_meshing_volume is not None:
+                    meshing_volume_objects.append(bl_meshing_volume)
+        self.organize_object_type(context, meshing_volume_objects, "MESHING_VOLUME")
+
+        all_objects = []
+        if domain_object:
+            all_objects += [domain_object]
+        all_objects += simulation_objects + fluid_target_objects + inflow_target_objects + meshing_volume_objects
+        all_collection = self.organize_object_type(context, all_objects, "ALL")
+
+        flip_fluid_collection = vcu.get_flip_fluids_collection(context)
+        for obj in flip_fluid_collection.objects:
+            if obj.name in all_collection.objects:
+                flip_fluid_collection.objects.unlink(obj)
+
+        default_collections = [bpy.context.scene.collection, bpy.data.collections.get("Collection")]
+        for default_collection in default_collections:
+            if default_collection is not None:
+                for obj in default_collection.objects:
+                    if obj.name in all_collection.objects:
+                        default_collection.objects.unlink(obj)
+
+        return {'FINISHED'}
+
+
+class FlipFluidHelperSeparateFLIPMeshes(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_separate_flip_meshes"
+    bl_label = "FLIP Meshes to Collections"
+    bl_description = ("Separate the fluid surface and whitewater meshes into separate collections. Useful for" +
+        " separating simulation mesh objects into view and render layers")
+
+
+    @classmethod
+    def poll(cls, context):
+        dprops = context.scene.flip_fluid.get_domain_properties()
+        return vcu.is_blender_28() and dprops is not None
+
+
+    def initialize_child_collection(self, context, child_name, parent_collection):
+        child_collection = bpy.data.collections.get(child_name)
+        if child_collection is None:
+            child_collection = bpy.data.collections.new(child_name)
+            parent_collection.children.link(child_collection)
+        return child_collection
+
+
+    def execute(self, context):
+        dprops = context.scene.flip_fluid.get_domain_properties()
+        if dprops is None:
+            return {'CANCELLED'}
+
+        mesh_collection = vcu.get_flip_mesh_collection(context)
+
+        surface_object = dprops.mesh_cache.surface.get_cache_object()
+        if surface_object is not None:
+            collection = self.initialize_child_collection(context, "SURFACE", mesh_collection)
+            if not surface_object.name in collection.objects:
+                collection.objects.link(surface_object)
+            if surface_object.name in mesh_collection.objects:
+                mesh_collection.objects.unlink(surface_object)
+
+        foam_object = dprops.mesh_cache.foam.get_cache_object()
+        if foam_object is not None:
+            collection = self.initialize_child_collection(context, "WHITEWATER", mesh_collection)
+            if not foam_object.name in collection.objects:
+                collection.objects.link(foam_object)
+            if foam_object.name in mesh_collection.objects:
+                mesh_collection.objects.unlink(foam_object)
+
+        bubble_object = dprops.mesh_cache.bubble.get_cache_object()
+        if bubble_object is not None:
+            collection = self.initialize_child_collection(context, "WHITEWATER", mesh_collection)
+            if not bubble_object.name in collection.objects:
+                collection.objects.link(bubble_object)
+            if bubble_object.name in mesh_collection.objects:
+                mesh_collection.objects.unlink(bubble_object)
+
+        spray_object = dprops.mesh_cache.spray.get_cache_object()
+        if spray_object is not None:
+            collection = self.initialize_child_collection(context, "WHITEWATER", mesh_collection)
+            if not spray_object.name in collection.objects:
+                collection.objects.link(spray_object)
+            if spray_object.name in mesh_collection.objects:
+                mesh_collection.objects.unlink(spray_object)
+
+        dust_object = dprops.mesh_cache.dust.get_cache_object()
+        if dust_object is not None:
+            collection = self.initialize_child_collection(context, "WHITEWATER", mesh_collection)
+            if not dust_object.name in collection.objects:
+                collection.objects.link(dust_object)
+            if dust_object.name in mesh_collection.objects:
+                mesh_collection.objects.unlink(dust_object)
+
+        particle_object = dprops.mesh_cache.foam.get_duplivert_object()
+        if particle_object is not None:
+            collection = self.initialize_child_collection(context, "WHITEWATER", mesh_collection)
+            if not particle_object.name in collection.objects:
+                collection.objects.link(particle_object)
+            if particle_object.name in mesh_collection.objects:
+                mesh_collection.objects.unlink(particle_object)
+
+        particle_object = dprops.mesh_cache.bubble.get_duplivert_object()
+        if particle_object is not None:
+            collection = self.initialize_child_collection(context, "WHITEWATER", mesh_collection)
+            if not particle_object.name in collection.objects:
+                collection.objects.link(particle_object)
+            if particle_object.name in mesh_collection.objects:
+                mesh_collection.objects.unlink(particle_object)
+
+        particle_object = dprops.mesh_cache.spray.get_duplivert_object()
+        if particle_object is not None:
+            collection = self.initialize_child_collection(context, "WHITEWATER", mesh_collection)
+            if not particle_object.name in collection.objects:
+                collection.objects.link(particle_object)
+            if particle_object.name in mesh_collection.objects:
+                mesh_collection.objects.unlink(particle_object)
+
+        particle_object = dprops.mesh_cache.dust.get_duplivert_object()
+        if particle_object is not None:
+            collection = self.initialize_child_collection(context, "WHITEWATER", mesh_collection)
+            if not particle_object.name in collection.objects:
+                collection.objects.link(particle_object)
+            if particle_object.name in mesh_collection.objects:
+                mesh_collection.objects.unlink(particle_object)
+
+        return {'FINISHED'}
+
+
+class FlipFluidHelperUndoOrganizeOutliner(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_undo_organize_outliner"
+    bl_label = "Unlink FLIP Object Collections"
+    bl_description = ("Unlink all FLIP Fluid objects from organized collections and place into the FLIPFluid" + 
+        " collection. This operation will not delete any objects")
+
+
+    @classmethod
+    def poll(cls, context):
+        return vcu.is_blender_28()
+
+
+    def unlink_collection(self, context, collection_name):
+        collection = bpy.data.collections.get(collection_name)
+        if collection is None:
+            return
+
+        parent_collection = vcu.get_flip_fluids_collection(context)
+        if collection.name not in parent_collection.children.keys():
+            return
+
+        for obj in collection.objects:
+            if obj.name not in parent_collection.objects:
+                parent_collection.objects.link(obj)
+            collection.objects.unlink(obj)
+
+        if not collection.objects and not collection.children:
+            parent_collection.children.unlink(collection)
+            bpy.data.collections.remove(collection)
+
+
+    def execute(self, context):
+        collection_names = [
+            "DOMAIN",
+            "OBSTACLE",
+            "FLUID",
+            "INFLOW",
+            "OUTFLOW",
+            "FORCE",
+            "MESHING_VOLUME",
+            "ALL",
+        ]
+
+        for cname in collection_names:
+            self.unlink_collection(context, cname)
+
+        return {'FINISHED'}
+
+
+class FlipFluidHelperUndoSeparateFLIPMeshes(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_undo_separate_flip_meshes"
+    bl_label = "Unlink FLIP Mesh Collections"
+    bl_description = ("Unlink all fluid surface and whitewater meshes from organized collections and place into the FLIPMeshes" + 
+        " collection. This operation will not delete any objects")
+
+
+    @classmethod
+    def poll(cls, context):
+        dprops = context.scene.flip_fluid.get_domain_properties()
+        return vcu.is_blender_28() and dprops is not None
+
+
+    def unlink_collection(self, context, collection_name):
+        collection = bpy.data.collections.get(collection_name)
+        if collection is None:
+            return
+
+        parent_collection = vcu.get_flip_mesh_collection(context)
+        if collection.name not in parent_collection.children.keys():
+            return
+
+        for obj in collection.objects:
+            if obj.name not in parent_collection.objects:
+                parent_collection.objects.link(obj)
+            collection.objects.unlink(obj)
+
+        if not collection.objects and not collection.children:
+            parent_collection.children.unlink(collection)
+            bpy.data.collections.remove(collection)
+
+
+    def execute(self, context):
+        collection_names = [
+            "SURFACE",
+            "WHITEWATER",
+            "FOAM",
+            "BUBBLE",
+            "SPRAY",
+            "DUST",
+        ]
+
+        for cname in collection_names:
+            self.unlink_collection(context, cname)
+
         return {'FINISHED'}
 
 
@@ -315,7 +993,8 @@ class FlipFluidHelperCommandLineBake(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.scene.flip_fluid.get_domain_object() is not None and bool(bpy.data.filepath)
+        system = platform.system()
+        return context.scene.flip_fluid.get_domain_object() is not None and bool(bpy.data.filepath) and system == "Windows"
 
 
     def execute(self, context):
@@ -524,14 +1203,141 @@ class FlipFluidHelperStableRendering28(bpy.types.Operator):
                       " during render (Blender > Render > Lock Interface) and is highly"
                       " recommended")
 
+    enable_state = BoolProperty(True)
+    exec(vcu.convert_attribute_to_28("enable_state"))
+
 
     @classmethod
     def poll(cls, context):
-        return not context.scene.render.use_lock_interface
+        return True
 
 
     def execute(self, context):
-        context.scene.render.use_lock_interface = True
+        context.scene.render.use_lock_interface = self.enable_state
+        return {'FINISHED'}
+
+
+class FlipFluidHelperSetLinearOverrideKeyframes(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_set_linear_override_keyframes"
+    bl_label = "Make Keyframes Linear"
+    bl_description = ("Automatically set the Override Frame interpolation mode to 'Linear'." +
+        " TIP: The interpolation mode can also be set in the Blender Graph Editor when selecting the domain")
+
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.flip_fluid.get_domain_object()
+
+
+    def execute(self, context):
+        bl_domain = context.scene.flip_fluid.get_domain_object()
+        if bl_domain is None:
+            return {'CANCELLED'}
+        dprops = context.scene.flip_fluid.get_domain_properties()
+
+        try:
+            fcurve = export_utils.get_property_fcurve(bl_domain, "override_frame")
+        except AttributeError:
+            self.report({'ERROR'}, "Override Frame value must contain keyframes for this operator to function")
+            return {'CANCELLED'}
+
+        for kp in fcurve.keyframe_points:
+            kp.interpolation = 'LINEAR'
+
+        return {'FINISHED'}
+
+
+class FlipFluidHelperSaveBlendFile(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_save_blend_file"
+    bl_label = "Save File"
+    bl_description = "Open the Blender file window to save the current .blend file"
+
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+
+    def execute(self, context):
+        bpy.ops.wm.save_as_mainfile('INVOKE_DEFAULT')
+        return {'FINISHED'}
+
+
+def _get_object_motion_type(obj):
+        props = obj.flip_fluid.get_property_group()
+        if hasattr(props, 'export_animated_mesh') and props.export_animated_mesh:
+            return 'ANIMATED'
+        if export_utils.is_object_keyframe_animated(obj):
+            return 'KEYFRAMED'
+        return 'STATIC'
+
+
+def _get_simulation_objects_by_filtered_motion_type(context):
+    dprops = context.scene.flip_fluid.get_domain_properties()
+    sprops = dprops.simulation
+    flip_props = context.scene.flip_fluid
+    flip_objects = (flip_props.get_obstacle_objects() + 
+                   flip_props.get_fluid_objects() + 
+                   flip_props.get_inflow_objects() + 
+                   flip_props.get_outflow_objects() + 
+                   flip_props.get_force_field_objects())
+
+    if sprops.mesh_reexport_type_filter == 'MOTION_FILTER_TYPE_ALL':
+        filtered_objects = flip_objects
+    elif sprops.mesh_reexport_type_filter == 'MOTION_FILTER_TYPE_STATIC':
+        filtered_objects = [x for x in flip_objects if _get_object_motion_type(x) == 'STATIC']
+    elif sprops.mesh_reexport_type_filter == 'MOTION_FILTER_TYPE_KEYFRAMED':
+        filtered_objects = [x for x in flip_objects if _get_object_motion_type(x) == 'KEYFRAMED']
+    elif sprops.mesh_reexport_type_filter == 'MOTION_FILTER_TYPE_ANIMATED':
+        filtered_objects = [x for x in flip_objects if _get_object_motion_type(x) == 'ANIMATED']
+    return filtered_objects
+
+
+class FlipFluidHelperBatchSkipReexport(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_batch_skip_reexport"
+    bl_label = ""
+    bl_description = "Enable or Disable the 'Skip Re-Export' option for all objects in list"
+
+
+    enable_state = BoolProperty(True)
+    exec(vcu.convert_attribute_to_28("enable_state"))
+
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.flip_fluid.get_domain_object() is not None
+
+
+    def execute(self, context):
+        filtered_objects = _get_simulation_objects_by_filtered_motion_type(context)
+        for obj in filtered_objects:
+            oprops = obj.flip_fluid.get_property_group()
+            oprops.skip_reexport = self.enable_state
+
+        return {'FINISHED'}
+
+
+class FlipFluidHelperBatchForceReexport(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_batch_force_reexport"
+    bl_label = ""
+    bl_description = "Enable or Disable the 'Force Re-Export On Next Bake' option for all objects in list"
+
+
+    enable_state = BoolProperty(True)
+    exec(vcu.convert_attribute_to_28("enable_state"))
+
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.flip_fluid.get_domain_object() is not None
+
+
+    def execute(self, context):
+        filtered_objects = _get_simulation_objects_by_filtered_motion_type(context)
+        for obj in filtered_objects:
+            oprops = obj.flip_fluid.get_property_group()
+            oprops.force_reexport_on_next_bake = self.enable_state
+
         return {'FINISHED'}
 
 
@@ -541,8 +1347,15 @@ def register():
     bpy.utils.register_class(FlipFluidHelperSelectFoam)
     bpy.utils.register_class(FlipFluidHelperSelectBubble)
     bpy.utils.register_class(FlipFluidHelperSelectSpray)
+    bpy.utils.register_class(FlipFluidHelperSelectDust)
+    bpy.utils.register_class(FlipFluidHelperSelectObjects)
+    bpy.utils.register_class(FlipFluidHelperCreateDomain)
     bpy.utils.register_class(FlipFluidHelperAddObjects)
     bpy.utils.register_class(FlipFluidHelperRemoveObjects)
+    bpy.utils.register_class(FlipFluidHelperOrganizeOutliner)
+    bpy.utils.register_class(FlipFluidHelperSeparateFLIPMeshes)
+    bpy.utils.register_class(FlipFluidHelperUndoOrganizeOutliner)
+    bpy.utils.register_class(FlipFluidHelperUndoSeparateFLIPMeshes)
     bpy.utils.register_class(FlipFluidHelperSetObjectViewportDisplay)
     bpy.utils.register_class(FlipFluidHelperLoadLastFrame)
     bpy.utils.register_class(FlipFluidHelperCommandLineBake)
@@ -551,6 +1364,10 @@ def register():
     bpy.utils.register_class(FlipFluidHelperCommandLineRenderToClipboard)
     bpy.utils.register_class(FlipFluidHelperStableRendering279)
     bpy.utils.register_class(FlipFluidHelperStableRendering28)
+    bpy.utils.register_class(FlipFluidHelperSetLinearOverrideKeyframes)
+    bpy.utils.register_class(FlipFluidHelperSaveBlendFile)
+    bpy.utils.register_class(FlipFluidHelperBatchSkipReexport)
+    bpy.utils.register_class(FlipFluidHelperBatchForceReexport)
 
     bpy.utils.register_class(FlipFluidEnableWhitewaterSimulation)
     bpy.utils.register_class(FlipFluidEnableWhitewaterMenu)
@@ -563,8 +1380,15 @@ def unregister():
     bpy.utils.unregister_class(FlipFluidHelperSelectFoam)
     bpy.utils.unregister_class(FlipFluidHelperSelectBubble)
     bpy.utils.unregister_class(FlipFluidHelperSelectSpray)
+    bpy.utils.unregister_class(FlipFluidHelperSelectDust)
+    bpy.utils.unregister_class(FlipFluidHelperSelectObjects)
+    bpy.utils.unregister_class(FlipFluidHelperCreateDomain)
     bpy.utils.unregister_class(FlipFluidHelperAddObjects)
     bpy.utils.unregister_class(FlipFluidHelperRemoveObjects)
+    bpy.utils.unregister_class(FlipFluidHelperOrganizeOutliner)
+    bpy.utils.unregister_class(FlipFluidHelperSeparateFLIPMeshes)
+    bpy.utils.unregister_class(FlipFluidHelperUndoOrganizeOutliner)
+    bpy.utils.unregister_class(FlipFluidHelperUndoSeparateFLIPMeshes)
     bpy.utils.unregister_class(FlipFluidHelperSetObjectViewportDisplay)
     bpy.utils.unregister_class(FlipFluidHelperLoadLastFrame)
     bpy.utils.unregister_class(FlipFluidHelperCommandLineBake)
@@ -573,6 +1397,10 @@ def unregister():
     bpy.utils.unregister_class(FlipFluidHelperCommandLineRenderToClipboard)
     bpy.utils.unregister_class(FlipFluidHelperStableRendering279)
     bpy.utils.unregister_class(FlipFluidHelperStableRendering28)
+    bpy.utils.unregister_class(FlipFluidHelperSetLinearOverrideKeyframes)
+    bpy.utils.unregister_class(FlipFluidHelperSaveBlendFile)
+    bpy.utils.unregister_class(FlipFluidHelperBatchSkipReexport)
+    bpy.utils.unregister_class(FlipFluidHelperBatchForceReexport)
 
     bpy.utils.unregister_class(FlipFluidEnableWhitewaterSimulation)
     bpy.utils.unregister_class(FlipFluidEnableWhitewaterMenu)

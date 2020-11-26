@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,12 +34,12 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
             name="Subdivisions",
             description="The level of detail of the generated surface mesh."
                 " This value is the number of times that the simulation grid"
-                " cells are split. Subdivision of 1 splits each grid cell into 2x2x2 blocks."
-                " Subdivision of 2 splits into 3x3x3 blocks. A value of 1 is recommended for"
-                " final simulation",
+                " cells are split. A value of 1 is recommended for"
+                " final simulation. Use a value of 0 to speed up baking during"
+                " testing",
             min=0,
             soft_max=2,
-            default=0,
+            default=1,
             ); exec(conv("subdivisions"))
     compute_chunks_auto = IntProperty(
             name="Compute Chunks",

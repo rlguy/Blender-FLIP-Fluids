@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -68,7 +68,7 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
             name="Gravity",
             description="Gravity in X, Y, and Z direction",
             default=(0.0, 0.0, -9.81),
-            precision=2,
+            precision=3,
             size=3,
             subtype='VELOCITY',
             ); exec(conv("gravity"))
@@ -77,15 +77,16 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
             description="Amount of grid resolution to use when evaluating force fields."
                 " Higher resolution improves force field accuracy at the cost of speed"
                 " and RAM. Increase to resolve smaller/sharper details in your force"
-                " field setup.",
+                " field setup. Ultra is recommended for static force fields. High/Med/Low is"
+                " recommended for animated force fields to optimize performance",
             items=types.force_field_resolution_modes,
-            default='FORCE_FIELD_RESOLUTION_NORMAL',
+            default='FORCE_FIELD_RESOLUTION_ULTRA',
             options={'HIDDEN'},
             ); exec(conv("force_field_resolution"))
     force_field_resolution_tooltip = BoolProperty(
             name="Force Field Grid Resolution", 
             description="Exact force field grid resolution calculated from the domain"
-                " resolution. See Debug Panel for force field visualization tools.", 
+                " resolution. See Debug Panel for force field visualization tools", 
             default=True,
             ); exec(conv("force_field_resolution_tooltip"))
     enable_viscosity = BoolProperty(
@@ -95,11 +96,22 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
             ); exec(conv("enable_viscosity"))
     viscosity = FloatProperty(
             name="Viscosity", 
-            description="Fluid viscosity value", 
+            description="Viscosity base value. This value is multipled by 10 to the"
+                " power of (exponent * -1)", 
             min=0.0,
             default=5.0,
             precision=3,
             ); exec(conv("viscosity"))
+    viscosity_exponent = IntProperty(
+            name="Viscosity Exponent", 
+            description="Viscosity exponent. Negative exponent for the viscosity value"
+                " to simplify entering small values (ex: 5.0 * 10^-3 = 0.005)", 
+            min=0,
+            soft_max=4, max=8,
+            default=0,
+            update=lambda self, context: self._update_viscosity_exponent(context),
+            options={'HIDDEN'},
+            ); exec(conv("viscosity_exponent"))
     enable_surface_tension = BoolProperty(
             name="Enable Surface Tension",
             description="Enable surface tension forces",
@@ -107,11 +119,22 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
             ); exec(conv("enable_surface_tension"))
     surface_tension = FloatProperty(
             name="Surface Tension", 
-            description="Fluid surface tension value", 
+            description="Surface tension base value. This value is multipled by 10 to the"
+                " power of (exponent * -1)", 
             min=0.0,
             default=0.25,
             precision=3,
             ); exec(conv("surface_tension"))
+    surface_tension_exponent = IntProperty(
+            name="Viscosity Exponent", 
+            description="Viscosity exponent. Negative exponent for the surface tension value"
+                " to simplify entering small values (ex: 5.0 * 10^-3 = 0.005)", 
+            min=0,
+            soft_max=4, max=8,
+            default=0,
+            update=lambda self, context: self._update_surface_tension_exponent(context),
+            options={'HIDDEN'},
+            ); exec(conv("surface_tension_exponent"))
     surface_tension_accuracy = IntProperty(
             name="Surface Tension Accuracy", 
             description="Amount of accuracy when calculating surface tension. "
@@ -124,14 +147,17 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
     enable_sheet_seeding = BoolProperty(
             name="Enable Sheeting Effects",
             description="Fluid sheeting fills in gaps between fluid particles to"
-                " help preserve thin fluid sheets and splashes",
+                " help preserve thin fluid sheets and splashes. Tip: Sheeting will"
+                " add fluid to the domain and prolonged use can result in an increased"
+                " fluid volume. Keyframing the Sheeting Strength down to 0.0 when no longer"
+                " needed can help prevent increased volume.",
             default=False,
             ); exec(conv("enable_sheet_seeding"))
     sheet_fill_rate = FloatProperty(
             name="Sheeting Strength", 
             description="The rate at which new sheeting particles are added."
                 " A higher value will add sheeting particles more often and"
-                " fill in gaps more quickly", 
+                " fill in gaps more quickly.", 
             min=0.0, max=1.0,
             default=0.5,
             precision=2,
@@ -153,6 +179,12 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
             precision=2,
             subtype='FACTOR',
             ); exec(conv("boundary_friction"))
+
+    last_viscosity_exponent = IntProperty(default=0)
+    exec(conv("last_viscosity_exponent"))
+
+    last_surface_tension_exponent = IntProperty(default=0)
+    exec(conv("last_surface_tension_exponent"))
 
     native_surface_tension_scale = FloatProperty(default=0.1)
     exec(conv("native_surface_tension_scale"))
@@ -176,11 +208,24 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
     maximum_surface_tension_cfl = FloatProperty(default=5.0)
     exec(conv("maximum_surface_tension_cfl"))
 
+    world_scale_settings_expanded = BoolProperty(default=True); exec(conv("world_scale_settings_expanded"))
+    force_field_settings_expanded = BoolProperty(default=False); exec(conv("force_field_settings_expanded"))
+    viscosity_settings_expanded = BoolProperty(default=False); exec(conv("viscosity_settings_expanded"))
+    surface_tension_settings_expanded = BoolProperty(default=False); exec(conv("surface_tension_settings_expanded"))
+    sheeting_settings_expanded = BoolProperty(default=False); exec(conv("sheeting_settings_expanded"))
+    friction_settings_expanded = BoolProperty(default=False); exec(conv("friction_settings_expanded"))
+    obstacle_friction_expanded = BoolProperty(default=False); exec(conv("obstacle_friction_expanded"))
+
 
     def scene_update_post(self, scene):
         self._update_surface_tension_info()
         self._update_world_scale_relative(bpy.context)
         self._update_world_scale_absolute(bpy.context)
+
+
+    def frame_change_post(self, scene):
+        # Accounts for keyframed value changes after a frame change
+        self._update_surface_tension_info()
 
 
     def register_preset_properties(self, registry, path):
@@ -192,9 +237,11 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
         add(path + ".gravity",                   "Gravity",                   group_id=0)
         add(path + ".force_field_resolution",    "Force Field Resolution",    group_id=0)
         add(path + ".enable_viscosity",          "Enable Viscosity",          group_id=0)
-        add(path + ".viscosity",                 "Viscosity",                 group_id=0)
+        add(path + ".viscosity",                 "Viscosity Base",            group_id=0)
+        add(path + ".viscosity_exponent",        "Viscosity Exponent",        group_id=0)
         add(path + ".enable_surface_tension",    "Enable Surface Tension",    group_id=0)
         add(path + ".surface_tension",           "Surface Tension",           group_id=0)
+        add(path + ".surface_tension_exponent",  "Surface Tension Exponent",  group_id=0)
         add(path + ".surface_tension_accuracy",  "Surface Tension Accuracy",  group_id=0)
         add(path + ".enable_sheet_seeding",      "Enable Sheeting Effects",   group_id=0)
         add(path + ".sheet_fill_rate",           "Sheeting Strength",         group_id=0)
@@ -245,6 +292,10 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
         return view_x * scale, view_y * scale, view_z * scale
 
 
+    def get_surface_tension_value(self):
+        return self.surface_tension * (10**(-self.surface_tension_exponent))
+
+
     def _update_world_scale_relative(self, context):
         if self.world_scale_mode == 'WORLD_SCALE_MODE_ABSOLUTE':
             return
@@ -280,7 +331,7 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
         accuracy_pct = dprops.world.surface_tension_accuracy / 100.0
         safety_factor = mincfl + (1.0 - accuracy_pct) * (maxcfl - mincfl)
 
-        surface_tension = dprops.world.surface_tension * dprops.world.native_surface_tension_scale
+        surface_tension = self.get_surface_tension_value() * dprops.world.native_surface_tension_scale
         eps = 1e-6
 
         restriction =  safety_factor * math.sqrt(dx * dx * dx) * math.sqrt(1.0 / (surface_tension + eps));
@@ -288,6 +339,22 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
 
         if self.minimum_surface_tension_substeps != num_substeps:
             self.minimum_surface_tension_substeps = num_substeps
+
+
+    def _update_viscosity_exponent(self, context):
+        last_value = self.last_viscosity_exponent
+        new_value = self.viscosity_exponent
+        multiplier = 10**(new_value - last_value)
+        self.viscosity = multiplier * self.viscosity
+        self.last_viscosity_exponent = new_value
+
+
+    def _update_surface_tension_exponent(self, context):
+        last_value = self.last_surface_tension_exponent
+        new_value = self.surface_tension_exponent
+        multiplier = 10**(new_value - last_value)
+        self.surface_tension = multiplier * self.surface_tension
+        self.last_surface_tension_exponent = new_value
 
 
 def register():

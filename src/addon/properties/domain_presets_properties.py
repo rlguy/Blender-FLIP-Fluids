@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -104,6 +104,7 @@ class DomainPresetsProperties(bpy.types.PropertyGroup):
             ); exec(conv("preset_stack"))
 
     preset_manager_expanded = BoolProperty(default=False); exec(conv("preset_manager_expanded"))
+    deprecated_presets_disabled_on_load = BoolProperty(default=False); exec(conv("deprecated_presets_disabled_on_load"))
 
 
     def register_preset_properties(self, registry, path):
@@ -122,6 +123,7 @@ class DomainPresetsProperties(bpy.types.PropertyGroup):
     def load_post(self):
         self.preset_stack.validate_stack()
         self.check_preset_enums()
+        self._check_presets_disable_on_load()
 
 
     def check_preset_enums(self):
@@ -138,6 +140,13 @@ class DomainPresetsProperties(bpy.types.PropertyGroup):
             self.current_preset = current_preset
         except:
             self.current_preset = 'PRESET_NONE'
+
+
+    def _check_presets_disable_on_load(self):
+        if self.deprecated_presets_disabled_on_load:
+            return
+        self.enable_presets = False
+        self.deprecated_presets_disabled_on_load = True
 
 
     def _initialize_default_current_package(self):

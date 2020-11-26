@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,6 +36,25 @@ class FLIPFLUID_PT_DomainTypeAdvancedPanel(bpy.types.Panel):
         obj = vcu.get_active_object(context)
         aprops = obj.flip_fluid.domain.advanced
         show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
+        show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
+
+        if show_documentation:
+            column = self.layout.column(align=True)
+            column.operator(
+                "wm.url_open", 
+                text="Advanced Settings Documentation", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Advanced-Settings"
+            column.operator(
+                "wm.url_open", 
+                text="What are substeps?", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Advanced-Settings#what-are-substeps-and-how-do-the-min-max-and-cfl-parameters-relate-to-each-other"
+            column.operator(
+                "wm.url_open", 
+                text="What are applications of the PIC/FLIP Ratio?", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Advanced-Settings#simulation-stability"
 
         column = self.layout.column(align=True)
         column.label(text="Frame Substeps:")
@@ -45,6 +64,7 @@ class FLIPFLUID_PT_DomainTypeAdvancedPanel(bpy.types.Panel):
 
         if show_advanced:
             column.prop(aprops, "enable_adaptive_obstacle_time_stepping")
+            column.prop(aprops, "enable_adaptive_force_field_time_stepping")
 
         column = self.layout.column()
         column.label(text="Simulation Stability:")
@@ -74,6 +94,14 @@ class FLIPFLUID_PT_DomainTypeAdvancedPanel(bpy.types.Panel):
                 row.prop(aprops, "num_threads_auto_detect")
             elif aprops.threading_mode == 'THREADING_MODE_FIXED':
                 row.prop(aprops, "num_threads_fixed")
+
+            if show_documentation:
+                column = self.layout.column(align=True)
+                column.operator(
+                    "wm.url_open", 
+                    text="CPU usage is under 100%, is this normal?", 
+                    icon="WORLD"
+                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Frequently-Asked-Questions#my-cpu-is-running-under-100-usage-while-simulating-is-this-normal"
             
             # Performance and optimization settings are hidden from the UI.
             # These should always be enabled for performance.

@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -103,11 +103,7 @@ class FlipFluidReloadFrame(bpy.types.Operator):
         if domain_object is None:
             return {'CANCELLED'}
 
-        rprops = domain_object.flip_fluid.domain.render
-        if rprops.hold_frame:
-            frameno = rprops.hold_frame_number
-        else:
-            frameno = context.scene.frame_current
+        frameno = render.get_current_simulation_frame()
         render.reload_frame(frameno)
         
         return {'FINISHED'}

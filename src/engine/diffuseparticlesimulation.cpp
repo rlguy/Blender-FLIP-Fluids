@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2019 Ryan L. Guy
+Copyright (C) 2020 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,7 @@ SOFTWARE.
 #include "meshlevelset.h"
 #include "particlelevelset.h"
 #include "meshobject.h"
+#include "forcefieldgrid.h"
 
 DiffuseParticleSimulation::DiffuseParticleSimulation() {
     double inf = std::numeric_limits<float>::infinity();
@@ -62,6 +63,8 @@ void DiffuseParticleSimulation::update(DiffuseParticleSimulationParameters param
     _influenceGrid = params.influenceGrid;
     _nearSolidGrid = params.nearSolidGrid;
     _nearSolidGridCellSize = params.nearSolidGridCellSize;
+    _forceFieldGrid = params.forceFieldGrid;
+    _isForceFieldGridSet = params.isForceFieldGridSet;
 
 
     bool isParticlesEnabled = _isFoamEnabled || _isBubblesEnabled || _isSprayEnabled || _isDustEnabled;
@@ -1640,8 +1643,9 @@ void DiffuseParticleSimulation::_advanceSprayParticlesThread(int startidx, int e
         double maxd = _sprayDragCoefficient + _sprayDragCoefficient * _sprayDragVarianceFactor;
         double dragCoefficient = mind + (1.0 - factor) * (maxd - mind);
 
+        vmath::vec3 bodyForce = _getGravityVector(dp.position);
         vmath::vec3 dragvec = -dragCoefficient * dp.velocity * (float)dt;
-        vmath::vec3 nextv = dp.velocity + _bodyForce * (float)dt + dragvec;
+        vmath::vec3 nextv = dp.velocity + bodyForce * (float)dt + dragvec;
         vmath::vec3 nextp = dp.position + nextv * (float)dt;
         nextp = _resolveCollision(dp.position, nextp, dp, boundary);
 
@@ -1666,9 +1670,10 @@ void DiffuseParticleSimulation::_advanceBubbleParticlesThread(int startidx, int 
             continue;
         }
 
+        vmath::vec3 bodyForce = _getGravityVector(dp.position);
         vmath::vec3 vmac = _vfield->evaluateVelocityAtPositionLinear(dp.position);
         vmath::vec3 vbub = dp.velocity;
-        vmath::vec3 bouyancyVelocity = (float)-_bubbleBouyancyCoefficient * _bodyForce;
+        vmath::vec3 bouyancyVelocity = (float)-_bubbleBouyancyCoefficient * bodyForce;
         vmath::vec3 dragVelocity = (float)_bubbleDragCoefficient*(vmac - vbub) / (float)dt;
 
         vmath::vec3 nextv = dp.velocity + (float)dt*(bouyancyVelocity + dragVelocity);
@@ -1731,9 +1736,10 @@ void DiffuseParticleSimulation::_advanceDustParticlesThread(int startidx, int en
         double maxd = std::min(_dustDragCoefficient + _dustDragCoefficient * _dustDragVarianceFactor, 1.0);
         double dragCoefficient = mind + (1.0 - factor) * (maxd - mind);
 
+        vmath::vec3 bodyForce = _getGravityVector(dp.position);
         vmath::vec3 vmac = _vfield->evaluateVelocityAtPositionLinear(dp.position);
         vmath::vec3 vbub = dp.velocity;
-        vmath::vec3 bouyancyVelocity = (float)-buoyancyCoefficient * _bodyForce;
+        vmath::vec3 bouyancyVelocity = (float)-buoyancyCoefficient * bodyForce;
         vmath::vec3 dragVelocity = (float)dragCoefficient * (vmac - vbub) / (float)dt;
 
         vmath::vec3 nextv = dp.velocity + (float)dt * (bouyancyVelocity + dragVelocity);
@@ -1899,6 +1905,14 @@ int DiffuseParticleSimulation::_getNearestSideIndex(vmath::vec3 p, AABB &boundar
 
 void DiffuseParticleSimulation::_markParticleForRemoval(unsigned int index) {
     _diffuseParticles[index].lifetime = -1e6;
+}
+
+vmath::vec3 DiffuseParticleSimulation::_getGravityVector(vmath::vec3 pos) {
+    if (_isForceFieldGridSet) {
+        return _forceFieldGrid->evaluateForceAtPosition(pos);
+    }
+
+    return _bodyForce;
 }
 
 void DiffuseParticleSimulation::

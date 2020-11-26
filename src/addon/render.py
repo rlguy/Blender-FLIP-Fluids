@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy
+import bpy, math
 
 from .utils import version_compatibility_utils as vcu
 
@@ -31,7 +31,23 @@ def __is_domain_set():
     return bpy.context.scene.flip_fluid.get_domain_object() is not None
 
 
-def get_current_frame():
+def get_current_simulation_frame():
+    dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+    if dprops is None:
+        return 0 
+
+    rprops = dprops.render
+    if rprops.simulation_playback_mode == 'PLAYBACK_MODE_TIMELINE':
+        current_frame = bpy.context.scene.frame_current
+    elif rprops.simulation_playback_mode == 'PLAYBACK_MODE_OVERRIDE_FRAME':
+        current_frame = math.floor(dprops.render.override_frame)
+    elif rprops.simulation_playback_mode == 'PLAYBACK_MODE_HOLD_FRAME':
+        current_frame = dprops.render.hold_frame_number
+
+    return current_frame - bpy.context.scene.flip_fluid_helper.playback_frame_offset
+
+
+def get_current_render_frame():
     dprops = bpy.context.scene.flip_fluid.get_domain_properties()
     if dprops is None:
         return 0 
@@ -40,11 +56,7 @@ def get_current_frame():
         global RENDER_PRE_FRAME_NUMBER
         return RENDER_PRE_FRAME_NUMBER
 
-    if dprops.render.hold_frame:
-        current_frame = dprops.render.hold_frame_number
-    else:
-        current_frame = bpy.context.scene.frame_current
-    return current_frame - bpy.context.scene.flip_fluid_helper.playback_frame_offset
+    return get_current_simulation_frame()
 
 
 def __get_render_pre_current_frame():
@@ -52,11 +64,7 @@ def __get_render_pre_current_frame():
     if dprops is None:
         return 0 
 
-    if dprops.render.hold_frame:
-        current_frame = dprops.render.hold_frame_number
-    else:
-        current_frame = bpy.context.scene.frame_current
-    return current_frame - bpy.context.scene.flip_fluid_helper.playback_frame_offset
+    return get_current_simulation_frame()
 
 
 def __get_display_mode():
@@ -533,6 +541,10 @@ def render_complete(scene):
     IS_RENDERING = False
     IS_FRAME_REQUIRING_RELOAD = True
 
+    # Testing potential fix for whitewater not rendering on first frame (v1.0.8)
+    # For part of this fix, we no longer want to unload the duplivert object 
+    # after render completes
+    """
     dprops = __get_domain_properties()
     if dprops.whitewater.enable_whitewater_simulation:
         if not __get_whitewater_particle_object_display_bool('FOAM'):
@@ -543,6 +555,7 @@ def render_complete(scene):
             dprops.mesh_cache.spray.unload_duplivert_object()
         if not __get_whitewater_particle_object_display_bool('DUST'):
             dprops.mesh_cache.dust.unload_duplivert_object()
+    """
 
 
 def render_cancel(scene):
@@ -565,7 +578,7 @@ def frame_change_post(scene, depsgraph=None):
             print("FLIP FLUIDS WARNING: Blender 2.80 contains a bug that can cause frequent render crashes and incorrect render results. Blender version 2.81 or higher is recommended.")
 
     force_reload = False
-    frameno = get_current_frame()
+    frameno = get_current_render_frame()
     __load_frame(frameno, force_reload, depsgraph)
     dprops = __get_domain_properties()
     dprops.render.current_frame = frameno
@@ -579,7 +592,7 @@ def scene_update_post(scene):
     if IS_FRAME_REQUIRING_RELOAD:
         IS_FRAME_REQUIRING_RELOAD = False
 
-        current_frame = get_current_frame()
+        current_frame = get_current_render_frame()
         reload_frame(current_frame)
         dprops = bpy.context.scene.flip_fluid.get_domain_properties()
         dprops.render.current_frame = current_frame

@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,6 +36,25 @@ class FLIPFLUID_PT_DomainTypeFluidSurfacePanel(bpy.types.Panel):
         obj = vcu.get_active_object(context)
         sprops = obj.flip_fluid.domain.surface
         show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
+        show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
+
+        if show_documentation:
+            column = self.layout.column(align=True)
+            column.operator(
+                "wm.url_open", 
+                text="Surface and Meshing Documentation", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Surface-Settings"
+            column.operator(
+                "wm.url_open", 
+                text="How do I make my surface smoother?", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Surface-Settings#mesh-smoothing"
+            column.operator(
+                "wm.url_open", 
+                text="Mesh banding against curved obstacles", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Scene-Troubleshooting#mesh-banding-artifacts-against-curved-obstacles"
 
         box = self.layout.box()
         column = box.column(align=True)
@@ -85,6 +104,14 @@ class FLIPFLUID_PT_DomainTypeFluidSurfacePanel(bpy.types.Panel):
         row = box.row(align=True)
         row.enabled = sprops.enable_meshing_offset
         row.prop(sprops, "obstacle_meshing_mode", expand=True)
+
+        if show_documentation:
+            column = box.column(align=True)
+            column.operator(
+                "wm.url_open", 
+                text="Which meshing offset mode to use?", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Surface-Settings#which-offset-mode-to-use"
 
         # Removed surface smoothing options. These are better set
         # using a Blender smooth modifier.

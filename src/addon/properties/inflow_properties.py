@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ class FlipFluidInflowProperties(bpy.types.PropertyGroup):
     
     is_enabled = BoolProperty(
             name="Enabled",
-            description="Object contributes to the fluid simulation",
+            description="Inflow emits fluid into the domain. Tip: keyframe this option on/off to start and stop inflow emission",
             default=True,
             ); exec(conv("is_enabled"))
     substep_emissions = IntProperty(
@@ -73,14 +73,6 @@ class FlipFluidInflowProperties(bpy.types.PropertyGroup):
             default=1.0,
             precision=2,
             ); exec(conv("append_object_velocity_influence"))
-    inflow_mesh_type = EnumProperty(
-            name="Mesh Type",
-            description="Type of mesh used for the inflow object. Used to"
-                " correctly calculate object velocities",
-            items=types.mesh_types,
-            default='MESH_TYPE_RIGID',
-            options={'HIDDEN'},
-            ); exec(conv("inflow_mesh_type"))
     inflow_velocity_mode = EnumProperty(
             name="Velocity Mode",
             description="Set how the inflow fluid velocity is calculated",
@@ -94,6 +86,12 @@ class FlipFluidInflowProperties(bpy.types.PropertyGroup):
             default=0.0,
             precision=3,
             ); exec(conv("inflow_speed"))
+    inflow_axis_mode = EnumProperty(
+            name="Local Axis",
+            description="Set local axis direction of fluid",
+            items=types.local_axis_directions,
+            default='LOCAL_AXIS_POS_X',
+            ); exec(conv("inflow_axis_mode"))
     target_object = PointerProperty(
             name="Target Object", 
             type=bpy.types.Object
@@ -123,14 +121,24 @@ class FlipFluidInflowProperties(bpy.types.PropertyGroup):
             default=False,
             options={'HIDDEN'},
             ); exec(conv("export_animated_mesh"))
-    skip_animated_mesh_reexport = BoolProperty(
+    skip_reexport = BoolProperty(
             name="Skip re-export",
             description="Skip re-exporting this mesh when starting or resuming"
                 " a bake. If this mesh has not been exported or is missing files,"
                 " the addon will automatically export the required files",
             default=False,
             options={'HIDDEN'},
-            ); exec(conv("skip_animated_mesh_reexport"))
+            ); exec(conv("skip_reexport"))
+    force_reexport_on_next_bake = BoolProperty(
+            name="Force Re-Export On Next Bake",
+            description="Override the 'Skip Re-Export' option and force this mesh to be"
+                " re-exported and updated on the next time a simulation start/resumes"
+                " baking. Afting starting/resuming the baking process, this option"
+                " will automatically be disabled once the object has been fully exported."
+                " This option is only applicable if 'Skip Re-Export' is enabled",
+            default=False,
+            options={'HIDDEN'},
+            ); exec(conv("force_reexport_on_next_bake"))
     property_registry = PointerProperty(
             name="Inflow Property Registry",
             description="",
@@ -147,11 +155,13 @@ class FlipFluidInflowProperties(bpy.types.PropertyGroup):
         add("inflow.inflow_velocity", "")
         add("inflow.append_object_velocity", "")
         add("inflow.append_object_velocity_influence", "")
-        add("inflow.inflow_mesh_type", "")
         add("inflow.constrain_fluid_velocity", "")
         add("inflow.inflow_speed", "")
+        add("inflow.inflow_axis_mode", "")
         add("inflow.export_animated_target", "")
         add("inflow.export_animated_mesh", "")
+        add("inflow.skip_reexport", "")
+        add("inflow.force_reexport_on_next_bake", "")
         self._validate_property_registry()
 
 

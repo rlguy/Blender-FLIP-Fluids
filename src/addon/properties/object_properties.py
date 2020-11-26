@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -132,6 +132,13 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
             return
         self._toggle_cycles_ray_visibility(bl_object, not bl_object.hide_render)
         self.last_hide_render_state = bl_object.hide_render
+
+        # In some versions of Blender the viewport rendered view is
+        # not updated to reflect the above 'hide_render' change. Toggling
+        # the hide_viewport option on and off is a workaround to get the viewport
+        # to update.
+        vcu.toggle_outline_eye_icon(bl_object)
+        vcu.toggle_outline_eye_icon(bl_object)
 
 
     def get_object_type():
@@ -266,7 +273,7 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
         primary_layer = 0
         object_layer = 14
 
-        if obj.type == 'EMPTY' and self.object_type != 'TYPE_FORCE_FIELD' and self.object_type != 'TYPE_NONE':
+        if (obj.type == 'EMPTY' or obj.type == 'CURVE') and self.object_type != 'TYPE_FORCE_FIELD' and self.object_type != 'TYPE_NONE':
             flip_type = ""
             if self.object_type == 'TYPE_DOMAIN':
                 flip_type = "Domain"
@@ -281,15 +288,27 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
 
             self.object_type = 'TYPE_NONE'
 
-            errmsg = "Empty type objects cannot be set as a FLIP Fluid " + flip_type + "."
-            errdesc = "Empty type objects are only supported as a FLIP Fluid Force Field."
-            bpy.ops.flip_fluid_operators.display_error(
-                'INVOKE_DEFAULT',
-                error_message=errmsg,
-                error_description=errdesc,
-                popup_width=600
-                )
+            if obj.type == 'EMPTY':
+                errmsg = "Empty type objects cannot be set as a FLIP Fluid " + flip_type + "."
+                errdesc = "Empty type objects are only supported as a FLIP Fluid Force Field."
+                bpy.ops.flip_fluid_operators.display_error(
+                    'INVOKE_DEFAULT',
+                    error_message=errmsg,
+                    error_description=errdesc,
+                    popup_width=600
+                    )
+            elif obj.type == 'CURVE': 
+                errmsg = "Curve type objects cannot be set as a FLIP Fluid " + flip_type + "."
+                errdesc = "Curve type objects are only supported as a FLIP Fluid Force Field > Curve Guide Force."
+                bpy.ops.flip_fluid_operators.display_error(
+                    'INVOKE_DEFAULT',
+                    error_message=errmsg,
+                    error_description=errdesc,
+                    popup_width=600
+                    )
+
             return
+
 
         if self.object_type == 'TYPE_DOMAIN':
             obj.hide_render = True
@@ -299,16 +318,6 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
             self._set_scene_layer(context.scene, object_layer)
 
         elif self.object_type == 'TYPE_FLUID':
-            if bpy.context.scene.flip_fluid.get_num_fluid_objects() > 1:
-                self["object_type"] = 0
-                errmsg = "Error: The FLIP Fluids Demo is limited to one Fluid object"
-                bpy.ops.flip_fluid_operators.display_error(
-                        'INVOKE_DEFAULT',
-                        error_message=errmsg,
-                        popup_width=600
-                        )
-                return
-
             obj.hide_render = True
             vcu.set_object_display_type(obj, 'WIRE')
             obj.show_name = True
@@ -316,16 +325,6 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
             self._set_scene_layer(context.scene, object_layer)
 
         elif self.object_type == 'TYPE_OBSTACLE':
-            if bpy.context.scene.flip_fluid.get_num_fluid_objects() > 1:
-                self["object_type"] = 0
-                errmsg = "Error: The FLIP Fluids Demo is limited to one Fluid object"
-                bpy.ops.flip_fluid_operators.display_error(
-                        'INVOKE_DEFAULT',
-                        error_message=errmsg,
-                        popup_width=600
-                        )
-                return
-
             obj.hide_render = False
             vcu.set_object_display_type(obj, 'TEXTURED')
             obj.show_name = True
@@ -334,16 +333,6 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
             self._set_scene_layer(context.scene, object_layer)
 
         elif self.object_type == 'TYPE_INFLOW':
-            if bpy.context.scene.flip_fluid.get_num_inflow_objects() > 1:
-                self["object_type"] = 0
-                errmsg = "Error: The FLIP Fluids Demo is limited to one Inflow object"
-                bpy.ops.flip_fluid_operators.display_error(
-                        'INVOKE_DEFAULT',
-                        error_message=errmsg,
-                        popup_width=600
-                        )
-                return
-
             obj.hide_render = True
             vcu.set_object_display_type(obj, 'WIRE')
             obj.show_name = True
@@ -351,16 +340,6 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
             self._set_scene_layer(context.scene, object_layer)
 
         elif self.object_type == 'TYPE_OUTFLOW':
-            if bpy.context.scene.flip_fluid.get_num_outflow_objects() > 1:
-                self["object_type"] = 0
-                errmsg = "Error: The FLIP Fluids Demo is limited to one Outflow object"
-                bpy.ops.flip_fluid_operators.display_error(
-                        'INVOKE_DEFAULT',
-                        error_message=errmsg,
-                        popup_width=600
-                        )
-                return
-
             obj.hide_render = True
             vcu.set_object_display_type(obj, 'WIRE')
             obj.show_name = True
@@ -373,6 +352,10 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
             obj.show_name = True
             self._set_object_layer(obj, object_layer)
             self._set_scene_layer(context.scene, object_layer)
+
+            if obj.type == 'CURVE':
+                ff_props = obj.flip_fluid.get_property_group()
+                ff_props.force_field_type = 'FORCE_FIELD_TYPE_CURVE'
 
 
     def _save_object_view_settings(self, obj):
@@ -442,7 +425,8 @@ def scene_update_post(scene):
 
     flip_objects = (scene.flip_fluid.get_inflow_objects() +
                     scene.flip_fluid.get_outflow_objects() +
-                    scene.flip_fluid.get_fluid_objects())
+                    scene.flip_fluid.get_fluid_objects() +
+                    scene.flip_fluid.get_force_field_objects())
     domain_object = scene.flip_fluid.get_domain_object()
     if domain_object is not None:
         flip_objects.append(domain_object)

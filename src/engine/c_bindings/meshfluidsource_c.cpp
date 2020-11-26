@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2019 Ryan L. Guy
+Copyright (C) 2020 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -222,24 +222,6 @@ extern "C" {
                                                                  int *err) {
         CBindings::safe_execute_method_void_1param(
             obj, &MeshFluidSource::setObjectVelocityInfluence, value, err
-        );
-    }
-
-    EXPORTDLL void MeshFluidSource_enable_rigid_mesh(MeshFluidSource* obj, int *err) {
-        CBindings::safe_execute_method_void_0param(
-            obj, &MeshFluidSource::enableRigidMesh, err
-        );
-    }
-
-    EXPORTDLL void MeshFluidSource_disable_rigid_mesh(MeshFluidSource* obj, int *err) {
-        CBindings::safe_execute_method_void_0param(
-            obj, &MeshFluidSource::disableRigidMesh, err
-        );
-    }
-
-    EXPORTDLL int MeshFluidSource_is_rigid_mesh_enabled(MeshFluidSource* obj, int *err) {
-        return CBindings::safe_execute_method_ret_0param(
-            obj, &MeshFluidSource::isRigidMeshEnabled, err
         );
     }
 

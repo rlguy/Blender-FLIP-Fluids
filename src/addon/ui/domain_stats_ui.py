@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -293,11 +293,12 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
         column = split.column()
         column.prop(sprops, "lock_info_frame_to_timeline")
 
-        box.separator()
-        if not sprops.is_frame_info_available:
-            box.label(text="Data Not Available")
-            return
+        if sprops.is_frame_info_available:
+            box.label(text="")
+        else:
+            box.label(text="Data Not Available (frame " + str(sprops.current_info_frame) + ")", icon='ERROR')
 
+        box.separator()
         self.draw_frame_info_simulation_stats(context, box)
         self.draw_frame_info_timing_stats(context, box)
         self.draw_frame_info_mesh_stats(context, box)

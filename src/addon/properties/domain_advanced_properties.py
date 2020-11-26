@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,9 +47,18 @@ class DomainAdvancedProperties(bpy.types.PropertyGroup):
             name="Enable Adaptive Time Stepping for Obstacles",
             description="Include obstacle velocities when calculating number"
                 " of frame substeps. Enabling may improve the accuracy of"
-                " fluid-solid interaction for fast moving obstacles",
+                " fluid-solid interaction for fast moving obstacles, but"
+                " may take longer to simulate",
             default = False,
             ); exec(conv("enable_adaptive_obstacle_time_stepping"))
+    enable_adaptive_force_field_time_stepping = BoolProperty(
+            name="Enable Adaptive Time Stepping for Force Fields",
+            description="Include force field velocities when calculating number"
+                " of frame substeps. Enabling may improve the accuracy of"
+                " fluid-forcefield interaction for fast moving force fields, but"
+                " will take longer to simulate",
+            default = False,
+            ); exec(conv("enable_adaptive_force_field_time_stepping"))
     particle_jitter_factor = FloatProperty(
             name="Particle Jitter",
             description="Amount of random jitter that is added to newly spawned"
@@ -161,20 +170,21 @@ class DomainAdvancedProperties(bpy.types.PropertyGroup):
 
     def register_preset_properties(self, registry, path):
         add = registry.add_property
-        add(path + ".min_max_time_steps_per_frame",           "Min-Max Time Steps",                 group_id=0)
-        add(path + ".enable_adaptive_obstacle_time_stepping", "Adaptive Obstacle Stepping",         group_id=0)
-        add(path + ".particle_jitter_factor",                 "Jitter Factor",                      group_id=0)
-        add(path + ".jitter_surface_particles",               "Jitter Surface Particles",           group_id=0)
-        add(path + ".PICFLIP_ratio",                          "PIC/FLIP Ratio",                     group_id=0)
-        add(path + ".CFL_condition_number",                   "CFL",                                group_id=0)
-        add(path + ".enable_extreme_velocity_removal",        "Enable Extreme Velocity Removal",    group_id=0)
-        add(path + ".enable_gpu_features",                    "Enable GPU Features",                group_id=1)
-        add(path + ".threading_mode",                         "Threading Mode",                     group_id=1)
-        add(path + ".num_threads_fixed",                      "Num Threads (fixed)",                group_id=1)
-        add(path + ".enable_asynchronous_meshing",            "Async Meshing",                      group_id=1)
-        add(path + ".precompute_static_obstacles",            "Precompute Static Obstacles",        group_id=1)
-        add(path + ".reserve_temporary_grids",                "Reserve Temporary Grid Memory",      group_id=1)
-        add(path + ".disable_changing_topology_warning",      "Disable Changing Topology Warning",  group_id=1)
+        add(path + ".min_max_time_steps_per_frame",              "Min-Max Time Steps",                 group_id=0)
+        add(path + ".enable_adaptive_obstacle_time_stepping",    "Adaptive Obstacle Stepping",         group_id=0)
+        add(path + ".enable_adaptive_force_field_time_stepping", "Adaptive Force Field Stepping",      group_id=0)
+        add(path + ".particle_jitter_factor",                    "Jitter Factor",                      group_id=0)
+        add(path + ".jitter_surface_particles",                  "Jitter Surface Particles",           group_id=0)
+        add(path + ".PICFLIP_ratio",                             "PIC/FLIP Ratio",                     group_id=0)
+        add(path + ".CFL_condition_number",                      "CFL",                                group_id=0)
+        add(path + ".enable_extreme_velocity_removal",           "Enable Extreme Velocity Removal",    group_id=0)
+        add(path + ".enable_gpu_features",                       "Enable GPU Features",                group_id=1)
+        add(path + ".threading_mode",                            "Threading Mode",                     group_id=1)
+        add(path + ".num_threads_fixed",                         "Num Threads (fixed)",                group_id=1)
+        add(path + ".enable_asynchronous_meshing",               "Async Meshing",                      group_id=1)
+        add(path + ".precompute_static_obstacles",               "Precompute Static Obstacles",        group_id=1)
+        add(path + ".reserve_temporary_grids",                   "Reserve Temporary Grid Memory",      group_id=1)
+        add(path + ".disable_changing_topology_warning",         "Disable Changing Topology Warning",  group_id=1)
 
 
     def initialize(self):

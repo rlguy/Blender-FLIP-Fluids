@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -305,20 +305,26 @@ class DomainRenderProperties(bpy.types.PropertyGroup):
             items=types.whitewater_object_settings_modes,
             default='WHITEWATER_OBJECT_SETTINGS_WHITEWATER',
             ); exec(conv("whitewater_particle_object_settings_mode"))
-    hold_frame = BoolProperty(
-            name="Hold Frame",
-            description="Hold a frame in place, regardless of timeline position",
-            default=False,
-            update=lambda self, context: self._update_hold_frame(context),
-            options = {'HIDDEN'},
-            ); exec(conv("hold_frame"))
+    simulation_playback_mode = EnumProperty(
+            name="Simulation Playback Mode",
+            description="How to playback the simulation animation",
+            items=types.simulation_playback_mode,
+            default='PLAYBACK_MODE_TIMELINE',
+            ); exec(conv("simulation_playback_mode"))
+    override_frame = FloatProperty(
+            name="Override Frame",
+            description="The custom frame number to override. If this value is not a whole number,"
+                " the frame to be loaded will be rounded down. TIP: This value can be keyframed for"
+                " complex control of simulation playback",
+            default=1.000,
+            ); exec(conv("override_frame"))
     hold_frame_number = IntProperty(
-            name="Frame", 
-            description="Frame number to be held",
+            name="Hold Frame", 
+            description="Frame number to be held in place",
             min=0,
             default=0,
             options = {'HIDDEN'},
-            ) ; exec(conv("hold_frame_number"))
+            ); exec(conv("hold_frame_number"))
 
 
     whitewater_display_settings_expanded = BoolProperty(default=False); exec(conv("whitewater_display_settings_expanded"))
@@ -381,12 +387,12 @@ class DomainRenderProperties(bpy.types.PropertyGroup):
 
 
     def _update_hold_frame(self, context):
-        if self.hold_frame:
+        if self.simulation_playback_mode == 'PLAYBACK_MODE_HOLD_FRAME':
             self.is_hold_frame_number_set = True
 
 
     def _scene_update_post_update_hold_frame_number(self, scene):
-        if self.hold_frame or self.is_hold_frame_number_set:
+        if self.simulation_playback_mode == 'PLAYBACK_MODE_HOLD_FRAME' or self.is_hold_frame_number_set:
             return
         if self.hold_frame_number != scene.frame_current:
             self.hold_frame_number = scene.frame_current

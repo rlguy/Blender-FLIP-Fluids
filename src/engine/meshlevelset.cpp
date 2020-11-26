@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2019 Ryan L. Guy
+Copyright (C) 2020 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,7 @@ SOFTWARE.
 #include "interpolation.h"
 #include "levelsetutils.h"
 #include "meshutils.h"
+#include "collision.h"
 
 MeshLevelSet::MeshLevelSet() {
 }
@@ -109,12 +110,16 @@ void MeshLevelSet::set(GridIndex g, float d) {
 }
 
 int MeshLevelSet::getClosestTriangleIndex(int i, int j, int k) {
-    FLUIDSIM_ASSERT(_closestTriangles.isIndexInRange(i, j, k));
+    if (!_closestTriangles.isIndexInRange(i, j, k)) {
+        return -1;
+    }
     return _closestTriangles(i, j, k);
 }
 
 int MeshLevelSet::getClosestTriangleIndex(GridIndex g) {
-    FLUIDSIM_ASSERT(_closestTriangles.isIndexInRange(g));
+    if (!_closestTriangles.isIndexInRange(g)) {
+        return -1;
+    }
     return _closestTriangles(g);
 }
 
@@ -1511,7 +1516,12 @@ float MeshLevelSet::_getCellWeight(int i, int j, int k) {
 float MeshLevelSet::_pointToTriangleDistance(vmath::vec3 x0, vmath::vec3 x1, 
                                                              vmath::vec3 x2, 
                                                              vmath::vec3 x3) {
+
+    // Alternative method - seems to have difficulties with accuracy in practice
+    
+    /*
     // first find barycentric coordinates of closest point on infinite plane
+    float value = -1;
     vmath::vec3 x13 = x1 - x3;
     vmath::vec3 x23 = x2 - x3;
     vmath::vec3 x03 = x0 - x3;
@@ -1528,26 +1538,30 @@ float MeshLevelSet::_pointToTriangleDistance(vmath::vec3 x0, vmath::vec3 x1,
     float w31 = invdet * (m13 * b - d * a);
     float w12 = 1 - w23 - w31;
     if (w23 >= 0 && w31 >= 0 && w12 >= 0) { // if we're inside the triangle
-        return vmath::length(x0 - (w23 * x1 + w31 * x2 + w12 * x3)); 
+        value = vmath::length(x0 - (w23 * x1 + w31 * x2 + w12 * x3)); 
     } else { 
         // we have to clamp to one of the edges
         if (w23 > 0) { 
             // this rules out edge 2-3 for us
             float d1 = _pointToSegmentDistance(x0, x1, x2);
             float d2 = _pointToSegmentDistance(x0, x1, x3);
-            return fmin(d1, d2);
+            value = fmin(d1, d2);
         } else if(w31>0) { 
             // this rules out edge 1-3
             float d1 = _pointToSegmentDistance(x0, x1, x2);
             float d2 = _pointToSegmentDistance(x0, x2, x3);
-            return fmin(d1, d2);
+            value = fmin(d1, d2);
         } else { 
             // w12 must be >0, ruling out edge 1-2
             float d1 = _pointToSegmentDistance(x0, x1, x3);
             float d2 = _pointToSegmentDistance(x0, x2, x3);
-            return fmin(d1, d2);
+            value = fmin(d1, d2);
         }
     }
+    */
+
+    vmath::vec3 cp = Collision::findClosestPointOnTriangle(x0, x1, x2, x3);
+    return vmath::length(cp - x0);
 }
 
 vmath::vec3 MeshLevelSet::_pointToTriangleVelocity(vmath::vec3 x0, int triangleIdx) {

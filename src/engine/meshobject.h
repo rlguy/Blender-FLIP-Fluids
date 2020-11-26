@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2019 Ryan L. Guy
+Copyright (C) 2020 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -76,6 +76,7 @@ public:
     void getCells(float frameInterpolation, 
                   std::vector<GridIndex> &cells);
     bool isAnimated();
+    bool isRigidBody();
     void clearObjectStatus();
     TriangleMesh getMesh();
     TriangleMesh getMesh(float frameInterpolation);
@@ -93,6 +94,7 @@ public:
 
     void setAsDomainObject();
     bool isDomainObject();
+
 
     void inverse();
     bool isInversed();
@@ -150,6 +152,7 @@ private:
     void _sortTriangleIndices(Triangle &t);
     bool _isTriangleEqual(Triangle &t1, Triangle &t2);
     bool _isTopologyConsistent(TriangleMesh &m1, TriangleMesh &m2);
+    bool _isRigidBody(TriangleMesh m1, TriangleMesh m2);
 
     int _isize = 0;
     int _jsize = 0;
@@ -172,6 +175,7 @@ private:
     bool _isInversed = false;
     bool _isAnimated = false;
     bool _isChangingTopology = false;
+    bool _isRigid = true;
     float _friction = 0.0f;
     float _whitewaterInfluence = 1.0f;
     float _dustEmissionStrength = 1.0f;

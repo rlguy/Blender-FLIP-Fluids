@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,11 +18,12 @@ import bpy, math, array, json, os, zipfile, shutil
 from mathutils import Vector
 
 from .objects import flip_fluid_map
+from .objects.flip_fluid_geometry_exporter import GeometryExportObject, MotionExportType, GeometryExportType
 from .utils import export_utils as utils
 from .objects.flip_fluid_aabb import AABB
 from .pyfluid import TriangleMesh
 from .utils import version_compatibility_utils as vcu
-from .utils import cache_utils
+from .utils import cache_utils, export_utils
 
 
 def __get_domain_object():
@@ -78,6 +79,13 @@ def __get_domain_data_dict(context, dobj):
     initialize_properties['dx'] = simulation_dx
     initialize_properties['preview_dx'] = simulation_preview_dx
 
+    initialize_properties['upscale_simulation'] = dprops.simulation.is_current_grid_upscaled()
+    if initialize_properties['upscale_simulation']:
+        initialize_properties['savestate_isize'] = dprops.simulation.savestate_isize
+        initialize_properties['savestate_jsize'] = dprops.simulation.savestate_jsize
+        initialize_properties['savestate_ksize'] = dprops.simulation.savestate_ksize
+        initialize_properties['savestate_dx'] = dprops.simulation.savestate_dx
+
     initialize_properties['logfile_name'] = dprops.cache.logfile_name
     initialize_properties['frame_start'] = dprops.simulation.frame_start
     initialize_properties['frame_end'] = dprops.simulation.frame_end
@@ -93,7 +101,10 @@ def __get_domain_data_dict(context, dobj):
         initialize_properties['gpu_device'] = preferences.selected_gpu_device
     else:
         initialize_properties['gpu_device'] = ""
-        
+
+    initialize_properties['enable_engine_debug_mode'] = preferences.engine_debug_mode
+    initialize_properties['geometry_database_filepath'] = dprops.cache.get_geometry_database_abspath()
+
     d['initialize'] = initialize_properties
 
     d['advanced']['num_threads_auto_detect'] = dprops.advanced.num_threads_auto_detect
@@ -300,81 +311,106 @@ def __export_animated_mesh_data(object_data, mesh_directory):
     frame_data = object_data['data']['frame_data'] = []
 
 
-def export_mesh_data(mesh_exporter_data, export_directory):
-    os.makedirs(export_directory, exist_ok=True)
+def __initialize_export_object_geometry_types(export_object):
+    bl_object = export_object.get_blender_object()
+    if bl_object.type == 'MESH':
+        export_object.add_geometry_export_type(GeometryExportType.MESH)
+    elif bl_object.type == 'CURVE':
+        export_object.add_geometry_export_type(GeometryExportType.CURVE)
+    elif bl_object.type == 'EMPTY':
+        export_object.add_geometry_export_type(GeometryExportType.CENTROID)
 
-    for object_name, object_data in mesh_exporter_data.items():
-        if not object_data['data']['mesh_data']:
+    fprops = bl_object.flip_fluid
+    if fprops.is_fluid() or fprops.is_inflow() or fprops.is_force_field():
+        export_object.add_geometry_export_type(GeometryExportType.AXIS)
+
+
+
+def __generate_export_object(bl_object):
+    export_object = GeometryExportObject(bl_object.name)
+    __initialize_export_object_geometry_types(export_object)
+
+    return export_object
+
+
+def __get_target_object_export_type(bl_target, bl_target_parent):
+    parent_props = bl_target_parent.flip_fluid.get_property_group()
+    if hasattr(parent_props, 'export_animated_target') and parent_props.export_animated_target:
+        return MotionExportType.ANIMATED
+    if export_utils.is_object_keyframe_animated(bl_target):
+        return MotionExportType.KEYFRAMED
+    return MotionExportType.STATIC
+
+
+def __generate_target_export_object(bl_target_object, bl_target_parent_object):
+    export_object = GeometryExportObject(bl_target_object.name)
+
+    export_type = __get_target_object_export_type(bl_target_object, bl_target_parent_object)
+    export_object.set_motion_export_type(export_type)
+    export_object.add_geometry_export_type(GeometryExportType.CENTROID)
+
+    return export_object
+
+
+def __get_meshing_volume_object_export_type(bl_meshing_volume, bl_domain):
+    dprops = bl_domain.flip_fluid.get_property_group()
+    if dprops.surface.export_animated_meshing_volume_object:
+        return MotionExportType.ANIMATED
+    if export_utils.is_object_keyframe_animated(bl_meshing_volume):
+        return MotionExportType.KEYFRAMED
+    return MotionExportType.STATIC
+
+
+def __generate_meshing_volume_export_object(bl_meshing_object, bl_domain_object):
+    export_object = GeometryExportObject(bl_meshing_object.name)
+
+    export_type = __get_meshing_volume_object_export_type(bl_meshing_object, bl_domain_object)
+    export_object.set_motion_export_type(export_type)
+    export_object.add_geometry_export_type(GeometryExportType.MESH)
+
+    return export_object
+
+
+def add_objects_to_geometry_exporter(geometry_exporter):
+    domain = bpy.context.scene.flip_fluid.get_domain_object()
+    dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+    objects = bpy.context.scene.flip_fluid.get_simulation_objects()
+    disable_topology_warning = dprops.advanced.disable_changing_topology_warning
+
+    # Add regular FLIP Fluid objects
+    for obj in objects:
+        props = obj.flip_fluid.get_property_group()
+        export_object = __generate_export_object(obj)
+
+        skip_reexport = hasattr(props, "skip_reexport") and props.skip_reexport
+        force_reexport = hasattr(props, "force_reexport_on_next_bake") and props.force_reexport_on_next_bake
+        skip_reexport = skip_reexport and not force_reexport
+        export_object.skip_reexport = skip_reexport and not force_reexport
+        export_object.disable_changing_topology_warning = disable_topology_warning or obj.flip_fluid.is_force_field()        
+        geometry_exporter.add_geometry_export_object(export_object)
+
+    # Add Fluid/Inflow target objects
+    for obj in objects:
+        if not obj.flip_fluid.is_fluid() and not obj.flip_fluid.is_inflow():
+            continue
+        props = obj.flip_fluid.get_property_group()
+        if not props.is_target_valid():
             continue
 
-        name_slug = cache_utils.string_to_cache_slug(object_name)
-        mesh_directory = os.path.join(export_directory, name_slug)
-        os.makedirs(mesh_directory, exist_ok=True)
+        target_object = props.get_target_object()
+        export_object = __generate_target_export_object(target_object, obj)
+        export_object.disable_changing_topology_warning = True
+        geometry_exporter.add_geometry_export_object(export_object)
 
-        mesh_type = object_data['data']['mesh_type']
-        if mesh_type == 'STATIC':
-            __export_static_mesh_data(object_data, mesh_directory)
-        elif mesh_type == 'KEYFRAMED':
-            __export_keyframed_mesh_data(object_data, mesh_directory)
-        elif mesh_type == 'ANIMATED':
-            __export_animated_mesh_data(object_data, mesh_directory)
+    # Add Meshing Volume object
+    if dprops.surface.is_meshing_volume_object_valid():
+        meshing_volume_object = dprops.surface.get_meshing_volume_object()
+        if meshing_volume_object is not None:
+            export_object = __generate_meshing_volume_export_object(meshing_volume_object, domain)
+            export_object.disable_changing_topology_warning = True
+            geometry_exporter.add_geometry_export_object(export_object)
 
-
-def clean_export_directory(export_object_names, export_directory):
-    os.makedirs(export_directory, exist_ok=True)
-    dprops = __get_domain_properties()
-
-    subdirs = [x for x in os.listdir(export_directory) if os.path.isdir(os.path.join(export_directory, x))]
-    slugified_object_names = [cache_utils.string_to_cache_slug(x) for x in export_object_names]
-
-    for d in subdirs:
-        if not d in slugified_object_names:
-            shutil.rmtree(os.path.join(export_directory, d))
-
-    for name in export_object_names:
-        name_slug = cache_utils.string_to_cache_slug(name)
-        object_dir = os.path.join(export_directory, name_slug)
-        if not os.path.isdir(object_dir):
-            continue
-        obj = bpy.data.objects.get(name)
-        props = obj.flip_fluid.get_property_group()
-        if not props.export_animated_mesh:
-            shutil.rmtree(object_dir)
-        if props.export_animated_mesh and not props.skip_animated_mesh_reexport:
-            shutil.rmtree(object_dir)
-
-
-def get_mesh_exporter_parameter_dict(export_object_names, export_directory):
-    dprops = __get_domain_properties()
-    frame_start, frame_end = dprops.simulation.get_frame_range()
-    mesh_data = {}
-    for name in export_object_names:
-        name_slug = cache_utils.string_to_cache_slug(name)
-        object_dir = os.path.join(export_directory, name_slug)
-        obj = bpy.data.objects.get(name)
-        props = obj.flip_fluid.get_property_group()
-
-        if props.export_animated_mesh and props.skip_animated_mesh_reexport:
-            if not os.path.isdir(object_dir):
-                mesh_data[name] = {'frame_start': frame_start, 'frame_end': frame_end}
-                continue
-
-            files = os.listdir(object_dir)
-            files = [f.split('.')[0][-6:] for f in files]
-            file_numbers = [int(f) for f in files if f.isdigit()]
-            file_numbers.sort()
-
-            if not file_numbers or frame_start < file_numbers[0]:
-                mesh_data[name] = {'frame_start': frame_start, 'frame_end': frame_end}
-                continue
-
-            next_number = file_numbers[-1] + 1
-            mesh_data[name] = {'frame_start': next_number, 'frame_end': frame_end}
-        else:
-            mesh_data[name] = {'frame_start': frame_start, 'frame_end': frame_end}
-
-    return mesh_data
-
+    geometry_exporter.initialize()
 
 
 def export_simulation_data(context, data_filepath):

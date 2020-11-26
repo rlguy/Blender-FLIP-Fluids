@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2019 Ryan L. Guy
+Copyright (C) 2020 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -111,6 +111,18 @@ extern "C" {
         );
     }
 
+    EXPORTDLL float ForceField_get_max_force_limit_factor(ForceField* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &ForceField::getMaxForceLimitFactor, err
+        );
+    }
+
+    EXPORTDLL void ForceField_set_max_force_limit_factor(ForceField* obj, float factor, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &ForceField::setMaxForceLimitFactor, factor, err
+        );
+    }
+
     EXPORTDLL void ForceField_enable_min_distance(ForceField* obj, int *err) {
         CBindings::safe_execute_method_void_0param(
             obj, &ForceField::enableMinDistance, err
@@ -168,6 +180,30 @@ extern "C" {
     EXPORTDLL void ForceField_set_max_distance(ForceField* obj, float d, int *err) {
         CBindings::safe_execute_method_void_1param(
             obj, &ForceField::setMaxDistance, d, err
+        );
+    }
+
+    EXPORTDLL float ForceField_get_gravity_scale(ForceField* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &ForceField::getGravityScale, err
+        );
+    }
+
+    EXPORTDLL void ForceField_set_gravity_scale(ForceField* obj, float s, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &ForceField::setGravityScale, s, err
+        );
+    }
+
+    EXPORTDLL float ForceField_get_gravity_scale_width(ForceField* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &ForceField::getGravityScaleWidth, err
+        );
+    }
+
+    EXPORTDLL void ForceField_set_gravity_scale_width(ForceField* obj, float w, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &ForceField::setGravityScaleWidth, w, err
         );
     }
 }

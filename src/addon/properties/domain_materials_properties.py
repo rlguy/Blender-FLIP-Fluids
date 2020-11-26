@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,31 +30,41 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
     
     surface_material = EnumProperty(
             name="Surface",
-            description="Surface Material",
+            description="Select a material for the fluid surface. Tip: materials can also be"
+                " created and assigned to the fluid_surface object in Blender's Material"
+                " Properties panel",
             items=material_library.get_surface_material_enums_ui,
             update=lambda self, context: self._update_surface_material(context),
             ); exec(conv("surface_material"))
     whitewater_foam_material = EnumProperty(
             name="Whitewater Foam",
-            description="Whitewater Foam Material",
+            description="Select a material for the foam particles. Tip: materials can also be"
+                " created and assigned to the whitewater_foam object in Blender's Material"
+                " Properties panel",
             items=material_library.get_whitewater_material_enums_ui,
             update=lambda self, context: self._update_whitewater_foam_material(context),
             ); exec(conv("whitewater_foam_material"))
     whitewater_bubble_material = EnumProperty(
             name="Whitewater Bubble",
-            description="Whitewater Bubble Material",
+            description="Select a material for the bubble particles. Tip: materials can also be"
+                " created and assigned to the whitewater_bubble object in Blender's Material"
+                " Properties panel",
             items=material_library.get_whitewater_material_enums_ui,
             update=lambda self, context: self._update_whitewater_bubble_material(context),
             ); exec(conv("whitewater_bubble_material"))
     whitewater_spray_material = EnumProperty(
             name="Whitewater Spray",
-            description="Whitewater Spray Material",
+            description="Select a material for the spray particles. Tip: materials can also be"
+                " created and assigned to the whitewater_spray object in Blender's Material"
+                " Properties panel",
             items=material_library.get_whitewater_material_enums_ui,
             update=lambda self, context: self._update_whitewater_spray_material(context),
             ); exec(conv("whitewater_spray_material"))
     whitewater_dust_material = EnumProperty(
             name="Whitewater Dust",
-            description="Whitewater Dust Material",
+            description="Select a material for the dust particles. Tip: materials can also be"
+                " created and assigned to the whitewater_dust object in Blender's Material"
+                " Properties panel",
             items=material_library.get_whitewater_material_enums_ui,
             update=lambda self, context: self._update_whitewater_dust_material(context),
             ); exec(conv("whitewater_dust_material"))

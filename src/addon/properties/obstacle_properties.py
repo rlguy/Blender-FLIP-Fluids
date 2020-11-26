@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@ class FlipFluidObstacleProperties(bpy.types.PropertyGroup):
     
     is_enabled = BoolProperty(
             name="Enabled",
-            description="Object is present in the fluid simulation",
+            description="Obstacle is present in the fluid simulation",
             default=True,
             ); exec(conv("is_enabled"))
     is_inversed = BoolProperty(
@@ -48,14 +48,24 @@ class FlipFluidObstacleProperties(bpy.types.PropertyGroup):
             default=False,
             options={'HIDDEN'},
             ); exec(conv("export_animated_mesh"))
-    skip_animated_mesh_reexport = BoolProperty(
-            name="Skip re-export",
+    skip_reexport = BoolProperty(
+            name="Skip Mesh Re-Export",
             description="Skip re-exporting this mesh when starting or resuming"
                 " a bake. If this mesh has not been exported or is missing files,"
                 " the addon will automatically export the required files",
             default=False,
             options={'HIDDEN'},
-            ); exec(conv("skip_animated_mesh_reexport"))
+            ); exec(conv("skip_reexport"))
+    force_reexport_on_next_bake = BoolProperty(
+            name="Force Re-Export On Next Bake",
+            description="Override the 'Skip Re-Export' option and force this mesh to be"
+                " re-exported and updated on the next time a simulation start/resumes"
+                " baking. Afting starting/resuming the baking process, this option"
+                " will automatically be disabled once the object has been fully exported."
+                " This option is only applicable if 'Skip Re-Export' is enabled",
+            default=False,
+            options={'HIDDEN'},
+            ); exec(conv("force_reexport_on_next_bake"))
     friction = FloatProperty(
             name="Friction",
             description="Amount of friction between the fluid and the surface"
@@ -119,6 +129,8 @@ class FlipFluidObstacleProperties(bpy.types.PropertyGroup):
         add("obstacle.is_enabled", "")
         add("obstacle.is_inversed", "")
         add("obstacle.export_animated_mesh", "")
+        add("obstacle.skip_reexport", "")
+        add("obstacle.force_reexport_on_next_bake", "")
         add("obstacle.friction", "")
         add("obstacle.whitewater_influence", "")
         add("obstacle.dust_emission_strength", "")

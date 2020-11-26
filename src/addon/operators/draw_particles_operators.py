@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -207,6 +207,7 @@ class FlipFluidDrawGLParticles(bpy.types.Operator):
         if vcu.is_blender_28():
             global particle_shader
             global particle_batch_draw
+            bgl.glPointSize(dprops.debug.particle_size)
             particle_batch_draw.draw(particle_shader)
         else:
             bgl.glPointSize(dprops.debug.particle_size)

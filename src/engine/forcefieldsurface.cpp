@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2019 Ryan L. Guy
+Copyright (C) 2020 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,12 @@ SOFTWARE.
 // DEBUG
 #include <iostream>
 
+#include <random>
+#include <algorithm>
+
 #include "levelsetsolver.h"
+#include "forcefieldutils.h"
+#include "interpolation.h"
 
 
 ForceFieldSurface::ForceFieldSurface() {
@@ -36,9 +41,10 @@ ForceFieldSurface::ForceFieldSurface() {
 ForceFieldSurface::~ForceFieldSurface() {
 }
 
-void ForceFieldSurface::update(double dt) {
-    MeshObjectStatus status = _meshObject.getStatus();
-    if (status.isMeshChanged) {
+void ForceFieldSurface::update(double dt, double frameInterpolation) {
+    MeshObjectStatus s = _meshObject.getStatus();
+    bool isMeshStateChanged = s.isStateChanged || (s.isEnabled && s.isAnimated && s.isMeshChanged);
+    if (isMeshStateChanged) {
         _isLevelsetUpToDate = false;
     }
 
@@ -51,10 +57,110 @@ void ForceFieldSurface::update(double dt) {
         return;
     }
 
-    std::cout << "Updating ForceFieldSurface " << dt << std::endl;
+    TriangleMesh mesh = _meshObject.getMesh(frameInterpolation);
+    _updateGridDimensions(mesh);
 
-    TriangleMesh mesh = _meshObject.getMesh();
+    mesh.translate(-_offsetSDF);
+    ForceFieldUtils::generateSurfaceVectorField(_sdf, mesh, _vectorField);
 
+    _lastMaxDistance = _isMaxDistanceEnabled ? _maxDistance : -1.0f;
+    _isLevelsetUpToDate = true;
+}
+
+void ForceFieldSurface::addForceFieldToGrid(MACVelocityField &fieldGrid) {
+    int U = 0; int V = 1; int W = 2;
+    _addForceFieldToGridMT(fieldGrid, U);
+    _addForceFieldToGridMT(fieldGrid, V);
+    _addForceFieldToGridMT(fieldGrid, W);
+}
+
+void ForceFieldSurface::addGravityScaleToGrid(ForceFieldGravityScaleGrid &scaleGrid) {
+    float scaleWidth = _gravityScaleWidth;
+    if (_isMaxDistanceEnabled) {
+        scaleWidth = std::min(scaleWidth, _maxDistance);
+    }
+
+    for (int k = 0; k < _ksizeSDF + 1; k++) {
+        for (int j = 0; j < _jsizeSDF + 1; j++) {
+            for (int i = 0; i < _isizeSDF + 1; i++) {
+                float d = _sdf(i, j, k);
+                if (d < scaleWidth) {
+                    float factor = 1.0f - (d / scaleWidth);
+                    float scale = factor * _gravityScale + (1.0f - factor);
+                    scaleGrid.addScale(i + _ioffsetSDF, j + _joffsetSDF, k + _koffsetSDF, scale);
+                }
+            }
+        }
+    }
+}
+
+std::vector<vmath::vec3> ForceFieldSurface::generateDebugProbes() {
+    std::mt19937 generator(0);
+    std::uniform_real_distribution<float> uniform(-_jitterFactor * _dx, _jitterFactor * _dx);
+
+    float minradius = _minRadiusFactor * _dx;
+    float maxradius = _maxRadiusFactor * _dx;
+    vmath::vec3 positionOffset(_ioffsetSDF * _dx, _joffsetSDF * _dx, _koffsetSDF * _dx);
+    std::vector<vmath::vec3> candidatePointList;
+    for (int k = 0; k < _ksizeSDF; k++) {
+        for (int j = 0; j < _jsizeSDF; j++) {
+            for (int i = 0; i < _isizeSDF; i++) {
+                float d = std::abs(_sdf(i, j, k));
+                if (d >= minradius && d < maxradius) {
+                    vmath::vec3 jitter(uniform(generator), uniform(generator), uniform(generator));
+                    vmath::vec3 p = Grid3d::GridIndexToPosition(i, j, k, _dx) + positionOffset + jitter;
+                    candidatePointList.push_back(p);
+                }
+            }
+        }
+    }
+
+    std::shuffle(candidatePointList.begin(), candidatePointList.end(), generator);
+    int numProbes = std::min(_numDebugProbes, (int)candidatePointList.size());
+    std::vector<vmath::vec3> probes(candidatePointList.begin(), candidatePointList.begin() + numProbes);
+
+    return probes;
+}
+
+void ForceFieldSurface::_initialize() {
+}
+
+bool ForceFieldSurface::_isSubclassStateChanged() {
+    return false;
+}
+
+void ForceFieldSurface::_clearSubclassState() {
+
+}
+
+void ForceFieldSurface::_addForceFieldToGridMT(MACVelocityField &fieldGrid, int dir) {
+    int U = 0; int V = 1; int W = 2;
+
+    int gridsize = 0;
+    if (dir == U) {
+        gridsize = (_isize + 1) * _jsize * _ksize;
+    } else if (dir == V) {
+        gridsize = _isize * (_jsize + 1) * _ksize;
+    } else if (dir == W) {
+        gridsize = _isize * _jsize * (_ksize + 1);
+    }
+
+    int numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)fmin(numCPU, gridsize);
+    std::vector<std::thread> threads(numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
+    for (int i = 0; i < numthreads; i++) {
+        threads[i] = std::thread(&ForceFieldSurface::_addForceFieldToGridThread, this,
+                                 intervals[i], intervals[i + 1], &fieldGrid, dir);
+    }
+
+    for (int i = 0; i < numthreads; i++) {
+        threads[i].join();
+    }
+}
+
+void ForceFieldSurface::_updateGridDimensions(TriangleMesh &mesh) {
+    float eps = 1e-6;
     if (_isMaxDistanceEnabled) {
         AABB bbox(mesh.vertices);
         bbox.expand(eps + 2.0f * _maxDistance);
@@ -90,44 +196,17 @@ void ForceFieldSurface::update(double dt) {
         _sdf = MeshLevelSet(_isizeSDF, _jsizeSDF, _ksizeSDF, _dx);
         _sdf.disableVelocityData();
         _sdf.disableSignCalculation();
+
+        _vectorField = Array3d<vmath::vec3>(_isizeSDF + 1, _jsizeSDF + 1, _ksizeSDF + 1);
     } else {
         _sdf.reset();
+        _vectorField.fill(vmath::vec3());
     }
-
-    mesh.translate(-_offsetSDF);
-    _sdf.fastCalculateSignedDistanceField(mesh, _exactBand);
-
-    Array3d<float> *_phigrid = _sdf.getPhiArray3d();
-    Array3d<float> tempphi(_phigrid->width, _phigrid->height, _phigrid->depth, 0.0f);
-
-    std::vector<GridIndex> solverGridCells;
-    solverGridCells.reserve(_phigrid->width * _phigrid->height * _phigrid->depth);
-    for (int k = 0; k < _phigrid->depth; k++) {
-        for (int j = 0; j < _phigrid->height; j++) {
-            for (int i = 0; i < _phigrid->width; i++) {
-                if (std::abs(_phigrid->get(i, j, k)) >= _exactBand * _dx) {
-                    solverGridCells.push_back(GridIndex(i, j, k));
-                }
-            }
-        }
-    }
-
-    float width = std::max(_isizeSDF, std::max(_jsizeSDF, _ksizeSDF)) * _dx;
-
-    LevelSetSolver solver;
-    solver.reinitializeUpwind(*_phigrid, _dx, width, solverGridCells, tempphi);
-
-    for (size_t i = 0; i < solverGridCells.size(); i++) {
-        GridIndex g = solverGridCells[i];
-        _phigrid->set(g, tempphi(g));
-    }
-
-    _lastMaxDistance = _isMaxDistanceEnabled ? _maxDistance : -1.0f;
-    _isLevelsetUpToDate = true;
 }
 
-void ForceFieldSurface::addForceFieldToGrid(MACVelocityField &fieldGrid) {
-    std::cout << "Adding ForceFieldSurface to grid" << std::endl;
+void ForceFieldSurface::_addForceFieldToGridThread(int startidx, int endidx, 
+                                                   MACVelocityField *fieldGrid, int dir) {
+    int U = 0; int V = 1; int W = 2;
 
     float minDistance = -1.0f;
     float maxDistance = std::numeric_limits<float>::infinity();
@@ -139,87 +218,76 @@ void ForceFieldSurface::addForceFieldToGrid(MACVelocityField &fieldGrid) {
     }
 
     float eps = 1e-6;
-    float power = _falloffPower;
-    for (int k = 0; k < _ksize; k++) {
-        for (int j = 0; j < _jsize; j++) {
-            for (int i = 0; i < _isize + 1; i++) {
-                vmath::vec3 gp = Grid3d::FaceIndexToPositionU(i, j, k, _dx);
-                if (!Grid3d::isPositionInGrid(gp - _offsetSDF, _dx, _isizeSDF, _jsizeSDF, _ksizeSDF)) {
-                    continue;
-                }
 
-                float r = std::max(std::abs(_sdf.trilinearInterpolate(gp - _offsetSDF)), minDistance);
-                if (r < eps || r > maxDistance) {
-                    continue;
-                }
+    if (dir == U) {
 
-                vmath::vec3 dir = _sdf.trilinearInterpolateGradient(gp - _offsetSDF);
-                if (dir.length() < eps) {
-                    continue;
-                }
-
-                dir = dir.normalize();
-                vmath::vec3 force = _strength * (1.0f / std::pow(r, power)) * dir;
-                fieldGrid.addU(i, j, k, force.x);
+        for (int idx = startidx; idx < endidx; idx++) {
+            GridIndex g = Grid3d::getUnflattenedIndex(idx, _isize + 1, _jsize);
+            vmath::vec3 gp = Grid3d::FaceIndexToPositionU(g, _dx);
+            if (!Grid3d::isPositionInGrid(gp - _offsetSDF, _dx, _isizeSDF, _jsizeSDF, _ksizeSDF)) {
+                continue;
             }
+
+            vmath::vec3 vp = gp - _offsetSDF;
+            vmath::vec3 vect = Interpolation::trilinearInterpolate(vp, _dx, _vectorField);
+
+            float dist = vect.length();
+            float r = std::max(dist, minDistance);
+            if (dist < eps || r < eps || r > maxDistance) {
+                continue;
+            }
+
+            vmath::vec3 dir = -vmath::normalize(vect);
+            vmath::vec3 force = _calculateForceVector(r, dir);
+            fieldGrid->addU(g, force.x);
         }
+
+    } else if (dir == V) {
+
+        for (int idx = startidx; idx < endidx; idx++) {
+            GridIndex g = Grid3d::getUnflattenedIndex(idx, _isize, _jsize + 1);
+            vmath::vec3 gp = Grid3d::FaceIndexToPositionV(g, _dx);
+            if (!Grid3d::isPositionInGrid(gp - _offsetSDF, _dx, _isizeSDF, _jsizeSDF, _ksizeSDF)) {
+                continue;
+            }
+
+            vmath::vec3 vp = gp - _offsetSDF;
+            vmath::vec3 vect = Interpolation::trilinearInterpolate(vp, _dx, _vectorField);
+
+            float dist = vect.length();
+            float r = std::max(dist, minDistance);
+            if (dist < eps || r < eps || r > maxDistance) {
+                continue;
+            }
+
+            vmath::vec3 dir = -vmath::normalize(vect);
+            vmath::vec3 force = _calculateForceVector(r, dir);
+            fieldGrid->addV(g, force.y);
+        }
+
+    } else if (dir == W) {
+
+        for (int idx = startidx; idx < endidx; idx++) {
+            GridIndex g = Grid3d::getUnflattenedIndex(idx, _isize, _jsize);
+            vmath::vec3 gp = Grid3d::FaceIndexToPositionW(g, _dx);
+            if (!Grid3d::isPositionInGrid(gp - _offsetSDF, _dx, _isizeSDF, _jsizeSDF, _ksizeSDF)) {
+                continue;
+            }
+
+            vmath::vec3 vp = gp - _offsetSDF;
+            vmath::vec3 vect = Interpolation::trilinearInterpolate(vp, _dx, _vectorField);
+
+            float dist = vect.length();
+            float r = std::max(dist, minDistance);
+            if (dist < eps || r < eps || r > maxDistance) {
+                continue;
+            }
+
+            vmath::vec3 dir = -vmath::normalize(vect);
+            vmath::vec3 force = _calculateForceVector(r, dir);
+            fieldGrid->addW(g, force.z);
+        }
+
     }
 
-    for (int k = 0; k < _ksize; k++) {
-        for (int j = 0; j < _jsize + 1; j++) {
-            for (int i = 0; i < _isize; i++) {
-                vmath::vec3 gp = Grid3d::FaceIndexToPositionV(i, j, k, _dx);
-                if (!Grid3d::isPositionInGrid(gp - _offsetSDF, _dx, _isizeSDF, _jsizeSDF, _ksizeSDF)) {
-                    continue;
-                }
-
-                float r = std::max(std::abs(_sdf.trilinearInterpolate(gp - _offsetSDF)), minDistance);
-                if (r < eps || r > maxDistance) {
-                    continue;
-                }
-
-                vmath::vec3 dir = _sdf.trilinearInterpolateGradient(gp - _offsetSDF);
-                if (dir.length() < eps) {
-                    continue;
-                }
-
-                dir = dir.normalize();
-                vmath::vec3 force = _strength * (1.0f / std::pow(r, power)) * dir;
-                fieldGrid.addV(i, j, k, force.y);
-            }
-        }
-    }
-
-    for (int k = 0; k < _ksize + 1; k++) {
-        for (int j = 0; j < _jsize; j++) {
-            for (int i = 0; i < _isize; i++) {
-                vmath::vec3 gp = Grid3d::FaceIndexToPositionW(i, j, k, _dx);
-                if (!Grid3d::isPositionInGrid(gp - _offsetSDF, _dx, _isizeSDF, _jsizeSDF, _ksizeSDF)) {
-                    continue;
-                }
-
-                float r = std::max(std::abs(_sdf.trilinearInterpolate(gp - _offsetSDF)), minDistance);
-                if (r < eps || r > maxDistance) {
-                    continue;
-                }
-
-                vmath::vec3 dir = _sdf.trilinearInterpolateGradient(gp - _offsetSDF);
-                if (dir.length() < eps) {
-                    continue;
-                }
-
-                dir = dir.normalize();
-                vmath::vec3 force = _strength * (1.0f / std::pow(r, power)) * dir;
-                fieldGrid.addW(i, j, k, force.z);
-            }
-        }
-    }
-}
-
-std::vector<vmath::vec3> ForceFieldSurface::generateDebugProbes() {
-    return std::vector<vmath::vec3>();
-}
-
-void ForceFieldSurface::_initialize() {
-    std::cout << "Initializing ForceFieldSurface " << _isize << " " << _jsize << " " << _ksize << " " << _dx << std::endl;
 }

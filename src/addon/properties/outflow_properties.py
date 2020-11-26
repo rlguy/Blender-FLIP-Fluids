@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ class FlipFluidOutflowProperties(bpy.types.PropertyGroup):
     
     is_enabled = BoolProperty(
             name="Enabled",
-            description="Object contributes to the fluid simulation",
+            description="Object is active in the fluid simulation",
             default=True,
             ); exec(conv("is_enabled"))
     remove_fluid = BoolProperty(
@@ -58,14 +58,24 @@ class FlipFluidOutflowProperties(bpy.types.PropertyGroup):
             default=False,
             options={'HIDDEN'},
             ); exec(conv("export_animated_mesh"))
-    skip_animated_mesh_reexport = BoolProperty(
+    skip_reexport = BoolProperty(
             name="Skip re-export",
             description="Skip re-exporting this mesh when starting or resuming"
                 " a bake. If this mesh has not been exported or is missing files,"
                 " the addon will automatically export the required files",
             default=False,
             options={'HIDDEN'},
-            ); exec(conv("skip_animated_mesh_reexport"))
+            ); exec(conv("skip_reexport"))
+    force_reexport_on_next_bake = BoolProperty(
+            name="Force Re-Export On Next Bake",
+            description="Override the 'Skip Re-Export' option and force this mesh to be"
+                " re-exported and updated on the next time a simulation start/resumes"
+                " baking. Afting starting/resuming the baking process, this option"
+                " will automatically be disabled once the object has been fully exported."
+                " This option is only applicable if 'Skip Re-Export' is enabled",
+            default=False,
+            options={'HIDDEN'},
+            ); exec(conv("force_reexport_on_next_bake"))
     property_registry = PointerProperty(
             name="Outflow Property Registry",
             description="",
@@ -81,6 +91,9 @@ class FlipFluidOutflowProperties(bpy.types.PropertyGroup):
         add("outflow.remove_whitewater", "")
         add("outflow.is_inversed", "")
         add("outflow.export_animated_mesh", "")
+        add("outflow.skip_reexport", "")
+        add("outflow.force_reexport_on_next_bake", "")
+
         self._validate_property_registry()
 
 

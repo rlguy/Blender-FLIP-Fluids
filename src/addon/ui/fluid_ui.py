@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,10 +38,24 @@ class FLIPFLUID_PT_FluidTypePanel(bpy.types.Panel):
         obj_props = obj.flip_fluid
         fluid_props = obj_props.fluid
         show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
+        show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
 
         column = self.layout.column()
         column.prop(obj_props, "object_type")
         column.separator()
+
+        if show_documentation:
+            column = self.layout.column(align=True)
+            column.operator(
+                "wm.url_open", 
+                text="Fluid Object Documentation", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Fluid-Object-Settings"
+            column.operator(
+                "wm.url_open", 
+                text="Fluid objects must have manifold/watertight geometry", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Manifold-Meshes"
 
         if show_advanced:
             column.label(text="Trigger:")
@@ -63,7 +77,27 @@ class FLIPFLUID_PT_FluidTypePanel(bpy.types.Panel):
             column.label(text="Fluid Velocity:")
             row = column.row(align=True)
             row.prop(fluid_props, "initial_velocity", text="")
-        else:
+            row = column.row(align=True)
+            row.label(text="")
+        elif fluid_props.fluid_velocity_mode == 'FLUID_VELOCITY_AXIS':
+            column = box.column(align=True)
+            split = column.split(align=True)
+            column_left = split.column(align=True)
+            column_left.label(text="Fluid Speed:")
+            column_left.prop(fluid_props, "initial_speed")
+                
+            column_right = split.column(align=True)
+            column_right.label(text="Local Axis:")
+            row = column_right.row(align=True)
+            row.prop_enum(fluid_props, "fluid_axis_mode", 'LOCAL_AXIS_POS_X')
+            row.prop_enum(fluid_props, "fluid_axis_mode", 'LOCAL_AXIS_POS_Y')
+            row.prop_enum(fluid_props, "fluid_axis_mode", 'LOCAL_AXIS_POS_Z')
+            row = column_right.row(align=True)
+            row.prop_enum(fluid_props, "fluid_axis_mode", 'LOCAL_AXIS_NEG_X')
+            row.prop_enum(fluid_props, "fluid_axis_mode", 'LOCAL_AXIS_NEG_Y')
+            row.prop_enum(fluid_props, "fluid_axis_mode", 'LOCAL_AXIS_NEG_Z')
+
+        elif fluid_props.fluid_velocity_mode == 'FLUID_VELOCITY_TARGET':
             column = box.column(align=True)
             split = column.split(align=True)
             column_left = split.column(align=True)
@@ -91,14 +125,15 @@ class FLIPFLUID_PT_FluidTypePanel(bpy.types.Panel):
             column.enabled = fluid_props.append_object_velocity
             column.prop(fluid_props, "append_object_velocity_influence")
 
-            column = self.layout.column()
+            box = self.layout.box()
+            box.label(text="Mesh Data Export:")
+            column = box.column(align=True)
+            column.prop(fluid_props, "export_animated_mesh")
+            column.prop(fluid_props, "skip_reexport")
             column.separator()
-            split = column.split()
-            column_left = split.column()
-            column_left.prop(fluid_props, "export_animated_mesh")
-            column_right = split.column()
-            column_right.enabled = fluid_props.export_animated_mesh
-            column_right.prop(fluid_props, "skip_animated_mesh_reexport")
+            column = box.column(align=True)
+            column.enabled = fluid_props.skip_reexport
+            column.prop(fluid_props, "force_reexport_on_next_bake", toggle=True)
     
 
 def register():

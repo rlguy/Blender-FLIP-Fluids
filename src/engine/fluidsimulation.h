@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2019 Ryan L. Guy
+Copyright (C) 2020 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -132,6 +132,12 @@ public:
         Retrieve the simulator version
     */
     void getVersion(int *major, int *minor, int *revision);
+
+    /*
+        Upscale (or downscale) the particle data from previousCellSize
+        to the current cell size (dx)
+    */
+        void upscaleOnInitialization(int isizePrev, int jsizePrev, int ksizePrev, double dxPrev);
 
     /*
         Initializes the fluid simulation.
@@ -848,15 +854,18 @@ public:
     void setMaxTimeStepsPerFrame(int n);
 
     /*
-        Enable/Disable adaptive time stepping for obstacles
+        Enable/Disable adaptive time stepping for obstacles/forcefields
 
-        If enabled, obstacle velocities are included in time step calculation.
-        May improve the accuracy of fluid-solid interaction for fast moving
-        obstacles.
+        If enabled, obstacle/forcefield velocities are included in time step calculation.
+        May improve the accuracy of fluid-solid/forcefield interaction for fast moving
+        obstacles/forcefields.
     */
     void enableAdaptiveObstacleTimeStepping();
     void disableAdaptiveObstacleTimeStepping();
     bool isAdaptiveObstacleTimeSteppingEnabled();
+    void enableAdaptiveForceFieldTimeStepping();
+    void disableAdaptiveForceFieldTimeStepping();
+    bool isAdaptiveForceFieldTimeSteppingEnabled();
 
     /*
         Enable/Disable removal of extreme velocities
@@ -1231,6 +1240,7 @@ private:
     double _getMarkerParticleJitter();
     vmath::vec3 _jitterMarkerParticlePosition(vmath::vec3 p, double jitter);
     void _addMarkerParticle(vmath::vec3 p, vmath::vec3 velocity);
+    void _upscaleParticleData();
     void _loadParticles();
     void _loadMarkerParticles(MarkerParticleLoadData &data);
     void _loadDiffuseParticles(DiffuseParticleLoadData &data);
@@ -1239,6 +1249,7 @@ private:
         Advancing the State of the Fluid Simulation
     */
     double _calculateNextTimeStep(double dt);
+    double _getFrameInterpolation();
     double _getMaximumMeshObjectFluidVelocity(MeshObject *object, 
                                               vmath::vec3 fluidVelocity);
     double _predictMaximumMarkerParticleSpeed(double dt);
@@ -1377,22 +1388,29 @@ private:
     */
     void _updateFluidObjects();
     void _updateAddedFluidMeshObjectQueue();
-    void _addNewFluidCells(std::vector<GridIndex> &cells, vmath::vec3 velocity,
-                           MeshLevelSet &liquidSDF);
     void _addNewFluidCells(std::vector<GridIndex> &cells, 
                            vmath::vec3 velocity,
                            MeshLevelSet &meshsdf,
+                           vmath::vec3 sdfoffset,
                            ParticleMaskGrid &maskgrid);
     void _addNewFluidCells(std::vector<GridIndex> &cells, 
                            vmath::vec3 velocity,
                            RigidBodyVelocity rvelocity,
                            MeshLevelSet &meshsdf,
+                           vmath::vec3 sdfoffset,
                            ParticleMaskGrid &maskgrid);
     void _addNewFluidCells(std::vector<GridIndex> &cells, 
                            vmath::vec3 velocity,
                            VelocityFieldData *vdata,
                            MeshLevelSet &meshsdf,
+                           vmath::vec3 sdfoffset,
                            ParticleMaskGrid &maskgrid);
+    void _addNewFluidCellsThread(int startidx, int endidx,
+                                 std::vector<GridIndex> *cells, 
+                                 MeshLevelSet *meshSDF,
+                                 vmath::vec3 sdfoffset,
+                                 std::vector<vmath::vec3> *particles);
+        
     void _updateMeshFluidSources();
     void _updateInflowMeshFluidSources();
     void _updateOutflowMeshFluidSources();
@@ -1502,6 +1520,11 @@ private:
 
     // Initialization
     bool _isSimulationInitialized = false;
+    bool _isUpscalingOnInitializationEnabled = false;
+    int _upscalingPreviousIsize = 0.0;
+    int _upscalingPreviousJsize = 0.0;
+    int _upscalingPreviousKsize = 0.0;
+    double _upscalingPreviousCellSize = 0.0;
 
     // Update
     int _currentFrame = 0;
@@ -1525,7 +1548,6 @@ private:
     std::vector<MeshFluidSource*> _meshFluidSources;
     FragmentedVector<MarkerParticle> _markerParticles;
     std::vector<FluidMeshObject> _addedFluidMeshObjectQueue;
-    int _addedFluidMeshObjectQueueSize = 0;
     double _markerParticleJitterFactor = 0.0;
     bool _isJitterSurfaceMarkerParticlesEnabled = false;
     int _liquidLevelSetExactBand = 3;
@@ -1659,6 +1681,7 @@ private:
     int _maxMarkerParticlesPerCell = 250;
     float _solidBufferWidth = 0.1f;
     bool _isAdaptiveObstacleTimeSteppingEnabled = false;
+    bool _isAdaptiveForceFieldTimeSteppingEnabled = false;
     bool _isExtremeVelocityRemovalEnabled = true;
     double _maxExtremeVelocityRemovalPercent = 0.0005;
     int _maxExtremeVelocityRemovalAbsolute = 35;

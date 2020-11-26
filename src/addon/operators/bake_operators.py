@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 import bpy, os, glob, json, threading, shutil
 
 from .. import bake
-from ..objects import flip_fluid_mesh_exporter
+from ..objects import flip_fluid_geometry_exporter
 from .. import export
 from ..utils import installation_utils
 
@@ -275,49 +275,6 @@ class BakeFluidSimulation(bpy.types.Operator):
             self.cancel(context)
             return {'CANCELLED'}
 
-        num_fluid = context.scene.flip_fluid.get_num_fluid_objects()
-        num_inflow = context.scene.flip_fluid.get_num_inflow_objects()
-        num_outflow = context.scene.flip_fluid.get_num_outflow_objects()
-        num_obstacle = context.scene.flip_fluid.get_num_obstacle_objects()
-        if num_fluid > 1 or num_inflow > 1 or num_outflow > 1 or num_obstacle > 1:
-            errmsg = "The FLIP Fluids Demo is limited to one of each object type. "
-            errmsg += "<Fluid: " + str(num_fluid) + " | "
-            errmsg += "Inflows: " + str(num_inflow) + " | "
-            errmsg += "Outflows: " + str(num_outflow) + " | "
-            errmsg += "Obstacles: " + str(num_obstacle) + ">\n\n"
-
-            if num_fluid > 1:
-                objects = context.scene.flip_fluid.get_fluid_objects()
-                errmsg += "Fluid objects: "
-                for obj in objects:
-                    errmsg += "<" + obj.name + "> "
-                errmsg += "\n"
-
-            if num_inflow > 1:
-                objects = context.scene.flip_fluid.get_inflow_objects()
-                errmsg += "Inflow objects: "
-                for obj in objects:
-                    errmsg += "<" + obj.name + "> "
-                errmsg += "\n"
-
-            if num_outflow > 1:
-                objects = context.scene.flip_fluid.get_outflow_objects()
-                errmsg += "Outflow objects: "
-                for obj in objects:
-                    errmsg += "<" + obj.name + "> "
-                errmsg += "\n"
-
-            if num_obstacle > 1:
-                objects = context.scene.flip_fluid.get_inflow_objects()
-                errmsg += "Obstacle objects: "
-                for obj in objects:
-                    errmsg += "<" + obj.name + "> "
-                errmsg += "\n"
-
-            self.report({"ERROR_INVALID_INPUT"}, errmsg)
-            self.cancel(context)
-            return {'CANCELLED'}
-
         dprops = self._get_domain_properties()
         if dprops.bake.is_simulation_running:
             self.cancel(context)
@@ -375,7 +332,7 @@ class BakeFluidSimulationCommandLine(bpy.types.Operator):
         self.thread = None
         self.mesh_data = {}
         self.data = BakeData()
-        self.mesh_exporter = None
+        self.geometry_exporter = None
 
 
     def _get_domain_properties(self):
@@ -410,22 +367,13 @@ class BakeFluidSimulationCommandLine(bpy.types.Operator):
                             dprops.bake.export_directory_name)
 
 
-    def _initialize_mesh_exporter(self, context):
+    def _initialize_geometry_exporter(self, context):
         print("Exporting Simulation Meshes:")
         print("------------------------------------------------------------")
 
-        simprops = context.scene.flip_fluid
-        objects = (simprops.get_fluid_objects() +
-                   simprops.get_obstacle_objects() +
-                   simprops.get_inflow_objects() + 
-                   simprops.get_outflow_objects() +
-                   simprops.get_force_field_objects())
-        object_names = [obj.name for obj in objects]
-
         export_dir = self._get_export_directory()
-        export.clean_export_directory(object_names, export_dir)
-        self.mesh_data = export.get_mesh_exporter_parameter_dict(object_names, export_dir)
-        self.mesh_exporter = flip_fluid_mesh_exporter.MeshExporter(self.mesh_data)
+        self.geometry_exporter = flip_fluid_geometry_exporter.GeometryExportManager(export_dir)
+        export.add_objects_to_geometry_exporter(self.geometry_exporter)
 
 
     def _get_logfile_name(self, context):
@@ -459,14 +407,6 @@ class BakeFluidSimulationCommandLine(bpy.types.Operator):
         dprops.cache.logfile_name = self._get_logfile_name(context)
 
 
-    def _export_mesh_data(self):
-        dprops = self._get_domain_properties()
-        cache_directory = dprops.cache.get_cache_abspath()
-        export_folder = dprops.bake.export_directory_name
-        export_directory = os.path.join(cache_directory, export_folder)
-        export.export_mesh_data(self.mesh_data, export_directory)
-
-
     def _get_export_filepath(self):
         dprops = self._get_domain_properties()
         return os.path.join(dprops.cache.get_cache_abspath(), 
@@ -495,17 +435,16 @@ class BakeFluidSimulationCommandLine(bpy.types.Operator):
         if not is_exporting:
             return
 
-        self._initialize_mesh_exporter(context)
+        self._initialize_geometry_exporter(context)
         self._initialize_export_operator(context)
 
         while True:
-            is_finished = self.mesh_exporter.update_export(1.0/30.0)
-            self._export_mesh_data()
-            dprops.bake.export_progress = self.mesh_exporter.export_progress
-            dprops.bake.export_stage = self.mesh_exporter.export_stage
+            is_finished = self.geometry_exporter.update_export(1.0/15.0)
+            dprops.bake.export_progress = self.geometry_exporter.get_export_progress()
+            dprops.bake.export_stage = self.geometry_exporter.get_export_stage()
             if is_finished:
-                if self.mesh_exporter.is_error:
-                    self.report({"ERROR"}, self.mesh_exporter.error_message)
+                if self.geometry_exporter.is_error():
+                    self.report({"ERROR"}, self.geometry_exporter.get_error_message())
                     dprops.bake.is_bake_cancelled = True
                     dprops.bake.is_export_operator_running = False
                     return
@@ -673,6 +612,7 @@ class FlipFluidResetBake(bpy.types.Operator):
 
         dprops.stats.refresh_stats()
         dprops.stats.reset_time_remaining()
+        dprops.stats.reset_stats_values()
         dprops.bake.check_autosave()
         dprops.render.reset_bake()
 

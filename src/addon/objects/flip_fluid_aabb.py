@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,9 +28,21 @@ class AABB(object):
 
     @classmethod
     def from_blender_object(cls, obj):
+        if obj.type == 'MESH':
+            vertices = obj.data.vertices
+        elif obj.type == 'CURVE':
+            spline = obj.data.splines[0]
+            if spline.type == 'BEZIER':
+                vertices = spline.bezier_points
+            elif spline.type == 'NURBS':
+                vertices = spline.points
+        elif obj.type == 'EMPTY':
+            position = obj.matrix_world.translation
+            return cls(position[0], position[1], position[2], 0.0, 0.0, 0.0)
+
         xmin, ymin, zmin = float('inf'), float('inf'), float('inf')
         xmax, ymax, zmax = -float('inf'), -float('inf'), -float('inf')
-        for mv in obj.data.vertices:
+        for mv in vertices:
             v = vcu.element_multiply(obj.matrix_world, mv.co)
             xmin = min(v.x, xmin)
             ymin = min(v.y, ymin)
@@ -65,9 +77,9 @@ class AABB(object):
         self.x -= hw
         self.y -= hw
         self.z -= hw
-        self.xdim += hw
-        self.ydim += hw
-        self.zdim += hw
+        self.xdim += amount
+        self.ydim += amount
+        self.zdim += amount
 
         return AABB(self.x - hw, self.y - hw, self.z - hw,
                     self.xdim + hw, self.ydim + hw, self.zdim + hw)

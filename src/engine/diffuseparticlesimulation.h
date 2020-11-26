@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2019 Ryan L. Guy
+Copyright (C) 2020 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -45,6 +45,7 @@ class MeshLevelSet;
 class MACVelocityField;
 class ParticleLevelSet;
 class ParticleAdvector;
+class ForceFieldGrid;
 
 struct DiffuseParticleSimulationParameters {
     int isize;
@@ -67,6 +68,8 @@ struct DiffuseParticleSimulationParameters {
     Array3d<float> *influenceGrid;
     Array3d<bool> *nearSolidGrid;
     double nearSolidGridCellSize;
+    ForceFieldGrid *forceFieldGrid;
+    bool isForceFieldGridSet = false;
 };
 
 enum class LimitBehaviour : char { 
@@ -327,6 +330,9 @@ private:
     std::vector<bool>* _getActiveSides(DiffuseParticle &dp);
     int _getNearestSideIndex(vmath::vec3 p, AABB &boundary);
     void _markParticleForRemoval(unsigned int index);
+
+    vmath::vec3 _getGravityVector(vmath::vec3 pos);
+
     void _getDiffuseParticleTypeCounts(int *numfoam, 
                                       int *numbubble, 
                                       int *numspray,
@@ -450,6 +456,8 @@ private:
     Array3d<float> *_influenceGrid;
     Array3d<bool> *_nearSolidGrid;
     double _nearSolidGridCellSize = 0.0;
+    ForceFieldGrid *_forceFieldGrid;
+    bool _isForceFieldGridSet = false;
 
     FluidMaterialGrid _mgrid;
     Array3d<bool> _borderingAirGrid;

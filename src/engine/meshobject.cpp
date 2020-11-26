@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2019 Ryan L. Guy
+Copyright (C) 2020 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -55,11 +55,13 @@ void MeshObject::updateMeshStatic(TriangleMesh meshCurrent) {
     _vertexTranslationsNext = std::vector<vmath::vec3>(meshCurrent.vertices.size());
     _isAnimated = false;
     _isChangingTopology = false;
+    _isRigid = true;
 }
 
 void MeshObject::updateMeshAnimated(TriangleMesh meshPrevious, 
                                     TriangleMesh meshCurrent, 
                                     TriangleMesh meshNext) {
+
     _meshPrevious = meshPrevious;
     _meshCurrent = meshCurrent;
     _meshNext = meshNext;
@@ -81,6 +83,12 @@ void MeshObject::updateMeshAnimated(TriangleMesh meshPrevious,
         }
     } else {
         _isChangingTopology = true;
+    }
+
+    if (_isChangingTopology) {
+        _isRigid = false;
+    } else {
+        _isRigid = _isRigidBody(meshPrevious, meshCurrent) && _isRigidBody(meshNext, meshCurrent);
     }
 
     _isAnimated = true;
@@ -133,6 +141,10 @@ void MeshObject::getCells(float frameInterpolation, std::vector<GridIndex> &cell
 
 bool MeshObject::isAnimated() {
     return _isAnimated;
+}
+
+bool MeshObject::isRigidBody() {
+    return _isRigid;
 }
 
 void MeshObject::clearObjectStatus() {
@@ -770,6 +782,93 @@ bool MeshObject::_isTopologyConsistent(TriangleMesh &m1, TriangleMesh &m2) {
             if (_isTriangleEqual(t1, t2)) {
                 break;
             }
+        }
+    }
+
+    return true;
+}
+
+bool MeshObject::_isRigidBody(TriangleMesh m1, TriangleMesh m2) {
+    double smalleps = 1e-6;
+    double bigeps = 1e-4;
+
+    vmath::vec3 c1 = m1.getCentroid();
+    vmath::vec3 c2 = m2.getCentroid();
+    m1.translate(-c1);
+    m2.translate(-c2);
+    vmath::vec3 centroid = vmath::vec3(0.0f, 0.0f, 0.0f);
+
+    AABB bbox(m1.vertices);
+    double width = std::max(bbox.width, std::max(bbox.height, bbox.depth));
+    double widthNormalized = 4.0;
+    double scaleFactor = widthNormalized / width;
+
+    vmath::vec3 scale(scaleFactor, scaleFactor, scaleFactor);
+    m1.scale(scale);
+    m2.scale(scale);
+
+    bool v1found = false;
+    size_t v1idx = -1;
+    for (size_t i = 0; i < m1.vertices.size(); i++) {
+        vmath::vec3 p = m1.vertices[i];
+        if (!vmath::equals(p, centroid, bigeps)) {
+            v1found = true;
+            v1idx = i;
+            break;
+        }
+    }
+
+    if (!v1found) {
+        return false;
+    }
+
+    vmath::vec3 m1v1 = m1.vertices[v1idx];
+
+    bool v2found = false;
+    size_t v2idx = -1;
+    for (int i = (int)m1.vertices.size() / 2; i >= 0; i--) {
+        if ((size_t)i == v1idx) {
+            continue;
+        }
+
+        vmath::vec3 p = m1.vertices[i];
+        if (!vmath::equals(p, centroid, bigeps) && !vmath::isCollinear(p, m1v1, smalleps)) {
+            v2found = true;
+            v2idx = (size_t)i;
+            break;
+        }
+    }
+
+    if (!v2found) {
+        return false;
+    }
+
+    vmath::vec3 m1v2 = m1.vertices[v2idx];
+
+    if ((m1v1 - m1v2).length() < bigeps) {
+        return false;
+    }
+
+    vmath::vec3 m2v1 = m2.vertices[v1idx];
+    vmath::vec3 m2v2 = m2.vertices[v2idx];
+
+    if (std::abs(m1v1.length() - m2v1.length()) > bigeps || std::abs(m1v2.length() - m2v2.length()) > bigeps) {
+        return false;
+    }
+
+    vmath::vec3 m1bx, m1by, m1bz;
+    vmath::vec3 m2bx, m2by, m2bz;
+    vmath::generateBasisVectors(m1v1, m1v2, m1bx, m1by, m1bz);
+    vmath::generateBasisVectors(m2v1, m2v2, m2bx, m2by, m2bz);
+
+    vmath::mat3 m1rot = vmath::localToWorldTransform(m1bx, m1by, m1bz);
+    vmath::mat3 m2rot = vmath::localToWorldTransform(m2bx, m2by, m2bz);
+
+    for (size_t i = 0; i < m1.vertices.size(); i++) {
+        vmath::vec3 r1 = m1rot.mult(m1.vertices[i]);
+        vmath::vec3 r2 = m2rot.mult(m2.vertices[i]);
+        if (!vmath::equals(r1, r2, bigeps)) {
+            return false;
         }
     }
 

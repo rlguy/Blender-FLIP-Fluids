@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2019 Ryan L. Guy
+Copyright (C) 2020 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -128,11 +128,13 @@ public:
     }
 
     GridBlock<T> getGridBlock(int i, int j, int k) {
-        if (!_isBlockIndexInRange(i, j, k)) {
-            std::string msg = "Error: index out of range.\n";
-            msg += "i: " + _toString(i) + " j: " + _toString(j) + " k: " + _toString(k) + "\n";
-            throw std::out_of_range(msg);
-        }
+        #if defined(BUILD_DEBUG)
+            if (!_isBlockIndexInRange(i, j, k)) {
+                std::string msg = "Error: index out of range.\n";
+                msg += "i: " + _toString(i) + " j: " + _toString(j) + " k: " + _toString(k) + "\n";
+                throw std::out_of_range(msg);
+            }
+        #endif
 
         int id = _blockDataGrid(i, j, k).id;
         GridBlock<T> gb;

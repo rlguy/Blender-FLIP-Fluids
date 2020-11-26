@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2019 Ryan L. Guy
+Copyright (C) 2020 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -77,6 +77,21 @@ extern "C" {
         CBindings::safe_execute_method_void_3param(
             obj, &FluidSimulation::getVersion, major, minor, revision, err
         );
+    }
+
+    EXPORTDLL void FluidSimulation_upscale_on_initialization(FluidSimulation* obj, 
+                                                             int previous_isize,
+                                                             int previous_jsize,
+                                                             int previous_ksize,
+                                                             double previous_dx,
+                                                             int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            obj->upscaleOnInitialization(previous_isize, previous_jsize, previous_ksize, previous_dx);
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
     }
 
     EXPORTDLL void FluidSimulation_initialize(FluidSimulation* obj, int *err) {
@@ -1901,6 +1916,27 @@ extern "C" {
                                                                              int *err) {
         return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::isAdaptiveObstacleTimeSteppingEnabled, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_enable_adaptive_force_field_time_stepping(FluidSimulation* obj,
+                                                                          int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableAdaptiveForceFieldTimeStepping, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_adaptive_force_field_time_stepping(FluidSimulation* obj,
+                                                                           int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableAdaptiveForceFieldTimeStepping, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_adaptive_force_field_time_stepping_enabled(FluidSimulation* obj,
+                                                                             int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isAdaptiveForceFieldTimeSteppingEnabled, err
         );
     }
 

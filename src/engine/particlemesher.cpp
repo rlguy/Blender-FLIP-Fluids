@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2019 Ryan L. Guy
+Copyright (C) 2020 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -673,6 +673,7 @@ void ParticleMesher::_addComputeChunkScalarFieldToPreviewField(ScalarFieldData &
     AABB bbox(offset, width, height, depth);
 
     vmath::vec3 pv;
+    double eps = 0.001;
     for (int k = 0; k < _pksize + 1; k++) {
         for (int j = 0; j < _pjsize + 1; j++) {
             for (int i = 0; i < _pisize + 1; i++) {
@@ -682,7 +683,9 @@ void ParticleMesher::_addComputeChunkScalarFieldToPreviewField(ScalarFieldData &
                 }
 
                 double fval = fieldData.fieldValues.trilinearInterpolation(pv - offset);
-                _pfield.setScalarFieldValue(i, j, k, fval);
+                if (std::abs(fval) > eps) {
+                    _pfield.setScalarFieldValue(i, j, k, fval);
+                }
             }
         }
     }
@@ -700,19 +703,15 @@ void ParticleMesher::_applySeamData(ScalarFieldData &fieldData) {
 
     MesherComputeChunk chunk = fieldData.computeChunk;
     GridIndex gmin = chunk.minGridIndex;
-    GridIndex gmax = chunk.maxGridIndex;
     Direction dir = chunk.splitDirection;
 
     bool isJoinedAtSeam = false;
     if (dir == Direction::U) {
         isJoinedAtSeam = gmin.i == _seamData.minGridIndex.i;
-        gmax.i = gmin.i + 1;
     } else if (dir == Direction::V) {
         isJoinedAtSeam = gmin.j == _seamData.minGridIndex.j;
-        gmax.j = gmin.j + 1;
     } else if (dir == Direction::W) {
         isJoinedAtSeam = gmin.k == _seamData.minGridIndex.k;
-        gmax.k = gmin.k + 1;
     }
 
     if (!isJoinedAtSeam) {
@@ -734,9 +733,6 @@ void ParticleMesher::_applySeamData(ScalarFieldData &fieldData) {
             }
         }
     }
-
-    gmax = gmax; // This statement avoids a 'variable set but not used' false-positive
-                 // warning in gcc versions < 6
 }
 
 void ParticleMesher::_commitSeamData(ScalarFieldData &fieldData) {

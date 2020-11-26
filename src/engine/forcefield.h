@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2019 Ryan L. Guy
+Copyright (C) 2020 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,7 @@ SOFTWARE.
 #include "trianglemesh.h"
 #include "meshobject.h"
 #include "macvelocityfield.h"
+#include "forcefieldgravityscalegrid.h"
 
 
 class ForceField
@@ -47,11 +48,17 @@ public:
 
     void initialize(int isize, int jsize, int ksize, double dx);
 
+    bool isStateChanged();
+    void clearState();
+
     float getStrength();
     void setStrength(float s);
 
     float getFalloffPower();
     void setFalloffPower(float p);
+
+    float getMaxForceLimitFactor();
+    void setMaxForceLimitFactor(float p);
 
     void enableMinDistance();
     void disableMinDistance();
@@ -66,25 +73,40 @@ public:
 
     float getMaxDistance();
     void setMaxDistance(float d);
+
+    float getGravityScale();
+    void setGravityScale(float s);
+
+    float getGravityScaleWidth();
+    void setGravityScaleWidth(float w);
     
-    virtual void update(double dt) = 0;
+    virtual void update(double dt, double frameInterpolation) = 0;
     virtual void addForceFieldToGrid(MACVelocityField &fieldGrid) = 0;
+    virtual void addGravityScaleToGrid(ForceFieldGravityScaleGrid &scaleGrid) = 0;
     virtual std::vector<vmath::vec3> generateDebugProbes() = 0;
 
 protected:
 
     virtual void _initialize() = 0;
+    virtual bool _isSubclassStateChanged() = 0;
+    virtual void _clearSubclassState() = 0;
+
+    vmath::vec3 _limitForceVector(vmath::vec3 v, float strength);
+    vmath::vec3 _calculateForceVector(float radius, vmath::vec3 normal);
+    vmath::vec3 _calculateForceVector(float radius, float strength, vmath::vec3 normal);
 
     int _isize = 0;
     int _jsize = 0;
     int _ksize = 0;
     double _dx = 1.0;
     bool _isInitialized = false;
+    bool _isStateChanged = true;
 
     MeshObject _meshObject;
 
     float _strength = 0.0f;
     float _falloffPower = 1.0f;
+    float _maxForceLimitFactor = 3.0f;
 
     bool _isMinDistanceEnabled = false;
     float _minDistance = 0.0f;
@@ -92,6 +114,9 @@ protected:
     bool _isMaxDistanceEnabled = false;
     float _maxDistance = 0.0f;
 
+    float _gravityScale = 1.0f;
+    float _gravityScaleWidth = 0.0f;
+    
 };
 
 #endif

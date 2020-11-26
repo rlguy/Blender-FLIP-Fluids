@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -40,10 +40,19 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
         box.label(text="Render Tools:")
         column = box.column(align=True)
         if vcu.is_blender_28():
-            status = "Enabled" if context.scene.render.use_lock_interface else 'Disabled'
-            icon = 'FUND' if context.scene.render.use_lock_interface else 'ERROR'
-            column.operator("flip_fluid_operators.helper_stable_rendering_28")
-            column.label(text="Current status: " + status, icon=icon)
+            lock_interface = context.scene.render.use_lock_interface
+            status = "Enabled" if lock_interface else 'Disabled'
+            icon = 'FUND' if lock_interface else 'ERROR'
+
+            if lock_interface:
+                column.operator("flip_fluid_operators.helper_stable_rendering_28", text="Disable Stable Rendering").enable_state = False
+            else:
+                column.operator("flip_fluid_operators.helper_stable_rendering_28", text="Enable Stable Rendering").enable_state = True
+                
+            row = column.row(align=True)
+            if not lock_interface:
+                row.alert = True
+            row.label(text="Current status: " + status, icon=icon)
         else:
             status = "Enabled" if context.scene.render.display_mode == 'SCREEN' else 'Disabled'
             icon = 'FILE_TICK' if context.scene.render.display_mode == 'SCREEN' else 'ERROR'
@@ -54,6 +63,7 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
     def draw_surface_display_settings(self, context):
         domain_object = vcu.get_active_object(context)
         rprops = domain_object.flip_fluid.domain.render
+        mprops = domain_object.flip_fluid.domain.materials
         show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
 
         box = self.layout.box()
@@ -64,11 +74,14 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
         split = vcu.ui_split(column, factor=0.5)
         column_left = split.column()
         column_left.label(text="Surface Render Display:")
-        column_left.prop(rprops, "render_display", text="")
+        column_left.prop(rprops, "render_display", expand=True)
 
         column_right = split.column()
         column_right.label(text="Surface Viewport Display:")
-        column_right.prop(rprops, "viewport_display", text="")
+        column_right.prop(rprops, "viewport_display", expand=True)
+
+        column = box.column()
+        column.prop(mprops, "surface_material", text="Surface Material")
 
         # Motion blur rendering is currently not supported due
         # to limitations in Blender
@@ -129,11 +142,11 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
         split = column.split()
         column = split.column(align=True)
         column.label(text="Whitewater Render Display:")
-        column.prop(rprops, "whitewater_render_display", text="")
+        column.prop(rprops, "whitewater_render_display", expand=True)
 
         column = split.column(align=True)
         column.label(text="Whitewater Viewport Display:")
-        column.prop(rprops, "whitewater_viewport_display", text="")
+        column.prop(rprops, "whitewater_viewport_display", expand=True)
         master_box.separator()
 
         # Whitewater motion blur rendering is currently too resource intensive
@@ -281,10 +294,46 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
             row.prop(rprops, "dust_particle_scale", text="Particle Scale")
             row.prop(rprops, "only_display_dust_in_render", text="Hide particles in viewport")
 
+        master_box.separator()
+        box = master_box.box()
+        box.enabled = is_whitewater_enabled
+
+        mprops = dprops.materials
+        column = box.column(align=True)
+        column.label(text="Particle Materials:")
+        column.prop(mprops, "whitewater_foam_material", text="Foam")
+        column.prop(mprops, "whitewater_bubble_material", text="Bubble")
+        column.prop(mprops, "whitewater_spray_material", text="Spray")
+        column.prop(mprops, "whitewater_dust_material", text="Dust")
+
 
     def draw(self, context):
         domain_object = vcu.get_active_object(context)
         rprops = domain_object.flip_fluid.domain.render
+        show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
+
+        if show_documentation:
+            column = self.layout.column(align=True)
+            column.operator(
+                "wm.url_open", 
+                text="Display and Render Settings Documentation", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Display-Settings"
+            column.operator(
+                "wm.url_open", 
+                text="Rendering from the command line", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Rendering-from-the-Command-Line"
+            column.operator(
+                "wm.url_open", 
+                text="Whitewater particles are rendered too large", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Scene-Troubleshooting#whitewater-particles-are-too-largesmall-when-rendered"
+            column.operator(
+                "wm.url_open", 
+                text="Whitewater particles are not rendered in preview render", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Scene-Troubleshooting#whitewater-particles-are-not-rendered-when-viewport-shading-is-set-to-rendered"
 
         self.draw_surface_display_settings(context)
         self.draw_whitewater_display_settings(context)

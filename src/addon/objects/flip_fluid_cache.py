@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -200,13 +200,13 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
             mesh_data = cache_object.data
 
             is_smooth = self._is_mesh_smooth(mesh_data)
-            octane_mesh_type = self._get_octane_mesh_type(mesh_data)
+            octane_mesh_type = self._get_octane_mesh_type(cache_object)
 
             mesh_data.clear_geometry()
             mesh_data.from_pydata([], [], [])
 
             self._set_mesh_smoothness(mesh_data, is_smooth)
-            self._set_octane_settings(mesh_data, octane_mesh_type)
+            self._set_octane_settings(cache_object, octane_mesh_type)
 
         else:
             old_mesh_data = cache_object.data
@@ -217,7 +217,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
             
             self._transfer_mesh_materials(old_mesh_data, new_mesh_data)
             self._transfer_mesh_smoothness(old_mesh_data, new_mesh_data)
-            self._transfer_octane_settings(old_mesh_data, new_mesh_data)
+            self._transfer_octane_settings(cache_object, cache_object)
 
             cache_object.data = new_mesh_data
 
@@ -252,7 +252,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         if not self._is_domain_set():
             return False
 
-        current_frame = render.get_current_frame()
+        current_frame = render.get_current_render_frame()
         if current_frame == self.current_loaded_frame and not force_load:
             return False
 
@@ -272,7 +272,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
         cache_object = self.get_cache_object()
         frame_string = self._frame_number_to_string(frameno)
-        current_frame = render.get_current_frame()
+        current_frame = render.get_current_render_frame()
 
         if vcu.is_blender_281() and cache_object.data.shape_keys is not None:
             for idx,key in enumerate(cache_object.data.shape_keys.key_blocks):
@@ -321,7 +321,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
                               cache_object.name + 
                               frame_string)
         is_smooth = self._is_mesh_smooth(cache_object.data)
-        octane_mesh_type = self._get_octane_mesh_type(cache_object.data)
+        octane_mesh_type = self._get_octane_mesh_type(cache_object)
         vertices, triangles = self._import_frame_mesh(frameno)
 
         vcu.swap_object_mesh_data_geometry(cache_object, vertices, triangles, 
@@ -333,7 +333,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         if self.enable_motion_blur:
             self._update_motion_blur(frameno)
 
-        self.current_loaded_frame = render.get_current_frame()
+        self.current_loaded_frame = render.get_current_render_frame()
         self._commit_loaded_frame_data(frameno)
 
         if vcu.is_blender_279() or render.is_rendering():
@@ -415,7 +415,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
     def _is_load_duplivert_object_valid(self, force_load=False):
         if not self._is_domain_set():
             return False
-        current_frame = render.get_current_frame()
+        current_frame = render.get_current_render_frame()
         if current_frame == self.current_duplivert_loaded_frame and not force_load:
             return False
         if self._is_loaded_duplivert_frame_up_to_date(current_frame):
@@ -430,7 +430,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
     def _initialize_duplivert_object_octane(self, cache_object, duplivert_object):
         if not self._is_octane_available():
             return
-        duplivert_object.data.octane.mesh_type = cache_object.data.octane.mesh_type
+        duplivert_object.octane.object_mesh_type = cache_object.octane.object_mesh_type
 
 
     def set_duplivert_instance_type(self, instance_type):
@@ -487,7 +487,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         duplivert_object = self.get_duplivert_object()
         duplivert_mesh_name = cache_object.name + self.duplivert_object_default_name + "_mesh"
         is_smooth = True
-        octane_mesh_type = self._get_octane_mesh_type(cache_object.data)
+        octane_mesh_type = self._get_octane_mesh_type(cache_object)
 
         vcu.swap_object_mesh_data_geometry(
                 duplivert_object, 
@@ -507,7 +507,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         self.apply_duplivert_object_material()
         vcu.set_object_instance_type(cache_object, 'VERTS')
 
-        current_frame = render.get_current_frame()
+        current_frame = render.get_current_render_frame()
         self.current_duplivert_loaded_frame = current_frame
         self._commit_loaded_duplivert_frame_data(current_frame)
 
@@ -666,15 +666,15 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         if not self._is_octane_available():
             return
 
-        GLOBAL = '0'
-        SCATTER = '1'
-        MOVABLE_PROXY = '2'
-        RESHAPEABLE_PROXY = '3'
+        GLOBAL = 'Global'
+        SCATTER = 'Scatter'
+        MOVABLE_PROXY = 'Movable proxy'
+        RESHAPEABLE_PROXY = 'Reshapable proxy'
 
         if self.mesh_file_extension == 'bobj':
-            cache_object.data.octane.mesh_type = RESHAPEABLE_PROXY
+            cache_object.octane.object_mesh_type = RESHAPEABLE_PROXY
         elif self.mesh_file_extension == 'wwp':
-            cache_object.data.octane.mesh_type = SCATTER
+            cache_object.octane.object_mesh_type = SCATTER
 
 
     def _is_cache_object_initialized(self):
@@ -717,20 +717,20 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
             self._flatten_mesh(mesh_data)
 
 
-    def _transfer_octane_settings(self, src_mesh_data, dst_mesh_data):
+    def _transfer_octane_settings(self, src_obj, dst_obj):
         if self._is_octane_available():
-            dst_mesh_data.octane.mesh_type = src_mesh_data.octane.mesh_type
+            dst_obj.octane.object_mesh_type = src_obj.octane.object_mesh_type
 
 
-    def _get_octane_mesh_type(self, mesh_data):
+    def _get_octane_mesh_type(self, obj):
         if self._is_octane_available():
-            return mesh_data.octane.mesh_type
+            return obj.octane.object_mesh_type
         return None
 
 
-    def _set_octane_settings(self, mesh_data, mesh_type):
+    def _set_octane_settings(self, obj, mesh_type):
         if self._is_octane_available() and mesh_type is not None:
-            mesh_data.octane.mesh_type = mesh_type
+            obj.octane.object_mesh_type = mesh_type
 
 
     def _is_mesh_smooth(self, mesh_data):
@@ -852,7 +852,7 @@ class FlipFluidGLPointCache(bpy.types.PropertyGroup):
         if not self._is_domain_set() or not self.is_enabled:
             return
 
-        current_frame = render.get_current_frame()
+        current_frame = render.get_current_render_frame()
         if current_frame == self.current_loaded_frame and not force_load:
             return
 
@@ -1003,7 +1003,7 @@ class FlipFluidGLForceFieldCache(bpy.types.PropertyGroup):
         if not self._is_domain_set() or not self.is_enabled:
             return
 
-        current_frame = render.get_current_frame()
+        current_frame = render.get_current_render_frame()
         if current_frame == self.current_loaded_frame and not force_load:
             return
 

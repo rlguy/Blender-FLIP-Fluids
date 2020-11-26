@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,9 +36,23 @@ class FLIPFLUID_PT_OutflowTypePanel(bpy.types.Panel):
         obj_props = obj.flip_fluid
         outflow_props = obj_props.outflow
         show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
+        show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
 
         column = self.layout.column()
         column.prop(obj_props, "object_type")
+
+        if show_documentation:
+            column = self.layout.column(align=True)
+            column.operator(
+                "wm.url_open", 
+                text="Outflow Object Documentation", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Outflow-Object-Settings"
+            column.operator(
+                "wm.url_open", 
+                text="Outflow objects must have manifold/watertight geometry", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Manifold-Meshes"
 
         column = self.layout.column()
         column.prop(outflow_props, "is_enabled")
@@ -55,16 +69,16 @@ class FLIPFLUID_PT_OutflowTypePanel(bpy.types.Panel):
             column = self.layout.column()
             column.prop(outflow_props, "is_inversed")
         
-        column = self.layout.column()
-        column.separator()
-        split = column.split()
-        column_left = split.column()
-        column_left.prop(outflow_props, "export_animated_mesh")
-        column_right = split.column()
-
+        box = self.layout.box()
+        box.label(text="Mesh Data Export:")
+        column = box.column(align=True)
+        column.prop(outflow_props, "export_animated_mesh")
         if show_advanced:
-            column_right.enabled = outflow_props.export_animated_mesh
-            column_right.prop(outflow_props, "skip_animated_mesh_reexport")
+            column.prop(outflow_props, "skip_reexport")
+            column.separator()
+            column = box.column(align=True)
+            column.enabled = outflow_props.skip_reexport
+            column.prop(outflow_props, "force_reexport_on_next_bake", toggle=True)
     
 
 def register():

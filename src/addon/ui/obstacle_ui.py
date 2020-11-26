@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,24 +39,62 @@ class FLIPFLUID_PT_ObstacleTypePanel(bpy.types.Panel):
         obstacle_props = obj_props.obstacle
         preferences = vcu.get_addon_preferences(context)
         show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
+        show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
 
         column = self.layout.column()
         column.prop(obj_props, "object_type")
+
+        if show_documentation:
+            column = self.layout.column(align=True)
+            column.operator(
+                "wm.url_open", 
+                text="Obstacle Object Documentation", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Obstacle-Object-Settings"
+            column.operator(
+                "wm.url_open", 
+                text="Obstacle objects must have manifold/watertight geometry", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Manifold-Meshes"
+            column.operator(
+                "wm.url_open", 
+                text="Thin obstacles are leaking fluid", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Scene-Troubleshooting#thin-obstacles-leaking-fluid"
+            column.operator(
+                "wm.url_open", 
+                text="Animated obstacle is static in the simulation", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Scene-Troubleshooting#animated-obstacle-is-static-when-running-the-simulation"
+            column.operator(
+                "wm.url_open", 
+                text="How to debug issues with obstacle objects", 
+                icon="WORLD"
+            ).url = "https://blendermarket.com/posts/flip-fluids-10-tips-to-improve-your-blender-workflow"
+            column.operator(
+                "wm.url_open", 
+                text="Mesh banding against curved obstacles", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Scene-Troubleshooting#mesh-banding-artifacts-against-curved-obstacles"
+            column.operator(
+                "wm.url_open", 
+                text="Using the Inverse option to perfectly contain fluid", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Obstacle-Inverse-Workflow"
+            column.operator(
+                "wm.url_open", 
+                text="Liquid volume loss with animated obstacle", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Limitations-of-the-FLIP-Fluids-addon#volume-and-mass-preservation"
+
+
+
 
         column = self.layout.column()
         column.prop(obstacle_props, "is_enabled")
 
         column = self.layout.column()
         column.prop(obstacle_props, "is_inversed")
-
-        column = self.layout.column()
-        split = column.split()
-        column_left = split.column()
-        column_left.prop(obstacle_props, "export_animated_mesh")
-        column_right = split.column()
-        if show_advanced:
-            column_right.enabled = obstacle_props.export_animated_mesh
-            column_right.prop(obstacle_props, "skip_animated_mesh_reexport")
 
         box = self.layout.box()
         box.label(text="Obstacle Properties")
@@ -76,6 +114,17 @@ class FLIPFLUID_PT_ObstacleTypePanel(bpy.types.Panel):
 
             column = box.column()
             column.prop(obstacle_props, "mesh_expansion")
+
+        box = self.layout.box()
+        box.label(text="Mesh Data Export:")
+        column = box.column(align=True)
+        column.prop(obstacle_props, "export_animated_mesh")
+        if show_advanced:
+            column.prop(obstacle_props, "skip_reexport")
+            column.separator()
+            column = box.column(align=True)
+            column.enabled = obstacle_props.skip_reexport
+            column.prop(obstacle_props, "force_reexport_on_next_bake", toggle=True)
     
 
 def register():

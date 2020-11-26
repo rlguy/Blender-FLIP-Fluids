@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2019 Ryan L. Guy
+Copyright (C) 2020 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -170,6 +170,45 @@ vmath::vec3 Collision::findClosestPointOnTriangle(vmath::vec3 p0, vmath::vec3 v0
     double e = vmath::dot(edge1, pv);
 
     double det = a*c - b*b;
+    double deps = 1e-9;
+    if (std::abs(det) < deps) {
+        // degenerate triangle: closest point is located on a line segment
+        float feps = 1e-6;
+        float len1 = vmath::length(v0 - v1);
+        float len2 = vmath::length(v1 - v2);
+        float len3 = vmath::length(v2 - v0);
+        if (len1 < feps && len2 < feps && len3 < feps) {
+            return v0;
+        }
+
+        vmath::vec3 dp, dq;
+        if (len1 < feps) {
+            dp = v0;
+            dq = v2;
+        } else if (len2 < feps) {
+            dp = v1;
+            dq = v0;
+        } else {
+            dp = v2;
+            dq = v1;
+        }
+
+        float dotnum = vmath::dot((p0 - dp), (dq - dp));
+        float dotdem = vmath::dot((dq - dp), (dq - dp));
+        if (std::abs(dotdem) < feps) {
+            return v0;
+        } else {
+            float lambda = dotnum / dotdem;
+            if (lambda <= 0.0f) {
+                return dp;
+            } else if (lambda >= 1.0f) {
+                return dq;
+            } else {
+                return dp + lambda * (dq - dp);
+            }
+        }
+    }
+
     double s = b*e - c*d;
     double t = b*d - a*e;
 

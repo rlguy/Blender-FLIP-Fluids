@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2019 Ryan L. Guy
+Copyright (C) 2020 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -76,9 +76,7 @@ public:
     void setObjectVelocityInfluence(float value);
     float getObjectVelocityInfluence();
 
-    void enableRigidMesh();
-    void disableRigidMesh();
-    bool isRigidMeshEnabled();
+    bool isRigidBody();
 
     void enableConstrainedFluidVelocity();
     void disableConstrainedFluidVelocity();
@@ -90,10 +88,12 @@ public:
 
     void setFrame(int f, float frameInterpolation);
     void update(double dt);
+    float trilinearInterpolate(vmath::vec3 p);
     void getCells(std::vector<GridIndex> &cells);
     void getCells(float frameInterpolation, std::vector<GridIndex> &cells);
     MeshObject* getMeshObject();
     MeshLevelSet* getMeshLevelSet();
+    vmath::vec3 getMeshLevelSetOffset();
     RigidBodyVelocity getRigidBodyVelocity(double framedt);
     VelocityFieldData* getVelocityFieldData();
     int getID();
@@ -102,6 +102,8 @@ private:
 
     void _initializeID();
     void _calculateVelocityFieldData();
+    void _getGridBoundsFromTriangleMesh(TriangleMesh &m, double pad, 
+                                        GridIndex &gmin, GridIndex &gmax);
 
     int _isize = 0;
     int _jsize = 0;
@@ -119,13 +121,16 @@ private:
     bool _isFluidOutflowEnabled = true;
     bool _isDiffuseOutflowEnabled = true;
     bool _isOutflowInversed = false;
-    bool _isRigidMesh = true;
     bool _isConstrainedFluidVelocity = true;
     vmath::vec3 _sourceVelocity;
     VelocityFieldData _vfieldData;
 
     MeshObject _meshObject;
+
     MeshLevelSet _sourceSDF;
+    GridIndex _sourceSDFGridOffset;
+    vmath::vec3 _sourceSDFOffset;
+    double _gridpad = 4.0;
 
     int _ID;
     static int _IDCounter;

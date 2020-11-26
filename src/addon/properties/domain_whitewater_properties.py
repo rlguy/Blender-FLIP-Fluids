@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -106,27 +106,27 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
             default=100,
             ); exec(conv("whitewater_emitter_generation_rate"))
     wavecrest_emission_rate = FloatProperty(
-            name="Wavecrest Emission Rate", 
+            name="Max Wavecrest Emission Rate", 
             description="Maximum number of whitewater particles that a"
-                " wavecrest emitter may generate per simulation second", 
+                " single wavecrest emitter may generate per simulation second", 
             min=0, soft_max=1000,
             default=175,
             step=30,
             precision=0,
             ); exec(conv("wavecrest_emission_rate"))
     turbulence_emission_rate = FloatProperty(
-            name="Turbulence Emission Rate", 
+            name="Max Turbulence Emission Rate", 
             description="Maximum number of whitewater particles that a"
-                " turbulence emitter may generate per simulation second", 
+                " single turbulence emitter may generate per simulation second", 
             min=0, soft_max=1000,
             default=175,
             step=30,
             precision=0,
             ); exec(conv("turbulence_emission_rate"))
     dust_emission_rate = FloatProperty(
-            name="Dust Emission Rate", 
+            name="Max Dust Emission Rate", 
             description="Maximum number of dust particles that a"
-                " dust emitter may generate per simulation second", 
+                " single dust emitter may generate per simulation second", 
             min=0, soft_max=1000,
             default=175,
             step=30,
@@ -145,7 +145,7 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
                 " no whitewater", 
             min_min=0,
             default_min=0.2,
-            precision_min=1,
+            precision_min=2,
 
             name_max="Max Energy Speed", 
             description_max="When fluid speed is greater than the min value, and"
@@ -153,12 +153,12 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
                 " of whitewater emitted based on emission rate of the emitter", 
             min_max=0,
             default_max=3.0,
-            precision_max=1,
+            precision_max=2,
             ); exec(conv("min_max_whitewater_energy_speed"))
     min_max_whitewater_wavecrest_curvature = NewMinMaxFloatProperty(
             name_min="Min Curvature", 
             description_min="Wavecrests with curvature less than this value will"
-                " generate no whitewater", 
+                " generate no whitewater. This value rarely needs to be changed", 
             min_min=0.0, max_min=5.0,
             default_min=0.4,
             precision_min=2,
@@ -166,7 +166,8 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
             name_max="Max Curvature", 
             description_max="When wavecrest curvature is greater than the min value,"
                 " and less than the max value, proportionally increase the amount"
-                " of whitewater emitted based on the Wavecrest Emission Rate", 
+                " of whitewater emitted based on the Wavecrest Emission Rate."
+                " This value rarely needs to be changed", 
             min_max=0.0, max_max=5.0,
             default_max=1.0,
             precision_max=2,
@@ -174,7 +175,7 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
     min_max_whitewater_turbulence = NewMinMaxFloatProperty(
             name_min="Min Turbulence", 
             description_min="Fluid with turbulence less than this value will"
-                " generate no whitewater", 
+                " generate no whitewater. This value rarely needs to be changed", 
             min_min=0,
             default_min=100,
             precision_min=0,
@@ -182,7 +183,8 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
             name_max="Max Turbulence", 
             description_max="When the fluid turbulence is greater than the min value,"
                 " and less than the max value, proportionally increase the amount"
-                " of whitewater emitted based on the Turbulence Emission Rate", 
+                " of whitewater emitted based on the Turbulence Emission Rate."
+                " This value rarely needs to be changed", 
             min_max=0,
             default_max=200,
             precision_max=0,
@@ -430,6 +432,12 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
             default=5.0,
             precision=2,
             ); exec(conv("obstacle_influence_decay_rate"))
+
+    emitter_settings_expanded = BoolProperty(default=True); exec(conv("emitter_settings_expanded"))
+    particle_settings_expanded = BoolProperty(default=False); exec(conv("particle_settings_expanded"))
+    boundary_behaviour_settings_expanded = BoolProperty(default=False); exec(conv("boundary_behaviour_settings_expanded"))
+    obstacle_settings_expanded = BoolProperty(default=False); exec(conv("obstacle_settings_expanded"))
+    whitewater_display_settings_expanded = BoolProperty(default=False); exec(conv("whitewater_display_settings_expanded"))
 
 
     def register_preset_properties(self, registry, path):

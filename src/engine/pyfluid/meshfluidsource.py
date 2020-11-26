@@ -1,6 +1,6 @@
 # MIT License
 # 
-# Copyright (c) 2019 Ryan L. Guy
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -192,21 +192,6 @@ class MeshFluidSource():
         libfunc = lib.MeshFluidSource_set_object_velocity_influence
         pb.init_lib_func(libfunc, [c_void_p, c_float, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), value])
-
-    @property
-    def enable_rigid_mesh(self):
-        libfunc = lib.MeshFluidSource_is_mesh_rigid
-        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
-        return bool(pb.execute_lib_func(libfunc, [self()]))
-
-    @enable_rigid_mesh.setter
-    def enable_rigid_mesh(self, boolval):
-        if boolval:
-            libfunc = lib.MeshFluidSource_enable_rigid_mesh
-        else:
-            libfunc = lib.MeshFluidSource_disable_rigid_mesh
-        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
-        pb.execute_lib_func(libfunc, [self()])
 
     @property
     def enable_constrained_fluid_velocity(self):
