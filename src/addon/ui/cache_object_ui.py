@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

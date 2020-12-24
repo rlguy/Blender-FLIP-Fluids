@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -51,7 +51,7 @@ from ..utils import installation_utils
 
 def append_to_PHYSICS_PT_add_panel(self, context):
     obj = vcu.get_active_object(context)
-    if not (obj.type == 'MESH' or obj.type == 'EMPTY'):
+    if not (obj.type == 'MESH' or obj.type == 'EMPTY', obj.type == 'CURVE'):
         return
 
     column = self.layout.column(align=True)
@@ -70,6 +70,44 @@ def append_to_PHYSICS_PT_add_panel(self, context):
         if obj.flip_fluid.is_domain():
             row.prop(context.scene.flip_fluid, "show_render", icon="RESTRICT_RENDER_OFF", text="")
             row.prop(context.scene.flip_fluid, "show_viewport", icon="RESTRICT_VIEW_OFF", text="")
+
+        addon_prefs = vcu.get_addon_preferences(context)
+        if addon_prefs.beginner_friendly_mode:
+            tooltip_column = self.layout.column(align=True)
+            row = tooltip_column.row(align=True)
+            row.alignment = 'LEFT'
+            row.prop(addon_prefs, "beginner_friendly_mode_tooltip", icon='QUESTION', emboss=False, text="")
+            row.label(text="FLIP Fluids Beginner Friendly Mode is enabled")
+
+        # Uncomment for experimental builds
+        """
+        # Experimental Build Warning
+        box = self.layout.box()
+        column = box.column(align=True)
+        column.label(text="This is an experimental build of the FLIP Fluids addon", icon='ERROR')
+        column.label(text="Not for production. Use at your own risk.", icon='ERROR')
+        column.label(text="Please read before using:", icon='ERROR')
+        column.operator(
+                "wm.url_open", 
+                text="Force Field Experimental Builds", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Force-Field-Experimental-Builds"
+        """
+
+        is_saved = bool(bpy.data.filepath)
+        if not is_saved and obj.flip_fluid.is_domain():
+            hprops = context.scene.flip_fluid_helper
+            box = self.layout.box()
+            row = box.row(align=True)
+            row.prop(hprops, "unsaved_blend_file_tooltip", icon="ERROR", emboss=False, text="")
+            row = row.row(align=True)
+            row.alert = True
+            row.label(text="Unsaved File")
+            row = row.row(align=True)
+            row.alert = False
+            row.operator("flip_fluid_operators.helper_save_blend_file", icon='FILE_TICK', text="Save")
+
+
     else:
         if not installation_utils.is_installation_complete():
             column_right.operator(

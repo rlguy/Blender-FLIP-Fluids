@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2019 Ryan L. Guy
+Copyright (C) 2020 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -97,9 +97,28 @@ inline vec3 normalize(const vec3 &v) {
 }
 
 inline bool equals(const vec3 &v1, const vec3 &v2, double eps) {
-    return fabs((double)v1.x - (double)v2.x) < eps && 
-           fabs((double)v1.y - (double)v2.y) < eps && 
-           fabs((double)v1.z - (double)v2.z) < eps;
+    return std::abs((double)v1.x - (double)v2.x) < eps && 
+           std::abs((double)v1.y - (double)v2.y) < eps && 
+           std::abs((double)v1.z - (double)v2.z) < eps;
+}
+
+inline bool isCollinear(const vec3 &v1, const vec3 &v2, double eps) {
+    double len1 = sqrt((double)v1.x * (double)v1.x + (double)v1.y * (double)v1.y + (double)v1.z * (double)v1.z);
+    double len2 = sqrt((double)v2.x * (double)v2.x + (double)v2.y * (double)v2.y + (double)v2.z * (double)v2.z);
+    double n1x = (double)v1.x / len1;
+    double n1y = (double)v1.y / len1;
+    double n1z = (double)v1.z / len1;
+    double n2x = (double)v2.x / len2;
+    double n2y = (double)v2.y / len2;
+    double n2z = (double)v2.z / len2;
+    double absdot = std::abs(n1x * n2x + n1y * n2y + n1z * n2z);
+    return std::abs(absdot - 1.0) < eps;
+}
+
+inline void generateBasisVectors(const vec3 &basisX, const vec3 &v, vec3 &b1, vec3 &b2, vec3 &b3) {
+    b1 = normalize(basisX);
+    b2 = cross(b1, v).normalize();
+    b3 = cross(b1, b2).normalize();
 }
 
 /********************************************************************************
@@ -152,6 +171,22 @@ inline mat3 transpose(const mat3 &m) {
     return mat3(m.m[0], m.m[3], m.m[6], 
                 m.m[1], m.m[4], m.m[7], 
                 m.m[2], m.m[5], m.m[8]);
+}
+
+inline mat3 localToWorldTransform(const vec3 &basisX, const vec3 &basisY, const vec3 &basisZ) {
+    vmath::vec3 worldX(1, 0, 0);
+    vmath::vec3 worldY(0, 1, 0);
+    vmath::vec3 worldZ(0, 0, 1);
+
+    vmath::vec3 x1p = normalize(basisX);
+    vmath::vec3 x2p = normalize(basisY);
+    vmath::vec3 x3p = normalize(basisZ);
+
+    return vmath::mat3(
+            vmath::dot(worldX, x1p), vmath::dot(worldX, x2p), vmath::dot(worldX, x3p),
+            vmath::dot(worldY, x1p), vmath::dot(worldY, x2p), vmath::dot(worldY, x3p),
+            vmath::dot(worldZ, x1p), vmath::dot(worldZ, x2p), vmath::dot(worldZ, x3p)
+            );
 }
 
 /********************************************************************************

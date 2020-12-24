@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -206,6 +206,40 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             time_remaining = max(0, time_remaining)
             ret_str = self.format_long_time(time_remaining)
         return ret_str
+
+
+    def reset_stats_values(self):
+        prop_names = [
+            "frame_info_id",
+            "frame_substeps",
+            "frame_delta_time",
+            "frame_fluid_particles",
+            "frame_diffuse_particles",
+            "surface_mesh",
+            "preview_mesh",
+            "surfaceblur_mesh",
+            "foam_mesh",
+            "bubble_mesh",
+            "spray_mesh",
+            "dust_mesh",
+            "foamblur_mesh",
+            "bubbleblur_mesh",
+            "sprayblur_mesh",
+            "dustblur_mesh",
+            "particle_mesh",
+            "obstacle_mesh",
+            "time_mesh",
+            "time_advection",
+            "time_particles",
+            "time_pressure",
+            "time_diffuse",
+            "time_viscosity",
+            "time_objects",
+            "time_other"
+            ]
+
+        for name in prop_names:
+            self.property_unset(name)
 
 
     def reset_time_remaining(self):

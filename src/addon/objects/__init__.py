@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,9 @@ if "bpy" in locals():
         'flip_fluid_cache',
         'flip_fluid_material_library'
         'flip_fluid_map',
-        'flip_fluid_mesh_exporter',
+        'flip_fluid_geometry_export_object',
+        'flip_fluid_geometry_database',
+        'flip_fluid_geometry_exporter',
         'flip_fluid_preset_stack',
     ]
     for module_name in reloadable_modules:
@@ -35,7 +37,9 @@ from . import (
     flip_fluid_cache,
     flip_fluid_material_library,
     flip_fluid_map,
-    flip_fluid_mesh_exporter,
+    flip_fluid_geometry_export_object,
+    flip_fluid_geometry_database,
+    flip_fluid_geometry_exporter,
     flip_fluid_preset_stack,
     )
 

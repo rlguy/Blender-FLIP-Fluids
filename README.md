@@ -4,9 +4,16 @@ The **FLIP Fluids addon** is a tool that helps you set up, run, and render liqui
 
 With our reputation for delivering high quality software and outstanding customer support, the FLIP Fluids addon is one of the best selling products on the Blender Market.
 
+- 5000+ sales, 5 star rating, excellent value
+- No subscriptions, all future updates included
+- [Try out our free demo! We're sure you'll like it :)](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/FLIP-Fluids-Demo-Addon)
+- [Frequently Asked Questions (FAQ)](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Frequently-Asked-Questions)
+- [What is the difference between Blender's Mantaflow FLIP simulator and the FLIP Fluids addon?](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Frequently-Asked-Questions#what-is-the-difference-between-blenders-mantaflow-fluid-simulator-and-the-flip-fluids-addon)
+Have any question? Do not hesitate to ask us here or at support@flipfluids.com!
+
 ## Getting the FLIP Fluids Addon
 
-You may purchase the **FLIP Fluids** addon on the [Blender Market](https://www.blendermarket.com/products/flipfluids). Purchasing a license entitles you to to full FLIP Fluids feature set and content, tool support, and helps ensure the continued development of the addon. Thanks to the amazing support of the Blender community, we have been able to further develop the addon on a full-time basis for over two years!
+You may purchase the **FLIP Fluids** addon on the [Blender Market](https://www.blendermarket.com/products/flipfluids). Purchasing a license entitles you to to full FLIP Fluids feature set and content, tool support, and helps ensure the continued development of the addon. Thanks to the amazing support of the Blender community, we have been able to further develop the addon on a full-time basis since May 2018!
 
 #### Getting Support
 
@@ -19,58 +26,78 @@ See our [Blender Market product page](https://blendermarket.com/products/flipflu
 ## System Requirements
 
 - Windows, MacOS, or Linux operating system
-- Blender 2.79 (64-bit) or Blender 2.8+ (64-bit)
+- Blender 2.79 or 2.8+* or 2.9+ (64-bit)
 - CPU 64-bit Intel® or AMD® multi-core processor
 - 8 GB RAM minimum, 16 GB or more of RAM memory is highly recommended
+
+***Blender Support on MacOS:** Due to a MacOS specific [Blender bug](https://developer.blender.org/T68243) in versions 2.80, 2.81, and 2.82, these Blender versions cannot be supported. Blender 2.79 or 2.83+ or 2.9+ are required for MacOS.
+
+## Release Notes
+
+**FLIP Fluids Version 1.0.9** - Our biggest update yet adds new [force field features](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Example-Scene-Descriptions#force-field-examples) and many more improvements! [See new example scene animations](https://gfycat.com/amusedlongkitfox).
+
+For full release notes, see this page: [Release Notes](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Release-Notes)
 
 ## License
 
 This program uses multiple licenses. See the files ```LICENSE_GPLv3.md```, ```LICENSE_MIT.md```, and ```LICENSE_Standard_Royalty_Free.md``` for license details. In General:
 
 - The Blender addon code is licensed under the GPL.
-- The fluid engine is licensed under the MIT license.
-- Some addon content will be using a Standard Royalty Free license. This license may cover content such as media, artwork, and data. This content will only be included within the paid addon and will not be available on the GitHub project page. The addon is still completely usable without this content.
+- The FLIP Fluids simulation engine is licensed under the MIT license.
+- Some addon content will be using a Standard Royalty Free license. This license may cover content such as [example scene files](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Example-Scene-Descriptions), media, artwork, and data. This content will only be included within the paid addon and will not be available on the GitHub project page. The addon is still completely usable without this content.
 
 Source code files will state their license at the top of the file. Assets will include a license file and information in their containing directory.
 
-### Source Code availability
+## Building
 
-The FLIP Fluids addon is developed in our team's own private repository. Due to licensing restrictions, the project source contained in the public GitHub repository cannot contain the royalty-free content (See [LICENSE_Standard_Royalty_Free.md](LICENSE_Standard_Royalty_Free.md)) of the Blender Market product and cannot contain features that depend upon the royalty-free content. The public repository will often not be up-to-date with the private development repository. The full source code including all features and royalty-free content is distributed with the Blender Market product.
+To build the FLIP Fluids addon, some programming experience or prior experience building C/C++ applications is recommended. The basics of navigation and executing commands using the command line is also recommended.
+
+Like our FLIP Fluids addon? If you can afford, please consider purchasing a license on the [Blender Market](https://blendermarket.com/products/flipfluids) to help support our continued development of the project. Development of the FLIP Fluids addon is funded solely through sales on the marketplace, and as a small team we truly appreciate your support.
 
 ### Source Code Dependencies
 
-There are three dependencies to build this program:
+There is one dependency to build this program:
 
-1. A compiler that supports C++11
-2. (optional) OpenCL headers (can be found at khronos.org)
-3. (optional) An OpenCL SDK specific to your GPU vender (AMD, NVIDIA, Intel, etc.)
+1. A compiler that supports C++11.
 
-_WARNING: Compilation using MSVC (Microsoft Visual Studio Compiler) is not supported. Building with MSVC will result in errors, performance issues, and incorrect simulation behaviour._
+_WINDOWS OS WARNING: Compilation using MSVC (Microsoft Visual Studio Compiler) is not supported. Building with MSVC will result in errors, performance issues, and incorrect simulation behaviour. The MinGW compiler is the only supported Windows compiler._
 
-### Building
+Aside from a C++11 compiler, you will also require installations of: 
 
-This program uses the [CMake](https://cmake.org/) utility to generate the appropriate solution, project, or Makefiles for your system. The following commands can be executed in the root directory of the project to generate a build system for your machine:
+1. [CMake](https://cmake.org/) to generate the appropriate solution, project, or Makefiles, for your system.
+2. [GNU Make](https://www.gnu.org/software/make/) to compile/build the FLIP Fluids simulation engine.
+3. (optional) [Python 3.3+](https://www.python.org/) to use the automated build script.
 
-```
-mkdir build && cd build
-cmake ..
-```
+### Building with automated script
 
-The first line creates a new directory named ```build``` and changes the working directory to the newly created build directory. The second line runs the CMake utility and passes it the parent directory which contains the ```CMakeLists.txt``` file.
+This repository includes an automated build script to help you build and compile the FLIP Fluids addon. Use of this script requires an installation of Python 3.3+. The script will work best if CMake and GNU Make are located in your system PATH variable, but if not, you may also specify their locations when executing the script (run ```python build.py --help``` for help).
 
-The type of build system generated by CMake can be specified with the ```-G [generator]``` parameter. For example:
+To build and compile the FLIP Fluids addon, navigate to the root of the project directory and run:
 
 ```
-cmake .. -G "MinGW Makefiles"
+python build.py
 ```
 
-will generate Makefiles for the MinGW compiler which can then be built using the [GNU Make](https://www.gnu.org/software/make/) utility with the command ```make```. A list of CMake generators can be found [here](https://cmake.org/cmake/help/v3.0/manual/cmake-generators.7.html).
+Once successfully built, the FLIP Fluids addon will be located in the ```build/bl_flip_fluids/``` directory.
 
-Once successfully built, the addon and python bindings will be located in the ```build/bl_flip_fluids/``` directory.
+### Building without automated script
 
-## Release Notes
+To build and compile the FLIP Fluids addon without the automated Python script, first copy the ```cmake/CMakeLists.txt``` file to the root of the project directory. The program can then be built and compiled using CMake and GNU Make. Example if your current working directory is located at the project root:
 
-See this documentation page for release notes: [Release Notes](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Release-Notes)
+```
+mkdir build
+cd build
+cmake .. -DBUILD_DEBUG=ON
+make
+cmake .. -DBUILD_DEBUG=OFF
+make
+```
+
+The above script uses CMake and GNU Make to build the FLIP Fluids engine twice: once for the debug version of the engine, and again for the optimized release version of the engine.
+
+The [CMake Generator](https://cmake.org/cmake/help/latest/manual/cmake-generators.7.html) can be specified by adding the ```-G "[generator]"``` flag. For example, to specify MinGW Makefiles on Windows OS, you can add the CMake flag ```-G "MinGW Makefiles"```.
+
+Once successfully built, the FLIP Fluids addon will be located in the ```build/bl_flip_fluids/``` directory.
 
 ## Links
 
@@ -79,4 +106,4 @@ See this documentation page for release notes: [Release Notes](https://github.co
 - [Bug/Issue Tracker](https://github.com/rlguy/Blender-FLIP-Fluids/issues)
 - [FLIP Fluids Homepage](http://flipfluids.com)
 - [Weekly Development Notes](http://flipfluids.com/blog)
-- [Facebook](https://www.facebook.com/FLIPFluids/) | [Twitter](https://twitter.com/flipfluids) | [Instagram](https://www.instagram.com/flip.fluids/)
+- [Twitter](https://twitter.com/flipfluids) | [Instagram](https://www.instagram.com/flip.fluids/) | [Facebook](https://www.facebook.com/FLIPFluids/) | [YouTube](https://www.youtube.com/flipfluids)

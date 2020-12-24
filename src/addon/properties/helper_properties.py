@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,11 +35,29 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             default=False,
             ); exec(conv("enable_auto_frame_load"))
     playback_frame_offset = IntProperty(
-            name="Playback Offset",
+            name="Frame Offset",
             description="Frame offset for simulation playback",
             default=0,
             options={'HIDDEN'},
             ); exec(conv("playback_frame_offset"))
+
+    unsaved_blend_file_tooltip = BoolProperty(
+            name="Unsaved Blend File Tooltip", 
+            description="This is currently an unsaved .blend file. We recommend saving your file before baking a"
+                " simulation so you do not accidentally lose your simulation progress or settings", 
+            default=True,
+            ); exec(conv("unsaved_blend_file_tooltip"))
+
+    bake_simulation_expanded = BoolProperty(default=True); exec(conv("bake_simulation_expanded"))
+    add_remove_objects_expanded = BoolProperty(default=True); exec(conv("add_remove_objects_expanded"))
+    outliner_organization_expanded = BoolProperty(default=False); exec(conv("outliner_organization_expanded"))
+    quick_select_expanded = BoolProperty(default=False); exec(conv("quick_select_expanded"))
+    command_line_tools_expanded = BoolProperty(default=False); exec(conv("command_line_tools_expanded"))
+    beginner_tools_expanded = BoolProperty(default=False); exec(conv("beginner_tools_expanded"))
+
+    quick_viewport_display_expanded = BoolProperty(default=True); exec(conv("quick_viewport_display_expanded"))
+    simulation_playback_expanded = BoolProperty(default=False); exec(conv("simulation_playback_expanded"))
+    render_tools_expanded = BoolProperty(default=False); exec(conv("render_tools_expanded"))
 
 
     @classmethod

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2019 Ryan L. Guy
+Copyright (C) 2020 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -34,18 +34,25 @@ public:
     ForceFieldPoint();
     virtual ~ForceFieldPoint();
 
-    virtual void update(double dt);
+    virtual void update(double dt, double frameInterpolation);
     virtual void addForceFieldToGrid(MACVelocityField &fieldGrid);
+    virtual void addGravityScaleToGrid(ForceFieldGravityScaleGrid &scaleGrid);
     virtual std::vector<vmath::vec3> generateDebugProbes();
-
 
 protected:
     virtual void _initialize();
+    virtual bool _isSubclassStateChanged();
+    virtual void _clearSubclassState();
 
 private:
 
-	int _numDebugProbes = 200;
-	float _minRadiusFactor = 2.0f;
+    void _addForceFieldToGridMT(MACVelocityField &fieldGrid, int dir);
+    void _addForceFieldToGridThread(int startidx, int endidx, 
+                                    MACVelocityField *fieldGrid, int dir);
+
+    double _frameInterpolation = 0.0;
+    int _numDebugProbes = 200;
+    float _minRadiusFactor = 4.0f;
 
 };
 

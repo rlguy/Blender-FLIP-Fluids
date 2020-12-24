@@ -1,6 +1,6 @@
 # MIT License
 # 
-# Copyright (c) 2019 Ryan L. Guy
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -43,9 +43,3 @@ class ForceFieldPoint(ForceField):
             libfunc(self._obj)
         except:
             pass
-
-    def test_protected_method(self):
-        libfunc = lib.ForceFieldPoint_test_protected_method
-        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
-        return bool(pb.execute_lib_func(libfunc, [self()]))
-

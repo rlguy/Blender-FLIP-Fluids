@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2019 Ryan L. Guy
+Copyright (C) 2020 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -60,6 +60,23 @@ FluidSimulation::~FluidSimulation() {
 
 void FluidSimulation::getVersion(int *major, int *minor, int *revision) { 
     VersionUtils::getVersion(major, minor, revision);
+}
+
+void FluidSimulation::upscaleOnInitialization(int isizePrev, int jsizePrev, int ksizePrev, double dxPrev) { 
+    if (isizePrev <= 0 || jsizePrev <= 0 || ksizePrev <= 0 || dxPrev <= 0.0) {
+        std::string msg = "Error: dimensions and cell size must be greater than 0.\n";
+        msg += "grid: " + _toString(isizePrev) + _toString(jsizePrev) + _toString(ksizePrev) + " " + _toString(dxPrev) + "\n";
+        throw std::domain_error(msg);
+    }
+
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " upscaleOnInitialization: " << isizePrev << " " << jsizePrev << " " << ksizePrev << " " << dxPrev << std::endl);
+
+    _isUpscalingOnInitializationEnabled = true;
+    _upscalingPreviousIsize = isizePrev;
+    _upscalingPreviousJsize = jsizePrev;
+    _upscalingPreviousKsize = ksizePrev;
+    _upscalingPreviousCellSize = dxPrev;
 }
 
 void FluidSimulation::initialize() {
@@ -1831,6 +1848,24 @@ bool FluidSimulation::isAdaptiveObstacleTimeSteppingEnabled() {
     return _isAdaptiveObstacleTimeSteppingEnabled;
 }
 
+void FluidSimulation::enableAdaptiveForceFieldTimeStepping() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " enableAdaptiveForceFieldTimeStepping" << std::endl);
+
+    _isAdaptiveForceFieldTimeSteppingEnabled = true;
+}
+
+void FluidSimulation::disableAdaptiveForceFieldTimeStepping() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " disableAdaptiveForceFieldTimeStepping" << std::endl);
+
+    _isAdaptiveForceFieldTimeSteppingEnabled = false;
+}
+
+bool FluidSimulation::isAdaptiveForceFieldTimeSteppingEnabled() {
+    return _isAdaptiveForceFieldTimeSteppingEnabled;
+}
+
 void FluidSimulation::enableExtremeVelocityRemoval() {
     _logfile.log(std::ostringstream().flush() << 
                  _logfile.getTime() << " enableExtremeVelocityRemoval" << std::endl);
@@ -2618,6 +2653,14 @@ void FluidSimulation::_initializeSimulation() {
 
     _initializeParticleRadii();
 
+    if (_upscalingPreviousCellSize) {
+        StopWatch upscaleTimer;
+        upscaleTimer.start();
+        _upscaleParticleData();
+        upscaleTimer.stop();
+        _logfile.log("Upscaling Particle Data:     \t", upscaleTimer.getTime(), 4, 1);
+    }
+
     if (_isMarkerParticleLoadPending || _isDiffuseParticleLoadPending) {
         StopWatch loadTimer;
         loadTimer.start();
@@ -2627,6 +2670,99 @@ void FluidSimulation::_initializeSimulation() {
     }
 
     _isSimulationInitialized = true;
+}
+
+void FluidSimulation::_upscaleParticleData() {
+    int isize = _upscalingPreviousIsize;
+    int jsize = _upscalingPreviousJsize;
+    int ksize = _upscalingPreviousKsize;
+    double dx = _upscalingPreviousCellSize;
+    double particleRadius = 0.5 * _liquidSDFParticleScale * dx * sqrt(3.0);
+
+    AABB bounds(0.0, 0.0, 0.0, isize * dx, jsize * dx, ksize * dx);
+    FragmentedVector<MarkerParticle> markerParticles;
+    for (size_t j = 0; j < _markerParticleLoadQueue.size(); j++) {
+        for (size_t i = 0; i < _markerParticleLoadQueue[j].particles.size(); i++) {
+            MarkerParticle mp = _markerParticleLoadQueue[j].particles[i];
+            mp.position = (mp.position - _domainOffset) / _domainScale;
+            if (bounds.isPointInside(mp.position)) {
+                markerParticles.push_back(mp);
+            }
+        }
+    }
+
+    if (markerParticles.empty()) {
+        return;
+    }
+
+    ParticleLevelSet liquidSDF(isize, jsize, ksize, dx);
+    liquidSDF.calculateSignedDistanceField(markerParticles, particleRadius);
+
+    MACVelocityField vfield(isize, jsize, ksize, dx);
+    ValidVelocityComponentGrid validVelocities(isize, jsize, ksize);
+    VelocityAdvector velocityAdvector;
+
+    VelocityAdvectorParameters params;
+    params.particles = &markerParticles;
+    params.vfield = &vfield;
+    params.validVelocities = &validVelocities;
+    params.particleRadius = particleRadius;
+
+    velocityAdvector.advect(params);
+    int extrapolationLayers = (int)ceil(_CFLConditionNumber) + 2;
+    vfield.extrapolateVelocityField(validVelocities, extrapolationLayers);
+
+    ParticleMaskGrid maskgrid(_isize, _jsize, _ksize, _dx);
+    for (unsigned int i = 0; i < markerParticles.size(); i++) {
+        maskgrid.addParticle(markerParticles[i].position);
+    }
+
+    double q = 0.25 * _dx;
+    vmath::vec3 particleOffsets[8] = {
+        vmath::vec3(-q, -q, -q),
+        vmath::vec3( q, -q, -q),
+        vmath::vec3(-q,  q, -q),
+        vmath::vec3( q,  q, -q),
+        vmath::vec3(-q, -q,  q),
+        vmath::vec3( q, -q,  q),
+        vmath::vec3(-q,  q,  q),
+        vmath::vec3( q,  q,  q)
+    };
+
+    double jitter = _getMarkerParticleJitter();
+    double currentParticleRadius = 0.5 * _liquidSDFParticleScale * _dx * sqrt(3.0); 
+    MarkerParticleLoadData loadData;
+    for (int k = 0; k < _ksize; k++) {
+        for (int j = 0; j < _jsize; j++) {
+            for (int i = 0; i < _isize; i++) {
+                vmath::vec3 c = Grid3d::GridIndexToCellCenter(i, j, k, _dx);
+                if (liquidSDF.trilinearInterpolate(c) > 0.0f) {
+                    continue;
+                }
+
+                for (int oidx = 0; oidx < 8; oidx++) {
+                    vmath::vec3 p = c + particleOffsets[oidx];
+                    if (maskgrid.isSubCellSet(p)) {
+                        continue;
+                    }
+
+                    if (_isJitterSurfaceMarkerParticlesEnabled) {
+                        p = _jitterMarkerParticlePosition(p, jitter);
+                    }
+
+                    if (liquidSDF.trilinearInterpolate(p) < -currentParticleRadius) {
+                        vmath::vec3 v = vfield.evaluateVelocityAtPosition(p);
+                        p = p * _domainScale + _domainOffset;
+                        MarkerParticle mp(p, v);
+                        loadData.particles.push_back(mp);
+                    }
+                }
+            }
+        }
+    }
+
+    _markerParticleLoadQueue.push_back(loadData);
+    _isMarkerParticleLoadPending = true;
 }
 
 void FluidSimulation::_loadMarkerParticles(MarkerParticleLoadData &data) {
@@ -3236,8 +3372,7 @@ void FluidSimulation::_getInflowConstrainedVelocityComponents(ValidVelocityCompo
             continue;
         }
 
-        float frameTime = (float)(_currentFrameDeltaTimeRemaining + _currentFrameTimeStep);
-        float frameProgress = 1.0f - frameTime / (float)_currentFrameDeltaTime;
+        float frameProgress = _getFrameInterpolation();
         int numSubsteps = inflow->getSubstepEmissions();
 
         if (numSubsteps == 0) {
@@ -3298,8 +3433,13 @@ void FluidSimulation::_getInflowConstrainedVelocityComponents(ValidVelocityCompo
 }
 
 void FluidSimulation::_updateForceFieldGrid(double dt) {
+    if (!_isAdaptiveForceFieldTimeSteppingEnabled && _currentFrameTimeStepNumber != 0) {
+        return;
+    }
+
+    float frameProgress = _getFrameInterpolation();
     _forceFieldGrid.setGravityVector(_getConstantBodyForce());
-    _forceFieldGrid.update(dt);
+    _forceFieldGrid.update(dt, frameProgress);
 }
 
 void FluidSimulation::_applyConstantBodyForces(ValidVelocityComponentGrid &ex, double dt) {
@@ -3826,7 +3966,6 @@ void FluidSimulation::_updateDiffuseMaterial(double dt) {
     params.deltaTime = dt;
     params.CFLConditionNumber = _CFLConditionNumber;
     params.markerParticleRadius = _markerParticleRadius;
-    params.bodyForce = _getConstantBodyForce();
 
     params.markerParticles = &_markerParticles;
     params.vfield = &_MACVelocity;
@@ -3845,6 +3984,12 @@ void FluidSimulation::_updateDiffuseMaterial(double dt) {
     params.influenceGrid = _obstacleInfluenceGrid.getInfluenceGrid();
     params.nearSolidGrid = &_nearSolidGrid;
     params.nearSolidGridCellSize = _nearSolidGridCellSize;
+
+    params.bodyForce = _getConstantBodyForce();
+    if (_isForceFieldsEnabled) {
+        params.forceFieldGrid = &_forceFieldGrid;
+        params.isForceFieldGridSet = true;
+    }
 
     _diffuseMaterial.update(params);
 
@@ -3957,8 +4102,7 @@ void FluidSimulation::_updatePICFLIPMarkerParticleVelocities() {
 }
 
 void FluidSimulation::_constrainMarkerParticleVelocities(MeshFluidSource *inflow) {
-    float frameTime = (float)(_currentFrameDeltaTimeRemaining + _currentFrameTimeStep);
-    float frameProgress = 1.0f - frameTime / (float)_currentFrameDeltaTime;
+    float frameProgress = _getFrameInterpolation();
     int numSubsteps = inflow->getSubstepEmissions();
 
     if (numSubsteps == 0) {
@@ -3994,7 +4138,7 @@ void FluidSimulation::_constrainMarkerParticleVelocities(MeshFluidSource *inflow
             }
 
             if (inflow->isAppendObjectVelocityEnabled()) {
-                if (inflow->isRigidMeshEnabled()) {
+                if (inflow->isRigidBody()) {
                     vmath::vec3 tv = vmath::cross(rv.angular * rv.axis, p - rv.centroid);
                     _markerParticles[i].velocity = v + rv.linear + tv;
                 } else {
@@ -4248,45 +4392,34 @@ void FluidSimulation::_advanceMarkerParticles(double dt) {
 void FluidSimulation::_addNewFluidCells(std::vector<GridIndex> &cells, 
                                         vmath::vec3 velocity,
                                         MeshLevelSet &meshSDF,
+                                        vmath::vec3 sdfoffset,
                                         ParticleMaskGrid &maskgrid) {
-    double q = 0.25 * _dx;
-    vmath::vec3 particleOffsets[8] = {
-        vmath::vec3(-q, -q, -q),
-        vmath::vec3( q, -q, -q),
-        vmath::vec3(-q,  q, -q),
-        vmath::vec3( q,  q, -q),
-        vmath::vec3(-q, -q,  q),
-        vmath::vec3( q, -q,  q),
-        vmath::vec3(-q,  q,  q),
-        vmath::vec3( q,  q,  q)
-    };
 
-    double jitter = _getMarkerParticleJitter();
-    GridIndex g;
-    vmath::vec3 p;
-    for (size_t i = 0; i < cells.size(); i++) {
-        g = cells[i];
-        vmath::vec3 c = Grid3d::GridIndexToCellCenter(g, _dx);
+    int numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)fmin(numCPU, cells.size());
+    std::vector<std::thread> threads(numthreads);
+    std::vector<std::vector<vmath::vec3> > particleVectors(numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, cells.size(), numthreads);
+    for (int i = 0; i < numthreads; i++) {
+        threads[i] = std::thread(&FluidSimulation::_addNewFluidCellsThread, this,
+                                 intervals[i], intervals[i + 1], 
+                                 &cells, &meshSDF, sdfoffset, 
+                                 &(particleVectors[i]));
+    }
 
-        for (unsigned int oidx = 0; oidx < 8; oidx++) {
-            p = c + particleOffsets[oidx];
+    for (int i = 0; i < numthreads; i++) {
+        threads[i].join();
+    }
+
+    for (size_t vidx = 0; vidx < particleVectors.size(); vidx++) {
+        for (size_t i = 0; i < particleVectors[vidx].size(); i++) {
+            vmath::vec3 p = particleVectors[vidx][i];
             if (maskgrid.isSubCellSet(p)) {
                 continue;
             }
 
-            double d = meshSDF.trilinearInterpolate(p);
-            if (d > 0) {
-                continue;
-            }
-
-            if (_isJitterSurfaceMarkerParticlesEnabled || d < -_dx) {
-                p = _jitterMarkerParticlePosition(p, jitter);
-            }
-
-            if (_solidSDF.trilinearInterpolate(p) > 0) {
-                _addMarkerParticle(p, velocity);
-                maskgrid.addParticle(p);
-            }
+            _addMarkerParticle(p, velocity);
+            maskgrid.addParticle(p);
         }
     }
 }
@@ -4295,48 +4428,36 @@ void FluidSimulation::_addNewFluidCells(std::vector<GridIndex> &cells,
                                         vmath::vec3 velocity,
                                         RigidBodyVelocity rvelocity,
                                         MeshLevelSet &meshSDF,
+                                        vmath::vec3 sdfoffset,
                                         ParticleMaskGrid &maskgrid) {
-    double q = 0.25 * _dx;
-    vmath::vec3 particleOffsets[8] = {
-        vmath::vec3(-q, -q, -q),
-        vmath::vec3( q, -q, -q),
-        vmath::vec3(-q,  q, -q),
-        vmath::vec3( q,  q, -q),
-        vmath::vec3(-q, -q,  q),
-        vmath::vec3( q, -q,  q),
-        vmath::vec3(-q,  q,  q),
-        vmath::vec3( q,  q,  q)
-    };
 
-    double jitter = _getMarkerParticleJitter();
-    GridIndex g;
-    vmath::vec3 p;
-    for (size_t i = 0; i < cells.size(); i++) {
-        g = cells[i];
-        vmath::vec3 c = Grid3d::GridIndexToCellCenter(g, _dx);
+    int numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)fmin(numCPU, cells.size());
+    std::vector<std::thread> threads(numthreads);
+    std::vector<std::vector<vmath::vec3> > particleVectors(numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, cells.size(), numthreads);
+    for (int i = 0; i < numthreads; i++) {
+        threads[i] = std::thread(&FluidSimulation::_addNewFluidCellsThread, this,
+                                 intervals[i], intervals[i + 1], 
+                                 &cells, &meshSDF, sdfoffset, 
+                                 &(particleVectors[i]));
+    }
 
-        for (unsigned int oidx = 0; oidx < 8; oidx++) {
-            p = c + particleOffsets[oidx];
+    for (int i = 0; i < numthreads; i++) {
+        threads[i].join();
+    }
+
+    for (size_t vidx = 0; vidx < particleVectors.size(); vidx++) {
+        for (size_t i = 0; i < particleVectors[vidx].size(); i++) {
+            vmath::vec3 p = particleVectors[vidx][i];
             if (maskgrid.isSubCellSet(p)) {
                 continue;
             }
 
-            double d = meshSDF.trilinearInterpolate(p);
-            if (d > 0) {
-                continue;
-            }
-
-            if (_isJitterSurfaceMarkerParticlesEnabled || d < -_dx) {
-                p = _jitterMarkerParticlePosition(p, jitter);
-            }
-
-            if (_solidSDF.trilinearInterpolate(p) > 0) {
-                vmath::vec3 tv = vmath::cross(rvelocity.angular * rvelocity.axis, 
-                                              p - rvelocity.centroid);
-                vmath::vec3 v = velocity + rvelocity.linear + tv;
-                _addMarkerParticle(p, v);
-                maskgrid.addParticle(p);
-            }
+            vmath::vec3 rotv = vmath::cross(rvelocity.angular * rvelocity.axis, p - rvelocity.centroid);
+            vmath::vec3 totv = velocity + rvelocity.linear + rotv;
+            _addMarkerParticle(p, totv);
+            maskgrid.addParticle(p);
         }
     }
 }
@@ -4345,6 +4466,7 @@ void FluidSimulation::_addNewFluidCells(std::vector<GridIndex> &cells,
                                         vmath::vec3 velocity,
                                         VelocityFieldData *vdata,
                                         MeshLevelSet &meshSDF,
+                                        vmath::vec3 sdfoffset,
                                         ParticleMaskGrid &maskgrid) {
     double q = 0.25 * _dx;
     vmath::vec3 particleOffsets[8] = {
@@ -4371,7 +4493,7 @@ void FluidSimulation::_addNewFluidCells(std::vector<GridIndex> &cells,
                 continue;
             }
 
-            double d = meshSDF.trilinearInterpolate(p);
+            double d = meshSDF.trilinearInterpolate(p - sdfoffset);
             if (d > 0) {
                 continue;
             }
@@ -4392,14 +4514,55 @@ void FluidSimulation::_addNewFluidCells(std::vector<GridIndex> &cells,
     }
 }
 
+void FluidSimulation::_addNewFluidCellsThread(int startidx, int endidx,
+                                              std::vector<GridIndex> *cells, 
+                                              MeshLevelSet *meshSDF,
+                                              vmath::vec3 sdfoffset,
+                                              std::vector<vmath::vec3> *particles) {
+
+    double q = 0.25 * _dx;
+    double jitter = _getMarkerParticleJitter();
+    vmath::vec3 particleOffsets[8] = {
+        vmath::vec3(-q, -q, -q),
+        vmath::vec3( q, -q, -q),
+        vmath::vec3(-q,  q, -q),
+        vmath::vec3( q,  q, -q),
+        vmath::vec3(-q, -q,  q),
+        vmath::vec3( q, -q,  q),
+        vmath::vec3(-q,  q,  q),
+        vmath::vec3( q,  q,  q)
+    };
+
+    for (int i = startidx; i < endidx; i++) {
+        GridIndex g = cells->at(i);
+        vmath::vec3 c = Grid3d::GridIndexToCellCenter(g, _dx);
+
+        for (int oidx = 0; oidx < 8; oidx++) {
+            vmath::vec3 p = c + particleOffsets[oidx];
+
+            double d = meshSDF->trilinearInterpolate(p - sdfoffset);
+            if (d > 0) {
+                continue;
+            }
+
+            if (_isJitterSurfaceMarkerParticlesEnabled || d < -_dx) {
+                p = _jitterMarkerParticlePosition(p, jitter);
+            }
+
+            if (_solidSDF.trilinearInterpolate(p) > 0) {
+                particles->push_back(p);
+            }
+        }
+    }
+}
+
 void FluidSimulation::_updateInflowMeshFluidSource(MeshFluidSource *source,
                                                    ParticleMaskGrid &maskgrid) {
     if (!source->isEnabled()) {
         return;
     }
 
-    float frameTime = (float)(_currentFrameDeltaTimeRemaining + _currentFrameTimeStep);
-    float frameProgress = 1.0f - frameTime / (float)_currentFrameDeltaTime;
+    float frameProgress = _getFrameInterpolation();
     int numSubsteps = source->getSubstepEmissions();
 
     if (numSubsteps == 0) {
@@ -4420,18 +4583,19 @@ void FluidSimulation::_updateInflowMeshFluidSource(MeshFluidSource *source,
         source->getCells(frameInterpolation, sourceCells);
 
         MeshLevelSet *sourceSDF = source->getMeshLevelSet();
+        vmath::vec3 sourceSDFOffset = source->getMeshLevelSetOffset(); 
         vmath::vec3 velocity = source->getVelocity();
 
         if (source->isAppendObjectVelocityEnabled()) {
-            if (source->isRigidMeshEnabled()) {
+            if (source->isRigidBody()) {
                 RigidBodyVelocity rv = source->getRigidBodyVelocity(_currentFrameDeltaTime);
-                _addNewFluidCells(sourceCells, velocity, rv, *sourceSDF, maskgrid);
+                _addNewFluidCells(sourceCells, velocity, rv, *sourceSDF, sourceSDFOffset, maskgrid);
             } else {
                 VelocityFieldData *vdata = source->getVelocityFieldData();
-                _addNewFluidCells(sourceCells, velocity, vdata, *sourceSDF, maskgrid);
+                _addNewFluidCells(sourceCells, velocity, vdata, *sourceSDF, sourceSDFOffset, maskgrid);
             }
         } else {
-            _addNewFluidCells(sourceCells, velocity, *sourceSDF, maskgrid);
+            _addNewFluidCells(sourceCells, velocity, *sourceSDF, sourceSDFOffset, maskgrid);
         }
     }
 }
@@ -4445,8 +4609,7 @@ void FluidSimulation::_updateOutflowMeshFluidSource(MeshFluidSource *source) {
         return;
     }
 
-    float frameTime = (float)(_currentFrameDeltaTimeRemaining + _currentFrameTimeStep);
-    float frameProgress = 1.0f - frameTime / (float)_currentFrameDeltaTime;
+    float frameProgress = _getFrameInterpolation();
 
     source->setFrame(_currentFrame, frameProgress);
     source->update(_currentFrameDeltaTime);
@@ -4454,6 +4617,7 @@ void FluidSimulation::_updateOutflowMeshFluidSource(MeshFluidSource *source) {
     std::vector<GridIndex> sourceCells;
     source->getCells(frameProgress, sourceCells);
     MeshLevelSet *sourceSDF = source->getMeshLevelSet();
+    vmath::vec3 offset = source->getMeshLevelSetOffset();
 
     Array3d<bool> isOutflowCell(_isize, _jsize, _ksize);
     if (source->isOutflowInversed()) {
@@ -4470,7 +4634,7 @@ void FluidSimulation::_updateOutflowMeshFluidSource(MeshFluidSource *source) {
             vmath::vec3 p = _markerParticles[i].position;
             GridIndex g = Grid3d::positionToGridIndex(p, _dx);
             if (isOutflowCell(g)) {
-                float d = sourceSDF->trilinearInterpolate(p);
+                float d = sourceSDF->trilinearInterpolate(p - offset);
                 if (source->isOutflowInversed() && d >= 0.0f) {
                     isRemoved[i] = true;
                 } else if (!source->isOutflowInversed() && d < 0.0f) {
@@ -4492,7 +4656,7 @@ void FluidSimulation::_updateOutflowMeshFluidSource(MeshFluidSource *source) {
             }
 
             if (isOutflowCell(g)) {
-                float d = sourceSDF->trilinearInterpolate(p);
+                float d = sourceSDF->trilinearInterpolate(p - offset);
                 if (source->isOutflowInversed() && d >= 0.0f) {
                     isRemoved[i] = true;
                 } else if (!source->isOutflowInversed() && d < 0.0f) {
@@ -4576,12 +4740,13 @@ void FluidSimulation::_updateAddedFluidMeshObjectQueue() {
         TriangleMesh mesh = object.getMesh();
         meshSDF.reset();
         meshSDF.fastCalculateSignedDistanceField(mesh, _liquidLevelSetExactBand);
+        vmath::vec3 offset(0.0f, 0.0f, 0.0f);
 
         if (object.isAppendObjectVelocityEnabled()) {
             RigidBodyVelocity rv = object.getRigidBodyVelocity(_currentFrameDeltaTime);
-            _addNewFluidCells(objectCells, velocity, rv, meshSDF, maskgrid);
+            _addNewFluidCells(objectCells, velocity, rv, meshSDF, offset, maskgrid);
         } else {
-            _addNewFluidCells(objectCells, velocity, meshSDF, maskgrid);
+            _addNewFluidCells(objectCells, velocity, meshSDF, offset, maskgrid);
         }
     }
 
@@ -5437,6 +5602,11 @@ double FluidSimulation::_calculateNextTimeStep(double dt) {
     }
 
     return timeStep;
+}
+
+double FluidSimulation::_getFrameInterpolation() {
+    double frameTime = _currentFrameDeltaTimeRemaining + _currentFrameTimeStep;
+    return 1.0 - (frameTime / _currentFrameDeltaTime);
 }
 
 void FluidSimulation::_updateTimingData() {

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2019 Ryan L. Guy
+Copyright (C) 2020 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,7 @@ SOFTWARE.
 #include <vector>
 
 #include "macvelocityfield.h"
+#include "forcefieldgravityscalegrid.h"
 #include "vmath.h"
 
 class ForceField;
@@ -48,7 +49,7 @@ public:
     
     void initialize(int isize, int jsize, int ksize, double dx);
     void addForceField(ForceField *field);
-    void update(double dt);
+    void update(double dt, double frameInterpolation);
 
     vmath::vec3 evaluateForceAtPosition(vmath::vec3 p);
     float evaluateForceAtPositionU(vmath::vec3 p);
@@ -62,29 +63,28 @@ public:
 
 private:
 
-    void _updateForceFields(double dt);
-    void _applyGravityVector();
+    void _updateForceFields(double dt, double frameInterpolation);
+    void _applyForceFields();
+    void _applyGravity();
 
     int _isize = 0;
     int _jsize = 0;
     int _ksize = 0;
     double _dx = 1.0;
     bool _isInitialized = false;
+    bool _isStateChanged = true;
 
     std::vector<ForceField*> _forceFields;
     MACVelocityField _forceField;
+    ForceFieldGravityScaleGrid _gravityScaleGrid;
 
     vmath::vec3 _gravityVector;
 
     // Debug Generation
-    float _lowPercentile = 0.75;
-    float _highPercentile = 1.0;
-    int _numLowPercentileProbes = 400;
-    int _numHighPercentileProbes = 200;
     int _numProbeSegments = 250;
     int _minProbeSegments = 20;
     int _segmentsPerArrow = 50;
-    int _numArrowSegments = 10;
+    int _numArrowSegments = 5;
     float _stepDistanceFactor = 0.125;
 };
 

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2019 Ryan L. Guy
+Copyright (C) 2020 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -109,6 +109,77 @@ double Interpolation::trilinearInterpolate(vmath::vec3 p, double dx, Array3d<flo
     }
 
     return trilinearInterpolate(points, ix, iy, iz);
+}
+
+vmath::vec3 Interpolation::trilinearInterpolate(vmath::vec3 p, double dx, Array3d<vmath::vec3> &grid) {
+
+    GridIndex g = Grid3d::positionToGridIndex(p, dx);
+    vmath::vec3 gpos = Grid3d::GridIndexToPosition(g, dx);
+
+    double inv_dx = 1.0 / dx;
+    double ix = (p.x - gpos.x)*inv_dx;
+    double iy = (p.y - gpos.y)*inv_dx;
+    double iz = (p.z - gpos.z)*inv_dx;
+
+    double pointsX[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    double pointsY[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    double pointsZ[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    int isize = grid.width;
+    int jsize = grid.height;
+    int ksize = grid.depth;
+    if (Grid3d::isGridIndexInRange(g.i,   g.j,   g.k, isize, jsize, ksize))   { 
+        vmath::vec3 point = grid(g.i,   g.j,   g.k);
+        pointsX[0] = point.x;
+        pointsY[0] = point.y;
+        pointsZ[0] = point.z;
+    }
+    if (Grid3d::isGridIndexInRange(g.i+1, g.j,   g.k, isize, jsize, ksize))   { 
+        vmath::vec3 point = grid(g.i+1, g.j,   g.k); 
+        pointsX[1] = point.x;
+        pointsY[1] = point.y;
+        pointsZ[1] = point.z;
+    }
+    if (Grid3d::isGridIndexInRange(g.i,   g.j+1, g.k, isize, jsize, ksize))   { 
+        vmath::vec3 point = grid(g.i,   g.j+1, g.k); 
+        pointsX[2] = point.x;
+        pointsY[2] = point.y;
+        pointsZ[2] = point.z;
+    }
+    if (Grid3d::isGridIndexInRange(g.i,   g.j,   g.k+1, isize, jsize, ksize)) {
+        vmath::vec3 point = grid(g.i,   g.j,   g.k+1); 
+        pointsX[3] = point.x;
+        pointsY[3] = point.y;
+        pointsZ[3] = point.z;
+    }
+    if (Grid3d::isGridIndexInRange(g.i+1, g.j,   g.k+1, isize, jsize, ksize)) { 
+        vmath::vec3 point = grid(g.i+1, g.j,   g.k+1); 
+        pointsX[4] = point.x;
+        pointsY[4] = point.y;
+        pointsZ[4] = point.z;
+    }
+    if (Grid3d::isGridIndexInRange(g.i,   g.j+1, g.k+1, isize, jsize, ksize)) { 
+        vmath::vec3 point = grid(g.i,   g.j+1, g.k+1); 
+        pointsX[5] = point.x;
+        pointsY[5] = point.y;
+        pointsZ[5] = point.z;
+    }
+    if (Grid3d::isGridIndexInRange(g.i+1, g.j+1, g.k, isize, jsize, ksize))   { 
+        vmath::vec3 point = grid(g.i+1, g.j+1, g.k); 
+        pointsX[6] = point.x;
+        pointsY[6] = point.y;
+        pointsZ[6] = point.z;
+    }
+    if (Grid3d::isGridIndexInRange(g.i+1, g.j+1, g.k+1, isize, jsize, ksize)) { 
+        vmath::vec3 point = grid(g.i+1, g.j+1, g.k+1); 
+        pointsX[7] = point.x;
+        pointsY[7] = point.y;
+        pointsZ[7] = point.z;
+    }
+
+    vmath::vec3 result(trilinearInterpolate(pointsX, ix, iy, iz),
+                       trilinearInterpolate(pointsY, ix, iy, iz),
+                       trilinearInterpolate(pointsZ, ix, iy, iz));
+    return result;
 }
 
 /* 

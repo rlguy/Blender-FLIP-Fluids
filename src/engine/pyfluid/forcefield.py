@@ -1,6 +1,6 @@
 # MIT License
 # 
-# Copyright (c) 2019 Ryan L. Guy
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -96,6 +96,18 @@ class ForceField():
         pb.execute_lib_func(libfunc, [self(), value])
 
     @property
+    def max_force_limit_factor(self):
+        libfunc = lib.ForceField_get_max_force_limit_factor
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_float)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @max_force_limit_factor.setter
+    def max_force_limit_factor(self, value):
+        libfunc = lib.ForceField_set_max_force_limit_factor
+        pb.init_lib_func(libfunc, [c_void_p, c_float, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), value])
+
+    @property
     def enable_min_distance(self):
         libfunc = lib.ForceField_is_min_distance_enabled
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
@@ -146,5 +158,29 @@ class ForceField():
     @max_distance.setter
     def max_distance(self, value):
         libfunc = lib.ForceField_set_max_distance
+        pb.init_lib_func(libfunc, [c_void_p, c_float, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), value])
+
+    @property
+    def gravity_scale(self):
+        libfunc = lib.ForceField_get_gravity_scale
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_float)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @gravity_scale.setter
+    def gravity_scale(self, value):
+        libfunc = lib.ForceField_set_gravity_scale
+        pb.init_lib_func(libfunc, [c_void_p, c_float, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), value])
+
+    @property
+    def gravity_scale_width(self):
+        libfunc = lib.ForceField_get_gravity_scale
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_float)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @gravity_scale_width.setter
+    def gravity_scale_width(self, value):
+        libfunc = lib.ForceField_set_gravity_scale_width
         pb.init_lib_func(libfunc, [c_void_p, c_float, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), value])

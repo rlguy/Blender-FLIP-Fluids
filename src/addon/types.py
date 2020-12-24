@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,36 +27,53 @@ object_types_mesh = (
     ('TYPE_OBSTACLE',    "Obstacle",    "Object represents an obstacle", 3),
     ('TYPE_INFLOW',      "Inflow",      "Object adds fluid to the simulation", 4),
     ('TYPE_OUTFLOW',     "Outflow",     "Object removes fluid from the simulation", 5),
-    )
-
-# Force field features currently hidden from UI
-"""
-object_types_mesh = (
-    ('TYPE_NONE',        "None",        "", 0),
-    ('TYPE_DOMAIN',      "Domain",      "Bounding box of this object represents the computational domain of the fluid simulation", 1),
-    ('TYPE_FLUID',       "Fluid",       "Object represents a volume of fluid in the simulation", 2),
-    ('TYPE_OBSTACLE',    "Obstacle",    "Object represents an obstacle", 3),
-    ('TYPE_INFLOW',      "Inflow",      "Object adds fluid to the simulation", 4),
-    ('TYPE_OUTFLOW',     "Outflow",     "Object removes fluid from the simulation", 5),
     ('TYPE_FORCE_FIELD', "Force Field", "Object acts as a force field to push fluid within the simulation", 6)
     )
-"""
 
 object_types_empty = (
     ('TYPE_NONE',        "None",        "", 0),
     ('TYPE_FORCE_FIELD', "Force Field", "Object acts as a force field to push fluid within the simulation", 6)
     )
 
+motion_filter_types = (
+    ('MOTION_FILTER_TYPE_ALL',       "All",       "Select all object animation types: static, keyframed, and animated."),
+    ('MOTION_FILTER_TYPE_STATIC',    "Static",    "Select only static objects. Objects that do not move"),
+    ('MOTION_FILTER_TYPE_KEYFRAMED', "Keyframed", "Select only keyframed objects. Objects with keyframed location/rotation/scale or f-curves"),
+    ('MOTION_FILTER_TYPE_ANIMATED',  "Animated",  "Select only animated objects. Objects with complex motion such as animation through parenting or armatures. These objects must be marked as animated in their object settings.")
+)
+
 force_field_types = (
-    ('FORCE_FIELD_TYPE_POINT',   "Point Force",   "Force field directed towards a single point", 0),
-    ('FORCE_FIELD_TYPE_SURFACE', "Surface Force", "Force field directed towards a surface", 1),
+    ('FORCE_FIELD_TYPE_POINT',        "Point Force",                                   "Force field directed towards a single point", 'EMPTY_AXIS', 0),
+    ('FORCE_FIELD_TYPE_SURFACE',      "Surface Force",                                 "Force field directed towards an object's surface", 'OUTLINER_DATA_SURFACE', 1),
+    ('FORCE_FIELD_TYPE_VOLUME',       "Volume Force",                                  "Force field directed to fill an object's volume", 'MESH_MONKEY', 2),
+    ('FORCE_FIELD_TYPE_CURVE',        "Curve Guide Force",                             "Force field directed along a curve object", 'FORCE_CURVE', 3),
+    ('FORCE_FIELD_TYPE_OTHER',        "More coming soon! (in development)",            "More force field modes such as vortex, turbublence, and programmable fields are in development! Try our experimental builds to test the latest features", 'FUND', 4),
     )
+
+# Uncomment for experimental builds
+"""
+force_field_types = (
+    ('FORCE_FIELD_TYPE_POINT',        "Point Force",                                   "Force field directed towards a single point", 0),
+    ('FORCE_FIELD_TYPE_SURFACE',      "Surface Force",                                 "Force field directed towards an object's surface", 1),
+    ('FORCE_FIELD_TYPE_VOLUME',       "Volume Force",                                  "Force field directed to fill an object's volume", 2),
+    ('FORCE_FIELD_TYPE_CURVE',        "Curve Guide Force",                             "Force field directed along a curve object", 3),
+    ('FORCE_FIELD_TYPE_VORTEX',       "(Unavailable, in progress) Vortex Force",       "Force field directed to spiral around the object's local Z-axis", 4),
+    ('FORCE_FIELD_TYPE_TURBULENCE',   "(Unavailable, in progress) Turbulence Force",   "Force field directed by random and chaotic 3D noise", 5),
+    ('FORCE_FIELD_TYPE_PROGRAMMABLE', "(Unavailable, in progress) Programmable Force", "Force field directed by a programmable vector field via Python scripting", 6),
+    )
+"""
 
 force_field_resolution_modes = (
     ('FORCE_FIELD_RESOLUTION_LOW',    "Low",    "Low resolution force field grid. Domain resolution divided by 4."),
-    ('FORCE_FIELD_RESOLUTION_NORMAL', "Normal", "Normal resolution force field grid. Domain resolution divided by 3."),
+    ('FORCE_FIELD_RESOLUTION_NORMAL', "Medium", "Medium resolution force field grid. Domain resolution divided by 3."),
     ('FORCE_FIELD_RESOLUTION_HIGH',   "High",   "High resolution force field grid. Domain resolution divided by 2."),
     ('FORCE_FIELD_RESOLUTION_ULTRA',  "Ultra",  "Very high resolution force field grid. Matches domain resolution."),
+    )
+
+force_field_falloff_shapes = (
+    ('FORCE_FIELD_FALLOFF_SPHERE', "Sphere", "Field strength falloff is uniform is all directions, as in a sphere"),
+    ('FORCE_FIELD_FALLOFF_TUBE',   "Tube",   "Field strength falloff results in a tube-shaped force field. Direction of the tube uses the object local Z-axis."),
+    ('FORCE_FIELD_FALLOFF_CONE',   "Cone",   "Field strength falloff results in a cone-shaped force field. Direction of the cone uses the object local Z-axis."),
     )
 
 frame_range_modes = (
@@ -69,6 +86,12 @@ frame_rate_modes = (
     ('FRAME_RATE_MODE_CUSTOM', "Custom", "Use a custom frame rate")
     )
 
+simulation_playback_mode = (
+    ('PLAYBACK_MODE_TIMELINE',       "Timeline",       "Use the current timeline frame for simulation playback"),
+    ('PLAYBACK_MODE_OVERRIDE_FRAME', "Override Frame", "Use a custom frame for simulation playback instead of the current timeline frame. TIP: the overridden frame value can be keyframed for complex control of playback"),
+    ('PLAYBACK_MODE_HOLD_FRAME',     "Hold Frame",     "Hold a frame in place, regardless of timeline position")
+    )
+
 frame_offset_types = (
     ('OFFSET_TYPE_TIMELINE', "Timeline Frame", "Trigger fluid object at frame in timeline"),
     ('OFFSET_TYPE_FRAME',    "Frame Offset",   "Trigger fluid object at a frame offset from start of the simulation")
@@ -76,12 +99,23 @@ frame_offset_types = (
 
 fluid_velocity_modes = (
     ('FLUID_VELOCITY_MANUAL', "Manual", "Set fluid velocity vector manually."),
+    ('FLUID_VELOCITY_AXIS',   "Axis",   "Set fluid velocity in direction of the object's local X/Y/Z axis."),
     ('FLUID_VELOCITY_TARGET', "Target", "Set fluid velocity vector towards a target object.")
     )
 
 inflow_velocity_modes = (
-    ('INFLOW_VELOCITY_MANUAL', "Manual", "Set inflow velocity vector manually."),
+    ('INFLOW_VELOCITY_MANUAL', "Vector", "Set inflow velocity vector manually."),
+    ('INFLOW_VELOCITY_AXIS',   "Axis",   "Set inflow velocity in direction of the object's local X/Y/Z axis."),
     ('INFLOW_VELOCITY_TARGET', "Target", "Set inflow velocity vector towards a target object.")
+    )
+
+local_axis_directions = (
+    ('LOCAL_AXIS_POS_X', "+X", "Direction of object's local +X axis."),
+    ('LOCAL_AXIS_POS_Y', "+Y", "Direction of object's local +Y axis."),
+    ('LOCAL_AXIS_POS_Z', "+Z", "Direction of object's local +Z axis."),
+    ('LOCAL_AXIS_NEG_X', "−X", "Direction of object's local −X axis."),
+    ('LOCAL_AXIS_NEG_Y', "−Y", "Direction of object's local −Y axis."),
+    ('LOCAL_AXIS_NEG_Z', "−Z", "Direction of object's local −Z axis.")
     )
 
 mesh_types = (
@@ -90,9 +124,9 @@ mesh_types = (
     )
 
 display_modes = (
-    ('DISPLAY_NONE',    "None",    "Display nothing"),
+    ('DISPLAY_FINAL',   "Final",   "Display final quality results"),
     ('DISPLAY_PREVIEW', "Preview", "Display preview quality results"),
-    ('DISPLAY_FINAL',   "Final",   "Display final quality results")
+    ('DISPLAY_NONE',    "None",    "Display nothing")
     )
 
 whitewater_view_settings_modes = (
@@ -113,7 +147,7 @@ whitewater_particle_object_modes = (
 
 whitewater_ui_modes = (
     ('WHITEWATER_UI_MODE_BASIC',    "Basic",    "Display only the basic and most important whitewater simulation parameters"),
-    ('WHITEWATER_UI_MODE_ADVANCED', "Advanced", "Display all whitewater simulation parameters")
+    ('WHITEWATER_UI_MODE_ADVANCED', "Advanced", "Display all whitewater simulation parameters. For most simulations, you will not need to change these settings from their defaults.")
     )
 
 cache_info_modes = (
@@ -170,15 +204,12 @@ grid_display_modes = (
     ('GRID_DISPLAY_PREVIEW',     "Preview Mesh Grid", "Display the domain surface preview mesh grid"),
     )
 
-# Force field features currently hidden from UI
-"""
 grid_display_modes = (
     ('GRID_DISPLAY_SIMULATION',  "Simulation Grid",   "Display the domain simulation grid"),
     ('GRID_DISPLAY_MESH',        "Final Mesh Grid",   "Display the domain surface mesh grid"),
     ('GRID_DISPLAY_PREVIEW',     "Preview Mesh Grid", "Display the domain surface preview mesh grid"),
     ('GRID_DISPLAY_FORCE_FIELD', "Force Field Grid",  "Display the domain force field grid"),
     )
-"""
 
 gradient_interpolation_modes = (
     ('GRADIENT_NONE', "No Gradient",  "Do not interpolate between colors"),

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2019 Ryan L. Guy
+Copyright (C) 2020 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +31,7 @@ SOFTWARE.
 #include <algorithm>
 
 #include "forcefield.h"
+#include "aabb.h"
 
 
 ForceFieldGrid::ForceFieldGrid() {
@@ -50,11 +51,13 @@ void ForceFieldGrid::initialize(int isize, int jsize, int ksize, double dx) {
     _dx = dx;
 
     _forceField = MACVelocityField(_isize, _jsize, _ksize, _dx);
+    _gravityScaleGrid = ForceFieldGravityScaleGrid(_isize + 1, _jsize + 1, _ksize + 1);
 
     for (size_t i = 0; i < _forceFields.size(); i++) {
         _forceFields[i]->initialize(isize, jsize, ksize, dx);
     }
 
+    _isStateChanged = true;
     _isInitialized = true;
 }
 
@@ -64,18 +67,32 @@ void ForceFieldGrid::addForceField(ForceField *field) {
     }
 
     _forceFields.push_back(field);
+    _isStateChanged = true;
 }
 
-void ForceFieldGrid::update(double dt) {
-    _updateForceFields(dt);
-
-    _forceField.clear();
-    _forceField.setOutOfRangeVector(_gravityVector);
-    _applyGravityVector();
+void ForceFieldGrid::update(double dt, double frameInterpolation) {
+    _updateForceFields(dt, frameInterpolation);
 
     for (size_t i = 0; i < _forceFields.size(); i++) {
-        _forceFields[i]->addForceFieldToGrid(_forceField);
+        if (_forceFields[i]->isStateChanged()) {
+            _isStateChanged = true;
+            break;
+        }
     }
+
+    if (!_isStateChanged) {
+        return;
+    }
+
+    _forceField.clear();
+    _applyForceFields();
+    _applyGravity();
+
+    for (size_t i = 0; i < _forceFields.size(); i++) {
+        _forceFields[i]->clearState();
+    }
+
+    _isStateChanged = false;
 }
 
 vmath::vec3 ForceFieldGrid::getGravityVector() {
@@ -83,6 +100,10 @@ vmath::vec3 ForceFieldGrid::getGravityVector() {
 }
 
 void ForceFieldGrid::setGravityVector(vmath::vec3 g) {
+    float eps = 1e-6;
+    if ((g - _gravityVector).length() > eps) {
+        _isStateChanged = true;
+    }
     _gravityVector = g;
 }
 
@@ -104,6 +125,11 @@ float ForceFieldGrid::evaluateForceAtPositionW(vmath::vec3 p) {
 
 void ForceFieldGrid::generateDebugNodes(std::vector<ForceFieldDebugNode> &nodes) {
     float eps = 1e-6;
+
+    int gridpad = 1;
+    vmath::vec3 debugmin = Grid3d::GridIndexToPosition(gridpad, gridpad, gridpad, _dx);
+    vmath::vec3 debugmax = Grid3d::GridIndexToPosition(_isize - gridpad, _jsize - gridpad, _ksize - gridpad, _dx);
+    AABB debugBounds(debugmin, debugmax);
 
     std::vector<vmath::vec3> probes;
     for (size_t i = 0; i < _forceFields.size(); i++) {
@@ -212,25 +238,51 @@ void ForceFieldGrid::generateDebugNodes(std::vector<ForceFieldDebugNode> &nodes)
         }
 
         forceline.insert(forceline.end(), arrowNodes.begin(), arrowNodes.end());
-        nodes.insert(nodes.end(), forceline.begin(), forceline.end());
-        
+        for (size_t fidx = 0; fidx < forceline.size(); fidx++) {
+            ForceFieldDebugNode n = forceline[fidx];
+            vmath::vec3 p(n.x, n.y, n.z);
+            if (debugBounds.isPointInside(p)) {
+                nodes.push_back(n);
+            }
+        }
     }
 }
 
-void ForceFieldGrid::_updateForceFields(double dt) {
+void ForceFieldGrid::_updateForceFields(double dt, double frameInterpolation) {
     for (size_t i = 0; i < _forceFields.size(); i++) {
-        _forceFields[i]->update(dt);
+        _forceFields[i]->update(dt, frameInterpolation);
     }
 }
 
-void ForceFieldGrid::_applyGravityVector() {
-    float eps = 1e-6;
+void ForceFieldGrid::_applyForceFields() {
+    for (size_t i = 0; i < _forceFields.size(); i++) {
+        if (_forceFields[i]->isEnabled()) {
+            _forceFields[i]->addForceFieldToGrid(_forceField);
+        }
+    }
+}
 
+void ForceFieldGrid::_applyGravity() {
+    _gravityScaleGrid.reset();
+    for (size_t i = 0; i < _forceFields.size(); i++) {
+        if (_forceFields[i]->isEnabled()) {
+            _forceFields[i]->addGravityScaleToGrid(_gravityScaleGrid);
+        }
+    }
+    _gravityScaleGrid.normalize();
+
+    _forceField.setOutOfRangeVector(_gravityVector);
+
+
+
+    float eps = 1e-6;
     if (fabs(_gravityVector.x) > eps) {
         for (int k = 0; k < _ksize; k++) {
             for (int j = 0; j < _jsize; j++) {
                 for (int i = 0; i < _isize + 1; i++) {
-                    _forceField.addU(i, j, k, _gravityVector.x);
+                    vmath::vec3 p = Grid3d::FaceIndexToPositionU(i, j, k, _dx);
+                    float scale = Interpolation::trilinearInterpolate(p, _dx, _gravityScaleGrid.gravityScale);
+                    _forceField.addU(i, j, k, scale * _gravityVector.x);
                 }
             }
         }
@@ -240,7 +292,9 @@ void ForceFieldGrid::_applyGravityVector() {
         for (int k = 0; k < _ksize; k++) {
             for (int j = 0; j < _jsize + 1; j++) {
                 for (int i = 0; i < _isize; i++) {
-                    _forceField.addV(i, j, k, _gravityVector.y);
+                    vmath::vec3 p = Grid3d::FaceIndexToPositionV(i, j, k, _dx);
+                    float scale = Interpolation::trilinearInterpolate(p, _dx, _gravityScaleGrid.gravityScale);
+                    _forceField.addV(i, j, k, scale * _gravityVector.y);
                 }
             }
         }
@@ -250,7 +304,9 @@ void ForceFieldGrid::_applyGravityVector() {
         for (int k = 0; k < _ksize + 1; k++) {
             for (int j = 0; j < _jsize; j++) {
                 for (int i = 0; i < _isize; i++) {
-                    _forceField.addW(i, j, k, _gravityVector.z);
+                    vmath::vec3 p = Grid3d::FaceIndexToPositionW(i, j, k, _dx);
+                    float scale = Interpolation::trilinearInterpolate(p, _dx, _gravityScaleGrid.gravityScale);
+                    _forceField.addW(i, j, k, scale * _gravityVector.z);
                 }
             }
         }

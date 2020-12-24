@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,8 +17,11 @@
 import sys, os, shutil, zipfile, json, struct, traceback, math
 
 from .objects import flip_fluid_map
+from .objects import flip_fluid_geometry_database
 from .operators import bake_operators
+
 from .pyfluid import (
+        pyfluid,
         FluidSimulation,
         TriangleMesh,
         Vector3,
@@ -26,7 +29,9 @@ from .pyfluid import (
         MeshObject,
         MeshFluidSource,
         ForceFieldPoint,
-        ForceFieldSurface
+        ForceFieldSurface,
+        ForceFieldVolume,
+        ForceFieldCurve
         )
 
 from .utils import cache_utils
@@ -34,6 +39,7 @@ from .utils import cache_utils
 FLUIDSIM_OBJECT = None
 SIMULATION_DATA = None
 CACHE_DIRECTORY = ""
+GEOMETRY_DATABASE = None
 
 
 class LibraryVersionError(Exception):
@@ -73,63 +79,33 @@ def __get_cache_directory():
     return CACHE_DIRECTORY
 
 
+def __set_geometry_database(geometry_database):
+    global GEOMETRY_DATABASE
+    GEOMETRY_DATABASE = geometry_database
+
+
+def __get_geometry_database():
+    global GEOMETRY_DATABASE
+    return GEOMETRY_DATABASE
+
+
 def __get_export_directory():
     return os.path.join(CACHE_DIRECTORY, "export")
 
 
-def __get_mesh_directory(object_name):
-    name_slug = cache_utils.string_to_cache_slug(object_name)
-    export_directory = __get_export_directory()
-    mesh_directory = os.path.join(export_directory, name_slug)
-    if not os.path.isdir(mesh_directory):
-        # This mesh directory naming scheme is deprecated in FLIP Fluids > 1.0.7
-        # See issue #462 for more info
-        deprecated_mesh_directory = os.path.join(export_directory, object_name)
-        if os.path.isdir(deprecated_mesh_directory):
-            mesh_directory = deprecated_mesh_directory
-    return mesh_directory
+def __get_geometry_database_filepath():
+    data = __get_simulation_data()
+    return data.domain_data.initialize.geometry_database_filepath
 
 
-def __get_mesh_info_filepath(object_name):
-    mesh_directory = __get_mesh_directory(object_name)
-    return os.path.join(mesh_directory, "mesh.info")
-
-
-def __get_static_mesh_filepath(object_name):
-    return os.path.join(__get_mesh_directory(object_name), "mesh.bobj")
-
-
-def __get_keyframed_mesh_filepath(object_name):
-    return os.path.join(__get_mesh_directory(object_name), "mesh.bobj")
-
-
-def __get_keyframed_transform_filepath(object_name):
-    return os.path.join(__get_mesh_directory(object_name), "transforms.data")
-
-
-def __get_animated_mesh_filepath(object_name, frameno):
-    mesh_name = "mesh" + str(frameno).zfill(6) + ".bobj"
-    return os.path.join(__get_mesh_directory(object_name), mesh_name)
-
-
-def __is_object_static(object_name):
-    info = __extract_mesh_info(object_name)
-    return info['mesh_type'] == 'STATIC'
-
-
-def __is_object_keyframed(object_name):
-    info = __extract_mesh_info(object_name)
-    return info['mesh_type'] == 'KEYFRAMED'
-
-
-def __is_object_animated(object_name):
-    info = __extract_mesh_info(object_name)
-    return info['mesh_type'] == 'ANIMATED'
+def __get_name_slug(object_name):
+    return cache_utils.string_to_cache_slug(object_name)
 
 
 def __is_object_dynamic(object_name):
-    info = __extract_mesh_info(object_name)
-    return info['mesh_type'] == 'KEYFRAMED' or info['mesh_type'] == 'ANIMATED'
+    name_slug = __get_name_slug(object_name)
+    geometry_database = __get_geometry_database()
+    return geometry_database.is_object_dynamic(name_slug)
 
 
 def __get_timeline_frame():
@@ -144,38 +120,13 @@ def __get_frame_id():
     return fluidsim.get_current_frame()
 
 
-def __extract_mesh_info(object_name):
-    mesh_directory = __get_mesh_directory(object_name)
-    if not os.path.isdir(mesh_directory):
-        msg = "Error extracting mesh data. Exported object not found: <" + object_name + ">"
-        raise Exception(msg)
-
-    info_filepath = __get_mesh_info_filepath(object_name)
-    if not os.path.isfile(info_filepath):
-        msg = "Error extracting mesh info. Exported object info not found: <" 
-        msg += info_filepath + ">"
-        raise Exception(msg)
-
-    with open(info_filepath, 'r') as f:
-        json_data = json.loads(f.read())
-
-    return json_data
-
-
 def __extract_static_mesh(object_name):
-    mesh_directory = __get_mesh_directory(object_name)
-    if not os.path.isdir(mesh_directory):
+    name_slug = __get_name_slug(object_name)
+    geometry_database = __get_geometry_database()
+    bobj_data = geometry_database.get_mesh_static(name_slug)
+    if bobj_data is None:
         msg = "Error extracting mesh data. Exported object not found: <" + object_name + ">"
         raise Exception(msg)
-
-    filepath_static = __get_static_mesh_filepath(object_name)
-    if not os.path.isfile(filepath_static):
-        msg = "Error extracting mesh data. Exported object frame not found: <" 
-        msg += object_name + ">"
-        raise Exception(msg)
-
-    with open(filepath_static, 'rb') as f:
-        bobj_data = f.read()
 
     data = __get_simulation_data()
     scale = data.domain_data.initialize.scale
@@ -188,32 +139,23 @@ def __extract_static_mesh(object_name):
 
 
 def __extract_transform_data(object_name, frameno):
-    transform_filepath = __get_keyframed_transform_filepath(object_name)
-    if not os.path.isfile(transform_filepath):
+    name_slug = __get_name_slug(object_name)
+    geometry_database = __get_geometry_database()
+    matrix_coefficients = geometry_database.get_mesh_keyframed_transform(name_slug, frameno)
+    if matrix_coefficients is None:
         msg = "Error extracting mesh transforms. Exported object not found: <" + object_name + ">"
         raise Exception(msg)
 
-    with open(transform_filepath, 'r') as f:
-        matrix_data = json.loads(f.read())
-
-    key = str(frameno)
-    if not key in matrix_data:
-        msg = "Error extracting mesh transforms. Exported transform frame not found: <" 
-        msg += object_name + ", " + str(frameno) + ">"
-        raise Exception(msg)
-
-    return matrix_data[key]
+    return matrix_coefficients
 
 
 def __extract_keyframed_mesh(object_name, frameno):
-    mesh_directory = __get_mesh_directory(object_name)
-    filepath_keyframed = __get_keyframed_mesh_filepath(object_name)
-    if not os.path.isdir(mesh_directory) or not os.path.isfile(filepath_keyframed):
+    name_slug = __get_name_slug(object_name)
+    geometry_database = __get_geometry_database()
+    bobj_data = geometry_database.get_mesh_static(name_slug)
+    if bobj_data is None:
         msg = "Error extracting mesh data. Exported object not found: <" + object_name + ">"
         raise Exception(msg)
-
-    with open(filepath_keyframed, 'rb') as f:
-        bobj_data = f.read()
 
     tmesh = TriangleMesh.from_bobj(bobj_data)
     tmesh.apply_transform(__extract_transform_data(object_name, frameno))
@@ -228,19 +170,9 @@ def __extract_keyframed_mesh(object_name, frameno):
 
 
 def __extract_animated_mesh(object_name, frameno):
-    mesh_directory = __get_mesh_directory(object_name)
-    if not os.path.isdir(mesh_directory):
-        msg = "Error extracting mesh data. Exported object not found: <" + object_name + ">"
-        raise Exception(msg)
-
-    filepath_animated = __get_animated_mesh_filepath(object_name, frameno)
-    if not os.path.isfile(filepath_animated):
-        msg = "Error extracting mesh data. Exported object frame not found: <" 
-        msg += object_name + ", " + str(frameno) + ">"
-        raise Exception(msg)
-
-    with open(filepath_animated, 'rb') as f:
-        bobj_data = f.read()
+    name_slug = __get_name_slug(object_name)
+    geometry_database = __get_geometry_database()
+    bobj_data = geometry_database.get_mesh_animated(name_slug, frameno)
 
     data = __get_simulation_data()
     scale = data.domain_data.initialize.scale
@@ -253,17 +185,35 @@ def __extract_animated_mesh(object_name, frameno):
 
 
 def __extract_mesh(object_name, frameno):
-    info = __extract_mesh_info(object_name)
-    if info['mesh_type'] == 'STATIC':
+    name_slug = __get_name_slug(object_name)
+    geometry_database = __get_geometry_database()
+    motion_type = geometry_database.get_object_motion_export_type(name_slug)
+
+    if motion_type == 'STATIC':
         return __extract_static_mesh(object_name)
-    elif info['mesh_type'] == 'KEYFRAMED': 
+    elif motion_type == 'KEYFRAMED': 
         return __extract_keyframed_mesh(object_name, frameno)
-    elif info['mesh_type'] == 'ANIMATED':
+    elif motion_type == 'ANIMATED':
         return __extract_animated_mesh(object_name, frameno)
 
 
 def __extract_static_frame_mesh(object_name):
     return __extract_static_mesh(object_name)
+
+
+def __extract_force_field_mesh(object_name, frame_id=0):
+    name_slug = __get_name_slug(object_name)
+    geometry_database = __get_geometry_database()
+    export_dict = geometry_database.get_object_geometry_export_types(name_slug)
+    if export_dict['mesh']:
+        return __extract_mesh(object_name, frame_id)
+    elif export_dict['centroid']:
+        centroid = __extract_centroid(object_name, frame_id)
+        tmesh = TriangleMesh()
+        tmesh.vertices.extend([centroid[0], centroid[1], centroid[2]])
+        return tmesh
+    elif export_dict['curve']:
+        return __extract_curve_mesh(object_name, frame_id)
 
 
 def __extract_keyframed_frame_meshes(object_name, frameno):
@@ -286,7 +236,7 @@ def __extract_animated_frame_meshes(object_name, frameno):
         mesh_previous = mesh_current
     else:
         mesh_previous = __extract_animated_mesh(object_name, frameno - 1)
-        
+
     if not __animated_mesh_exists(object_name, frameno + 1):
         mesh_next = mesh_current
     else:
@@ -294,32 +244,189 @@ def __extract_animated_frame_meshes(object_name, frameno):
     return mesh_previous, mesh_current, mesh_next
 
 
+def __extract_keyframed_frame_centroid_meshes(object_name, frameno):
+    mesh_current = __extract_force_field_mesh(object_name, frameno)
+    if frameno - 1 < 0 or not __keyframed_centroid_exists(object_name, frameno - 1):
+        mesh_previous = mesh_current
+    else:
+        mesh_previous = __extract_force_field_mesh(object_name, frameno - 1)
+
+    if not __keyframed_centroid_exists(object_name, frameno + 1):
+        mesh_next = mesh_current
+    else:
+        mesh_next = __extract_force_field_mesh(object_name, frameno + 1)
+    return mesh_previous, mesh_current, mesh_next
+
+
+def __extract_animated_frame_centroid_meshes(object_name, frameno):
+    mesh_current = __extract_force_field_mesh(object_name, frameno)
+    if frameno - 1 < 0 or not __animated_centroid_exists(object_name, frameno - 1):
+        mesh_previous = mesh_current
+    else:
+        mesh_previous = __extract_force_field_mesh(object_name, frameno - 1)
+
+    if not __animated_centroid_exists(object_name, frameno + 1):
+        mesh_next = mesh_current
+    else:
+        mesh_next = __extract_force_field_mesh(object_name, frameno + 1)
+    return mesh_previous, mesh_current, mesh_next
+
+
+def __extract_keyframed_frame_curve_meshes(object_name, frameno):
+    mesh_current = __extract_force_field_mesh(object_name, frameno)
+    if frameno - 1 < 0 or not __keyframed_curve_exists(object_name, frameno - 1):
+        mesh_previous = mesh_current
+    else:
+        mesh_previous = __extract_force_field_mesh(object_name, frameno - 1)
+
+    if not __keyframed_curve_exists(object_name, frameno + 1):
+        mesh_next = mesh_current
+    else:
+        mesh_next = __extract_force_field_mesh(object_name, frameno + 1)
+    return mesh_previous, mesh_current, mesh_next
+
+
+def __extract_animated_frame_curve_meshes(object_name, frameno):
+    mesh_current = __extract_force_field_mesh(object_name, frameno)
+    if frameno - 1 < 0 or not __animated_curve_exists(object_name, frameno - 1):
+        mesh_previous = mesh_current
+    else:
+        mesh_previous = __extract_force_field_mesh(object_name, frameno - 1)
+
+    if not __animated_curve_exists(object_name, frameno + 1):
+        mesh_next = mesh_current
+    else:
+        mesh_next = __extract_force_field_mesh(object_name, frameno + 1)
+    return mesh_previous, mesh_current, mesh_next
+
+
 def __extract_dynamic_frame_meshes(object_name, frameno):
-    info = __extract_mesh_info(object_name)
-    if info['mesh_type'] == 'KEYFRAMED': 
+    name_slug = __get_name_slug(object_name)
+    geometry_database = __get_geometry_database()
+    motion_type = geometry_database.get_object_motion_export_type(name_slug)
+    if motion_type == 'KEYFRAMED':
         return __extract_keyframed_frame_meshes(object_name, frameno)
-    elif info['mesh_type'] == 'ANIMATED':
+    elif motion_type == 'ANIMATED':
         return __extract_animated_frame_meshes(object_name, frameno)
 
 
-def __static_mesh_exists(object_name):
-    mesh_directory = __get_mesh_directory(object_name)
-    if not os.path.isdir(mesh_directory):
-        return False
-    filepath_static = __get_static_mesh_filepath(object_name)
-    return os.path.isfile(filepath_static)
+def __extract_dynamic_force_field_frame_meshes(object_name, frameno):
+    name_slug = __get_name_slug(object_name)
+    geometry_database = __get_geometry_database()
+    motion_type = geometry_database.get_object_motion_export_type(name_slug)
+    export_dict = geometry_database.get_object_geometry_export_types(name_slug)
+    if export_dict['mesh']:
+        if motion_type == 'KEYFRAMED':
+            return __extract_keyframed_frame_meshes(object_name, frameno)
+        elif motion_type == 'ANIMATED':
+            return __extract_animated_frame_meshes(object_name, frameno)
+    elif export_dict['centroid']:
+        if motion_type == 'KEYFRAMED':
+            return __extract_keyframed_frame_centroid_meshes(object_name, frameno)
+        elif motion_type == 'ANIMATED':
+            return __extract_animated_frame_centroid_meshes(object_name, frameno)
+    elif export_dict['curve']:
+        if motion_type == 'KEYFRAMED':
+            return __extract_keyframed_frame_curve_meshes(object_name, frameno)
+        elif motion_type == 'ANIMATED':
+            return __extract_animated_frame_curve_meshes(object_name, frameno)
+
+
+def __extract_local_axis(object_name, frameno=0):
+    name_slug = __get_name_slug(object_name)
+    geometry_database = __get_geometry_database()
+    motion_type = geometry_database.get_object_motion_export_type(name_slug)
+    if motion_type == 'STATIC':
+        local_x, local_y, local_z = geometry_database.get_axis_static(name_slug)
+    elif motion_type == 'KEYFRAMED':
+        local_x, local_y, local_z = geometry_database.get_axis_keyframed(name_slug, frameno)
+    elif motion_type == 'ANIMATED':
+        local_x, local_y, local_z = geometry_database.get_axis_animated(name_slug, frameno)
+    return local_x, local_y, local_z
 
 
 def __keyframed_mesh_exists(object_name, frameno):
-    mesh_directory = __get_mesh_directory(object_name)
-    if not os.path.isdir(mesh_directory):
-        return False
-    info = __extract_mesh_info(object_name)
-    return frameno >= info['frame_start'] and frameno <= info['frame_end']
+    name_slug = __get_name_slug(object_name)
+    geometry_database = __get_geometry_database()
+    return geometry_database.mesh_keyframed_exists(name_slug, frameno)
 
 
 def __animated_mesh_exists(object_name, frameno):
-    return __keyframed_mesh_exists(object_name, frameno)
+    name_slug = __get_name_slug(object_name)
+    geometry_database = __get_geometry_database()
+    return geometry_database.mesh_animated_exists(name_slug, frameno)
+
+
+def __keyframed_centroid_exists(object_name, frameno):
+    name_slug = __get_name_slug(object_name)
+    geometry_database = __get_geometry_database()
+    return geometry_database.centroid_keyframed_exists(name_slug, frameno)
+
+
+def __animated_centroid_exists(object_name, frameno):
+    name_slug = __get_name_slug(object_name)
+    geometry_database = __get_geometry_database()
+    return geometry_database.centroid_animated_exists(name_slug, frameno)
+
+
+def __extract_centroid(object_name, frameno):
+    name_slug = __get_name_slug(object_name)
+    geometry_database = __get_geometry_database()
+    motion_type = geometry_database.get_object_motion_export_type(name_slug)
+
+    if motion_type == 'STATIC':
+        centroid = geometry_database.get_centroid_static(name_slug)
+    elif motion_type == 'KEYFRAMED': 
+        centroid = geometry_database.get_centroid_keyframed(name_slug, frameno)
+    elif motion_type == 'ANIMATED':
+        centroid = geometry_database.get_centroid_animated(name_slug, frameno)
+
+    data = __get_simulation_data()
+    scale = data.domain_data.initialize.scale
+    bbox = data.domain_data.initialize.bbox
+    centroid[0] = (centroid[0] - bbox.x) * scale
+    centroid[1] = (centroid[1] - bbox.y) * scale
+    centroid[2] = (centroid[2] - bbox.z) * scale
+
+    return centroid
+
+
+def __keyframed_curve_exists(object_name, frameno):
+    name_slug = __get_name_slug(object_name)
+    geometry_database = __get_geometry_database()
+    return geometry_database.curve_keyframed_exists(name_slug, frameno)
+
+
+def __animated_curve_exists(object_name, frameno):
+    name_slug = __get_name_slug(object_name)
+    geometry_database = __get_geometry_database()
+    return geometry_database.curve_animated_exists(name_slug, frameno)
+
+
+def __extract_curve_mesh(object_name, frameno=0):
+    name_slug = __get_name_slug(object_name)
+    geometry_database = __get_geometry_database()
+    motion_type = geometry_database.get_object_motion_export_type(name_slug)
+
+    if motion_type == 'STATIC':
+        bobj_data = geometry_database.get_curve_static(name_slug)
+    elif motion_type == 'KEYFRAMED': 
+        bobj_data = geometry_database.get_curve_static(name_slug)
+        matrix_coefficients = geometry_database.get_curve_keyframed_transform(name_slug, frameno)
+    elif motion_type == 'ANIMATED':
+        bobj_data = geometry_database.get_curve_animated(name_slug, frameno)
+
+    data = __get_simulation_data()
+    scale = data.domain_data.initialize.scale
+    bbox = data.domain_data.initialize.bbox
+    curve_tmesh = TriangleMesh.from_bobj(bobj_data)
+    if motion_type == 'KEYFRAMED': 
+        curve_tmesh.apply_transform(matrix_coefficients)
+
+    curve_tmesh.translate(-bbox.x, -bbox.y, -bbox.z)
+    curve_tmesh.scale(scale)
+
+    return curve_tmesh
 
 
 def __extract_data(data_filepath):
@@ -401,6 +508,18 @@ def __get_obstacle_meshing_offset(obstacle_meshing_mode):
         return 0.0
     elif obstacle_meshing_mode == 'MESHING_MODE_OUTSIDE_SURFACE':
         return -0.5
+
+
+def __get_viscosity_value(world_data, frameno):
+    base = __get_parameter_data(world_data.viscosity, frameno)
+    exp = __get_parameter_data(world_data.viscosity_exponent, frameno)
+    return base * (10**(-exp))
+
+
+def __get_surface_tension_value(world_data, frameno):
+    base = __get_parameter_data(world_data.surface_tension, frameno)
+    exp = __get_parameter_data(world_data.surface_tension_exponent, frameno)
+    return world_data.native_surface_tension_scale * base * (10**(-exp))
 
 
 def __read_save_state_file_data(file_data_path, start_byte, end_byte):
@@ -572,6 +691,12 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
     # Domain Settings
 
     fluidsim.enable_preview_mesh_output = dprops.initialize.preview_dx
+    if dprops.initialize.upscale_simulation:
+        save_isize = dprops.initialize.savestate_isize
+        save_jsize = dprops.initialize.savestate_jsize
+        save_ksize = dprops.initialize.savestate_ksize
+        save_dx = dprops.initialize.savestate_dx
+        fluidsim.upscale_on_initialization(save_isize, save_jsize, save_ksize, save_dx)
 
     bbox = dprops.initialize.bbox
     fluidsim.set_domain_offset(bbox.x, bbox.y, bbox.z)
@@ -730,12 +855,11 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
 
     is_viscosity_enabled = __get_parameter_data(world.enable_viscosity, frameno)
     if is_viscosity_enabled:
-        fluidsim.viscosity = __get_parameter_data(world.viscosity, frameno)
+        fluidsim.viscosity = __get_viscosity_value(world, frameno)
 
     is_surface_tension_enabled = __get_parameter_data(world.enable_surface_tension, frameno)
     if is_surface_tension_enabled:
-        surface_tension = __get_parameter_data(world.surface_tension, frameno)
-        surface_tension *= world.native_surface_tension_scale
+        surface_tension = __get_surface_tension_value(world, frameno)
         fluidsim.surface_tension = surface_tension
 
         mincfl, maxcfl = world.minimum_surface_tension_cfl, world.maximum_surface_tension_cfl
@@ -803,6 +927,8 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
 
     fluidsim.enable_adaptive_obstacle_time_stepping = \
         __get_parameter_data(advanced.enable_adaptive_obstacle_time_stepping, frameno)
+    fluidsim.enable_adaptive_force_field_time_stepping = \
+        __get_parameter_data(advanced.enable_adaptive_force_field_time_stepping, frameno)
 
     fluidsim.marker_particle_jitter_factor = \
         __get_parameter_data(advanced.particle_jitter_factor, frameno)
@@ -874,6 +1000,28 @@ def __get_mesh_centroid(tmesh):
 def __get_fluid_object_velocity(fluid_object, frameid):
     if fluid_object.fluid_velocity_mode.data == 'FLUID_VELOCITY_MANUAL':
         return __get_parameter_data(fluid_object.initial_velocity, frameid)
+    elif fluid_object.fluid_velocity_mode.data == 'FLUID_VELOCITY_AXIS':
+        timeline_frame = __get_timeline_frame()
+        local_x, local_y, local_z = __extract_local_axis(fluid_object.name, timeline_frame)
+        axis_mode = __get_parameter_data(fluid_object.fluid_axis_mode, timeline_frame)
+        if axis_mode == 'LOCAL_AXIS_POS_X' or axis_mode == 0.0:
+            local_axis = local_x
+        elif axis_mode == 'LOCAL_AXIS_POS_Y' or axis_mode == 1.0:
+            local_axis = local_y
+        elif axis_mode == 'LOCAL_AXIS_POS_Z' or axis_mode == 2.0:
+            local_axis = local_z
+        elif axis_mode == 'LOCAL_AXIS_NEG_X' or axis_mode == 3.0:
+            local_axis = [-local_x[0], -local_x[1], -local_x[2]]
+        elif axis_mode == 'LOCAL_AXIS_NEG_Y' or axis_mode == 4.0:
+            local_axis = [-local_y[0], -local_y[1], -local_y[2]]
+        elif axis_mode == 'LOCAL_AXIS_NEG_Z' or axis_mode == 5.0:
+            local_axis = [-local_z[0], -local_z[1], -local_z[2]]
+
+        initial_speed = __get_parameter_data(fluid_object.initial_speed, timeline_frame)
+        velocity = [initial_speed * local_axis[0], initial_speed * local_axis[1], initial_speed * local_axis[2]]
+        return velocity
+
+    # Use target
     if not fluid_object.target_object:
         return [0, 0, 0]
 
@@ -881,11 +1029,9 @@ def __get_fluid_object_velocity(fluid_object, frameid):
     initial_speed = __get_parameter_data(fluid_object.initial_speed, frameid)
     timeline_frame = __get_timeline_frame()
 
-    mesh1 = __extract_mesh(fluid_object.name, timeline_frame)
-    mesh2 = __extract_mesh(target_object_name, timeline_frame)
-
-    c1 = __get_mesh_centroid(mesh1)
-    c2 = __get_mesh_centroid(mesh2)
+    fluid_object_mesh = __extract_mesh(fluid_object.name, timeline_frame)
+    c1 = __get_mesh_centroid(fluid_object_mesh)
+    c2 = __extract_centroid(target_object_name, timeline_frame)
     vdir = [c2[0] - c1[0], c2[1] - c1[1], c2[2] - c1[2]]
     vlen = math.sqrt(vdir[0] * vdir[0] + vdir[1] * vdir[1] + vdir[2] * vdir[2])
     eps = 1e-6
@@ -905,6 +1051,28 @@ def __get_fluid_object_velocity(fluid_object, frameid):
 def __get_inflow_object_velocity(inflow_object, frameid):
     if inflow_object.inflow_velocity_mode.data == 'INFLOW_VELOCITY_MANUAL':
         return __get_parameter_data(inflow_object.inflow_velocity, frameid)
+    elif inflow_object.inflow_velocity_mode.data == 'INFLOW_VELOCITY_AXIS':
+        timeline_frame = __get_timeline_frame()
+        local_x, local_y, local_z = __extract_local_axis(inflow_object.name, timeline_frame)
+        axis_mode = __get_parameter_data(inflow_object.inflow_axis_mode, timeline_frame)
+        if axis_mode == 'LOCAL_AXIS_POS_X' or axis_mode == 0.0:
+            local_axis = local_x
+        elif axis_mode == 'LOCAL_AXIS_POS_Y' or axis_mode == 1.0:
+            local_axis = local_y
+        elif axis_mode == 'LOCAL_AXIS_POS_Z' or axis_mode == 2.0:
+            local_axis = local_z
+        elif axis_mode == 'LOCAL_AXIS_NEG_X' or axis_mode == 3.0:
+            local_axis = [-local_x[0], -local_x[1], -local_x[2]]
+        elif axis_mode == 'LOCAL_AXIS_NEG_Y' or axis_mode == 4.0:
+            local_axis = [-local_y[0], -local_y[1], -local_y[2]]
+        elif axis_mode == 'LOCAL_AXIS_NEG_Z' or axis_mode == 5.0:
+            local_axis = [-local_z[0], -local_z[1], -local_z[2]]
+
+        inflow_speed = __get_parameter_data(inflow_object.inflow_speed, timeline_frame)
+        velocity = [inflow_speed * local_axis[0], inflow_speed * local_axis[1], inflow_speed * local_axis[2]]
+        return velocity
+
+    # Use target
     if not inflow_object.target_object:
         return [0, 0, 0]
 
@@ -912,11 +1080,9 @@ def __get_inflow_object_velocity(inflow_object, frameid):
     inflow_speed = __get_parameter_data(inflow_object.inflow_speed, frameid)
     timeline_frame = __get_timeline_frame()
 
-    mesh1 = __extract_mesh(inflow_object.name, timeline_frame)
-    mesh2 = __extract_mesh(target_object_name, timeline_frame)
-
-    c1 = __get_mesh_centroid(mesh1)
-    c2 = __get_mesh_centroid(mesh2)
+    fluid_object_mesh = __extract_mesh(inflow_object.name, timeline_frame)
+    c1 = __get_mesh_centroid(fluid_object_mesh)
+    c2 = __extract_centroid(target_object_name, timeline_frame)
     vdir = [c2[0] - c1[0], c2[1] - c1[1], c2[2] - c1[2]]
     vlen = math.sqrt(vdir[0] * vdir[0] + vdir[1] * vdir[1] + vdir[2] * vdir[2])
     eps = 1e-6
@@ -1063,9 +1229,13 @@ def __add_force_field_objects(fluidsim, data, bakedata):
             field_object = ForceFieldPoint()
         elif field_type == 'FORCE_FIELD_TYPE_SURFACE':
             field_object = ForceFieldSurface()
+        elif field_type == 'FORCE_FIELD_TYPE_VOLUME':
+            field_object = ForceFieldVolume()
+        elif field_type == 'FORCE_FIELD_TYPE_CURVE':
+            field_object = ForceFieldCurve()
 
         if not __is_object_dynamic(obj.name):
-            mesh = __extract_static_frame_mesh(obj.name)
+            mesh = __extract_force_field_mesh(obj.name)
             field_object.update_mesh_static(mesh)
 
         force_field_grid.add_force_field(field_object)
@@ -1101,12 +1271,14 @@ def __initialize_fluid_simulation(fluidsim, data, cache_directory, bakedata, sav
 
 
 def __update_dynamic_object_mesh(animated_object, object_data):
-    data = __get_simulation_data()
-    scale = data.domain_data.initialize.scale
-    bbox = data.domain_data.initialize.bbox
-
     timeline_frame = __get_timeline_frame()
     mesh_previous, mesh_current, mesh_next = __extract_dynamic_frame_meshes(object_data.name, timeline_frame)
+    animated_object.update_mesh_animated(mesh_previous, mesh_current, mesh_next)
+
+
+def __update_dynamic_force_field_mesh(animated_object, object_data):
+    timeline_frame = __get_timeline_frame()
+    mesh_previous, mesh_current, mesh_next = __extract_dynamic_force_field_frame_meshes(object_data.name, timeline_frame)
     animated_object.update_mesh_animated(mesh_previous, mesh_current, mesh_next)
 
 
@@ -1127,9 +1299,6 @@ def __update_animatable_inflow_properties(data, frameid):
         inflow.object_velocity_influence = \
             __get_parameter_data(data.append_object_velocity_influence, frameid)
         inflow.substep_emissions = __get_parameter_data(data.substep_emissions, frameid)
-
-        is_rigid = __get_parameter_data(data.inflow_mesh_type, frameid) == 'MESH_TYPE_RIGID'
-        inflow.enable_rigid_mesh = is_rigid
 
         is_constrained = __get_parameter_data(data.constrain_fluid_velocity, frameid)
         inflow.enable_constrained_fluid_velocity = is_constrained
@@ -1158,14 +1327,32 @@ def __update_animatable_force_field_properties(data, frameid):
         data = force_field_data[idx]
 
         if __is_object_dynamic(data.name):
-            __update_dynamic_object_mesh(force_field, data)
+            __update_dynamic_force_field_mesh(force_field, data)
 
         force_field.enable = __get_parameter_data(data.is_enabled, frameid)
         force_field.strength = __get_parameter_data(data.strength, frameid)
         force_field.falloff_power = __get_parameter_data(data.falloff_power, frameid)
+        force_field.max_force_limit_factor = __get_parameter_data(data.maximum_force_limit_factor, frameid)
         force_field.enable_min_distance = __get_parameter_data(data.enable_min_distance, frameid)
         force_field.enable_max_distance = __get_parameter_data(data.enable_max_distance, frameid)
         force_field.min_distance, force_field.max_distance = __get_parameter_data(data.min_max_distance, frameid)
+
+        field_type = data.force_field_type.data
+        if field_type == 'FORCE_FIELD_TYPE_POINT':
+            force_field.gravity_scale = __get_parameter_data(data.gravity_scale_point, frameid)
+            force_field.gravity_scale_width = __get_parameter_data(data.gravity_scale_width_point, frameid)
+        elif field_type == 'FORCE_FIELD_TYPE_SURFACE':
+            force_field.gravity_scale = __get_parameter_data(data.gravity_scale_surface, frameid)
+            force_field.gravity_scale_width = __get_parameter_data(data.gravity_scale_width_surface, frameid)
+        elif field_type == 'FORCE_FIELD_TYPE_VOLUME':
+            force_field.gravity_scale = __get_parameter_data(data.gravity_scale_volume, frameid)
+            force_field.gravity_scale_width = __get_parameter_data(data.gravity_scale_width_volume, frameid)
+        elif field_type == 'FORCE_FIELD_TYPE_CURVE':
+            force_field.flow_strength = __get_parameter_data(data.flow_strength, frameid)
+            force_field.spin_strength = __get_parameter_data(data.spin_strength, frameid)
+            force_field.enable_endcaps = __get_parameter_data(data.enable_endcaps, frameid)
+            force_field.gravity_scale = __get_parameter_data(data.gravity_scale_curve, frameid)
+            force_field.gravity_scale_width = __get_parameter_data(data.gravity_scale_width_curve, frameid)
 
 
 def __update_animatable_obstacle_properties(data, frameid):
@@ -1394,15 +1581,14 @@ def __update_animatable_domain_properties(fluidsim, data, frameno):
 
     is_viscosity_enabled = __get_parameter_data(world.enable_viscosity, frameno)
     if is_viscosity_enabled:
-        viscosity = __get_parameter_data(world.viscosity, frameno)
+        viscosity = __get_viscosity_value(world, frameno)
         __set_property(fluidsim, 'viscosity', viscosity)
     elif fluidsim.viscosity > 0.0:
         __set_property(fluidsim, 'viscosity', 0.0)
 
     is_surface_tension_enabled = __get_parameter_data(world.enable_surface_tension, frameno)
     if is_surface_tension_enabled:
-        surface_tension = __get_parameter_data(world.surface_tension, frameno)
-        surface_tension *= world.native_surface_tension_scale
+        surface_tension = __get_surface_tension_value(world, frameno)
         __set_property(fluidsim, 'surface_tension', surface_tension)
 
         mincfl, maxcfl = world.minimum_surface_tension_cfl, world.maximum_surface_tension_cfl
@@ -1471,9 +1657,13 @@ def __update_animatable_domain_properties(fluidsim, data, frameno):
     __set_property(fluidsim, 'min_time_steps_per_frame', min_substeps)
     __set_property(fluidsim, 'max_time_steps_per_frame', max_substeps)
 
-    enable_time_stepping = \
+    enable_obstacle_time_stepping = \
         __get_parameter_data(advanced.enable_adaptive_obstacle_time_stepping, frameno)
-    __set_property(fluidsim, 'enable_adaptive_obstacle_time_stepping', enable_time_stepping)
+    __set_property(fluidsim, 'enable_adaptive_obstacle_time_stepping', enable_obstacle_time_stepping)
+
+    enable_force_field_time_stepping = \
+        __get_parameter_data(advanced.enable_adaptive_force_field_time_stepping, frameno)
+    __set_property(fluidsim, 'enable_adaptive_force_field_time_stepping', enable_force_field_time_stepping)
 
     jitter_factor = __get_parameter_data(advanced.particle_jitter_factor, frameno)
     __set_property(fluidsim, 'marker_particle_jitter_factor', jitter_factor)
@@ -1799,8 +1989,14 @@ def __write_autosave_data(domain_data, cache_directory, fluidsim, frameno):
                 data = fluidsim.get_diffuse_particle_id_data_range(start_idx, end_idx)
                 __write_save_state_file_data(diffuse_id_data_path + temp_extension, data, is_appending_data=is_appending)
 
-        frame_start, frame_end = domain_data.initialize.frame_start, domain_data.initialize.frame_end
+        init_data = domain_data.initialize
+        frame_start, frame_end = init_data.frame_start, init_data.frame_end
+
         autosave_info = {}
+        autosave_info['isize'] = init_data.isize
+        autosave_info['jsize'] = init_data.jsize
+        autosave_info['ksize'] = init_data.ksize
+        autosave_info['dx'] = init_data.dx
         autosave_info['frame'] = frameno
         autosave_info['frame_start'] = frame_start
         autosave_info['frame_end'] = frame_end
@@ -1862,7 +2058,7 @@ def __write_autosave_data(domain_data, cache_directory, fluidsim, frameno):
     init_data = domain_data.initialize
     if init_data.enable_savestates:
         interval = init_data.savestate_interval
-        if (frameno + 1 - frame_start) % interval == 0:
+        if (frameno + 1 - frame_start) % interval == 0 or frameno == frame_start:
             numstr = str(frameno).zfill(6)
             savestate_dir = os.path.join(cache_directory, "savestates", "autosave" + numstr)
             if os.path.isdir(savestate_dir):
@@ -1910,8 +2106,17 @@ def __run_simulation(fluidsim, data, cache_directory, bakedata):
         simulator_frameno = fluidsim.get_current_frame()
         blender_frameno = simulator_frameno + init_data.frame_start
 
-        __update_animatable_properties(fluidsim, data, simulator_frameno)
-        __add_fluid_objects(fluidsim, data, bakedata, simulator_frameno)
+        geometry_database = __get_geometry_database()
+        try:
+            geometry_database.open()
+
+            __update_animatable_properties(fluidsim, data, simulator_frameno)
+            __add_fluid_objects(fluidsim, data, bakedata, simulator_frameno)
+
+            geometry_database.close()
+        except Exception:
+            geometry_database.close()
+            raise Exception
 
         dt = __get_current_frame_delta_time(domain, simulator_frameno)
         fluidsim.update(dt)
@@ -1958,7 +2163,17 @@ def bake(datafile, cache_directory, bakedata, savestate_id=None):
         __set_cache_directory(cache_directory)
 
         data = __extract_data(datafile)
+
+        if data.domain_data.initialize.enable_engine_debug_mode:
+            pyfluid.enable_debug_mode()
+        else:
+            pyfluid.disable_debug_mode()
+
         __set_simulation_data(data)
+
+        db_filepath = __get_geometry_database_filepath()
+        geometry_database = flip_fluid_geometry_database.GeometryDatabase(db_filepath)
+        __set_geometry_database(geometry_database)
 
         if __check_bake_cancelled(bakedata):
             return
@@ -1978,13 +2193,19 @@ def bake(datafile, cache_directory, bakedata, savestate_id=None):
         if __check_bake_cancelled(bakedata):
             return
 
+        geometry_database.open()
         __initialize_fluid_simulation(fluidsim, data, cache_directory, bakedata, savestate_id)
+        geometry_database.close()
+
         if __check_bake_cancelled(bakedata):
             return
 
         __run_simulation(fluidsim, data, cache_directory, bakedata)
 
     except Exception as e:
+        database = __get_geometry_database()
+        database.close()
+
         errmsg = str(e)
         if "std::bad_alloc" in errmsg:
             errmsg = "Out of memory. "

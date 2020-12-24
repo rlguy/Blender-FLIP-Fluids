@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2019 Ryan L. Guy
+Copyright (C) 2020 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -45,10 +45,16 @@ void ForceField::updateMeshAnimated(TriangleMesh meshPrevious,
 }
 
 void ForceField::enable() {
+    if (!_meshObject.isEnabled()) {
+        _isStateChanged = true;
+    }
     _meshObject.enable();
 }
 
 void ForceField::disable() {
+    if (_meshObject.isEnabled()) {
+        _isStateChanged = true;
+    }
     _meshObject.disable();
 }
 
@@ -69,7 +75,20 @@ void ForceField::initialize(int isize, int jsize, int ksize, double dx) {
 
     _initialize();
 
+    _isStateChanged = true;
     _isInitialized = true;
+}
+
+bool ForceField::isStateChanged() {
+    MeshObjectStatus s = _meshObject.getStatus();
+    bool isMeshStateChanged = s.isStateChanged || (s.isEnabled && s.isAnimated && s.isMeshChanged);
+    return _isStateChanged || isMeshStateChanged || _isSubclassStateChanged();
+}
+
+void ForceField::clearState() {
+    _meshObject.clearObjectStatus();
+    _isStateChanged = false;
+    _clearSubclassState();
 }
 
 float ForceField::getStrength() {
@@ -77,6 +96,10 @@ float ForceField::getStrength() {
 }
 
 void ForceField::setStrength(float s) {
+    float eps = 1e-6;
+    if (std::abs(s - _strength) > eps) {
+        _isStateChanged = true;
+    }
     _strength = s;
 }
 
@@ -85,14 +108,36 @@ float ForceField::getFalloffPower() {
 }
 
 void ForceField::setFalloffPower(float p) {
+    float eps = 1e-6;
+    if (std::abs(p - _falloffPower) > eps) {
+        _isStateChanged = true;
+    }
     _falloffPower = p;
 }
 
+float ForceField::getMaxForceLimitFactor() {
+    return _maxForceLimitFactor;
+}
+
+void ForceField::setMaxForceLimitFactor(float factor) {
+    float eps = 1e-6;
+    if (std::abs(factor - _maxForceLimitFactor) > eps) {
+        _isStateChanged = true;
+    }
+    _maxForceLimitFactor = factor;
+}
+
 void ForceField::enableMinDistance() {
+    if (!_isMinDistanceEnabled) {
+        _isStateChanged = true;
+    }
     _isMinDistanceEnabled = true;
 }
 
 void ForceField::disableMinDistance() {
+    if (_isMinDistanceEnabled) {
+        _isStateChanged = true;
+    }
     _isMinDistanceEnabled = false;
 }
 
@@ -105,14 +150,24 @@ float ForceField::getMinDistance() {
 }
 
 void ForceField::setMinDistance(float d) {
+    float eps = 1e-6;
+    if (std::abs(d - _minDistance) > eps) {
+        _isStateChanged = true;
+    }
     _minDistance = d;
 }
 
 void ForceField::enableMaxDistance() {
+    if (!_isMaxDistanceEnabled) {
+        _isStateChanged = true;
+    }
     _isMaxDistanceEnabled = true;
 }
 
 void ForceField::disableMaxDistance() {
+    if (_isMaxDistanceEnabled) {
+        _isStateChanged = true;
+    }
     _isMaxDistanceEnabled = false;
 }
 
@@ -125,6 +180,57 @@ float ForceField::getMaxDistance() {
 }
 
 void ForceField::setMaxDistance(float d) {
+    float eps = 1e-6;
+    if (std::abs(d - _maxDistance) > eps) {
+        _isStateChanged = true;
+    }
     _maxDistance = d;
 }
 
+float ForceField::getGravityScale() {
+    return _gravityScale;
+}
+
+void ForceField::setGravityScale(float s) {
+    float eps = 1e-6;
+    if (std::abs(s - _gravityScale) > eps) {
+        _isStateChanged = true;
+    }
+    _gravityScale = s;
+}
+
+float ForceField::getGravityScaleWidth() {
+    return _gravityScaleWidth;
+}
+
+void ForceField::setGravityScaleWidth(float w) {
+    float eps = 1e-6;
+    if (std::abs(w - _gravityScaleWidth) > eps) {
+        _isStateChanged = true;
+    }
+    _gravityScaleWidth = w;
+}
+
+vmath::vec3 ForceField::_limitForceVector(vmath::vec3 v, float strength) {
+    float eps = 1e-6;
+    float maxForce = std::abs(strength) * _maxForceLimitFactor;
+    float len = vmath::length(v);
+    if (len <= maxForce || len < eps) {
+        return v;
+    }
+
+    if (maxForce < eps) {
+        return vmath::vec3();
+    }
+
+    return (maxForce / len) * v;
+}
+
+vmath::vec3 ForceField::_calculateForceVector(float distance, vmath::vec3 normal) {
+    return _calculateForceVector(distance, _strength, normal);
+}
+
+vmath::vec3 ForceField::_calculateForceVector(float distance, float strength, vmath::vec3 normal) {
+    vmath::vec3 force = strength * (1.0f / std::pow(distance, _falloffPower)) * normal;
+    return _limitForceVector(force, strength);
+}

@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, math
+import bpy, math, os, json
 from bpy.props import (
         BoolProperty,
         EnumProperty,
@@ -62,9 +62,15 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
             description="Update simulation settings and meshes when resuming a bake."
                 " If disabled, the simulator will use the original settings and meshes"
                 " from when the bake was started",
-            default=False,
+            default=True,
             options={'HIDDEN'},
             ); exec(conv("update_settings_on_resume"))
+    mesh_reexport_type_filter = EnumProperty(
+            name="Object Motion Type",
+            description="Filter objects by motion type for skip re-export list display",
+            items=types.motion_filter_types,
+            default='MOTION_FILTER_TYPE_ANIMATED',
+            ); exec(conv("mesh_reexport_type_filter"))
     enable_savestates = BoolProperty(
             name="Enable Savestates",
             description="Generate savestates/checkpoints as the simulation progresses."
@@ -109,8 +115,8 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
     resolution = IntProperty(
             name="Resolution",
             description="Domain grid resolution. This value specifies the number of"
-                " grid cells on the longest side of the domain. See Debug Panel for"
-                " grid visualization tools",
+                " grid voxels on the longest side of the domain. See the tooltips in"
+                " the Grid Info section below for a detailed explanation of the domain grid",
             min=10,
             default=65,
             update=lambda self, context: self._update_resolution(context),
@@ -139,7 +145,7 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
             description="Lock the current grid cell size and update the grid"
                 " resolution as the domain dimensions are changed. Enable this"
                 " option before resizing the domain to maintain a constant level"
-                " of simulation detail.",
+                " of simulation detail",
             default=False,
             update=lambda self, context: self._update_lock_cell_size(context),
             options = {'HIDDEN'},
@@ -173,8 +179,53 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
     frame_end = IntProperty(default=-1); exec(conv("frame_end"))
 
     more_bake_settings_expanded = BoolProperty(default=False); exec(conv("more_bake_settings_expanded"))
+    skip_mesh_reexport_expanded = BoolProperty(default=False); exec(conv("skip_mesh_reexport_expanded"))
+    grid_info_expanded = BoolProperty(default=True); exec(conv("grid_info_expanded"))
     last_selected_savestate_int = IntProperty(default=-1); exec(conv("last_selected_savestate_int"))
     selected_savestate_int_label = StringProperty(default=""); exec(conv("selected_savestate_int_label"))
+
+    current_isize = IntProperty(default=-1); exec(conv("current_isize"))
+    current_jsize = IntProperty(default=-1); exec(conv("current_jsize"))
+    current_ksize = IntProperty(default=-1); exec(conv("current_ksize"))
+    current_dx = FloatProperty(default=-1.0); exec(conv("current_dx"))
+
+    savestate_isize = IntProperty(default=-1); exec(conv("savestate_isize"))
+    savestate_jsize = IntProperty(default=-1); exec(conv("savestate_jsize"))
+    savestate_ksize = IntProperty(default=-1); exec(conv("savestate_ksize"))
+    savestate_dx = FloatProperty(default=-1.0); exec(conv("savestate_dx"))
+
+    upscale_trigger_factor = FloatProperty(default=0.05); exec(conv("upscale_trigger_factor"))
+
+    upscale_resolution_tooltip = BoolProperty(
+            name="Upscale Resolution Tooltip", 
+            description="Upscaling converts a lower resolution savestate to a higher resolution savestate"
+                " so that the simulation can resume baking at the increased resolution", 
+            default=True,
+            ); exec(conv("upscale_resolution_tooltip"))
+
+    grid_voxels_tooltip = BoolProperty(
+            name="Grid Voxels Tooltip", 
+            description="The domain is a 3D grid of cubes called voxels, or cells. This info shows the number of voxels on each of the X/Y/Z axis of the domain. The voxels in the 3D grid are similar to the 2D pixels in a 2D image. Instead of storing color data, the voxels store physics data", 
+            default=True,
+            ); exec(conv("grid_voxels_tooltip"))
+
+    grid_dimensions_tooltip = BoolProperty(
+            name="Grid Dimensions Tooltip", 
+            description="Displays the physical scale of the domain on the X/Y/Z axis in meters. Setting an appropriate scale can be an important factor for realistic motion and speed of your simulated fluid", 
+            default=True,
+            ); exec(conv("grid_dimensions_tooltip"))
+
+    grid_voxel_size_tooltip = BoolProperty(
+            name="Voxel Size Tooltip", 
+            description="Displays the physical size of a single voxel. You can think of a voxel as being the 3D version of a 2D image pixel. In an image, the pixel size is the minimum amount of detail that can be resolved in the picture. In the domain, the voxel size is the minimum amount of physics detail that can be resolved in the simulation such as the smallest droplets and ripples or the thinnest splashes", 
+            default=True,
+            ); exec(conv("grid_voxel_size_tooltip"))
+
+    grid_voxel_count_tooltip = BoolProperty(
+            name="Voxel Count Tooltip", 
+            description="Displays the total number of voxels in the domain. Physics are computed each voxel and the total count can be a measure for how much work your system will be doing. Small simulation = around 2 million. Medium =  around 10M. Large = around 40M. Very Large = over 80M", 
+            default=True,
+            ); exec(conv("grid_voxel_count_tooltip"))
 
 
     def register_preset_properties(self, registry, path):
@@ -200,9 +251,18 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
         self.frame_rate_custom = bpy.context.scene.render.fps
 
 
+    def load_post(self):
+        self._update_current_settings_grid_dimensions()
+
+
     def scene_update_post(self, scene):
+        if self.grid_info_expanded:
+            # Workaround to get UI panel to redraw when grid info is displayed
+            self.resolution = self.resolution
+
         self._update_locked_cell_size_resolution()
         self._set_recommended_preview_resolution()
+        self._update_current_settings_grid_dimensions()
 
 
     # World scale is not applied to dx, which will match dimensions within viewport
@@ -307,10 +367,32 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
             return export_utils.get_property_data_dict(domain_object, self, 'frame_rate_custom')
 
 
+    def is_current_grid_upscaled(self):
+        dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+        if not dprops.bake.is_autosave_available:
+            return False
+        if self.savestate_isize <= 0 or self.savestate_jsize <= 0 or self.savestate_ksize <= 0 or self.savestate_dx <= 0.0:
+            return False
+        if self.current_isize <= 0 or self.current_jsize <= 0 or self.current_ksize <= 0 or self.current_dx <= 0.0:
+            return False
+        if self.current_dx > self.savestate_dx:
+            # downscaled
+            return False
+
+        res_changed = (self.current_isize != self.savestate_isize or 
+                        self.current_jsize != self.savestate_jsize or 
+                        self.current_ksize != self.savestate_ksize)
+
+        dx_eps = self.upscale_trigger_factor * self.savestate_dx
+        dx_changed = abs(self.current_dx - self.savestate_dx) > dx_eps
+        return res_changed and dx_changed
+
+
     def _update_resolution(self, context):
         self._set_recommended_preview_resolution(context)
         if self.preview_resolution > self.resolution:
             self.preview_resolution = self.resolution
+        self._update_current_settings_grid_dimensions()
 
 
     def _update_preview_resolution(self, context):
@@ -385,6 +467,8 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
                     break
                 self.selected_savestate_int_label = label[idx1:idx2+1]
 
+        self._update_selected_savestate_grid_dimensions(context)
+
 
     def _update_selected_savestate_int(self, context):
         last_id = self.last_selected_savestate_int - 1
@@ -409,6 +493,67 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
         self["selected_savestate_int"] = next_valid_id + 1
 
         self.last_selected_savestate_int = self.selected_savestate_int
+
+        self._update_selected_savestate_grid_dimensions(context)
+
+
+    def _update_current_settings_grid_dimensions(self):
+        isize, jsize, ksize, dx = self.get_simulation_grid_dimensions()
+
+        eps = 1e-6
+        if self.current_isize != isize:
+            self.current_isize = isize
+        if self.current_jsize != jsize:
+            self.current_jsize = jsize
+        if self.current_ksize != ksize:
+            self.current_ksize = ksize
+        if abs(self.current_dx - dx) > eps:
+            self.current_dx = dx
+
+
+    def _update_selected_savestate_grid_dimensions(self, context):
+        dprops = context.scene.flip_fluid.get_domain_properties()
+        if dprops.bake.is_simulation_running:
+            return
+
+        savestate_id = self.get_selected_savestate_id()
+
+        cache_directory = dprops.cache.get_cache_abspath()
+        savestate_directory = os.path.join(cache_directory, "savestates")
+        savestate_name = "autosave" + str(savestate_id).zfill(6)
+        autosave_directory = os.path.join(savestate_directory, savestate_name)
+        if not os.path.isdir(autosave_directory):
+            autosave_directory = os.path.join(savestate_directory, "autosave")
+
+        if not os.path.isdir(autosave_directory):
+            return
+        
+        autosave_info_file = os.path.join(autosave_directory, "autosave.state")
+        if not os.path.isfile(autosave_info_file):
+            return
+
+        with open(autosave_info_file, 'r') as f:
+            autosave_info = json.loads(f.read())
+
+        try:
+            isize = autosave_info["isize"]
+            jsize = autosave_info["jsize"]
+            ksize = autosave_info["ksize"]
+            dx = autosave_info["dx"]
+        except KeyError:
+            # Cache created in older FLIP Fluids version which does not contain
+            # this info. Fill in properties with the current grid dimension settings.
+            isize, jsize, ksize, dx = self.get_simulation_grid_dimensions()
+
+        eps = 1e-6
+        if self.savestate_isize != isize:
+            self.savestate_isize = isize
+        if self.savestate_jsize != jsize:
+            self.savestate_jsize = jsize
+        if self.savestate_ksize != ksize:
+            self.savestate_ksize = ksize
+        if abs(self.savestate_dx - dx) > eps:
+            self.savestate_dx = dx
 
 
 def register():

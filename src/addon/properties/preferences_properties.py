@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,6 +36,23 @@ class FLIPFluidGPUDevice(bpy.types.PropertyGroup):
     score = FloatProperty(); exec(conv("score"))
 
 
+def update_helper_category_name(self, context):
+    panel_ids = ['FLIPFLUID_PT_HelperPanelMain', 'FLIPFLUID_PT_HelperPanelDisplay']
+    for pid in panel_ids:
+        is_panel_registered = hasattr(bpy.types, pid)
+        if is_panel_registered:
+            try:
+                bpy.utils.unregister_class(getattr(bpy.types, pid))
+            except:
+                pass
+
+    if self.enable_helper:
+        for pid in panel_ids:
+            panel = getattr(helper_ui, pid)
+            panel.bl_category = self.helper_category_name
+            bpy.utils.register_class(panel)
+
+
 class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
     bl_idname = __name__.split(".")[0]
 
@@ -49,6 +66,14 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
                 )
     exec(vcu.convert_attribute_to_28("enable_helper"))
 
+    helper_category_name = StringProperty(
+                name="Panel Category",
+                description="Choose a category for the FLIP Fluids helper panel tab in the sidebar",
+                default="FLIP Fluids",
+                update=lambda self, context: self._update_helper_category_name(context),
+                )
+    exec(vcu.convert_attribute_to_28("helper_category_name"))
+
     beginner_friendly_mode = BoolProperty(
                 name="Beginner Friendly Mode",
                 description="Beginner friendly mode will show only the most important settings"
@@ -60,6 +85,46 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
                 options={'HIDDEN'},
                 )
     exec(vcu.convert_attribute_to_28("beginner_friendly_mode"))
+
+    beginner_friendly_mode_tooltip = BoolProperty(
+            name="Beginner Friendly Mode Tooltip", 
+            description="Beginner Friendly Mode hides all but the most important settings and"
+                " can be disabled in the FLIP Fluids preferences menu (Edit > Preferences >"
+                " Addons > FLIP Fluids)", 
+            default=True,
+            ); 
+    exec(vcu.convert_attribute_to_28("beginner_friendly_mode_tooltip"))
+
+    show_documentation_in_ui = BoolProperty(
+                name="Display documentation links in UI",
+                description="Display relevant documentation links within the UI. Documentation links will open in your browser."
+                    " This setting is also available from the FLIP Fluids toolbox menu",
+                default=False,
+                options={'HIDDEN'},
+                )
+    exec(vcu.convert_attribute_to_28("show_documentation_in_ui"))
+
+    engine_debug_mode = BoolProperty(
+            name="Engine Debug Mode", 
+            description="Enable to run simulation engine in debug mode (slower, but is able to"
+                " generate crash errors). Disabling can speed up simulation by 10% - 15%, but if"
+                " a crash is encountered, no error messages will be generated. If encountering a"
+                " persistent simulation crash, switch to debug mode and resume to check for error"
+                " messages. Error messages are not guaranteed on a crash and will depend on system and"
+                " situation. Running with debug mode on or off will not affect simulation results", 
+            default=False,
+            ); 
+    exec(vcu.convert_attribute_to_28("engine_debug_mode"))
+
+    enable_presets = BoolProperty(
+                name="Enable Presets",
+                description="Presets are a deprecated feature that will no longer be updated. Enable to use the older preset"
+                    " features, but be aware that you may encounter bugs or issues. Use at your own risk. Blender must be"
+                    " restarted after enabling this option. See documentation for more info and future plans",
+                default=False,
+                options={'HIDDEN'},
+                )
+    exec(vcu.convert_attribute_to_28("enable_presets"))
 
     selected_gpu_device = EnumProperty(
                 name="GPU Compute Device",
@@ -76,16 +141,11 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
 
 
     def _update_enable_helper(self, context):
-        if self.enable_helper:
-            try:
-                helper_ui.register()
-            except:
-                pass
-        else:
-            try:
-                helper_ui.unregister()
-            except:
-                pass
+        update_helper_category_name(self, context)
+
+
+    def _update_helper_category_name(self, context):
+        update_helper_category_name(self, context)
 
 
     def draw(self, context):
@@ -107,6 +167,17 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
                     icon="WORLD"
                 ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Addon-Installation-and-Uninstallation"
 
+        box = column.box()
+        box.label(text="Like our FLIP Fluids addon?", icon='FUND')
+        box.label(text="Consider purchasing a license to help support our continued development :)")
+        box.separator()
+        box.operator(
+                "wm.url_open", 
+                text="FLIP Fluids on the Blender Market", 
+                icon="WORLD"
+            ).url = "https://blendermarket.com/products/flipfluids"
+        column.separator()
+
         if vcu.is_blender_28() and not vcu.is_blender_281():
             box = column.box()
             box.label(text="WARNING: Blender 2.80 contains bugs that can cause frequent crashes", icon='ERROR')
@@ -127,18 +198,43 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
             box.label(text="Reminder: It is necessary to lock the Blender interface during render to ", icon='INFO')
             box.label(text="     prevent crashes (Blender > Render > Lock Interface).")
 
-        if not is_installation_complete:
-            return
 
+        box = self.layout.box()
+        box.enabled = is_installation_complete
+        helper_column = box.column()
+        helper_column.label(text="Options:")
+        helper_column.prop(self, "beginner_friendly_mode")
+        helper_column.prop(self, "show_documentation_in_ui")
+
+        row = helper_column.row()
+        row.alignment = 'LEFT'
+        row.prop(self, "enable_helper")
+        row = row.row()
+        row.alignment = 'LEFT'
+        row.enabled = self.enable_helper
+        row.prop(self, "helper_category_name")
+        helper_column.prop(self, "engine_debug_mode")
+        helper_column.separator()
+        helper_column.separator()
+
+        """
+        helper_column.separator()
+        helper_column.label(text="Deprecated Features:")
+        helper_column.prop(self, "enable_presets")
+
+        helper_column.operator(
+                "wm.url_open", 
+                text="Why Are Preset Features Deprecated?", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Preset-Settings"
+        """
+
+        box = self.layout.box()
+        box.enabled = is_installation_complete
+        column = box.column(align=True)
         split = column.split()
         column_left = split.column(align=True)
         column_right = split.column()
-
-        helper_column = column_left.column()
-        helper_column.prop(self, "beginner_friendly_mode")
-        helper_column.prop(self, "enable_helper")
-        helper_column.separator()
-        helper_column.separator()
 
         # These operators need to be reworked to support both 2.79 and 2.80
         """
@@ -222,6 +318,10 @@ def load_post():
 def register():
     bpy.utils.register_class(FLIPFluidGPUDevice)
     bpy.utils.register_class(FLIPFluidAddonPreferences)
+
+    id_name = __name__.split(".")[0]
+    preferences = vcu.get_blender_preferences(bpy.context).addons[id_name].preferences
+    update_helper_category_name(preferences, bpy.context)
 
 
 def unregister():

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2019 Ryan L. Guy
+Copyright (C) 2020 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -53,6 +53,11 @@ bool ViscositySolver::applyViscosityToVelocityField(ViscositySolverParameters pa
     _computeMatrixIndexTable();
 
     int matsize = _matrixIndex.matrixSize;
+    if (matsize == 0) {
+        // Nothing to solve
+        return true;
+    }
+
     SparseMatrixf matrix(matsize, 15);
     std::vector<float> rhs(matsize, 0);
     std::vector<float> soln(matsize, 0);

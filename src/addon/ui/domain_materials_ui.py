@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,11 +43,11 @@ class FLIPFLUID_PT_DomainTypeMaterialsPanel(bpy.types.Panel):
         mprops = obj.flip_fluid.domain.materials
 
         column = self.layout.column()
-        column.prop(mprops, "surface_material")
-        column.prop(mprops, "whitewater_foam_material")
-        column.prop(mprops, "whitewater_bubble_material")
-        column.prop(mprops, "whitewater_spray_material")
-        column.prop(mprops, "whitewater_dust_material")
+        column.prop(mprops, "surface_material", text="Surface")
+        column.prop(mprops, "whitewater_foam_material", text="Foam")
+        column.prop(mprops, "whitewater_bubble_material", text="Bubble")
+        column.prop(mprops, "whitewater_spray_material", text="Spray")
+        column.prop(mprops, "whitewater_dust_material", text="Dust")
 
         self.layout.row().separator()
         row = self.layout.row(align = True)

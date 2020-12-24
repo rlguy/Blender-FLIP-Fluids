@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -78,6 +78,12 @@ class FlipFluidFluidProperties(bpy.types.PropertyGroup):
             precision=3,
             options={'HIDDEN'},
             ); exec(conv("initial_speed"))
+    fluid_axis_mode = EnumProperty(
+            name="Local Axis",
+            description="Set local axis direction of fluid",
+            items=types.local_axis_directions,
+            default='LOCAL_AXIS_POS_X',
+            ); exec(conv("fluid_axis_mode"))
     target_object = PointerProperty(
             name="Target Object", 
             type=bpy.types.Object
@@ -98,14 +104,24 @@ class FlipFluidFluidProperties(bpy.types.PropertyGroup):
             default=False,
             options={'HIDDEN'},
             ); exec(conv("export_animated_mesh"))
-    skip_animated_mesh_reexport = BoolProperty(
-            name="Skip re-export",
+    skip_reexport = BoolProperty(
+            name="Skip Mesh Re-Export",
             description="Skip re-exporting this mesh when starting or resuming"
                 " a bake. If this mesh has not been exported or is missing files,"
                 " the addon will automatically export the required files",
             default=False,
             options={'HIDDEN'},
-            ); exec(conv("skip_animated_mesh_reexport"))
+            ); exec(conv("skip_reexport"))
+    force_reexport_on_next_bake = BoolProperty(
+            name="Force Re-Export On Next Bake",
+            description="Override the 'Skip Re-Export' option and force this mesh to be"
+                " re-exported and updated on the next time a simulation start/resumes"
+                " baking. Afting starting/resuming the baking process, this option"
+                " will automatically be disabled once the object has been fully exported."
+                " This option is only applicable if 'Skip Re-Export' is enabled",
+            default=False,
+            options={'HIDDEN'},
+            ); exec(conv("force_reexport_on_next_bake"))
     frame_offset_type = EnumProperty(
             name="Trigger Type",
             description="When to trigger fluid object",
@@ -143,8 +159,11 @@ class FlipFluidFluidProperties(bpy.types.PropertyGroup):
         add("fluid.append_object_velocity_influence", "")
         add("fluid.fluid_velocity_mode", "")
         add("fluid.initial_speed", "")
+        add("fluid.fluid_axis_mode", "")
         add("fluid.export_animated_target", "")
         add("fluid.export_animated_mesh", "")
+        add("fluid.skip_reexport", "")
+        add("fluid.force_reexport_on_next_bake", "")
         add("fluid.frame_offset_type", "")
         add("fluid.frame_offset", "")
         add("fluid.timeline_offset", "")

@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -59,7 +59,10 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
     
     display_simulation_grid = BoolProperty(
             name="Display Domain Grid",
-            description="Visualize the simulation/meshing grid",
+            description="Visualize the domain voxel grid in the 3D viewport."
+                " Try scaling different sides of the domain to better understand how the grid works."
+                " Try enabling the Lock Cell Size option in the FLIP Fluid Simulation panel and compare"
+                " the differences in how the grid changes as the domain is resized.",
             default=False,
             update=lambda self, context: self._update_display_simulation_grid(context),
             ); exec(conv("display_simulation_grid"))
@@ -288,6 +291,10 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
     is_draw_debug_grid_operator_running = BoolProperty(default=False); exec(conv("is_draw_debug_grid_operator_running"))
     is_draw_gl_particles_operator_running = BoolProperty(default=False); exec(conv("is_draw_gl_particles_operator_running"))
     is_draw_gl_force_field_operator_running = BoolProperty(default=False); exec(conv("is_draw_gl_force_field_operator_running"))
+
+    grid_display_settings_expanded = BoolProperty(default=True); exec(conv("grid_display_settings_expanded"))
+    particle_debug_settings_expanded = BoolProperty(default=False); exec(conv("particle_debug_settings_expanded"))
+    force_field_debug_settings_expanded = BoolProperty(default=False); exec(conv("force_field_debug_settings_expanded"))
 
     version_history = CollectionProperty(type=VersionHistoryItem); exec(conv("version_history"))
 

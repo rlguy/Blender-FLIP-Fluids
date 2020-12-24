@@ -1,6 +1,6 @@
 # MIT License
 # 
-# Copyright (c) 2019 Ryan L. Guy
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,19 @@ import ctypes
 import os
 import platform
 
+DEBUG_MODE_ENABLED = False
+IS_DEBUG_MODE_LIBRARY_LOADED = False
+
+def enable_debug_mode():
+    global DEBUG_MODE_ENABLED
+    DEBUG_MODE_ENABLED = True
+
+
+def disable_debug_mode():
+    global DEBUG_MODE_ENABLED
+    DEBUG_MODE_ENABLED = False
+
+
 class LibraryLoadError(Exception):
     def __init__(self, value):
         self.value = value
@@ -35,8 +48,14 @@ class PyFluidLib():
         self._lib = None
 
     def __getattr__(self, name):
+        global DEBUG_MODE_ENABLED
+        global IS_DEBUG_MODE_LIBRARY_LOADED
+
         if self.__dict__['_lib'] is None:
             self._lib = self._load_library("pyfluid")
+        elif DEBUG_MODE_ENABLED != IS_DEBUG_MODE_LIBRARY_LOADED:
+            self._lib = self._load_library("pyfluid")
+
         return getattr(self._lib, name)
 
     def _load_library(self, name):
@@ -44,20 +63,43 @@ class PyFluidLib():
 
         system = platform.system()
         if system == "Windows":
-            libname = "libblpyfluid.dll"
+            libname_debug = "libblpyfluiddebug.dll"
+            libname_release = "libblpyfluidrelease.dll"
         elif system == "Darwin":
-            libname = "libblpyfluid.dylib"
+            libname_debug = "libblpyfluiddebug.dylib"
+            libname_release = "libblpyfluidrelease.dylib"
         elif system == "Linux":
-            libname = "libblpyfluid.so"
+            libname_debug = "libblpyfluiddebug.so"
+            libname_release = "libblpyfluidrelease.so"
         else:
             raise LibraryLoadError("Unable to recognize system: " + system)
 
-        libfile = os.path.join(libdir, libname)
-        if not os.path.isfile(libfile):
-            raise LibraryLoadError("Cannot find fluid engine library: " + libname)
+        libfile_debug = os.path.join(libdir, libname_debug)
+        libfile_release = os.path.join(libdir, libname_release)
+
+        library_files = [libfile_debug, libfile_release]
+        missing_libraries = []
+        for lib in library_files:
+            if not os.path.isfile(lib):
+                missing_libraries.append(os.path.basename(lib))
+
+        if missing_libraries:
+            err_msg = "Cannot find fluid engine libraries: "
+            for libname in missing_libraries:
+                err_msg += "<" + libname + "> "
+            raise LibraryLoadError(err_msg)
+
+        global DEBUG_MODE_ENABLED
+        global IS_DEBUG_MODE_LIBRARY_LOADED
+
+        if DEBUG_MODE_ENABLED:
+            libfile = libfile_debug
+        else:
+            libfile = libfile_release
 
         try:
             library = ctypes.cdll.LoadLibrary(libfile)
+            IS_DEBUG_MODE_LIBRARY_LOADED = DEBUG_MODE_ENABLED
         except:
             msg = "Unable to load fluid engine library: <" + libname + ">"
             msg += " (1) Make sure that you are using a 64-bit version of Python/Blender"

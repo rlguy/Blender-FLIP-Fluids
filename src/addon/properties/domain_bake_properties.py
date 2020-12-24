@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -148,7 +148,13 @@ class DomainBakeProperties(bpy.types.PropertyGroup):
         subdirs.remove("autosave")
         autosave_frame = self.autosave_frame
 
-        savestate_frames = [int(x[-6:]) for x in subdirs]
+        savestate_frames = []
+        for d in subdirs:
+            try:
+                savestate_frames.append(int(d[-6:]))
+            except:
+                pass
+
         if autosave_frame in savestate_frames:
             savestate_frames.remove(autosave_frame)
 

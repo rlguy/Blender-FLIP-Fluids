@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -111,6 +111,13 @@ def get_object_hide_viewport(obj):
         return obj.hide
 
 
+def toggle_outline_eye_icon(obj):
+    if is_blender_28():
+        obj.hide_viewport = not obj.hide_viewport
+    else:
+        obj.hide = not obj.hide
+
+
 def set_object_instance_type(obj, display_type):
     if is_blender_28():
         if obj.instance_type != display_type:
@@ -157,6 +164,15 @@ def link_object(obj, context=None):
         context.scene.objects.link(obj)
 
 
+def link_object_to_master_scene(obj, context=None):
+    if context is None:
+        context = bpy.context
+    if is_blender_28():
+        context.scene.collection.objects.link(obj)
+    else:
+        context.scene.objects.link(obj)
+
+
 def add_to_flip_fluids_collection(obj, context):
     if context is None:
         context = bpy.context
@@ -185,10 +201,13 @@ def remove_from_flip_fluids_collection(obj, context):
 
 
 def delete_object(obj):
-    mesh_data = obj.data
-    bpy.data.objects.remove(obj, do_unlink=True)
-    mesh_data.user_clear()
-    bpy.data.meshes.remove(mesh_data)
+    if obj.type == 'MESH':
+        mesh_data = obj.data
+        bpy.data.objects.remove(obj, do_unlink=True)
+        mesh_data.user_clear()
+        bpy.data.meshes.remove(mesh_data)
+    else:
+        bpy.data.objects.remove(obj, do_unlink=True)
 
 
 def delete_mesh_data(mesh_data):
@@ -324,9 +343,9 @@ def _set_mesh_smoothness(mesh_data, is_smooth):
         mesh_data.polygons.foreach_set("use_smooth", values)
 
 
-def _set_octane_mesh_type(mesh_data, mesh_type):
+def _set_octane_mesh_type(obj, mesh_type):
         if hasattr(bpy.context.scene, 'octane') and mesh_type is not None:
-            mesh_data.octane.mesh_type = mesh_type
+            obj.octane.object_mesh_type = mesh_type
 
 
 def _transfer_mesh_materials(src_mesh_data, dst_mesh_data):
@@ -344,12 +363,12 @@ def _transfer_mesh_materials(src_mesh_data, dst_mesh_data):
 def swap_object_mesh_data_geometry(bl_object, vertices=[], triangles=[], 
                                    mesh_name="Untitled",
                                    smooth_mesh=False,
-                                   octane_mesh_type='0'):
+                                   octane_mesh_type='Global'):
     if is_blender_281():
         bl_object.data.clear_geometry()
         bl_object.data.from_pydata(vertices, [], triangles)
         _set_mesh_smoothness(bl_object.data, smooth_mesh)
-        _set_octane_mesh_type(bl_object.data, octane_mesh_type)
+        _set_octane_mesh_type(bl_object, octane_mesh_type)
     else:
         old_mesh_data = bl_object.data
         new_mesh_data = bpy.data.meshes.new(mesh_name)
@@ -358,7 +377,7 @@ def swap_object_mesh_data_geometry(bl_object, vertices=[], triangles=[],
 
         _transfer_mesh_materials(old_mesh_data, new_mesh_data)
         _set_mesh_smoothness(new_mesh_data, smooth_mesh)
-        _set_octane_mesh_type(new_mesh_data, octane_mesh_type)
+        _set_octane_mesh_type(bl_object, octane_mesh_type)
 
         old_mesh_data.user_clear()
         bpy.data.meshes.remove(old_mesh_data)

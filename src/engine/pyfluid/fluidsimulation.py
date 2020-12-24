@@ -1,6 +1,6 @@
 # MIT License
 # 
-# Copyright (c) 2019 Ryan L. Guy
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -108,6 +108,11 @@ class FluidSimulation(object):
         pb.check_success(success, libfunc.__name__ + " - ")
         return (major.value, minor.value, revision.value)
 
+    def upscale_on_initialization(self, prev_isize, prev_jsize, prev_ksize, prev_dx):
+        libfunc = lib.FluidSimulation_upscale_on_initialization
+        pb.init_lib_func(libfunc, [c_void_p, c_int, c_int, c_int, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), prev_isize, prev_jsize, prev_ksize, prev_dx])
+
     def initialize(self):
         if self.is_initialized():
             return
@@ -119,6 +124,7 @@ class FluidSimulation(object):
         libfunc = lib.FluidSimulation_is_initialized
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
         return bool(pb.execute_lib_func(libfunc, [self()]))
+
 
     @_check_simulation_initialized
     def update(self, dt):
@@ -1580,6 +1586,21 @@ class FluidSimulation(object):
             libfunc = lib.FluidSimulation_enable_adaptive_obstacle_time_stepping
         else:
             libfunc = lib.FluidSimulation_disable_adaptive_obstacle_time_stepping
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_adaptive_force_field_time_stepping(self):
+        libfunc = lib.FluidSimulation_is_adaptive_force_field_time_stepping_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_adaptive_force_field_time_stepping.setter
+    def enable_adaptive_force_field_time_stepping(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_adaptive_force_field_time_stepping
+        else:
+            libfunc = lib.FluidSimulation_disable_adaptive_force_field_time_stepping
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self()])
 

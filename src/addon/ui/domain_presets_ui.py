@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -271,8 +271,14 @@ class FLIPFLUID_PT_DomainTypePresetsPanel(bpy.types.Panel):
 
 
 def register():
-    bpy.utils.register_class(FLIPFLUID_PT_DomainTypePresetsPanel)
+    id_name = __name__.split(".")[0]
+    preferences = vcu.get_blender_preferences(bpy.context).addons[id_name].preferences
+    if preferences.enable_presets:
+        bpy.utils.register_class(FLIPFLUID_PT_DomainTypePresetsPanel)
 
 
 def unregister():
-    bpy.utils.unregister_class(FLIPFLUID_PT_DomainTypePresetsPanel)
+    try:
+        bpy.utils.unregister_class(FLIPFLUID_PT_DomainTypePresetsPanel)
+    except:
+        pass

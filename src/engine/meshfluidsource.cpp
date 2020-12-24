@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2019 Ryan L. Guy
+Copyright (C) 2020 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,8 +31,7 @@ MeshFluidSource::MeshFluidSource() {
 
 MeshFluidSource::MeshFluidSource(int i, int j, int k, double dx) :
         _isize(i), _jsize(j), _ksize(k), _dx(dx), 
-        _meshObject(i, j, k, dx),
-        _sourceSDF(i, j, k, dx) {
+        _meshObject(i, j, k, dx) {
     _initializeID();
 }
 
@@ -140,16 +139,8 @@ float MeshFluidSource::getObjectVelocityInfluence() {
     return _meshObject.getObjectVelocityInfluence();
 }
 
-void MeshFluidSource::enableRigidMesh() {
-    _isRigidMesh = true;
-}
-
-void MeshFluidSource::disableRigidMesh() {
-    _isRigidMesh = false;
-}
-
-bool MeshFluidSource::isRigidMeshEnabled() {
-    return _isRigidMesh;
+bool MeshFluidSource::isRigidBody() {
+    return _meshObject.isRigidBody();
 }
 
 void MeshFluidSource::enableConstrainedFluidVelocity() {
@@ -190,29 +181,48 @@ void MeshFluidSource::update(double dt) {
     }
 
     TriangleMesh sourceMesh = _meshObject.getMesh(_currentFrameInterpolation);
+
+    GridIndex gmin, gmax;
+    _getGridBoundsFromTriangleMesh(sourceMesh, _gridpad, gmin, gmax);
+    _sourceSDFGridOffset = gmin;
+    _sourceSDFOffset = Grid3d::GridIndexToPosition(gmin, _dx);
+    int isdf = std::max(gmax.i - gmin.i + 1, 1);
+    int jsdf = std::max(gmax.j - gmin.j + 1, 1);
+    int ksdf = std::max(gmax.k - gmin.k + 1, 1);
+
+    int isdfcurr, jsdfcurr, ksdfcurr;
+    _sourceSDF.getGridDimensions(&isdfcurr, &jsdfcurr, &ksdfcurr);
+
+    if (isdfcurr != isdf || jsdfcurr != jsdf || ksdfcurr != ksdf) {
+        _sourceSDF = MeshLevelSet(isdf, jsdf, ksdf, _dx);
+    }
+
     std::vector<vmath::vec3> vertexVelocities = _meshObject.getVertexVelocities(dt, _currentFrameInterpolation);
     AABB domainbbox(vmath::vec3(), (_isize + 1) * _dx, (_jsize + 1) * _dx, (_ksize + 1) * _dx);
-
     AABB meshbbox(sourceMesh.vertices);
     double eps = (_dx * _dx * _dx) * 0.125;
     if (!meshbbox.isIntersecting(domainbbox, eps)) {
         sourceMesh = TriangleMesh();
         vertexVelocities.clear();
     }
+    sourceMesh.translate(-_sourceSDFOffset);
 
-
-    if (_isRigidMesh) {
+    if (isRigidBody()) {
         _sourceSDF.disableVelocityData();
     } else {
         _sourceSDF.enableVelocityData();
     }
     _sourceSDF.fastCalculateSignedDistanceField(sourceMesh, vertexVelocities, _exactBand);
 
-    if (!_isRigidMesh && meshbbox.isIntersecting(domainbbox)) {
+    if (!isRigidBody() && meshbbox.isIntersecting(domainbbox)) {
         _calculateVelocityFieldData();
     }
 
     _isUpToDate = true;
+}
+
+float MeshFluidSource::trilinearInterpolate(vmath::vec3 p) {
+    return _sourceSDF.trilinearInterpolate(p - _sourceSDFOffset);
 }
 
 void MeshFluidSource::getCells(std::vector<GridIndex> &cells) {
@@ -231,6 +241,10 @@ MeshLevelSet* MeshFluidSource::getMeshLevelSet() {
     return &_sourceSDF;
 }
 
+vmath::vec3 MeshFluidSource::getMeshLevelSetOffset() {
+    return _sourceSDFOffset;
+}
+
 RigidBodyVelocity MeshFluidSource::getRigidBodyVelocity(double framedt) {
     return _meshObject.getRigidBodyVelocity(framedt);
 }
@@ -244,30 +258,13 @@ void MeshFluidSource::_initializeID() {
 }
 
 void MeshFluidSource::_calculateVelocityFieldData() {
-    TriangleMesh sourceMesh = _meshObject.getMesh(_currentFrameInterpolation);
-    AABB bbox(sourceMesh.vertices);
-    bbox.expand(4.0*_dx);
-    vmath::vec3 pmin = bbox.getMinPoint();
-    vmath::vec3 pmax = bbox.getMaxPoint();
-    GridIndex gmin = Grid3d::positionToGridIndex(pmin, _dx);
-    GridIndex gmax = Grid3d::positionToGridIndex(pmax, _dx);
-
-    gmin.i = fmax(gmin.i, 0);
-    gmin.j = fmax(gmin.j, 0);
-    gmin.k = fmax(gmin.k, 0);
-    gmax.i = fmin(gmax.i, _isize - 1);
-    gmax.j = fmin(gmax.j, _jsize - 1);
-    gmax.k = fmin(gmax.k, _ksize - 1);
-
-    int isize = gmax.i - gmin.i + 1;
-    int jsize = gmax.j - gmin.j + 1;
-    int ksize = gmax.k - gmin.k + 1;
-    vmath::vec3 offset = Grid3d::GridIndexToPosition(gmin, _dx);
+    int isize, jsize, ksize;
+    _sourceSDF.getGridDimensions(&isize, &jsize, &ksize);
 
     VelocityFieldData vdata;
     vdata.vfield = MACVelocityField(isize, jsize, ksize, _dx);
-    vdata.offset = offset;
-    vdata.gridOffset = gmin;
+    vdata.offset = _sourceSDFOffset;
+    vdata.gridOffset = _sourceSDFGridOffset;
 
     ValidVelocityComponentGrid valid(isize, jsize, ksize);
     VelocityDataGrid *sdfvgrid = _sourceSDF.getVelocityDataGrid();
@@ -277,11 +274,10 @@ void MeshFluidSource::_calculateVelocityFieldData() {
     for (int k = 0; k < ksize; k++) {
         for (int j = 0; j < jsize; j++) {
             for (int i = 0; i < isize + 1; i++) {
-                GridIndex g(gmin.i + i, gmin.j + j, gmin.k + k);
-                vmath::vec3 p = Grid3d::FaceIndexToPositionU(g, _dx);
+                vmath::vec3 p = Grid3d::FaceIndexToPositionU(i, j, k, _dx);
                 float d = _sourceSDF.trilinearInterpolate(p);
                 if (d < maxd) {
-                    vdata.vfield.setU(i, j, k, vscale * sdfvgrid->field.U(g));
+                    vdata.vfield.setU(i, j, k, vscale * sdfvgrid->field.U(i, j, k));
                     valid.validU.set(i, j, k, true);
                 }
             }
@@ -291,11 +287,10 @@ void MeshFluidSource::_calculateVelocityFieldData() {
     for (int k = 0; k < ksize; k++) {
         for (int j = 0; j < jsize + 1; j++) {
             for (int i = 0; i < isize; i++) {
-                GridIndex g(gmin.i + i, gmin.j + j, gmin.k + k);
-                vmath::vec3 p = Grid3d::FaceIndexToPositionV(g, _dx);
+                vmath::vec3 p = Grid3d::FaceIndexToPositionV(i, j, k, _dx);
                 float d = _sourceSDF.trilinearInterpolate(p);
                 if (d < maxd) {
-                    vdata.vfield.setV(i, j, k, vscale * sdfvgrid->field.V(g));
+                    vdata.vfield.setV(i, j, k, vscale * sdfvgrid->field.V(i, j, k));
                     valid.validV.set(i, j, k, true);
                 }
             }
@@ -305,11 +300,10 @@ void MeshFluidSource::_calculateVelocityFieldData() {
     for (int k = 0; k < ksize + 1; k++) {
         for (int j = 0; j < jsize; j++) {
             for (int i = 0; i < isize; i++) {
-                GridIndex g(gmin.i + i, gmin.j + j, gmin.k + k);
-                vmath::vec3 p = Grid3d::FaceIndexToPositionW(g, _dx);
+                vmath::vec3 p = Grid3d::FaceIndexToPositionW(i, j, k, _dx);
                 float d = _sourceSDF.trilinearInterpolate(p);
                 if (d < maxd) {
-                    vdata.vfield.setW(i, j, k, vscale * sdfvgrid->field.W(g));
+                    vdata.vfield.setW(i, j, k, vscale * sdfvgrid->field.W(i, j, k));
                     valid.validW.set(i, j, k, true);
                 }
             }
@@ -319,6 +313,23 @@ void MeshFluidSource::_calculateVelocityFieldData() {
     int layers = isize + jsize + ksize;
     vdata.vfield.extrapolateVelocityField(valid, layers);
     _vfieldData = vdata;
+}
+
+void MeshFluidSource::_getGridBoundsFromTriangleMesh(TriangleMesh &m, double pad, 
+                                                     GridIndex &gmin, GridIndex &gmax) {
+    AABB bbox(m.vertices);
+    bbox.expand(pad * _dx);
+    vmath::vec3 pmin = bbox.getMinPoint();
+    vmath::vec3 pmax = bbox.getMaxPoint();
+    gmin = Grid3d::positionToGridIndex(pmin, _dx);
+    gmax = Grid3d::positionToGridIndex(pmax, _dx);
+
+    gmin.i = fmax(gmin.i, 0);
+    gmin.j = fmax(gmin.j, 0);
+    gmin.k = fmax(gmin.k, 0);
+    gmax.i = fmin(gmax.i, _isize - 1);
+    gmax.j = fmin(gmax.j, _jsize - 1);
+    gmax.k = fmin(gmax.k, _ksize - 1);
 }
 
 VelocityFieldData* MeshFluidSource::getVelocityFieldData() {

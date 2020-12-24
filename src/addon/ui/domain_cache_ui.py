@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -56,6 +56,20 @@ class FLIPFLUID_PT_DomainTypeCachePanel(bpy.types.Panel):
         dprops = domain_object.flip_fluid.domain
         cprops = dprops.cache
         show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
+        show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
+
+        if show_documentation:
+            column = self.layout.column(align=True)
+            column.operator(
+                "wm.url_open", 
+                text="Cache Documentation", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Cache-Settings"
+            column.operator(
+                "wm.url_open", 
+                text="Exporting to Alemibc (.abc) cache", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Alembic-Export-Support"
 
         column = self.layout.column(align=True)
         column.label(text="Current Cache Directory:")
@@ -69,6 +83,18 @@ class FLIPFLUID_PT_DomainTypeCachePanel(bpy.types.Panel):
 
         if not show_advanced:
             return
+
+        column = self.layout.column(align=True)
+        column.label(text="Link existing exported geometry:")
+        subcolumn = column.column(align=True)
+        subcolumn.enabled = not dprops.bake.is_simulation_running
+        subcolumn.prop(cprops, "linked_geometry_directory")
+        row = column.row(align=True)
+        row.operator("flip_fluid_operators.relative_linked_geometry_directory")
+        row.operator("flip_fluid_operators.absolute_linked_geometry_directory")
+        column = column.column(align=True)
+        column.operator("flip_fluid_operators.clear_linked_geometry_directory")
+        column.separator()
 
         column = self.layout.column(align=True)
         column.label(text="Cache Operators:")
@@ -100,8 +126,8 @@ class FLIPFLUID_PT_DomainTypeCachePanel(bpy.types.Panel):
         column_left = split.column(align=True)
         column_right = split.column(align=True)
         column_left.operator("flip_fluid_operators.free_cache", text=free_text)
-        column_right.prop(cprops, "clear_cache_directory_logs")
-        column_right.prop(cprops, "clear_cache_directory_export")
+        column_right.prop(cprops, "clear_cache_directory_logs", text="Free log files")
+        column_right.prop(cprops, "clear_cache_directory_export", text="Free export files")
     
 
 def register():

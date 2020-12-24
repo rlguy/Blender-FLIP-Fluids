@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ if "bpy" in locals():
         'object_operators',
         'render_operators',
         'cache_operators',
+        'world_operators',
         'export_operators',
         'material_operators',
         'preset_operators',
@@ -43,6 +44,7 @@ from . import (
         object_operators,
         render_operators,
         cache_operators,
+        world_operators,
         export_operators,
         material_operators,
         preset_operators,
@@ -60,6 +62,7 @@ def register():
     object_operators.register()
     render_operators.register()
     cache_operators.register()
+    world_operators.register()
     export_operators.register()
     material_operators.register()
     preset_operators.register()
@@ -76,6 +79,7 @@ def unregister():
     object_operators.unregister()
     render_operators.unregister()
     cache_operators.unregister()
+    world_operators.unregister()
     export_operators.unregister()
     material_operators.unregister()
     preset_operators.unregister()

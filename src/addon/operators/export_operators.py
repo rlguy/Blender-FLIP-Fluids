@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 
 import bpy, os, json, csv, math
 
-from ..objects import flip_fluid_mesh_exporter
+from ..objects import flip_fluid_geometry_exporter as geometry_exporter
 from .. import export
 
 
@@ -30,8 +30,8 @@ class ExportFluidSimulation(bpy.types.Operator):
     def __init__(self):
         self.timer = None
         self.is_executing_timer_event = False
-        self.mesh_exporter = None
-        self.export_step_time = 1.0 / 30.0
+        self.geometry_exporter = None
+        self.export_step_time = 1.0 / 15.0
         self.mesh_data = None
 
 
@@ -39,24 +39,13 @@ class ExportFluidSimulation(bpy.types.Operator):
         return bpy.context.scene.flip_fluid.get_domain_properties()
 
 
-    def _initialize_mesh_exporter(self, context):
-        dprops = self._get_domain_properties()
-        if dprops.debug.display_console_output:
-            print("Exporting Simulation Meshes:")
-            print("------------------------------------------------------------")
-
-        simprops = context.scene.flip_fluid
-        objects = (simprops.get_fluid_objects() +
-                   simprops.get_obstacle_objects() +
-                   simprops.get_inflow_objects() + 
-                   simprops.get_outflow_objects() + 
-                   simprops.get_force_field_objects())
-        object_names = [obj.name for obj in objects]
+    def _initialize_geometry_exporter(self, context):
+        print("Exporting Simulation Meshes:")
+        print("------------------------------------------------------------")
 
         export_dir = self._get_export_directory()
-        export.clean_export_directory(object_names, export_dir)
-        self.mesh_data = export.get_mesh_exporter_parameter_dict(object_names, export_dir)
-        self.mesh_exporter = flip_fluid_mesh_exporter.MeshExporter(self.mesh_data)
+        self.geometry_exporter = geometry_exporter.GeometryExportManager(export_dir)
+        export.add_objects_to_geometry_exporter(self.geometry_exporter)
 
 
     def _get_logfile_name(self, context):
@@ -118,12 +107,12 @@ class ExportFluidSimulation(bpy.types.Operator):
             dprops.bake.is_cache_directory_set = True
 
 
-    def _export_mesh_data(self):
-        dprops = self._get_domain_properties()
-        cache_directory = dprops.cache.get_cache_abspath()
-        export_folder = dprops.bake.export_directory_name
-        export_directory = os.path.join(cache_directory, export_folder)
-        export.export_mesh_data(self.mesh_data, export_directory)
+    def _update_flip_object_force_reexport_on_bake(self, context):
+        sim_objects = context.scene.flip_fluid.get_simulation_objects()
+        for obj in sim_objects:
+            props = obj.flip_fluid.get_property_group()
+            if hasattr(props, "force_reexport_on_next_bake"):
+                props.force_reexport_on_next_bake = False
 
 
     @classmethod
@@ -145,19 +134,19 @@ class ExportFluidSimulation(bpy.types.Operator):
         if event.type == 'TIMER' and not self.is_executing_timer_event:
             self.is_executing_timer_event = True
 
-            is_finished = self.mesh_exporter.update_export(self.export_step_time)
-            self._export_mesh_data()
+            is_finished = self.geometry_exporter.update_export(self.export_step_time)
 
-            dprops.bake.export_progress = self.mesh_exporter.export_progress
-            dprops.bake.export_stage = self.mesh_exporter.export_stage
+            dprops.bake.export_progress = self.geometry_exporter.get_export_progress()
+            dprops.bake.export_stage = self.geometry_exporter.get_export_stage()
             if is_finished:
-                if self.mesh_exporter.is_error:
-                    self.report({"ERROR"}, self.mesh_exporter.error_message)
+                if self.geometry_exporter.is_error():
+                    self.report({"ERROR"}, self.geometry_exporter.get_error_message())
                     dprops.bake.is_bake_cancelled = True
                     self.cancel(context)
                     return {'FINISHED'}
 
                 self._export_simulation_data_file()
+                self._update_flip_object_force_reexport_on_bake(context)
                 self.cancel(context)
                 return {'FINISHED'}
 
@@ -172,7 +161,7 @@ class ExportFluidSimulation(bpy.types.Operator):
 
 
     def execute(self, context):
-        self._initialize_mesh_exporter(context)
+        self._initialize_geometry_exporter(context)
         self._initialize_operator(context)
         return {'RUNNING_MODAL'}
 

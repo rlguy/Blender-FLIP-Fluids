@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2019 Ryan L. Guy
+Copyright (C) 2020 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -35,29 +35,41 @@ public:
     ForceFieldSurface();
     virtual ~ForceFieldSurface();
 
-    virtual void update(double dt);
+    virtual void update(double dt, double frameInterpolation);
     virtual void addForceFieldToGrid(MACVelocityField &fieldGrid);
+    virtual void addGravityScaleToGrid(ForceFieldGravityScaleGrid &scaleGrid);
     virtual std::vector<vmath::vec3> generateDebugProbes();
 
 protected:
     virtual void _initialize();
+    virtual bool _isSubclassStateChanged();
+    virtual void _clearSubclassState();
 
 private:
 
-	int _ioffsetSDF = 0;
-	int _joffsetSDF = 0;
-	int _koffsetSDF = 0;
-	vmath::vec3 _offsetSDF;
-	int _isizeSDF = 0;
-	int _jsizeSDF = 0;
-	int _ksizeSDF = 0;
+    void _updateGridDimensions(TriangleMesh &mesh);
+    void _addForceFieldToGridMT(MACVelocityField &fieldGrid, int dir);
+    void _addForceFieldToGridThread(int startidx, int endidx, 
+                                    MACVelocityField *fieldGrid, int dir);
 
-	bool _isLevelsetUpToDate = false;
-	float _minForceThreshold = 1e-4;
-	float _lastMaxDistance = -1.0f;
+    int _ioffsetSDF = 0;
+    int _joffsetSDF = 0;
+    int _koffsetSDF = 0;
+    vmath::vec3 _offsetSDF;
+    int _isizeSDF = 0;
+    int _jsizeSDF = 0;
+    int _ksizeSDF = 0;
 
-	MeshLevelSet _sdf;
-	int _exactBand = 3;
+    bool _isLevelsetUpToDate = false;
+    float _lastMaxDistance = -1.0f;
+
+    MeshLevelSet _sdf;
+    Array3d<vmath::vec3> _vectorField;
+
+    int _numDebugProbes = 600;
+    float _jitterFactor = 0.25;
+    float _minRadiusFactor = 0.5f;
+    float _maxRadiusFactor = 5.0f;
 
 };
 

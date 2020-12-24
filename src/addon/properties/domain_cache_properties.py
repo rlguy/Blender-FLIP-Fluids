@@ -1,5 +1,5 @@
-# Blender FLIP Fluid Add-on
-# Copyright (C) 2019 Ryan L. Guy
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2020 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -75,6 +75,14 @@ class DomainCacheProperties(bpy.types.PropertyGroup):
             default=os.path.join(temp_directory, "flip_fluid_log.txt"), 
             subtype='FILE_NAME',
             ); exec(conv("logfile_name"))
+    linked_geometry_directory = StringProperty(
+            name="",
+            description="select an existing cache directory. Link exported geometry data from another cache directory."
+                " Use if you want to re-use exported geometry that is located in another cache. Useful if you have a"
+                " lot of geometry in your scene that you do not want to re-export",
+            default="", 
+            subtype='DIR_PATH',
+            ); exec(conv("linked_geometry_directory"))
 
     is_cache_directory_set = BoolProperty(default=False); exec(conv("is_cache_directory_set"))
 
@@ -99,6 +107,57 @@ class DomainCacheProperties(bpy.types.PropertyGroup):
 
     def get_cache_abspath(self):
         return self.get_abspath(self.cache_directory)
+
+
+    def get_linked_geometry_abspath(self):
+        if not self.linked_geometry_directory:
+            return None
+        return self.get_abspath(self.linked_geometry_directory)
+
+
+    def is_linked_geometry_directory(self):
+        linked_geometry_directory = self.get_linked_geometry_abspath()
+        if linked_geometry_directory is None:
+            return False
+
+        if not os.path.isdir(linked_geometry_directory):
+            return False
+
+        linked_export_directory = os.path.join(linked_geometry_directory, "export")
+        if os.path.isdir(linked_export_directory):
+            return True
+        else:
+            incorrect_filepath_test = os.path.join(linked_geometry_directory, database_filename)
+            if os.path.isfile(incorrect_filepath_test):
+                return True
+            else:
+                return False
+
+
+    def get_geometry_database_abspath(self, export_directory=None, database_filename=None):
+        if export_directory is None:
+            export_directory = os.path.join(self.get_cache_abspath(), "export")
+        if database_filename is None:
+            database_filename = "export_data.sqlite3"
+
+        default_filepath = os.path.join(export_directory, database_filename)
+
+        linked_geometry_directory = self.get_linked_geometry_abspath()
+        if linked_geometry_directory is None:
+            return default_filepath
+
+        if not os.path.isdir(linked_geometry_directory):
+            return default_filepath
+
+        linked_export_directory = os.path.join(linked_geometry_directory, "export")
+        if os.path.isdir(linked_export_directory):
+            return os.path.join(linked_export_directory, database_filename)
+        else:
+            incorrect_filepath_test = os.path.join(linked_geometry_directory, database_filename)
+            if os.path.isfile(incorrect_filepath_test):
+                return incorrect_filepath_test
+            else:
+                return default_filepath
 
 
     def mark_cache_directory_set(self):

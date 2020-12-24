@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2019 Ryan L. Guy
+Copyright (C) 2020 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -39,6 +39,7 @@ namespace Interpolation {
 
     extern double bilinearInterpolate(double v00, double v10, double v01, double v11, 
                                       double ix, double iy);
+    extern vmath::vec3 trilinearInterpolate(vmath::vec3 p, double dx, Array3d<vmath::vec3> &grid);
     extern void trilinearInterpolateGradient(
             vmath::vec3 p, double dx, Array3d<float> &grid, vmath::vec3 *grad);
 }
