@@ -27,6 +27,10 @@ def is_blender_281():
     return bpy.app.version >= (2, 81, 0)
 
 
+def is_blender_29():
+    return bpy.app.version >= (2, 90, 0)
+
+
 def is_blender_279():
     return bpy.app.version <= (2, 79, 999)
     

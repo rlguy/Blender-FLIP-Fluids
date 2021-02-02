@@ -988,7 +988,8 @@ class FlipFluidHelperCommandLineBake(bpy.types.Operator):
     bl_label = "Launch Bake"
     bl_description = ("Launch a new command line window and start baking." +
                      " The .blend file will need to be saved before using" +
-                     " this operator")
+                     " this operator. Only available on Windows OS." +
+                     " For MacOS/Linux, use the copy operator to copy the command to the clipboard")
 
 
     @classmethod
@@ -1060,23 +1061,6 @@ class FlipFluidHelperCommandLineBakeToClipboard(bpy.types.Operator):
         script_path = os.path.dirname(script_path)
         script_path = os.path.join(script_path, "resources", "command_line_scripts", "run_simulation.py")
 
-        system = platform.system()
-        if system == "Windows":
-            if vcu.is_blender_28():
-                blender_exe_path = bpy.app.binary_path
-            else:
-                # subproccess.call() in Blender 2.79 Python does not seem to support spaces in the 
-                # executable path, so we'll just use blender.exe and hope that no other addon has
-                # changed Blender's working directory
-                blender_exe_path = "blender.exe"
-            command = ["start", "cmd", "/k", blender_exe_path, "--background", bpy.data.filepath, "--python", script_path]
-        elif system == "Darwin":
-            # Feature not available on MacOS
-            return {'CANCELLED'}
-        elif system == "Linux":
-            # Feature not available on Linux
-            return {'CANCELLED'}
-
         command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" --python \"" + script_path + "\""
         bpy.context.window_manager.clipboard = command_text
 
@@ -1093,12 +1077,15 @@ class FlipFluidHelperCommandLineRender(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.helper_command_line_render"
     bl_label = "Launch Render"
     bl_description = ("Launch a new command line window and start rendering the animation." +
-                     " The .blend file will need to be saved before using this operator")
+                     " The .blend file will need to be saved before using this operator." +
+                     " Only available on Windows OS. For MacOS/Linux, use" +
+                     " the copy operator to copy the command to the clipboard")
 
 
     @classmethod
     def poll(cls, context):
-        return bool(bpy.data.filepath)
+        system = platform.system()
+        return bool(bpy.data.filepath) and system == "Windows"
 
 
     def execute(self, context):        
@@ -1147,23 +1134,6 @@ class FlipFluidHelperCommandLineRenderToClipboard(bpy.types.Operator):
 
 
     def execute(self, context):
-        system = platform.system()
-        if system == "Windows":
-            if vcu.is_blender_28():
-                blender_exe_path = bpy.app.binary_path
-            else:
-                # subproccess.call() in Blender 2.79 Python does not seem to support spaces in the 
-                # executable path, so we'll just use blender.exe and hope that no other addon has
-                # changed Blender's working directory
-                blender_exe_path = "blender.exe"
-            command = ["start", "cmd", "/k", blender_exe_path, "--background", bpy.data.filepath, "-a"]
-        elif system == "Darwin":
-            # Feature not available on MacOS
-            return {'CANCELLED'}
-        elif system == "Linux":
-            # Feature not available on Linux
-            return {'CANCELLED'}
-
         command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" -a"
         bpy.context.window_manager.clipboard = command_text
 

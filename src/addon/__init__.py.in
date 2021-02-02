@@ -30,6 +30,7 @@ bl_info = {
 if "bpy" in locals():
     import importlib
     reloadable_modules = [
+        'filesystem',
         'utils',
         'objects',
         'materials',
@@ -53,6 +54,7 @@ from bpy.props import (
         )
 
 from . import (
+        filesystem,
         utils,
         objects,
         materials,
@@ -93,6 +95,18 @@ def render_complete(scene):
 @bpy.app.handlers.persistent
 def render_cancel(scene):
     render.render_cancel(scene)
+
+
+@bpy.app.handlers.persistent
+def frame_change_pre(scene, depsgraph=None):
+    #scene.objects["mesh_cache"].modifiers["Ocean"].time = scene.objects["mesh_cache"].evaluated_get(depsgraph).modifiers["Ocean"].time
+
+    dprops = scene.flip_fluid.get_domain_properties()
+    domain_object = scene.flip_fluid.get_domain_object()
+    if domain_object is not None:
+        domain_object_eval = domain_object.evaluated_get(bpy.context.evaluated_depsgraph_get())
+        dprops_eval = domain_object_eval.flip_fluid.domain
+        dprops.render.override_frame = dprops_eval.render.override_frame
 
 
 @bpy.app.handlers.persistent
@@ -155,6 +169,7 @@ def register():
     bpy.app.handlers.render_init.append(render_init)
     bpy.app.handlers.render_complete.append(render_complete)
     bpy.app.handlers.render_cancel.append(render_cancel)
+    bpy.app.handlers.frame_change_pre.append(frame_change_pre)
     bpy.app.handlers.frame_change_post.append(frame_change_post)
     bpy.app.handlers.render_pre.append(render_pre)
     bpy.app.handlers.load_pre.append(load_pre)
@@ -180,6 +195,7 @@ def unregister():
     bpy.app.handlers.render_init.remove(render_init)
     bpy.app.handlers.render_complete.remove(render_complete)
     bpy.app.handlers.render_cancel.remove(render_cancel)
+    bpy.app.handlers.frame_change_pre.remove(frame_change_pre)
     bpy.app.handlers.frame_change_post.remove(frame_change_post)
     bpy.app.handlers.render_pre.remove(render_pre)
     bpy.app.handlers.load_pre.remove(load_pre)

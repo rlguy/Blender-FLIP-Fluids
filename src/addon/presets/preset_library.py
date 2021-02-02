@@ -20,6 +20,7 @@ from mathutils import Vector
 
 from ..materials import material_library
 from ..utils import version_compatibility_utils as vcu
+from ..filesystem import filesystem_protection_layer as fpl
 
 PACKAGE_INFO_LIST = None
 PRESET_INFO_LIST = None
@@ -288,7 +289,7 @@ def save_user_default_settings():
     usr_path = __get_usr_preset_path()
     default_file = os.path.join(usr_path, "default.preset")
     if os.path.exists(default_file):
-        os.remove(default_file)
+        fpl.delete_file(default_file)
 
     preset_dict = __get_default_preset_dict(domain_object)
     __write_dict_to_json(preset_dict, default_file)
@@ -304,7 +305,7 @@ def delete_user_default_settings():
     usr_path = __get_usr_preset_path()
     default_file = os.path.join(usr_path, "default.preset")
     if os.path.exists(default_file):
-        os.remove(default_file)
+        fpl.delete_file(default_file)
 
     return True
 
@@ -379,7 +380,7 @@ def delete_package(identifier):
     package_info = package_identifier_to_info(identifier)
     package_path = package_info["path"]
     try:
-        shutil.rmtree(package_path)
+        fpl.delete_files_in_directory(package_path, [".info", ".md"], remove_directory=True)
     except:
         return "Unable to delete package directory <" + package_path + ">"
     __initialize_package_info_list()
@@ -443,7 +444,7 @@ def edit_user_preset(preset_info_dict):
         return error
 
     try:
-        shutil.rmtree(original_preset_path)
+        fpl.delete_files_in_directory(original_preset_path, [".preset", ".png"], remove_directory=True)
     except:
         return "Unable to delete original preset directory <" + original_preset_path + ">"
 
@@ -455,7 +456,7 @@ def delete_preset(identifier):
     preset_info = preset_identifier_to_info(identifier)
     preset_path = preset_info["path"]
     try:
-        shutil.rmtree(preset_path)
+        fpl.delete_files_in_directory(preset_path, [".preset", ".png"], remove_directory=True)
     except:
         return "Unable to delete preset directory <" + preset_path + ">"
     __initialize_preset_info_list()
@@ -566,7 +567,7 @@ def decode_package_zipfile(filepath, dst_data):
 def clear_temp_files():
     temp_dir = __get_temp_preset_path()
     try:
-        shutil.rmtree(temp_dir)
+        fpl.delete_files_in_directory(temp_dir, [".info", ".md"], remove_directory=True)
     except:
         print("Error clearing temp directory <" + temp_dir + ">")
 
@@ -693,7 +694,7 @@ def __initialize_default_preset():
     sys_path = __get_sys_preset_path()
     default_file = os.path.join(sys_path, "default.preset")
     if os.path.exists(default_file):
-        os.remove(default_file)
+        fpl.delete_file(default_file)
 
     domain_object = generate_dummy_domain_object()
     preset_dict = __get_default_preset_dict(domain_object)

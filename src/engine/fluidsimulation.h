@@ -32,6 +32,7 @@ SOFTWARE.
 #endif
 
 #include <vector>
+#include <random>
 
 #include "vmath.h"
 #include "array3d.h"
@@ -1237,6 +1238,7 @@ private:
     void _initializeForceFieldGrid(int isize, int jsize, int ksize, double dx);
     void _initializeSimulation();
     void _initializeParticleRadii();
+    void _initializeRandomGenerator();
     double _getMarkerParticleJitter();
     vmath::vec3 _jitterMarkerParticlePosition(vmath::vec3 p, double jitter);
     void _addMarkerParticle(vmath::vec3 p, vmath::vec3 velocity);
@@ -1496,7 +1498,7 @@ private:
     }
 
     inline double _randomDouble(double min, double max) {
-        return min + ((double)rand() / (double)RAND_MAX) * (max - min);
+        return min + _random(_randomSeed) * (max - min);
     }
 
     template<class T>
@@ -1685,6 +1687,7 @@ private:
     bool _isExtremeVelocityRemovalEnabled = true;
     double _maxExtremeVelocityRemovalPercent = 0.0005;
     int _maxExtremeVelocityRemovalAbsolute = 35;
+    int _minTimeStepIncreaseForRemoval = 4;
     float _markerParticleStepDistanceFactor = 0.5;
     
     // OpenCL
@@ -1700,6 +1703,9 @@ private:
     std::vector<int> _triy;
     std::vector<int> _triz;
 
+    std::random_device _randomDevice;
+    std::mt19937 _randomSeed;
+    std::uniform_real_distribution<> _random;
 };
 
 #endif

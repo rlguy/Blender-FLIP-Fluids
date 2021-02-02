@@ -14,11 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys, os, shutil, zipfile, json, struct, traceback, math
+import sys, os, shutil, json, traceback, math
 
 from .objects import flip_fluid_map
 from .objects import flip_fluid_geometry_database
 from .operators import bake_operators
+from .filesystem import filesystem_protection_layer as fpl
 
 from .pyfluid import (
         pyfluid,
@@ -619,10 +620,11 @@ def __delete_outdated_savestates(cache_directory, savestate_id):
         subdirs.remove("autosave")
 
     for d in subdirs:
+        extensions = [".state", ".data"]
         if int(d[-6:]) > savestate_id:
             path = os.path.join(savestate_directory, d)
             try:
-                shutil.rmtree(path)
+                fpl.delete_files_in_directory(path, extensions, remove_directory=True)
             except:
                 print("Error: unable to delete directory <" + path + "> (skipping)")
 
@@ -636,7 +638,7 @@ def __delete_outdated_meshes(cache_directory, savestate_id):
         if filenum > savestate_id:
             path = os.path.join(bakefiles_directory, f)
             try:
-                os.remove(path)
+                fpl.delete_file(path)
             except:
                 print("Error: unable to delete file <" + path + "> (skipping)")
 
@@ -1003,7 +1005,7 @@ def __get_fluid_object_velocity(fluid_object, frameid):
     elif fluid_object.fluid_velocity_mode.data == 'FLUID_VELOCITY_AXIS':
         timeline_frame = __get_timeline_frame()
         local_x, local_y, local_z = __extract_local_axis(fluid_object.name, timeline_frame)
-        axis_mode = __get_parameter_data(fluid_object.fluid_axis_mode, timeline_frame)
+        axis_mode = __get_parameter_data(fluid_object.fluid_axis_mode, frameid)
         if axis_mode == 'LOCAL_AXIS_POS_X' or axis_mode == 0.0:
             local_axis = local_x
         elif axis_mode == 'LOCAL_AXIS_POS_Y' or axis_mode == 1.0:
@@ -1017,7 +1019,7 @@ def __get_fluid_object_velocity(fluid_object, frameid):
         elif axis_mode == 'LOCAL_AXIS_NEG_Z' or axis_mode == 5.0:
             local_axis = [-local_z[0], -local_z[1], -local_z[2]]
 
-        initial_speed = __get_parameter_data(fluid_object.initial_speed, timeline_frame)
+        initial_speed = __get_parameter_data(fluid_object.initial_speed, frameid)
         velocity = [initial_speed * local_axis[0], initial_speed * local_axis[1], initial_speed * local_axis[2]]
         return velocity
 
@@ -1054,7 +1056,7 @@ def __get_inflow_object_velocity(inflow_object, frameid):
     elif inflow_object.inflow_velocity_mode.data == 'INFLOW_VELOCITY_AXIS':
         timeline_frame = __get_timeline_frame()
         local_x, local_y, local_z = __extract_local_axis(inflow_object.name, timeline_frame)
-        axis_mode = __get_parameter_data(inflow_object.inflow_axis_mode, timeline_frame)
+        axis_mode = __get_parameter_data(inflow_object.inflow_axis_mode, frameid)
         if axis_mode == 'LOCAL_AXIS_POS_X' or axis_mode == 0.0:
             local_axis = local_x
         elif axis_mode == 'LOCAL_AXIS_POS_Y' or axis_mode == 1.0:
@@ -1068,7 +1070,7 @@ def __get_inflow_object_velocity(inflow_object, frameid):
         elif axis_mode == 'LOCAL_AXIS_NEG_Z' or axis_mode == 5.0:
             local_axis = [-local_z[0], -local_z[1], -local_z[2]]
 
-        inflow_speed = __get_parameter_data(inflow_object.inflow_speed, timeline_frame)
+        inflow_speed = __get_parameter_data(inflow_object.inflow_speed, frameid)
         velocity = [inflow_speed * local_axis[0], inflow_speed * local_axis[1], inflow_speed * local_axis[2]]
         return velocity
 
@@ -2031,12 +2033,10 @@ def __write_autosave_data(domain_data, cache_directory, fluidsim, frameno):
 
     try:
         for filepath in autosave_default_filepaths:
-            if os.path.exists(filepath):
-                os.remove(filepath)
+            fpl.delete_file(filepath)
         if fluidsim.get_num_diffuse_particles() > 0:
             for filepath in autosave_diffuse_filepaths:
-                if os.path.exists(filepath):
-                    os.remove(filepath)
+                fpl.delete_file(filepath)
     except Exception as e:
         print("FLIP Fluids: OS/Filesystem Error: Unable to delete older autosave files from storage")
         print("Error Message: ", e)
@@ -2062,7 +2062,7 @@ def __write_autosave_data(domain_data, cache_directory, fluidsim, frameno):
             numstr = str(frameno).zfill(6)
             savestate_dir = os.path.join(cache_directory, "savestates", "autosave" + numstr)
             if os.path.isdir(savestate_dir):
-                shutil.rmtree(savestate_dir)
+                fpl.delete_files_in_directory(savestate_dir, [".state", ".data"], remove_directory=True)
             shutil.copytree(autosave_dir, savestate_dir)
 
 

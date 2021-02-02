@@ -52,9 +52,19 @@ def get_current_render_frame():
     if dprops is None:
         return 0 
 
+    """
+    # https://developer.blender.org/T71908 currently breaks
+    # this return due to incorrect frame number that is not
+    # available on render_pre.
+    #
+    # Reason for this return is to prevent the Blender compositor
+    # from changing frames while rendering a single frame, but this
+    # use case is rare.
+
     if is_rendering():
         global RENDER_PRE_FRAME_NUMBER
         return RENDER_PRE_FRAME_NUMBER
+    """
 
     return get_current_simulation_frame()
 

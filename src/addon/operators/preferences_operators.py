@@ -87,6 +87,10 @@ class FLIPFluidPreferencesExportUserData(bpy.types.Operator):
 
 
     def create_archive(self):
+        pass
+
+        # Deprecated function - do not uncomment until updating to use filesystem_protection_layer
+        """
         temp_dir = self.get_temp_directory()
         if not os.path.exists(temp_dir):
             try:
@@ -122,6 +126,7 @@ class FLIPFluidPreferencesExportUserData(bpy.types.Operator):
             shutil.rmtree(temp_dir)
         except Exception as e:
             return str(e)
+        """
 
 
     def execute(self, context):
@@ -190,6 +195,10 @@ class FLIPFluidPreferencesImportUserData(bpy.types.Operator, ImportHelper):
 
 
     def import_user_data(self):
+        pass
+
+        # Deprecated function - do not uncomment until updating to use filesystem_protection_layer
+        """
         temp_dir = self.get_temp_directory()
         try:
             zfile = zipfile.ZipFile(self.filepath, "r")
@@ -220,6 +229,7 @@ class FLIPFluidPreferencesImportUserData(bpy.types.Operator, ImportHelper):
             shutil.rmtree(temp_dir)
         except Exception as e:
             return str(e)
+        """
 
 
     def execute(self, context):

@@ -2653,6 +2653,11 @@ void FluidSimulation::_initializeParticleRadii() {
     _liquidSDFParticleRadius = 0.5 * _liquidSDFParticleScale * _dx * sqrt(3.0); 
 }
 
+void FluidSimulation::_initializeRandomGenerator() {
+    _randomSeed = std::mt19937(_randomDevice());
+    _random = std::uniform_real_distribution<>(0, 1); 
+}
+
 void FluidSimulation::_initializeSimulation() {
     _logfile.newline();
     _logfile.log(std::ostringstream().flush() << 
@@ -2661,6 +2666,7 @@ void FluidSimulation::_initializeSimulation() {
     _initializeSimulationGrids(_isize, _jsize, _ksize, _dx);
 
     _initializeParticleRadii();
+    _initializeRandomGenerator();
 
     if (_upscalingPreviousCellSize) {
         StopWatch upscaleTimer;
@@ -4319,7 +4325,7 @@ float FluidSimulation::_getMarkerParticleSpeedLimit(double dt) {
         }
 
         currentRemovalCount += speedLimitCounts[i];
-        maxspeed = i * speedLimitStep;
+        maxspeed = std::max(i + _minTimeStepIncreaseForRemoval, _maxFrameTimeSteps) * speedLimitStep;
     }
 
     return maxspeed;
@@ -5552,6 +5558,7 @@ void FluidSimulation::_outputSimulationData() {
 ********************************************************************************/
 
 void FluidSimulation::_stepFluid(double dt) {
+    srand(_currentFrame + _currentFrameTimeStepNumber);
     if (!_isSkippedFrame) {
         _launchUpdateObstacleObjectsThread(dt);
         _joinUpdateObstacleObjectsThread();
@@ -5861,7 +5868,8 @@ void FluidSimulation::update(double dt) {
     _currentFrameDeltaTime = dt;
     _currentFrameDeltaTimeRemaining = dt;
     _currentFrameTimeStepNumber = 0;
-    _isSkippedFrame = _isZeroLengthDeltaTime && _outputData.isInitialized;
+    bool isDebuggingEnabled = _isFluidParticleOutputEnabled || _isInternalObstacleMeshOutputEnabled || _isForceFieldDebugOutputEnabled;
+    _isSkippedFrame = _isZeroLengthDeltaTime && _outputData.isInitialized && !isDebuggingEnabled;
     double substepTime = _currentFrameDeltaTime / (double)_minFrameTimeSteps;
 
     double eps = 1e-9;

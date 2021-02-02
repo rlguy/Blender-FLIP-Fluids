@@ -179,9 +179,9 @@ void ForceFieldVolume::_updateGridDimensions(TriangleMesh &mesh) {
         gmax.i = std::min(gmax.i + 1, _isize - 1);
         gmax.j = std::min(gmax.j + 1, _jsize - 1);
         gmax.k = std::min(gmax.k + 1, _ksize - 1);
-        _isizeSDF = gmax.i - _ioffsetSDF + 1;
-        _jsizeSDF = gmax.j - _joffsetSDF + 1;
-        _ksizeSDF = gmax.k - _koffsetSDF + 1;
+        _isizeSDF = std::max(gmax.i - _ioffsetSDF + 1, 1);
+        _jsizeSDF = std::max(gmax.j - _joffsetSDF + 1, 1);
+        _ksizeSDF = std::max(gmax.k - _koffsetSDF + 1, 1);
     } else {
         _ioffsetSDF = 0;
         _joffsetSDF = 0;

@@ -339,6 +339,7 @@ class DomainRenderProperties(bpy.types.PropertyGroup):
         add(path + ".whitewater_render_display",                  "Whitewater Render",         group_id=0)
         add(path + ".whitewater_viewport_display",                "Whitewater Viewport",       group_id=0)
         add(path + ".render_surface_motion_blur",                 "Render Motion Blur",        group_id=0)
+        add(path + ".override_frame",                             "Override Frame",            group_id=0)
 
         add(path + ".whitewater_view_settings_mode",              "Whitewater View Mode",      group_id=1, is_key=True)
         key_path = path + ".whitewater_view_settings_mode"

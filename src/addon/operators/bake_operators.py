@@ -14,12 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, os, glob, json, threading, shutil
+import bpy, os, glob, json, threading
 
 from .. import bake
 from ..objects import flip_fluid_geometry_exporter
 from .. import export
 from ..utils import installation_utils
+from ..filesystem import filesystem_protection_layer as fpl
 
 _IS_BAKE_OPERATOR_RUNNING = False
 
@@ -37,13 +38,6 @@ def _notify_bake_operator_cancelled():
 def is_bake_operator_running():
     global _IS_BAKE_OPERATOR_RUNNING
     return _IS_BAKE_OPERATOR_RUNNING
-
-
-def _delete_cache_file(filepath):
-    try:
-        os.remove(filepath)
-    except OSError:
-        pass
 
 
 def _update_stats(context):
@@ -75,7 +69,7 @@ def _update_stats(context):
                 # process the next time stats are updated.
                 continue
             stats_dict[str(frameno)] = frame_stats_dict
-        _delete_cache_file(statpath)
+        fpl.delete_file(statpath)
 
     with open(statsfilepath, 'w') as f:
             f.write(json.dumps(stats_dict, sort_keys=True, indent=4))
@@ -133,13 +127,6 @@ class BakeFluidSimulation(bpy.types.Operator):
         dprops.bake.num_baked_frames = 0
         dprops.stats.refresh_stats()
         self.data.reset()
-
-
-    def _delete_cache_file(self, filepath):
-        try:
-            os.remove(filepath)
-        except OSError:
-            pass
 
 
     def _initialize_domain_properties_frame_range(self, context):
@@ -454,13 +441,6 @@ class BakeFluidSimulationCommandLine(bpy.types.Operator):
                 return
 
 
-    def _delete_cache_file(self, filepath):
-        try:
-            os.remove(filepath)
-        except OSError:
-            pass
-
-
     def _update_simulation_stats(self, context):
         _update_stats(context)
 
@@ -549,44 +529,14 @@ class FlipFluidResetBake(bpy.types.Operator):
                       " operation will delete previously baked simulation data.")
 
 
-    def _delete_cache_file(self, filepath):
-        try:
-            os.remove(filepath)
-        except OSError:
-            pass
-
-
-    def _delete_cache_directory(self, directory, extension):
-        if not os.path.isdir(directory):
-            return
-        
-        for f in os.listdir(directory):
-            if f.endswith(extension):
-                self._delete_cache_file(os.path.join(directory, f))
-
-        if len(os.listdir(directory)) == 0:
-            os.rmdir(directory)
-
-
     def _clear_cache(self, context):
         dprops = bpy.context.scene.flip_fluid.get_domain_properties()
-        cache_dir = dprops.cache.get_cache_abspath()
-
-        statsfilepath = os.path.join(cache_dir, dprops.stats.stats_filename)
-        self._delete_cache_file(statsfilepath)
-
-        bakefiles_dir = os.path.join(cache_dir, "bakefiles")
-        self._delete_cache_directory(bakefiles_dir, ".bbox")
-        self._delete_cache_directory(bakefiles_dir, ".bobj")
-        self._delete_cache_directory(bakefiles_dir, ".wwp")
-        self._delete_cache_directory(bakefiles_dir, ".fpd")
-        self._delete_cache_directory(bakefiles_dir, ".ffd")
-
-        temp_dir = os.path.join(cache_dir, "temp")
-        self._delete_cache_directory(temp_dir, ".data")
-
-        savestates_dir = os.path.join(cache_dir, "savestates")
-        shutil.rmtree(savestates_dir)
+        cache_directory = dprops.cache.get_cache_abspath()
+        fpl.clear_cache_directory(cache_directory, 
+            clear_export=False, 
+            clear_logs=False, 
+            remove_directory=False
+            )
 
 
     @classmethod

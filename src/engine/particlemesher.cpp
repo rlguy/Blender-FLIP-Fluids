@@ -673,7 +673,7 @@ void ParticleMesher::_addComputeChunkScalarFieldToPreviewField(ScalarFieldData &
     AABB bbox(offset, width, height, depth);
 
     vmath::vec3 pv;
-    double eps = 0.001;
+    double eps = 1e-6;
     for (int k = 0; k < _pksize + 1; k++) {
         for (int j = 0; j < _pjsize + 1; j++) {
             for (int i = 0; i < _pisize + 1; i++) {

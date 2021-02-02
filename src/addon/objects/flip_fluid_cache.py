@@ -259,10 +259,6 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         if self._is_loaded_frame_up_to_date(frameno) and not force_load:
             return False
 
-        is_render_backloading = current_frame == self.loaded_frame_data.frame - 1
-        if render.is_rendering() and self.enable_motion_blur and is_render_backloading:
-            return False
-
         return True
 
 

@@ -14,7 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, os, shutil
+import bpy, os
+
+from ..filesystem import filesystem_protection_layer as fpl
 
 
 class FlipFluidFreeCache(bpy.types.Operator):
@@ -23,67 +25,17 @@ class FlipFluidFreeCache(bpy.types.Operator):
     bl_description = "Delete Simulation Cache Files"
 
 
-    def delete_cache_file(self, filepath):
-        try:
-            os.remove(filepath)
-        except OSError:
-            pass
-
-
-    def delete_cache_directory(self, directory, extension):
-        if not os.path.isdir(directory):
-            return
-        
-        for f in os.listdir(directory):
-            if f.endswith(extension):
-                self.delete_cache_file(os.path.join(directory, f))
-
-        if len(os.listdir(directory)) == 0:
-            os.rmdir(directory)
-
-
     def clear_cache(self, context):
         dprops = context.scene.flip_fluid.get_domain_properties()
-        cache_dir = dprops.cache.get_cache_abspath()
-        simfilepath = os.path.join(cache_dir, dprops.bake.export_filename)
-        self.delete_cache_file(simfilepath)
+        cache_directory = dprops.cache.get_cache_abspath()
+        clear_export = dprops.cache.clear_cache_directory_export
+        clear_logs = dprops.cache.clear_cache_directory_logs
 
-        statsfilepath = os.path.join(cache_dir, dprops.stats.stats_filename)
-        self.delete_cache_file(statsfilepath)
-
-        bakefiles_dir = os.path.join(cache_dir, "bakefiles")
-        self.delete_cache_directory(bakefiles_dir, ".bbox")
-        self.delete_cache_directory(bakefiles_dir, ".bobj")
-        self.delete_cache_directory(bakefiles_dir, ".wwp")
-        self.delete_cache_directory(bakefiles_dir, ".fpd")
-        self.delete_cache_directory(bakefiles_dir, ".ffd")
-
-        logs_dir = os.path.join(cache_dir, "logs")
-        if os.path.isdir(logs_dir) and dprops.cache.clear_cache_directory_logs:
-            logs_dir = os.path.join(cache_dir, "logs")
-            self.delete_cache_directory(logs_dir, ".txt")
-
-        export_dir = os.path.join(cache_dir, "export")
-        if os.path.isdir(export_dir) and dprops.cache.clear_cache_directory_export:
-            for subdir in os.listdir(export_dir):
-                object_dir = os.path.join(export_dir, subdir)
-                self.delete_cache_directory(object_dir, ".info")
-                self.delete_cache_directory(object_dir, ".bobj")
-            self.delete_cache_directory(export_dir, ".sim")
-            self.delete_cache_directory(export_dir, ".sqlite3")
-
-        temp_dir = os.path.join(cache_dir, "temp")
-        self.delete_cache_directory(temp_dir, ".data")
-
-        savestates_dir = os.path.join(cache_dir, "savestates")
-        autosave_dir = os.path.join(savestates_dir, "autosave")
-        self.delete_cache_directory(autosave_dir, ".state")
-        self.delete_cache_directory(autosave_dir, ".data")
-        self.delete_cache_directory(savestates_dir, ".state")
-        self.delete_cache_directory(savestates_dir, ".data")
-
-        if len(os.listdir(cache_dir)) == 0:
-            os.rmdir(cache_dir)
+        fpl.clear_cache_directory(cache_directory, 
+            clear_export=clear_export, 
+            clear_logs=clear_logs, 
+            remove_directory=True
+            )
 
 
     @classmethod
@@ -122,13 +74,6 @@ class FlipFluidFreeUnheldCacheFiles(bpy.types.Operator):
     bl_description = "Delete Unheld Simulation Cache Files"
 
 
-    def delete_cache_file(self, filepath):
-        try:
-            os.remove(filepath)
-        except OSError:
-            pass
-
-
     def delete_unheld_cache_directory(self, directory, extension):
         if not os.path.isdir(directory):
             return
@@ -149,7 +94,8 @@ class FlipFluidFreeUnheldCacheFiles(bpy.types.Operator):
                 if frameno == hold_frame:
                     continue
 
-                self.delete_cache_file(os.path.join(directory, f))
+                filepath = os.path.join(directory, f)
+                fpl.delete_file(filepath)
 
 
     def clear_unheld_cache_files(self, context):
