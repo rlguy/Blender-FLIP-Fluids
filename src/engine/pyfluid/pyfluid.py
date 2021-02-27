@@ -101,7 +101,7 @@ class PyFluidLib():
             library = ctypes.cdll.LoadLibrary(libfile)
             IS_DEBUG_MODE_LIBRARY_LOADED = DEBUG_MODE_ENABLED
         except:
-            msg = "Unable to load fluid engine library: <" + libname + ">"
+            msg = "Unable to load fluid engine library: <" + libfile + ">"
             msg += " (1) Make sure that you are using a 64-bit version of Python/Blender"
             msg += " if built for 64-bit and likewise if built for 32-bit."
             msg += " (2) Try clearing your Blender user settings (make a backup first!)."
