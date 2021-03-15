@@ -65,9 +65,9 @@ class TriangleMesh(object):
         num_vertices = len(self.vertices) // 3
         num_triangles = len(self.triangles) // 3
         datastr = struct.pack('i', num_vertices)
-        datastr += self.vertices.tostring()
+        datastr += self.vertices.tobytes()
         datastr += struct.pack('i', num_triangles)
-        datastr += self.triangles.tostring()
+        datastr += self.triangles.tobytes()
 
         return datastr
 
