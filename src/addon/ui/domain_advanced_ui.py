@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@ class FLIPFLUID_PT_DomainTypeAdvancedPanel(bpy.types.Panel):
     def draw(self, context):
         obj = vcu.get_active_object(context)
         aprops = obj.flip_fluid.domain.advanced
+        wprops = obj.flip_fluid.domain.world
         show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
         show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
 
@@ -45,43 +46,70 @@ class FLIPFLUID_PT_DomainTypeAdvancedPanel(bpy.types.Panel):
                 text="Advanced Settings Documentation", 
                 icon="WORLD"
             ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Advanced-Settings"
-            column.operator(
-                "wm.url_open", 
-                text="What are substeps?", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Advanced-Settings#what-are-substeps-and-how-do-the-min-max-and-cfl-parameters-relate-to-each-other"
-            column.operator(
-                "wm.url_open", 
-                text="What are applications of the PIC/FLIP Ratio?", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Advanced-Settings#simulation-stability"
 
-        column = self.layout.column(align=True)
+        subbox = self.layout.box()
+        column = subbox.column(align=True)
         column.label(text="Frame Substeps:")
+
+        if wprops.enable_surface_tension and aprops.min_max_time_steps_per_frame.value_max < wprops.minimum_surface_tension_substeps:
+            row = column.row(align=True)
+            row.alert = True
+            row.prop(aprops, "surface_tension_substeps_exceeded_tooltip", icon="QUESTION", emboss=False, text="")
+            row.label(text="  Warning: Not Enough Max Substeps")
+
         row = column.row(align=True)
         row.prop(aprops.min_max_time_steps_per_frame, "value_min", text="Min")
         row.prop(aprops.min_max_time_steps_per_frame, "value_max", text="Max")
+        column.prop(aprops, "CFL_condition_number")
 
         if show_advanced:
             column.prop(aprops, "enable_adaptive_obstacle_time_stepping")
             column.prop(aprops, "enable_adaptive_force_field_time_stepping")
 
-        column = self.layout.column()
+        if show_documentation:
+            column = subbox.column(align=True)
+            column.operator(
+                    "wm.url_open", 
+                    text="What are substeps?", 
+                    icon="WORLD"
+                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Advanced-Settings#what-are-substeps-and-how-do-the-min-max-and-cfl-parameters-relate-to-each-other"
+
+        subbox = self.layout.box()
+        column = subbox.column(align=True)
+        column.label(text="Simulation Method:")
+        row = column.row(align=True)
+        row.prop(aprops, "velocity_transfer_method", expand=True)
+        if aprops.velocity_transfer_method == 'VELOCITY_TRANSFER_METHOD_FLIP':
+            column.prop(aprops, "PICFLIP_ratio", slider=True)
+        else:
+            column.label(text="")
+
+        if show_documentation:
+            column = subbox.column(align=True)
+            column.operator(
+                "wm.url_open", 
+                text="What are applications of the PIC/FLIP Ratio?", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Advanced-Settings#simulation-stability"
+            column.operator(
+                "wm.url_open", 
+                text="FLIP vs APIC", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Advanced-Settings#flip-vs-apic"
+
+        subbox = self.layout.box()
+        column = subbox.column()
         column.label(text="Simulation Stability:")
 
         if show_advanced:
             row = column.row(align=True)
             row.prop(aprops, "particle_jitter_factor", slider=True)
             row.prop(aprops, "jitter_surface_particles")
-        column.prop(aprops, "PICFLIP_ratio", slider=True)
-        column = self.layout.column(align=True)
-        column.prop(aprops, "CFL_condition_number")
-
-        if show_advanced:
             column.prop(aprops, "enable_extreme_velocity_removal")
 
         if show_advanced:
-            column = self.layout.column()
+            subbox = self.layout.box()
+            column = subbox.column()
             split = column.split(align=True)
 
             column_left = split.column(align=True)
@@ -96,7 +124,7 @@ class FLIPFLUID_PT_DomainTypeAdvancedPanel(bpy.types.Panel):
                 row.prop(aprops, "num_threads_fixed")
 
             if show_documentation:
-                column = self.layout.column(align=True)
+                column = subbox.column(align=True)
                 column.operator(
                     "wm.url_open", 
                     text="CPU usage is under 100%, is this normal?", 
@@ -114,7 +142,8 @@ class FLIPFLUID_PT_DomainTypeAdvancedPanel(bpy.types.Panel):
             column.prop(aprops, "reserve_temporary_grids")
             """
 
-            column = self.layout.column(align=True)
+            subbox = self.layout.box()
+            column = subbox.column(align=True)
             column.separator()
             column.label(text="Warnings and Errors:")
             column.prop(aprops, "disable_changing_topology_warning")

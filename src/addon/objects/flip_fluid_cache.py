@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -174,6 +174,11 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
         smooth_mod = cache_object.modifiers.new("Smooth", "SMOOTH")
         smooth_mod.iterations = 0
+
+        # Motion blur not supported. Leaving motion blur enabled can cause
+        # slow render in versions of Blender 2.91+. Workaround is to
+        # automatically disable motion blur on the object.
+        cache_object.cycles.use_motion_blur = False
 
         self._initialize_cache_object_octane(cache_object)
 
@@ -463,6 +468,11 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         self._initialize_duplivert_object_octane(cache_object, duplivert_object)
         vcu.set_object_instance_type(cache_object, instance_type)
         vcu.set_object_hide_viewport(duplivert_object, True)
+
+        # Motion blur not supported. Leaving motion blur enabled can cause
+        # slow render in versions of Blender 2.91+. Workaround is to
+        # automatically disable motion blur on the object.
+        duplivert_object.cycles.use_motion_blur = False
 
         self.duplivert_object = duplivert_object
 
@@ -792,7 +802,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         filepath = self._get_bounds_filepath(frameno)
         bounds_data = None
         if os.path.isfile(filepath):
-            with open(filepath, 'r') as f:
+            with open(filepath, 'r', encoding='utf-8') as f:
                 bounds_data = json.loads(f.read())
         self.bounds.set(bounds_data)
 

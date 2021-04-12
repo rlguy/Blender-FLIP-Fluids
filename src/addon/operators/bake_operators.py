@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ def _update_stats(context):
     cache_dir = dprops.cache.get_cache_abspath()
     statsfilepath = os.path.join(cache_dir, dprops.stats.stats_filename)
     if not os.path.isfile(statsfilepath):
-        with open(statsfilepath, 'w') as f:
+        with open(statsfilepath, 'w', encoding='utf-8') as f:
             f.write(json.dumps({}, sort_keys=True, indent=4))
 
     temp_dir = os.path.join(cache_dir, "temp")
@@ -54,13 +54,13 @@ def _update_stats(context):
     if not stat_files:
         return
 
-    with open(statsfilepath, 'r') as f:
+    with open(statsfilepath, 'r', encoding='utf-8') as f:
         stats_dict = json.loads(f.read())
 
     for statpath in stat_files:
         filename = os.path.basename(statpath)
         frameno = int(filename[len("framestats"):-len(".data")])
-        with open(statpath, 'r') as frame_stats:
+        with open(statpath, 'r', encoding='utf-8') as frame_stats:
             try:
                 frame_stats_dict = json.loads(frame_stats.read())
             except:
@@ -71,7 +71,7 @@ def _update_stats(context):
             stats_dict[str(frameno)] = frame_stats_dict
         fpl.delete_file(statpath)
 
-    with open(statsfilepath, 'w') as f:
+    with open(statsfilepath, 'w', encoding='utf-8') as f:
             f.write(json.dumps(stats_dict, sort_keys=True, indent=4))
 
     dprops.stats.is_stats_current = False
@@ -539,6 +539,17 @@ class FlipFluidResetBake(bpy.types.Operator):
             )
 
 
+    def _reset_property_data(self):
+        dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+        dprops.mesh_cache.reset_cache_objects()
+        dprops.stats.refresh_stats()
+        dprops.stats.reset_time_remaining()
+        dprops.stats.reset_stats_values()
+        dprops.bake.check_autosave()
+        dprops.render.reset_bake()
+
+
+
     @classmethod
     def poll(cls, context):
         dprops = bpy.context.scene.flip_fluid.get_domain_properties()
@@ -551,21 +562,15 @@ class FlipFluidResetBake(bpy.types.Operator):
         dprops = bpy.context.scene.flip_fluid.get_domain_properties()
         cache_path = dprops.cache.get_cache_abspath()
         if not os.path.isdir(cache_path):
-            self.report({"ERROR"}, "Current cache directory does not exist")
-            return {'CANCELLED'}
+            self._reset_property_data()
+            self.report({"INFO"}, "Current cache directory does not exist - skipping cache reset")
+            return {'FINISHED'}
+
         dprops.cache.mark_cache_directory_set()
-
         self._clear_cache(context)
-        dprops.mesh_cache.reset_cache_objects()
-        
+        self._reset_property_data()
+
         self.report({"INFO"}, "Successfully reset bake")
-
-        dprops.stats.refresh_stats()
-        dprops.stats.reset_time_remaining()
-        dprops.stats.reset_stats_values()
-        dprops.bake.check_autosave()
-        dprops.render.reset_bake()
-
         return {'FINISHED'}
 
 

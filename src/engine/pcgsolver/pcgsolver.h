@@ -284,7 +284,7 @@ struct PCGSolver {
             BLAS::addScaled(-alpha, z, r);
 
             residualOut = BLAS::absMax(r);
-            if(residualOut <= tol) {
+            if(residualOut <= std::min(tol, (double)maxErrorTolerance)) {
                 iterationsOut = iteration + 1;
                 return true; 
             }
@@ -310,6 +310,7 @@ protected:
 
     // parameters
     T toleranceFactor;
+    T maxErrorTolerance = 1.0;
     int maxIterations;
     T modifiedIncompleteCholeskyParameter;
     T minDiagonalRatio;

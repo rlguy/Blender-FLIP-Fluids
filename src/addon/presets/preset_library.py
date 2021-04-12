@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -268,7 +268,7 @@ def destroy_dummy_domain_object(domain_object):
 def get_system_default_preset_dict():
     sys_path = __get_sys_preset_path()
     default_preset_path = os.path.join(sys_path, "default.preset")
-    with open(default_preset_path, 'r') as f:
+    with open(default_preset_path, 'r', encoding='utf-8') as f:
         try:
             data = json.loads(f.read())
         except:
@@ -319,7 +319,7 @@ def load_default_settings(domain_properties):
         if not os.path.isfile(default_preset_file):
             return
 
-    with open(default_preset_file, 'r') as f:
+    with open(default_preset_file, 'r', encoding='utf-8') as f:
         try:
             default_data = json.loads(f.read())
         except:
@@ -336,7 +336,7 @@ def restore_default_settings(domain_properties):
     if not os.path.isfile(default_preset_file):
         return "Missing default preset file: <" + default_preset_file + ">"
 
-    with open(default_preset_file, 'r') as f:
+    with open(default_preset_file, 'r', encoding='utf-8') as f:
         try:
             default_data = json.loads(f.read())
         except:
@@ -525,7 +525,7 @@ def decode_package_zipfile(filepath, dst_data):
         if package_file is None:
             return "Unable to find package info file"
 
-        with zfile.open(package_file, "r") as info_file:
+        with zfile.open(package_file, "r", encoding='utf-8') as info_file:
             try:
                 pinfo = json.loads(info_file.read().decode("utf-8"))
             except:
@@ -539,7 +539,7 @@ def decode_package_zipfile(filepath, dst_data):
         dst_data.update(pinfo)
         dst_data['presets'] = []
         for f in preset_data_files:
-            with zfile.open(f, "r") as info_file:
+            with zfile.open(f, 'r', encoding='utf-8') as info_file:
                 try:
                     info = json.loads(info_file.read().decode("utf-8"))
                 except:
@@ -623,7 +623,7 @@ def __create_empty_blend_file(dst_path):
 
 def __write_dict_to_json(d, filepath):
     jsonstr = json.dumps(d, sort_keys=True, indent=4)
-    with open(filepath, 'w') as f:
+    with open(filepath, 'w', encoding='utf-8') as f:
         f.write(jsonstr)
 
 
@@ -801,7 +801,7 @@ def __get_package_info_list_from_path(path):
         if os.path.isdir(dirpath):
             info_filepath = os.path.join(dirpath, "package.info")
             if os.path.isfile(info_filepath):
-                with open(info_filepath, 'r') as f:
+                with open(info_filepath, 'r', encoding='utf-8') as f:
                     try:
                         package_info = json.loads(f.read())
                         package_info["path"] = dirpath
@@ -830,7 +830,7 @@ def __get_preset_info_list_from_path(path):
         if not os.path.isfile(package_info_filepath):
             continue
 
-        with open(package_info_filepath, 'r') as f:
+        with open(package_info_filepath, 'r', encoding='utf-8') as f:
             try:
                 package_info = json.loads(f.read())
             except:
@@ -848,7 +848,7 @@ def __get_preset_info_list_from_path(path):
             if not os.path.isfile(preset_info_filepath):
                 continue
 
-            with open(preset_info_filepath, 'r') as f:
+            with open(preset_info_filepath, 'r', encoding='utf-8') as f:
                 try:
                     preset_info = json.loads(f.read())
                 except:

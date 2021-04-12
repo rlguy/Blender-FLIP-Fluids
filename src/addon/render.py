@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -485,7 +485,7 @@ def __load_obstacle_debug_frame(frameno, force_reload=False):
         return
 
     dprops = __get_domain_properties()
-    if not dprops.debug.export_internal_obstacle_mesh:
+    if not dprops.debug.export_internal_obstacle_mesh or not dprops.debug.internal_obstacle_mesh_visibility:
         return
 
     force_load = force_reload or IS_RENDERING

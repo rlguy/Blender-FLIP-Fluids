@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ from bpy.props import (
 from ..objects.flip_fluid_aabb import AABB
 from ..utils import ui_utils
 from ..utils import version_compatibility_utils as vcu
+from .. import render
 
 if vcu.is_blender_28():
     import gpu
@@ -33,6 +34,11 @@ y_coords = []
 z_coords = []
 bounds_coords = []
 def update_debug_grid_geometry(context):
+    if render.is_rendering():
+        # This method does not need to be run while rendering. Can cause
+        # crashes on certain systems.
+        return
+
     global x_coords
     global y_coords
     global z_coords
@@ -159,6 +165,11 @@ class FlipFluidDrawDebugGrid(bpy.types.Operator):
 
 
     def draw_callback_2d(self, context):
+        if render.is_rendering():
+            # This method does not need to be run while rendering. Can cause
+            # crashes on certain systems.
+            return
+
         domain = context.scene.flip_fluid.get_domain_object()
         if domain is None:
             return
@@ -311,6 +322,11 @@ class FlipFluidDrawDebugGrid(bpy.types.Operator):
 
 
     def draw_callback_3d(self, context):
+        if render.is_rendering():
+            # This method does not need to be run while rendering. Can cause
+            # crashes on certain systems.
+            return
+            
         global x_coords
         global y_coords
         global z_coords

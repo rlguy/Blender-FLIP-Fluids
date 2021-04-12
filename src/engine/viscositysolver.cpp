@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2020 Ryan L. Guy
+Copyright (C) 2021 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -39,6 +39,7 @@ SOFTWARE.
 #include "macvelocityfield.h"
 #include "particlelevelset.h"
 #include "meshlevelset.h"
+#include "interpolation.h"
 
 ViscositySolver::ViscositySolver() {
 }
@@ -63,7 +64,6 @@ bool ViscositySolver::applyViscosityToVelocityField(ViscositySolverParameters pa
     std::vector<float> soln(matsize, 0);
 
     _initializeLinearSystem(matrix, rhs);
-    _destroyVolumeGrid();
 
     bool success = _solveLinearSystem(matrix, rhs, soln);
     if (!success) {
@@ -92,6 +92,7 @@ void ViscositySolver::_initialize(ViscositySolverParameters params) {
     _liquidSDF = params.liquidSDF;
     _solidSDF = params.solidSDF;
     _viscosity = params.viscosity;
+    _solverTolerance = params.errorTolerance;
 }
 
 void ViscositySolver::_computeFaceStateGrid() {
@@ -202,8 +203,6 @@ void ViscositySolver::_computeSolidCenterPhiThread(int startidx, int endidx,
 }
 
 void ViscositySolver::_computeVolumeGrid() {
-    _volumes = ViscosityVolumeGrid(_isize, _jsize, _ksize);
-
     Array3d<bool> validCells(_isize + 1, _jsize + 1, _ksize + 1, false);
     for (int k = 0; k < _ksize; k++) {
         for (int j = 0; j < _jsize; j++) {
@@ -236,22 +235,32 @@ void ViscositySolver::_computeVolumeGrid() {
         validCells = tempValid;
     }
 
+    if (_volumes.isize != _isize || _volumes.jsize != _jsize || _volumes.ksize != _ksize) {
+        _volumes = ViscosityVolumeGrid(_isize, _jsize, _ksize);
+        _subcellVolumeGrid = Array3d<float>(2 * _isize, 2 * _jsize, 2 * _ksize, 0.0f);
+    } else {
+        _volumes.clear();
+        _subcellVolumeGrid.fill(0.0f);
+    }
+
+    vmath::vec3 centerStart(0.25f * _dx, 0.25f * _dx, 0.25f * _dx);
+    _estimateVolumeFractions(&_subcellVolumeGrid, &validCells, centerStart, 0.5f * _dx);
+
     struct WorkGroup {
         Array3d<float> *grid;
-        vmath::vec3 offset;
-        WorkGroup(Array3d<float> *gridptr, vmath::vec3 gridoffset) : 
-                    grid(gridptr), offset(gridoffset) {}
+        GridIndex gridOffset;
+        WorkGroup(Array3d<float> *gridptr, GridIndex gridoffset) : 
+                    grid(gridptr), gridOffset(gridoffset) {}
     };
 
-    float hdx = 0.5 * _dx;
     std::vector<WorkGroup> workqueue({
-        WorkGroup(&(_volumes.center), vmath::vec3(hdx, hdx, hdx)),
-        WorkGroup(&(_volumes.U), vmath::vec3(0,   hdx, hdx)),
-        WorkGroup(&(_volumes.V), vmath::vec3(hdx, 0,   hdx)),
-        WorkGroup(&(_volumes.W), vmath::vec3(hdx, hdx, 0  )),
-        WorkGroup(&(_volumes.edgeU), vmath::vec3(hdx, 0,   0  )),
-        WorkGroup(&(_volumes.edgeV), vmath::vec3(0,   hdx, 0  )),
-        WorkGroup(&(_volumes.edgeW), vmath::vec3(0,   0,   hdx))
+        WorkGroup(&(_volumes.center), GridIndex( 0,  0,  0)),
+        WorkGroup(&(_volumes.U),      GridIndex(-1,  0,  0)),
+        WorkGroup(&(_volumes.V),      GridIndex( 0, -1,  0)),
+        WorkGroup(&(_volumes.W),      GridIndex( 0,  0, -1)),
+        WorkGroup(&(_volumes.edgeU),  GridIndex( 0, -1, -1)),
+        WorkGroup(&(_volumes.edgeV),  GridIndex(-1,  0, -1)),
+        WorkGroup(&(_volumes.edgeW),  GridIndex(-1, -1,  0))
     });
 
     int numCPU = ThreadUtils::getMaxThreadCount();
@@ -265,8 +274,9 @@ void ViscositySolver::_computeVolumeGrid() {
             WorkGroup workgroup = workqueue.back();
             workqueue.pop_back();
 
-            threads[tidx] = std::thread(&ViscositySolver::_estimateVolumeFractions, this,
-                                        workgroup.grid, workgroup.offset, &validCells);
+            threads[tidx] = std::thread(&ViscositySolver::_computeVolumeGridThread, this,
+                                        workgroup.grid, &validCells, &_subcellVolumeGrid, 
+                                        workgroup.gridOffset);
         }
 
         for (int tidx = 0; tidx < numthreads; tidx++) {
@@ -276,95 +286,90 @@ void ViscositySolver::_computeVolumeGrid() {
 }
 
 void ViscositySolver::_estimateVolumeFractions(Array3d<float> *volumes, 
+                                               Array3d<bool> *validCells, 
                                                vmath::vec3 centerStart, 
-                                               Array3d<bool> *validCells) {
+                                               float dx) {
 
-    Array3d<float> nodalPhi(volumes->width + 1, volumes->height + 1, volumes->depth + 1);
-    Array3d<bool> isNodalSet(volumes->width + 1, volumes->height + 1, volumes->depth + 1, false);
+    int gridsize = volumes->width * volumes->height * volumes->depth;
+    int numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)fmin(numCPU, gridsize);
+    std::vector<std::thread> threads(numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
+    for (int i = 0; i < numthreads; i++) {
+        threads[i] = std::thread(&ViscositySolver::_estimateVolumeFractionsThread, this,
+                                 intervals[i], intervals[i + 1], 
+                                 volumes, validCells, centerStart, dx);
+    }
 
-    volumes->fill(0);
-    float hdx = 0.5f * _dx;
-    for(int k = 0; k < volumes->depth; k++) {
-        for(int j = 0; j < volumes->height; j++) { 
-            for(int i = 0; i < volumes->width; i++) {
+    for (int i = 0; i < numthreads; i++) {
+        threads[i].join();
+    }
+
+}
+
+void ViscositySolver::_estimateVolumeFractionsThread(int startidx, int endidx,
+                                                     Array3d<float> *volumes, 
+                                                     Array3d<bool> *validCells, 
+                                                     vmath::vec3 centerStart, 
+                                                     float dx) {
+
+    int isize = volumes->width;
+    int jsize = volumes->height;
+    for (int idx = startidx; idx < endidx; idx++) {
+        GridIndex g = Grid3d::getUnflattenedIndex(idx, isize, jsize);
+        int i = g.i;
+        int j = g.j;
+        int k = g.k;
+
+        if (!validCells->get(i / 2, j / 2, k / 2)) {
+            continue;
+        }
+
+        vmath::vec3 center = centerStart + vmath::vec3(i * dx, j * dx, k * dx);
+        float hdx = 0.5f * dx;
+
+        float phi000 = _liquidSDF->trilinearInterpolate(center + vmath::vec3(-hdx, -hdx, -hdx));
+        float phi001 = _liquidSDF->trilinearInterpolate(center + vmath::vec3(-hdx, -hdx, +hdx));
+        float phi010 = _liquidSDF->trilinearInterpolate(center + vmath::vec3(-hdx, +hdx, -hdx));
+        float phi011 = _liquidSDF->trilinearInterpolate(center + vmath::vec3(-hdx, +hdx, +hdx));
+        float phi100 = _liquidSDF->trilinearInterpolate(center + vmath::vec3(+hdx, -hdx, -hdx));
+        float phi101 = _liquidSDF->trilinearInterpolate(center + vmath::vec3(+hdx, -hdx, +hdx));
+        float phi110 = _liquidSDF->trilinearInterpolate(center + vmath::vec3(+hdx, +hdx, -hdx));
+        float phi111 = _liquidSDF->trilinearInterpolate(center + vmath::vec3(+hdx, +hdx, +hdx));
+
+        volumes->set(i, j, k, LevelsetUtils::volumeFraction(
+                phi000, phi100, phi010, phi110, phi001, phi101, phi011, phi111
+        ));
+    }
+}
+
+void ViscositySolver::_computeVolumeGridThread(Array3d<float> *volumes, 
+                                  Array3d<bool> *validCells,
+                                  Array3d<float> *subcellVolumes,
+                                  GridIndex gridOffset) {
+
+    for (int k = 1; k < _ksize; k++) {
+        for (int j = 1; j < _jsize; j++) {
+            for (int i = 1; i < _isize; i++) {
                 if (!validCells->get(i, j, k)) {
                     continue;
                 }
 
-                vmath::vec3 centre = centerStart + Grid3d::GridIndexToCellCenter(i, j, k, _dx);
-
-                if (!isNodalSet(i, j, k)) {
-                    float n = _liquidSDF->trilinearInterpolate(centre + vmath::vec3(-hdx, -hdx, -hdx));
-                    nodalPhi.set(i, j, k, n);
-                    isNodalSet.set(i, j, k, true);
+                int base_i = 2 * i + gridOffset.i;
+                int base_j = 2 * j + gridOffset.j;
+                int base_k = 2 * k + gridOffset.k;
+                for (int k_off = 0; k_off < 2; k_off++) {
+                    for (int j_off = 0; j_off < 2; j_off++) {
+                        for (int i_off = 0; i_off < 2; i_off++) {
+                            volumes->add(i, j, k, subcellVolumes->get(base_i + i_off, base_j + j_off, base_k + k_off));
+                        }
+                    }
                 }
-                float phi000 = nodalPhi(i, j, k);
+                volumes->set(i, j, k, 0.125f * volumes->get(i, j, k));
 
-                if (!isNodalSet(i, j, k + 1)) {
-                    float n = _liquidSDF->trilinearInterpolate(centre + vmath::vec3(-hdx, -hdx, hdx));
-                    nodalPhi.set(i, j, k + 1, n);
-                    isNodalSet.set(i, j, k + 1, true);
-                }
-                float phi001 = nodalPhi(i, j, k + 1);
-
-                if (!isNodalSet(i, j + 1, k)) {
-                    float n = _liquidSDF->trilinearInterpolate(centre + vmath::vec3(-hdx, hdx, -hdx));
-                    nodalPhi.set(i, j + 1, k, n);
-                    isNodalSet.set(i, j + 1, k, true);
-                }
-                float phi010 = nodalPhi(i, j + 1, k);
-
-                if (!isNodalSet(i, j + 1, k + 1)) {
-                    float n = _liquidSDF->trilinearInterpolate(centre + vmath::vec3(-hdx, hdx, hdx));
-                    nodalPhi.set(i, j + 1, k + 1, n);
-                    isNodalSet.set(i, j + 1, k + 1, true);
-                }
-                float phi011 = nodalPhi(i, j + 1, k + 1);
-
-                if (!isNodalSet(i + 1, j, k)) {
-                    float n = _liquidSDF->trilinearInterpolate(centre + vmath::vec3(hdx, -hdx, -hdx));
-                    nodalPhi.set(i + 1, j, k, n);
-                    isNodalSet.set(i + 1, j, k, true);
-                }
-                float phi100 = nodalPhi(i + 1, j, k);
-
-                if (!isNodalSet(i + 1, j, k + 1)) {
-                    float n = _liquidSDF->trilinearInterpolate(centre + vmath::vec3(hdx, -hdx, hdx));
-                    nodalPhi.set(i + 1, j, k + 1, n);
-                    isNodalSet.set(i + 1, j, k + 1, true);
-                }
-                float phi101 = nodalPhi(i + 1, j, k + 1);
-
-                if (!isNodalSet(i + 1, j + 1, k)) {
-                    float n = _liquidSDF->trilinearInterpolate(centre + vmath::vec3(hdx, hdx, -hdx));
-                    nodalPhi.set(i + 1, j + 1, k, n);
-                    isNodalSet.set(i + 1, j + 1, k, true);
-                }
-                float phi110 = nodalPhi(i + 1, j + 1, k);
-
-                if (!isNodalSet(i + 1, j + 1, k + 1)) {
-                    float n = _liquidSDF->trilinearInterpolate(centre + vmath::vec3(hdx, hdx, hdx));
-                    nodalPhi.set(i + 1, j + 1, k + 1, n);
-                    isNodalSet.set(i + 1, j + 1, k + 1, true);
-                }
-                float phi111 = nodalPhi(i + 1, j + 1, k + 1);
-
-                if (phi000 < 0 && phi001 < 0 && phi010 < 0 && phi011 < 0 &&
-                    phi100 < 0 && phi101 < 0 && phi110 < 0 && phi111 < 0) {
-                    volumes->set(i, j, k, 1.0);
-                } else if (phi000 >= 0 && phi001 >= 0 && phi010 >= 0 && phi011 >= 0 &&
-                    phi100 >= 0 && phi101 >= 0 && phi110 >= 0 && phi111 >= 0) {
-                    volumes->set(i, j, k, 0.0);
-                } else {
-                    volumes->set(i, j, k, LevelsetUtils::volumeFraction(
-                            phi000, phi100, phi010, phi110, phi001, phi101, phi011, phi111
-                    ));
-                }
             }
         }
-
     }
-
 }
 
 void ViscositySolver::_destroyVolumeGrid() {

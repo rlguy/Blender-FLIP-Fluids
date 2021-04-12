@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -66,3 +66,19 @@ def frame_change_post_apply_T71908_workaround(context, depsgraph=None):
             if obj.modifiers[i].type == 'OCEAN':
                 obj.modifiers[i].time = obj_eval.modifiers[i].time
                 print("updated", obj.modifiers[i])
+
+
+# In some versions of Blender the viewport rendered view is
+# not updated to display and object if the object's 'hide_render' 
+# property has changed or ray visibility has changed via Python. 
+# Toggling the object's hide_viewport option on and off
+# is a workaround to get the viewport to update.
+#
+# Note: toggling hide_viewport will deselect the object, so this workaround
+#       will also re-select the object if needed.
+def toggle_viewport_visibility_to_update_rendered_viewport_workaround(bl_object):
+    is_selected = vcu.select_get(bl_object)
+    vcu.toggle_outline_eye_icon(bl_object)
+    vcu.toggle_outline_eye_icon(bl_object)
+    if is_selected:
+        vcu.select_set(bl_object, True)

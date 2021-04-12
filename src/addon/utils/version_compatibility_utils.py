@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -434,3 +434,15 @@ def get_file_folder_icon():
         return "FILEBROWSER"
     else:
         return "FILESEL"
+
+def get_hide_off_icon():
+    if is_blender_28():
+        return "HIDE_OFF"
+    else:
+        return "RESTRICT_VIEW_OFF"
+
+def get_hide_on_icon():
+    if is_blender_28():
+        return "HIDE_ON"
+    else:
+        return "RESTRICT_VIEW_ON"

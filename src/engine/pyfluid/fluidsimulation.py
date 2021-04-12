@@ -1,6 +1,6 @@
 # MIT License
 # 
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -1460,6 +1460,19 @@ class FluidSimulation(object):
         pb.execute_lib_func(libfunc, [self(), value])
 
     @property
+    def viscosity_solver_error_tolerance(self):
+        libfunc = lib.FluidSimulation_get_viscosity_solver_error_tolerance
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @viscosity_solver_error_tolerance.setter
+    @decorators.check_ge_zero
+    def viscosity_solver_error_tolerance(self, value):
+        libfunc = lib.FluidSimulation_set_viscosity_solver_error_tolerance
+        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), value])
+
+    @property
     def surface_tension(self):
         libfunc = lib.FluidSimulation_get_surface_tension
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
@@ -1626,6 +1639,26 @@ class FluidSimulation(object):
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self()])
 
+    def set_velocity_transfer_method_FLIP(self):
+        libfunc = lib.FluidSimulation_set_velocity_transfer_method_FLIP
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    def set_velocity_transfer_method_APIC(self):
+        libfunc = lib.FluidSimulation_set_velocity_transfer_method_APIC
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    def is_velocity_transfer_method_FLIP(self):
+        libfunc = lib.FluidSimulation_is_velocity_transfer_method_FLIP
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    def is_velocity_transfer_method_APIC(self):
+        libfunc = lib.FluidSimulation_is_velocity_transfer_method_APIC
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
     @property
     def PICFLIP_ratio(self):
         libfunc = lib.FluidSimulation_get_PICFLIP_ratio
@@ -1637,6 +1670,20 @@ class FluidSimulation(object):
     @decorators.check_le(1.0)
     def PICFLIP_ratio(self, ratio):
         libfunc = lib.FluidSimulation_set_PICFLIP_ratio
+        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), ratio])
+
+    @property
+    def PICAPIC_ratio(self):
+        libfunc = lib.FluidSimulation_get_PICAPIC_ratio
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @PICAPIC_ratio.setter
+    @decorators.check_ge_zero
+    @decorators.check_le(1.0)
+    def PICAPIC_ratio(self, ratio):
+        libfunc = lib.FluidSimulation_set_PICAPIC_ratio
         pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), ratio])
 
@@ -1769,19 +1816,6 @@ class FluidSimulation(object):
         libfunc = lib.FluidSimulation_get_num_diffuse_particles
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
         return pb.execute_lib_func(libfunc, [self()])
-
-    def get_diffuse_particles(self, startidx = None, endidx = None):
-        nparticles = self.get_num_diffuse_particles()
-        startidx, endidx = self._check_range(startidx, endidx, 0, nparticles)
-        n = endidx - startidx
-        out = (DiffuseParticle_t * n)()
-
-        libfunc = lib.FluidSimulation_get_diffuse_particles
-        pb.init_lib_func(libfunc, 
-                         [c_void_p, c_int, c_int, c_void_p, c_void_p], None)
-        pb.execute_lib_func(libfunc, [self(), startidx, endidx, out])
-
-        return out
 
     def get_diffuse_particle_positions(self, startidx = None, endidx = None):
         nparticles = self.get_num_diffuse_particles()
@@ -1965,6 +1999,21 @@ class FluidSimulation(object):
         return self._get_output_data_range(lib.FluidSimulation_get_marker_particle_velocity_data_range,
                                            start_idx, end_idx, size_of_vector)
 
+    def get_marker_particle_affinex_data_range(self, start_idx, end_idx):
+        size_of_vector = 12
+        return self._get_output_data_range(lib.FluidSimulation_get_marker_particle_affinex_data_range,
+                                           start_idx, end_idx, size_of_vector)
+
+    def get_marker_particle_affiney_data_range(self, start_idx, end_idx):
+        size_of_vector = 12
+        return self._get_output_data_range(lib.FluidSimulation_get_marker_particle_affiney_data_range,
+                                           start_idx, end_idx, size_of_vector)
+
+    def get_marker_particle_affinez_data_range(self, start_idx, end_idx):
+        size_of_vector = 12
+        return self._get_output_data_range(lib.FluidSimulation_get_marker_particle_affinez_data_range,
+                                           start_idx, end_idx, size_of_vector)
+
     def get_diffuse_particle_position_data_range(self, start_idx, end_idx):
         size_of_vector = 12
         return self._get_output_data_range(lib.FluidSimulation_get_diffuse_particle_position_data_range,
@@ -2028,6 +2077,21 @@ class FluidSimulation(object):
 
         libfunc = lib.FluidSimulation_load_marker_particle_data
         pb.init_lib_func(libfunc, [c_void_p, FluidSimulationMarkerParticleData_t, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), pdata])
+
+    def load_marker_particle_affine_data(self, num_particles, affinex_data, affiney_data, affinez_data):
+        c_affinex_data = (c_char * len(affinex_data)).from_buffer_copy(affinex_data)
+        c_affiney_data = (c_char * len(affiney_data)).from_buffer_copy(affiney_data)
+        c_affinez_data = (c_char * len(affinez_data)).from_buffer_copy(affinez_data)
+
+        pdata = FluidSimulationMarkerParticleAffineData_t()
+        pdata.size = c_int(num_particles)
+        pdata.affinex = ctypes.cast(c_affinex_data, c_char_p)
+        pdata.affiney = ctypes.cast(c_affiney_data, c_char_p)
+        pdata.affinez = ctypes.cast(c_affinez_data, c_char_p)
+
+        libfunc = lib.FluidSimulation_load_marker_particle_affine_data
+        pb.init_lib_func(libfunc, [c_void_p, FluidSimulationMarkerParticleAffineData_t, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), pdata])
 
     def load_diffuse_particle_data(self, num_particles, position_data, velocity_data,
@@ -2104,6 +2168,12 @@ class FluidSimulationMarkerParticleData_t(ctypes.Structure):
     _fields_ = [("size", c_int),
                 ("positions", c_char_p),
                 ("velocities", c_char_p)]
+
+class FluidSimulationMarkerParticleAffineData_t(ctypes.Structure):
+    _fields_ = [("size", c_int),
+                ("affinex", c_char_p),
+                ("affiney", c_char_p),
+                ("affinez", c_char_p),]
 
 class FluidSimulationDiffuseParticleData_t(ctypes.Structure):
     _fields_ = [("size", c_int),

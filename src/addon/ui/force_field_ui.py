@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -81,9 +81,9 @@ class FLIPFLUID_PT_ForceFieldTypePanel(bpy.types.Panel):
             column.label(text="Try out our experimental builds for the latest features!")
             column.operator(
                 "wm.url_open", 
-                text="Force Field Experimental Builds", 
+                text="Experimental Builds", 
                 icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Force-Field-Experimental-Builds"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Experimental-Builds"
             return
 
         if show_documentation:

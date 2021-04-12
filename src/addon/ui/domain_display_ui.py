@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -334,6 +334,11 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
                 text="Whitewater particles are not rendered in preview render", 
                 icon="WORLD"
             ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Scene-Troubleshooting#whitewater-particles-are-not-rendered-when-viewport-shading-is-set-to-rendered"
+            column.operator(
+                "wm.url_open", 
+                text="Simulation meshes not appearing in viewport/render", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Scene-Troubleshooting#simulation-meshes-are-not-appearing-in-the-viewport-andor-render"
 
         self.draw_surface_display_settings(context)
         self.draw_whitewater_display_settings(context)

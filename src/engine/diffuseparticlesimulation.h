@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2020 Ryan L. Guy
+Copyright (C) 2021 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -37,9 +37,10 @@ SOFTWARE.
 #include "aabb.h"
 #include "fluidmaterialgrid.h"
 #include "turbulencefield.h"
+#include "particlesystem.h"
+#include "diffuseparticle.h"
 
 struct MarkerParticle;
-struct DiffuseParticle;
 enum class DiffuseParticleType : char;
 class MeshLevelSet;
 class MACVelocityField;
@@ -57,7 +58,7 @@ struct DiffuseParticleSimulationParameters {
     double markerParticleRadius;
     vmath::vec3 bodyForce;
 
-    FragmentedVector<MarkerParticle> *markerParticles;
+    ParticleSystem *markerParticles;
     MACVelocityField *vfield;
     ParticleLevelSet *liquidSDF;
     MeshLevelSet *solidSDF;
@@ -120,12 +121,8 @@ public:
     void disableBoundaryDustEmission();
     bool isBoundaryDustEmissionEnabled();
 
-    FragmentedVector<DiffuseParticle>* getDiffuseParticles();
+    ParticleSystem* getDiffuseParticles();
     int getNumDiffuseParticles();
-    void setDiffuseParticles(std::vector<DiffuseParticle> &particles);
-    void setDiffuseParticles(FragmentedVector<DiffuseParticle> &particles);
-    void addDiffuseParticles(std::vector<DiffuseParticle> &particles);
-    void addDiffuseParticles(FragmentedVector<DiffuseParticle> &particles);
 
     double getEmitterGenerationRate();
     void setEmitterGenerationRate(double rate);
@@ -271,6 +268,26 @@ private:
                                    dustPotential(d) {}
     };    
 
+    struct DiffuseParticleAttributes {
+        std::vector<vmath::vec3> *positions = nullptr;
+        std::vector<vmath::vec3> *velocities = nullptr;
+        std::vector<float> *lifetimes = nullptr;
+        std::vector<char> *types = nullptr;
+        std::vector<unsigned char> *ids = nullptr;
+
+        DiffuseParticle getDiffuseParticle(size_t index) {
+            DiffuseParticle dp;
+            dp.position = positions->at(index);
+            dp.velocity = velocities->at(index);
+            dp.lifetime = lifetimes->at(index);
+            dp.type = (DiffuseParticleType)types->at(index);
+            dp.id = ids->at(index);
+            return dp;
+        }
+    };
+
+    DiffuseParticleAttributes _getDiffuseParticleAttributes();
+
     void _trilinearInterpolate(std::vector<vmath::vec3> &input, MACVelocityField *vfield, 
                                std::vector<vmath::vec3> &output);
     void _trilinearInterpolateThread(int startidx, int endidx, 
@@ -298,6 +315,7 @@ private:
                                          std::vector<DiffuseParticleEmitter> &dustEmitters);
     void _shuffleDiffuseParticleEmitters(std::vector<DiffuseParticleEmitter> &emitters);
 
+    void _addNewDiffuseParticles(std::vector<DiffuseParticle> &newDiffuseParticles);
     void _emitNormalDiffuseParticles(std::vector<DiffuseParticleEmitter> &emitters, double dt);
     void _emitDustDiffuseParticles(std::vector<DiffuseParticleEmitter> &emitters, double dt);
     void _emitDiffuseParticles(DiffuseParticleEmitter &emitter, 
@@ -329,7 +347,6 @@ private:
     LimitBehaviour _getLimitBehaviour(DiffuseParticle &dp);
     std::vector<bool>* _getActiveSides(DiffuseParticle &dp);
     int _getNearestSideIndex(vmath::vec3 p, AABB &boundary);
-    void _markParticleForRemoval(unsigned int index);
 
     vmath::vec3 _getGravityVector(vmath::vec3 pos);
 
@@ -445,7 +462,7 @@ private:
     std::vector<bool> _dustActiveSides;
     AABB _emitterGenerationBounds;
 
-    FragmentedVector<MarkerParticle> *_markerParticles;
+    ParticleSystem *_markerParticles;
     MACVelocityField *_vfield;
     ParticleLevelSet *_liquidSDF;
     MeshLevelSet *_solidSDF;
@@ -463,7 +480,7 @@ private:
     Array3d<bool> _borderingAirGrid;
     Array3d<bool> _isBorderingAirGridSet;
     TurbulenceField _turbulenceField;
-    FragmentedVector<DiffuseParticle> _diffuseParticles;
+    ParticleSystem _diffuseParticles;
 
     int _currentDiffuseParticleID = 0;
     int _diffuseParticleIDLimit = 256;

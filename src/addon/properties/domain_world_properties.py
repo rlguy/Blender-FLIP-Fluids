@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -112,6 +112,14 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
             update=lambda self, context: self._update_viscosity_exponent(context),
             options={'HIDDEN'},
             ); exec(conv("viscosity_exponent"))
+    viscosity_solver_error_tolerance = IntProperty(
+            description="Accuracy of the viscosity solver. Decrease to speed up baking at the cost of accuracy,"
+                " increase to improve accuracy at the cost of baking speed. High viscosity thick or stiff fluids"
+                " benefit the most from increasing accuracy. Low viscosity thin fluids often work well at the lowest"
+                " accuracy. Setting above a value of 4 may have greatly diminishing returns on improvement", 
+            min=1, max=6,
+            default=4,
+            ); exec(conv("viscosity_solver_error_tolerance"))
     enable_surface_tension = BoolProperty(
             name="Enable Surface Tension",
             description="Enable surface tension forces",
@@ -202,6 +210,15 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
             default=True,
             ); exec(conv("surface_tension_substeps_tooltip"))
 
+    surface_tension_substeps_exceeded_tooltip = BoolProperty(
+            name="Warning: Too Many Substeps", 
+            description="The estimated number of Surface Tension substeps per frame exceeds the Max Frame"
+                " Substeps value. This can cause an unstable simulation. Either decrease the amount of"
+                " Surface Tension in the FLIP Fluid World panel to lower the number of required substeps or"
+                " increase the number of allowed Max Frame Substeps in the FLIP Fluid Advanced panel", 
+            default=True,
+            ); exec(conv("surface_tension_substeps_exceeded_tooltip"))
+
     minimum_surface_tension_cfl = FloatProperty(default=0.25)
     exec(conv("minimum_surface_tension_cfl"))
 
@@ -227,26 +244,26 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
         # Accounts for keyframed value changes after a frame change
         self._update_surface_tension_info()
 
-
     def register_preset_properties(self, registry, path):
         add = registry.add_property
-        add(path + ".world_scale_mode",          "World Scaling Mode",        group_id=0)
-        add(path + ".world_scale_relative",      "Relative Scale",            group_id=0)
-        add(path + ".world_scale_absolute",      "Absolute Scale",            group_id=0)
-        add(path + ".gravity_type",              "Gravity Type",              group_id=0)
-        add(path + ".gravity",                   "Gravity",                   group_id=0)
-        add(path + ".force_field_resolution",    "Force Field Resolution",    group_id=0)
-        add(path + ".enable_viscosity",          "Enable Viscosity",          group_id=0)
-        add(path + ".viscosity",                 "Viscosity Base",            group_id=0)
-        add(path + ".viscosity_exponent",        "Viscosity Exponent",        group_id=0)
-        add(path + ".enable_surface_tension",    "Enable Surface Tension",    group_id=0)
-        add(path + ".surface_tension",           "Surface Tension",           group_id=0)
-        add(path + ".surface_tension_exponent",  "Surface Tension Exponent",  group_id=0)
-        add(path + ".surface_tension_accuracy",  "Surface Tension Accuracy",  group_id=0)
-        add(path + ".enable_sheet_seeding",      "Enable Sheeting Effects",   group_id=0)
-        add(path + ".sheet_fill_rate",           "Sheeting Strength",         group_id=0)
-        add(path + ".sheet_fill_threshold",      "Sheeting Thickness",        group_id=0)
-        add(path + ".boundary_friction",         "Boundary Friction",         group_id=0)
+        add(path + ".world_scale_mode",                 "World Scaling Mode",        group_id=0)
+        add(path + ".world_scale_relative",             "Relative Scale",            group_id=0)
+        add(path + ".world_scale_absolute",             "Absolute Scale",            group_id=0)
+        add(path + ".gravity_type",                     "Gravity Type",              group_id=0)
+        add(path + ".gravity",                          "Gravity",                   group_id=0)
+        add(path + ".force_field_resolution",           "Force Field Resolution",    group_id=0)
+        add(path + ".enable_viscosity",                 "Enable Viscosity",          group_id=0)
+        add(path + ".viscosity",                        "Viscosity Base",            group_id=0)
+        add(path + ".viscosity_exponent",               "Viscosity Exponent",        group_id=0)
+        add(path + ".viscosity_solver_error_tolerance", "Viscosity Accuracy",        group_id=0)
+        add(path + ".enable_surface_tension",           "Enable Surface Tension",    group_id=0)
+        add(path + ".surface_tension",                  "Surface Tension",           group_id=0)
+        add(path + ".surface_tension_exponent",         "Surface Tension Exponent",  group_id=0)
+        add(path + ".surface_tension_accuracy",         "Surface Tension Accuracy",  group_id=0)
+        add(path + ".enable_sheet_seeding",             "Enable Sheeting Effects",   group_id=0)
+        add(path + ".sheet_fill_rate",                  "Sheeting Strength",         group_id=0)
+        add(path + ".sheet_fill_threshold",             "Sheeting Thickness",        group_id=0)
+        add(path + ".boundary_friction",                "Boundary Friction",         group_id=0)
 
 
     def get_gravity_data_dict(self):

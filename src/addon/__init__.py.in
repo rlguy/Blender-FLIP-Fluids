@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -99,14 +99,7 @@ def render_cancel(scene):
 
 @bpy.app.handlers.persistent
 def frame_change_pre(scene, depsgraph=None):
-    #scene.objects["mesh_cache"].modifiers["Ocean"].time = scene.objects["mesh_cache"].evaluated_get(depsgraph).modifiers["Ocean"].time
-
-    dprops = scene.flip_fluid.get_domain_properties()
-    domain_object = scene.flip_fluid.get_domain_object()
-    if domain_object is not None:
-        domain_object_eval = domain_object.evaluated_get(bpy.context.evaluated_depsgraph_get())
-        dprops_eval = domain_object_eval.flip_fluid.domain
-        dprops.render.override_frame = dprops_eval.render.override_frame
+    pass
 
 
 @bpy.app.handlers.persistent

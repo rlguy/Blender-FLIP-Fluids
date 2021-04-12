@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -327,7 +327,7 @@ class FlipFluidExportStatsCSV(bpy.types.Operator):
             if d is not None:
                 csv_rows.append(d)
 
-        with open(filepath, 'w', newline='') as csvfile:
+        with open(filepath, 'w', newline='', encoding='utf-8') as csvfile:
             dprops = bpy.context.scene.flip_fluid.get_domain_properties()
             if dprops.stats.csv_region_format == 'CSV_REGION_US':
                 delimiter = ','
@@ -351,7 +351,7 @@ class FlipFluidExportStatsCSV(bpy.types.Operator):
             self.report({"ERROR"}, "Missing simulation stats data file: " + statsfile)
             return {'CANCELLED'}
 
-        with open(statsfile, 'r') as f:
+        with open(statsfile, 'r', encoding='utf-8') as f:
             statsdata = json.loads(f.read())
 
         csv_filepath = dprops.stats.csv_save_filepath

@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -102,7 +102,7 @@ class FLIPFluidPreferencesExportUserData(bpy.types.Operator):
 
         user_info_str = json.dumps(user_info, sort_keys=True, indent=4)
         user_info_filepath = os.path.join(temp_dir, "user_settings.info")
-        with open(user_info_filepath, 'w') as f:
+        with open(user_info_filepath, 'w', encoding='utf-8') as f:
             f.write(user_info_str)
 
         addon_path = _get_addon_directory()

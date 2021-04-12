@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2020 Ryan L. Guy
+Copyright (C) 2021 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -30,10 +30,11 @@ SOFTWARE.
 #include "meshlevelset.h"
 #include "particlemaskgrid.h"
 #include "vmath.h"
+#include "particlesystem.h"
 
 
 struct ParticleSheeterParameters {
-    FragmentedVector<MarkerParticle> *particles;
+    ParticleSystem *particles;
     Array3d<float> *fluidSurfaceLevelSet;
 
     int isize = 0;
@@ -118,7 +119,7 @@ private:
                                     std::vector<vmath::vec3> *result);
 
     // External parameters
-    FragmentedVector<MarkerParticle> *_particles;
+    ParticleSystem *_particles;
     Array3d<float> *_fluidSurfaceLevelSet;
 
     int _isize = 0;

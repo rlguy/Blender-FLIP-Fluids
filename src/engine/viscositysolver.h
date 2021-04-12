@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2020 Ryan L. Guy
+Copyright (C) 2021 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -42,6 +42,7 @@ struct ViscositySolverParameters {
     ParticleLevelSet *liquidSDF;
     MeshLevelSet *solidSDF;
     Array3d<float> *viscosity;
+    double errorTolerance = 1e-4;
 };
 
 class ViscositySolver {
@@ -75,6 +76,16 @@ private:
             edgeU(isize, jsize + 1, ksize + 1, 0.0f),
             edgeV(isize + 1, jsize, ksize + 1, 0.0f),
             edgeW(isize + 1, jsize + 1, ksize, 0.0f) {}
+
+        void clear() {
+            center.fill(0.0f);
+            U.fill(0.0f);
+            V.fill(0.0f);
+            W.fill(0.0f);
+            edgeU.fill(0.0f);
+            edgeV.fill(0.0f);
+            edgeW.fill(0.0f);
+        }
 
         void destroy() {
             isize = 0;
@@ -179,8 +190,19 @@ private:
                                       Array3d<float> *solidCenterPhi);
     void _computeVolumeGrid();
     void _estimateVolumeFractions(Array3d<float> *volumes, 
+                                  Array3d<bool> *validCells, 
                                   vmath::vec3 centerStart, 
-                                  Array3d<bool> *validCells);
+                                  float dx);
+    void _estimateVolumeFractionsThread(int startidx, int endidx,
+                                        Array3d<float> *volumes, 
+                                        Array3d<bool> *validCells, 
+                                        vmath::vec3 centerStart, 
+                                        float dx);
+    void _computeVolumeGridThread(Array3d<float> *volumes, 
+                                  Array3d<bool> *validCells,
+                                  Array3d<float> *subcellVolumes,
+                                  GridIndex gridOffset);
+
     void _destroyVolumeGrid();
     void _computeMatrixIndexTable();
     void _initializeLinearSystem(SparseMatrixf &matrix, std::vector<float> &rhs);
@@ -216,13 +238,13 @@ private:
 
     FaceStateGrid _state;
     ViscosityVolumeGrid _volumes;
+    Array3d<float> _subcellVolumeGrid;
     MatrixIndexer _matrixIndex;
 
     double _solverTolerance = 1e-4;
     double _acceptableTolerace = 10.0;
-    int _maxSolverIterations = 700;
+    int _maxSolverIterations = 1400;
     std::string _solverStatus;
-
 };
 
 

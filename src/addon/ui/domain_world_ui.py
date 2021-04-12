@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -197,11 +197,6 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
                 ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-World-Settings#force-field-resolution"
                 column.operator(
                     "wm.url_open", 
-                    text="Force Field Experimental Builds", 
-                    icon="WORLD"
-                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Force-Field-Experimental-Builds"
-                column.operator(
-                    "wm.url_open", 
                     text="Force Field Example Scenes", 
                     icon="WORLD"
                 ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Example-Scene-Descriptions#force-field-examples"
@@ -223,6 +218,7 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
             column_left = split.column(align=True)
             column_left.prop(wprops, "enable_viscosity")
             column_left.label(text="")
+            column_left.label(text="")
             row = column_left.row(align=True)
             row.alignment='RIGHT'
             row.enabled = wprops.enable_viscosity
@@ -235,6 +231,7 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
             column_right.enabled = wprops.enable_viscosity
             column_right.prop(wprops, "viscosity", text="Base")
             column_right.prop(wprops, "viscosity_exponent", text="Exponent")
+            column_right.prop(wprops, "viscosity_solver_error_tolerance", text="Accuracy", slider=True)
             column_right.label(text=viscosity_str)
 
         if show_documentation:
@@ -283,6 +280,12 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
             column_right.prop(wprops, "surface_tension_accuracy", text="Accuracy")
             column_right.label(text=surface_tension_str)
             column_right.label(text=str(wprops.minimum_surface_tension_substeps))
+
+            if wprops.enable_surface_tension and wprops.minimum_surface_tension_substeps > aprops.min_max_time_steps_per_frame.value_max:
+                row = column.row(align=True)
+                row.alert = True
+                row.prop(wprops, "surface_tension_substeps_exceeded_tooltip", icon="QUESTION", emboss=False, text="")
+                row.label(text="  Warning: Too Many Substeps")
 
         if show_documentation:
             column = box.column(align=True)

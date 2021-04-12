@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -208,7 +208,7 @@ class FLIPFluidMaterialLibrary(bpy.types.PropertyGroup):
                 description_path = f[:-len(extension)] + "description"
                 description_text = ""
                 if os.path.isfile(description_path):
-                    with open(description_path, 'r') as description_file:
+                    with open(description_path, 'r', encoding='utf-8') as description_file:
                         description_text = description_file.read()
 
                 new_material = self.material_list.add()
@@ -239,12 +239,12 @@ class FLIPFluidMaterialLibrary(bpy.types.PropertyGroup):
         icon_hash_path = os.path.join(icon_dir, "material_library_hash")
         old_material_library_hash = None
         if os.path.isfile(icon_hash_path):
-            with open(icon_hash_path, "r") as f:
+            with open(icon_hash_path, 'r', encoding='utf-8') as f:
                 old_material_library_hash = f.read()
 
         current_material_library_hash = self._calculate_material_library_hash()
         if current_material_library_hash != old_material_library_hash:
-            with open(icon_hash_path, "w") as f:
+            with open(icon_hash_path, 'w', encoding='utf-8') as f:
                 f.write(current_material_library_hash)
             return True
 

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2020 Ryan L. Guy
+Copyright (C) 2021 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -158,14 +158,12 @@ float ParticleLevelSet::getDistanceAtNode(GridIndex g) {
     return getDistanceAtNode(g.i, g.j, g.k);
 }
 
-void ParticleLevelSet::calculateSignedDistanceField(FragmentedVector<MarkerParticle> &particles, 
+void ParticleLevelSet::calculateSignedDistanceField(ParticleSystem &particles, 
                                                     double radius) {
-    std::vector<vmath::vec3> points;
-    points.reserve(particles.size());
-    for (size_t i = 0; i < particles.size(); i++) {
-        points.push_back(particles[i].position);
-    }
+    std::vector<vmath::vec3> *positions;
+    particles.getAttributeValues("POSITION", positions);
 
+    std::vector<vmath::vec3> points = *positions;
     _computeSignedDistanceFromParticles(points, radius);
 }
 

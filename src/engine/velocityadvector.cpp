@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2020 Ryan L. Guy
+Copyright (C) 2021 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -47,17 +47,27 @@ void VelocityAdvector::_initializeParameters(VelocityAdvectorParameters params) 
     _vfield = params.vfield;
     _validVelocities = params.validVelocities;
     _particleRadius = params.particleRadius;
+    _velocityTransferMethod = params.velocityTransferMethod;
     
     _dx = _vfield->getGridCellSize();
     _chunkdx = _dx * _chunkWidth;
 
-    _points.clear();
-    _points.reserve(_particles->size());
-    _velocities.clear();
-    _velocities.reserve(_particles->size());
-    for (size_t i = 0; i < _particles->size(); i++) {
-        _points.push_back((*_particles)[i].position);
-        _velocities.push_back((*_particles)[i].velocity);
+    std::vector<vmath::vec3> *positions, *velocities;
+    _particles->getAttributeValues("POSITION", positions);
+    _particles->getAttributeValues("VELOCITY", velocities);
+
+    _points = *positions;
+    _velocities = *velocities;
+
+    if (_isAPIC()) {
+        std::vector<vmath::vec3> *affineX, *affineY, *affineZ;
+        _particles->getAttributeValues("AFFINEX", affineX);
+        _particles->getAttributeValues("AFFINEY", affineY);
+        _particles->getAttributeValues("AFFINEZ", affineZ);
+
+        _affineX = *affineX;
+        _affineY = *affineY;
+        _affineZ = *affineZ;
     }
 }
 
@@ -69,8 +79,12 @@ void VelocityAdvector::_advectGrid(Direction dir) {
     _computeGridCountData(blockphi, gridCountData, dir);
 
     std::vector<PointData> sortedParticleData;
+    std::vector<AffineData> sortedAffineData;
     std::vector<int> blockToParticleDataIndex;
-    _sortParticlesIntoBlocks(gridCountData, sortedParticleData, blockToParticleDataIndex, dir);
+    _sortParticlesIntoBlocks(gridCountData, 
+                             sortedParticleData, sortedAffineData, 
+                             blockToParticleDataIndex, 
+                             dir);
 
     std::vector<GridBlock<ScalarData> > gridBlocks;
     blockphi.getActiveGridBlocks(gridBlocks);
@@ -86,6 +100,11 @@ void VelocityAdvector::_advectGrid(Direction dir) {
         ComputeBlock computeBlock;
         computeBlock.gridBlock = b;
         computeBlock.particleData = &(sortedParticleData[blockToParticleDataIndex[b.id]]);
+
+        if (_isAPIC()) {
+            computeBlock.affineData = &(sortedAffineData[blockToParticleDataIndex[b.id]]);
+        }
+
         computeBlock.numParticles = gridCountData.totalGridCount[b.id];
         computeBlock.radius = _particleRadius;
         computeBlockQueue.push(computeBlock);
@@ -96,8 +115,13 @@ void VelocityAdvector::_advectGrid(Direction dir) {
     int numthreads = (int)fmin(numCPU, std::ceil((float)computeBlockQueue.size() / (float)_numBlocksPerJob));
     std::vector<std::thread> producerThreads(numthreads);
     for (int i = 0; i < numthreads; i++) {
-        producerThreads[i] = std::thread(&VelocityAdvector::_advectionProducerThread, this,
+        if (_isFLIP()) {
+            producerThreads[i] = std::thread(&VelocityAdvector::_advectionFLIPProducerThread, this,
+                                             &computeBlockQueue, &finishedComputeBlockQueue);
+        } else {
+            producerThreads[i] = std::thread(&VelocityAdvector::_advectionAPICProducerThread, this,
                                          &computeBlockQueue, &finishedComputeBlockQueue);
+        }
     }
 
     Array3d<float> *vfieldgrid = NULL;
@@ -330,6 +354,7 @@ void VelocityAdvector::_computeGridCountDataThread(int startidx, int endidx,
 
 void VelocityAdvector::_sortParticlesIntoBlocks(ParticleGridCountData &countdata, 
                                                 std::vector<PointData> &sortedParticleData, 
+                                                std::vector<AffineData> &sortedAffineData, 
                                                 std::vector<int> &blockToParticleIndex,
                                                 Direction dir) {
     int diridx = 0;
@@ -352,43 +377,95 @@ void VelocityAdvector::_sortParticlesIntoBlocks(ParticleGridCountData &countdata
 
     vmath::vec3 offset = _getDirectionOffset(dir);
     sortedParticleData = std::vector<PointData>(totalParticleCount);
-    for (int tidx = 0; tidx < countdata.numthreads; tidx++) {
-        GridCountData *countData = &(countdata.threadGridCountData[tidx]);
 
-        int indexOffset = countData->startidx;
-        int currentOverlappingIndex = 0;
-        for (size_t i = 0; i < countData->simpleGridIndices.size(); i++) {
-            if (countData->invalidPoints[i]) {
-                continue;
-            }
+    if (_isFLIP()) {
 
-            vmath::vec3 p = _points[i + indexOffset] - offset;
-            float v = _velocities[i + indexOffset][diridx];
-            PointData pdata(p.x, p.y, p.z, v);
+        for (int tidx = 0; tidx < countdata.numthreads; tidx++) {
+            GridCountData *countData = &(countdata.threadGridCountData[tidx]);
 
-            if (countData->simpleGridIndices[i] >= 0) {
-                int blockid = countData->simpleGridIndices[i];
-                int sortedIndex = blockToParticleIndexCurrent[blockid];
-                sortedParticleData[sortedIndex] = pdata;
-                blockToParticleIndexCurrent[blockid]++;
-            } else {
-                int numblocks = -(countData->simpleGridIndices[i]);
-                for (int blockidx = 0; blockidx < numblocks; blockidx++) {
-                    int blockid = countData->overlappingGridIndices[currentOverlappingIndex];
-                    currentOverlappingIndex++;
+            int indexOffset = countData->startidx;
+            int currentOverlappingIndex = 0;
+            for (size_t i = 0; i < countData->simpleGridIndices.size(); i++) {
+                if (countData->invalidPoints[i]) {
+                    continue;
+                }
 
+                vmath::vec3 p = _points[i + indexOffset] - offset;
+                float v = _velocities[i + indexOffset][diridx];
+                PointData pdata(p.x, p.y, p.z, v);
+
+                if (countData->simpleGridIndices[i] >= 0) {
+                    int blockid = countData->simpleGridIndices[i];
                     int sortedIndex = blockToParticleIndexCurrent[blockid];
                     sortedParticleData[sortedIndex] = pdata;
                     blockToParticleIndexCurrent[blockid]++;
+                } else {
+                    int numblocks = -(countData->simpleGridIndices[i]);
+                    for (int blockidx = 0; blockidx < numblocks; blockidx++) {
+                        int blockid = countData->overlappingGridIndices[currentOverlappingIndex];
+                        currentOverlappingIndex++;
+
+                        int sortedIndex = blockToParticleIndexCurrent[blockid];
+                        sortedParticleData[sortedIndex] = pdata;
+                        blockToParticleIndexCurrent[blockid]++;
+                    }
                 }
             }
         }
+
+    } else if (_isAPIC()) {
+
+        sortedAffineData = std::vector<AffineData>(totalParticleCount);
+        for (int tidx = 0; tidx < countdata.numthreads; tidx++) {
+            GridCountData *countData = &(countdata.threadGridCountData[tidx]);
+
+            int indexOffset = countData->startidx;
+            int currentOverlappingIndex = 0;
+            for (size_t i = 0; i < countData->simpleGridIndices.size(); i++) {
+                if (countData->invalidPoints[i]) {
+                    continue;
+                }
+
+                vmath::vec3 p = _points[i + indexOffset] - offset;
+                float v = _velocities[i + indexOffset][diridx];
+                PointData pdata(p.x, p.y, p.z, v);
+                AffineData adata;
+
+                if (dir == Direction::U) {
+                    adata = AffineData(_affineX[i + indexOffset]);
+                } else if (dir == Direction::V) {
+                    adata = AffineData(_affineY[i + indexOffset]);
+                } else if (dir == Direction::W) {
+                    adata = AffineData(_affineZ[i + indexOffset]);
+                }
+
+                if (countData->simpleGridIndices[i] >= 0) {
+                    int blockid = countData->simpleGridIndices[i];
+                    int sortedIndex = blockToParticleIndexCurrent[blockid];
+                    sortedParticleData[sortedIndex] = pdata;
+                    sortedAffineData[sortedIndex] = adata;
+                    blockToParticleIndexCurrent[blockid]++;
+                } else {
+                    int numblocks = -(countData->simpleGridIndices[i]);
+                    for (int blockidx = 0; blockidx < numblocks; blockidx++) {
+                        int blockid = countData->overlappingGridIndices[currentOverlappingIndex];
+                        currentOverlappingIndex++;
+
+                        int sortedIndex = blockToParticleIndexCurrent[blockid];
+                        sortedParticleData[sortedIndex] = pdata;
+                        sortedAffineData[sortedIndex] = adata;
+                        blockToParticleIndexCurrent[blockid]++;
+                    }
+                }
+            }
+        }
+
     }
 
 }
 
-void VelocityAdvector::_advectionProducerThread(BoundedBuffer<ComputeBlock> *blockQueue, 
-                                                BoundedBuffer<ComputeBlock> *finishedBlockQueue) {
+void VelocityAdvector::_advectionFLIPProducerThread(BoundedBuffer<ComputeBlock> *blockQueue, 
+                                                    BoundedBuffer<ComputeBlock> *finishedBlockQueue) {
 
     float eps = 1e-6;
     float r = _particleRadius;
@@ -443,6 +520,93 @@ void VelocityAdvector::_advectionProducerThread(BoundedBuffer<ComputeBlock> *blo
                         }
                     }
                 }
+            }
+
+            int numVals = _chunkWidth * _chunkWidth * _chunkWidth;
+            for (int i = 0; i < numVals; i++) {
+                if (block.gridBlock.data[i].weight > eps) {
+                    block.gridBlock.data[i].scalar /= block.gridBlock.data[i].weight;
+                }
+            }
+
+            finishedBlockQueue->push(block);
+        }
+    }
+
+}
+
+/*
+    The APIC (Affine Particle-In-Cell) velocity transfer method was adapted from
+    Doyub Kim's 'Fluid Engine Dev' repository:
+        https://github.com/doyubkim/fluid-engine-dev
+*/
+void VelocityAdvector::_advectionAPICProducerThread(BoundedBuffer<ComputeBlock> *blockQueue, 
+                                                    BoundedBuffer<ComputeBlock> *finishedBlockQueue) {
+
+    float eps = 1e-6;
+    GridIndex indices[8];
+    float weights[8];
+
+    while (blockQueue->size() > 0) {
+        std::vector<ComputeBlock> computeBlocks;
+        int numBlocks = blockQueue->pop(_numBlocksPerJob, computeBlocks);
+        if (numBlocks == 0) {
+            continue;
+        }
+
+        for (size_t bidx = 0; bidx < computeBlocks.size(); bidx++) {
+            ComputeBlock block = computeBlocks[bidx];
+            GridIndex blockIndex = block.gridBlock.index;
+            vmath::vec3 blockPositionOffset = Grid3d::GridIndexToPosition(blockIndex, _chunkWidth * _dx);
+
+            for (int pidx = 0; pidx < block.numParticles; pidx++) {
+
+                PointData pdata = block.particleData[pidx];
+                AffineData adata = block.affineData[pidx];
+
+                vmath::vec3 p(pdata.x, pdata.y, pdata.z);
+                p -= blockPositionOffset;
+                float velocity = pdata.v;
+                vmath::vec3 affine = vmath::vec3(adata.x, adata.y, adata.z);
+
+                GridIndex g = Grid3d::positionToGridIndex(p, _dx);
+                vmath::vec3 gpos = Grid3d::GridIndexToPosition(g, _dx);
+                vmath::vec3 ipos = (p - gpos) / _dx;
+
+                indices[0] = GridIndex(g.i,     g.j,     g.k);
+                indices[1] = GridIndex(g.i + 1, g.j,     g.k);
+                indices[2] = GridIndex(g.i,     g.j + 1, g.k);
+                indices[3] = GridIndex(g.i + 1, g.j + 1, g.k);
+                indices[4] = GridIndex(g.i,     g.j,     g.k + 1);
+                indices[5] = GridIndex(g.i + 1, g.j,     g.k + 1);
+                indices[6] = GridIndex(g.i,     g.j + 1, g.k + 1);
+                indices[7] = GridIndex(g.i + 1, g.j + 1, g.k + 1);
+
+                weights[0] = (1.0f - ipos.x) * (1.0f - ipos.y) * (1.0f - ipos.z);
+                weights[1] = ipos.x * (1.0f - ipos.y) * (1.0f - ipos.z);
+                weights[2] = (1.0f - ipos.x) * ipos.y * (1.0f - ipos.z);
+                weights[3] = ipos.x * ipos.y * (1.0f - ipos.z);
+                weights[4] = (1.0f - ipos.x) * (1.0f - ipos.y) * ipos.z;
+                weights[5] = ipos.x * (1.0f - ipos.y) * ipos.z;
+                weights[6] = (1.0f - ipos.x) * ipos.y * ipos.z;
+                weights[7] = ipos.x * ipos.y * ipos.z;
+
+                for (int gidx = 0; gidx < 8; gidx++) {
+                    GridIndex index = indices[gidx];
+                    if (index.i < 0 || index.j < 0 || index.k < 0 || 
+                            index.i >= _chunkWidth || index.j >= _chunkWidth || index.k >= _chunkWidth) {
+                        continue;
+                    }
+
+                    vmath::vec3 nodepos = Grid3d::GridIndexToPosition(index, _dx);
+                    float apicTerm = vmath::dot(affine, nodepos - p);
+                    float weight = weights[gidx];
+
+                    int flatidx = Grid3d::getFlatIndex(index, _chunkWidth, _chunkWidth);
+                    block.gridBlock.data[flatidx].scalar += weight * (velocity + apicTerm);
+                    block.gridBlock.data[flatidx].weight += weight;
+                }
+
             }
 
             int numVals = _chunkWidth * _chunkWidth * _chunkWidth;

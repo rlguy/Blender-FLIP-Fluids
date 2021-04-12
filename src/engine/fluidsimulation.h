@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2020 Ryan L. Guy
+Copyright (C) 2021 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -48,13 +48,15 @@ SOFTWARE.
 #include "meshfluidsource.h"
 #include "influencegrid.h"
 #include "forcefieldgrid.h"
+#include "particlesystem.h"
+#include "markerparticle.h"
+#include "viscositysolver.h"
 
 class AABB;
 class MeshFluidSource;
 class ParticleMaskGrid;
 class MACVelocityField;
 class FluidMaterialGrid;
-struct MarkerParticle;
 struct DiffuseParticle;
 enum class LimitBehaviour : char;
 
@@ -104,6 +106,13 @@ struct FluidSimulationMarkerParticleData {
     int size = 0;
     char *positions;
     char *velocities;
+};
+
+struct FluidSimulationMarkerParticleAffineData {
+    int size = 0;
+    char *affineX;
+    char *affineY;
+    char *affineZ;
 };
 
 struct FluidSimulationDiffuseParticleData {
@@ -800,6 +809,13 @@ public:
     void setViscosity(double v);
 
     /*
+        Error tolerance of the viscosity solver.
+        Recommended range around [1e-1, 1e-6].
+    */
+    double getViscositySolverErrorTolerance();
+    void setViscositySolverErrorTolerance(double tol);
+
+    /*
         Surface tension constant of the fluid.
         Must be greater than or equal to zero. 
     */
@@ -880,10 +896,20 @@ public:
     bool isExtremeVelocityRemovalEnabled();
 
     /*
-        Ratio of PIC to FLIP velocity update
+        Set FLIP (splashy) or APIC (swirly) velocity transfer method
+    */
+    void setVelocityTransferMethodFLIP();
+    void setVelocityTransferMethodAPIC();
+    bool isVelocityTransferMethodFLIP();
+    bool isVelocityTransferMethodAPIC();
+
+    /*
+        Ratio of PIC to FLIP or PIC to APIC velocity update
     */
     double getPICFLIPRatio();
     void setPICFLIPRatio(double r);
+    double getPICAPICRatio();
+    void setPICAPICRatio(double r);
 
     /*
         Name of the preferred GPU device to use for GPU acceleration features
@@ -1025,14 +1051,6 @@ public:
     unsigned int getNumDiffuseParticles();
 
     /*
-        Returns a vector of all diffuse particles in the simulation. Diffuse particles
-        store a position, velocity, lifetime, and and type (bubble, spray,
-        or foam).
-    */
-    std::vector<DiffuseParticle> getDiffuseParticles();
-    std::vector<DiffuseParticle> getDiffuseParticles(int startidx, int endidx);
-
-    /*
         Returns a vector of diffuse particle positions. If range indices
         are specified, the vector will contain positions ranging from 
         [startidx, endidx).
@@ -1100,6 +1118,9 @@ public:
 
     void getMarkerParticlePositionDataRange(int start_idx, int end_idx, char *data);
     void getMarkerParticleVelocityDataRange(int start_idx, int end_idx, char *data);
+    void getMarkerParticleAffineXDataRange(int start_idx, int end_idx, char *data);
+    void getMarkerParticleAffineYDataRange(int start_idx, int end_idx, char *data);
+    void getMarkerParticleAffineZDataRange(int start_idx, int end_idx, char *data);
     void getDiffuseParticlePositionDataRange(int start_idx, int end_idx, char *data);
     void getDiffuseParticleVelocityDataRange(int start_idx, int end_idx, char *data);
     void getDiffuseParticleLifetimeDataRange(int start_idx, int end_idx, char *data);
@@ -1125,9 +1146,15 @@ public:
         Load char data representing marker/diffuse particles into the simulator
     */
     void loadMarkerParticleData(FluidSimulationMarkerParticleData data);
+    void loadMarkerParticleAffineData(FluidSimulationMarkerParticleAffineData data);
     void loadDiffuseParticleData(FluidSimulationDiffuseParticleData data);
 
 private:   
+
+    enum class VelocityTransferMethod : char { 
+        FLIP = 0x00, 
+        APIC = 0x01
+    };
 
     struct FluidMeshObject {
         MeshObject object;
@@ -1161,6 +1188,10 @@ private:
 
     struct MarkerParticleLoadData {
         FragmentedVector<MarkerParticle> particles;
+    };
+
+    struct MarkerParticleAffineLoadData {
+        FragmentedVector<MarkerParticleAffine> particles;
     };
 
     struct DiffuseParticleLoadData {
@@ -1236,15 +1267,17 @@ private:
     void _initializeLogFile();
     void _initializeSimulationGrids(int isize, int jsize, int ksize, double dx);
     void _initializeForceFieldGrid(int isize, int jsize, int ksize, double dx);
+    void _initializeParticleSystems();
     void _initializeSimulation();
     void _initializeParticleRadii();
     void _initializeRandomGenerator();
     double _getMarkerParticleJitter();
     vmath::vec3 _jitterMarkerParticlePosition(vmath::vec3 p, double jitter);
-    void _addMarkerParticle(vmath::vec3 p, vmath::vec3 velocity);
+    void _addMarkerParticles(std::vector<MarkerParticle> &particles);
     void _upscaleParticleData();
     void _loadParticles();
-    void _loadMarkerParticles(MarkerParticleLoadData &data);
+    void _loadMarkerParticles(MarkerParticleLoadData &particleData,
+                              MarkerParticleAffineLoadData &affineData);
     void _loadDiffuseParticles(DiffuseParticleLoadData &data);
 
     /*
@@ -1363,8 +1396,10 @@ private:
         Update MarkerParticle Velocities
     */
     void _updateMarkerParticleVelocities();
-    void _updatePICFLIPMarkerParticleVelocities();
+    void _updateMarkerParticleVelocitiesThread();
     void _updatePICFLIPMarkerParticleVelocitiesThread(int startidx, int endidx);
+    void _updatePICAPICMarkerParticleVelocitiesThread(int startidx, int endidx);
+    void _getIndicesAndGradientWeights(vmath::vec3 p, GridIndex indices[8], vmath::vec3 weights[8], int dir);
     void _constrainMarkerParticleVelocities();
     void _constrainMarkerParticleVelocities(MeshFluidSource *inflow);
 
@@ -1460,26 +1495,7 @@ private:
         Misc Methods
     */
     template<class T>
-    void _removeItemsFromVector(FragmentedVector<T> &items, std::vector<bool> &isRemoved) {
-        FLUIDSIM_ASSERT(items.size() == isRemoved.size());
-
-        int currentidx = 0;
-        for (unsigned int i = 0; i < items.size(); i++) {
-            if (!isRemoved[i]) {
-                items[currentidx] = items[i];
-                currentidx++;
-            }
-        }
-
-        int numRemoved = items.size() - currentidx;
-        for (int i = 0; i < numRemoved; i++) {
-            items.pop_back();
-        }
-        items.shrink_to_fit();
-    }
-
-    template<class T>
-    void _removeItemsFromVector(std::vector<T> &items, std::vector<bool> &isRemoved) {
+    void _removeItemsFromVector(T &items, std::vector<bool> &isRemoved) {
         FLUIDSIM_ASSERT(items.size() == isRemoved.size());
 
         int currentidx = 0;
@@ -1548,7 +1564,7 @@ private:
     // Update fluid material
     ParticleLevelSet _liquidSDF;
     std::vector<MeshFluidSource*> _meshFluidSources;
-    FragmentedVector<MarkerParticle> _markerParticles;
+    ParticleSystem _markerParticles;
     std::vector<FluidMeshObject> _addedFluidMeshObjectQueue;
     double _markerParticleJitterFactor = 0.0;
     bool _isJitterSurfaceMarkerParticlesEnabled = false;
@@ -1557,6 +1573,7 @@ private:
     bool _isMarkerParticleLoadPending = false;
     bool _isDiffuseParticleLoadPending = false;
     std::vector<MarkerParticleLoadData> _markerParticleLoadQueue;
+    std::vector<MarkerParticleAffineLoadData> _markerParticleAffineLoadQueue;
     std::vector<DiffuseParticleLoadData> _diffuseParticleLoadQueue;
 
     // Update obstacles
@@ -1626,6 +1643,7 @@ private:
     VelocityAdvector _velocityAdvector;
     int _maxParticlesPerVelocityAdvection = 5e6;
     std::thread _advectVelocityFieldThread;
+    VelocityTransferMethod _velocityTransferMethod = VelocityTransferMethod::FLIP;
 
     // Calculate fluid curvature
     Array3d<float> _fluidSurfaceLevelSet;
@@ -1641,9 +1659,11 @@ private:
     ForceFieldGrid _forceFieldGrid;
 
     // Viscosity solve
+    ViscositySolver _viscositySolver;
     Array3d<float> _viscosity;
     bool _isViscosityEnabled = false;
     double _constantViscosityValue = 0.0;
+    double _viscositySolverErrorTolerance = 1e-4;
     std::string _viscositySolverStatus;
 
     // Pressure solve
@@ -1675,20 +1695,21 @@ private:
     // Update MarkerParticle velocities
     int _maxParticlesPerPICFLIPUpdate = 10e6;
     double _ratioPICFLIP = 0.05;
+    double _ratioPICAPIC = 0.00;
     MACVelocityField _MACVelocity;
     MACVelocityField _savedVelocityField;
 
     // Advance MarkerParticles
     int _maxParticlesPerParticleAdvection = 10e6;
     int _maxMarkerParticlesPerCell = 250;
-    float _solidBufferWidth = 0.1f;
+    float _solidBufferWidth = 0.2f;
     bool _isAdaptiveObstacleTimeSteppingEnabled = false;
     bool _isAdaptiveForceFieldTimeSteppingEnabled = false;
     bool _isExtremeVelocityRemovalEnabled = true;
     double _maxExtremeVelocityRemovalPercent = 0.0005;
     int _maxExtremeVelocityRemovalAbsolute = 35;
     int _minTimeStepIncreaseForRemoval = 4;
-    float _markerParticleStepDistanceFactor = 0.5;
+    float _markerParticleStepDistanceFactor = 0.1f;
     
     // OpenCL
     // NOTE: These objects are not used within the simulator, but will remain

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2020 Ryan L. Guy
+Copyright (C) 2021 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -34,7 +34,6 @@ SOFTWARE.
 #include "particlemesher.h"
 #include "polygonizer3d.h"
 #include "diffuseparticle.h"
-#include "markerparticle.h"
 #include "particlemaskgrid.h"
 #include "triangle.h"
 #include "scalarfield.h"
@@ -1669,6 +1668,23 @@ void FluidSimulation::setViscosity(double v) {
     _constantViscosityValue = v;
 }
 
+double FluidSimulation::getViscositySolverErrorTolerance() {
+    return _viscositySolverErrorTolerance;
+}
+
+void FluidSimulation::setViscositySolverErrorTolerance(double tol) {
+    if (tol < 0.0) {
+        std::string msg = "Error: viscosity solver error tolerance must be greater than or equal to 0.\n";
+        msg += "error tolerance: " + _toString(tol) + "\n";
+        throw std::domain_error(msg);
+    }
+
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " setViscositySolverErrorTolerance: " << tol << std::endl);
+
+    _viscositySolverErrorTolerance = tol;
+}
+
 double FluidSimulation::getSurfaceTension() {
     return _surfaceTensionConstant;
 }
@@ -1884,6 +1900,28 @@ bool FluidSimulation::isExtremeVelocityRemovalEnabled() {
     return _isExtremeVelocityRemovalEnabled;
 }
 
+void FluidSimulation::setVelocityTransferMethodFLIP() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " setVelocityTransferMethodFLIP" << std::endl);
+
+    _velocityTransferMethod = VelocityTransferMethod::FLIP;
+}
+
+void FluidSimulation::setVelocityTransferMethodAPIC() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " setVelocityTransferMethodAPIC" << std::endl);
+
+    _velocityTransferMethod = VelocityTransferMethod::APIC;
+}
+
+bool FluidSimulation::isVelocityTransferMethodFLIP() {
+    return _velocityTransferMethod == VelocityTransferMethod::FLIP;
+}
+
+bool FluidSimulation::isVelocityTransferMethodAPIC() {
+    return _velocityTransferMethod == VelocityTransferMethod::APIC;
+}
+
 double FluidSimulation::getPICFLIPRatio() {
     return _ratioPICFLIP;
 }
@@ -1900,6 +1938,24 @@ void FluidSimulation::setPICFLIPRatio(double r) {
                  " setPICFLIPRatio: " << r << std::endl);
 
     _ratioPICFLIP = r;
+}
+
+double FluidSimulation::getPICAPICRatio() {
+    return _ratioPICAPIC;
+}
+
+void FluidSimulation::setPICAPICRatio(double r) {
+    if (r < 0.0 || r > 1.0) {
+        std::string msg = "Error: PICAPIC ratio must be in range [0.0, 1.0].\n";
+        msg += "ratio: " + _toString(r) + "\n";
+        throw std::domain_error(msg);
+    }
+
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << 
+                 " setPICAPICRatio: " << r << std::endl);
+
+    _ratioPICAPIC = r;
 }
 
 void FluidSimulation::setPreferredGPUDevice(std::string deviceName) {
@@ -2065,8 +2121,13 @@ std::vector<MarkerParticle> FluidSimulation::getMarkerParticles(int startidx, in
     std::vector<MarkerParticle> particles;
     particles.reserve(endidx - startidx);
 
+    std::vector<vmath::vec3> *positions, *velocities;
+    _markerParticles.getAttributeValues("POSITION", positions);
+    _markerParticles.getAttributeValues("VELOCITY", velocities);
+
     for (int i = startidx; i < endidx; i++) {
-        particles.push_back(_markerParticles[i]);
+        MarkerParticle mp(positions->at(i), velocities->at(i));
+        particles.push_back(mp);
     }
 
     return particles;
@@ -2087,8 +2148,11 @@ std::vector<vmath::vec3> FluidSimulation::getMarkerParticlePositions(int startid
     std::vector<vmath::vec3> particles;
     particles.reserve(endidx - startidx);
 
+    std::vector<vmath::vec3> *positions;
+    _markerParticles.getAttributeValues("POSITION", positions);
+
     for (int i = startidx; i < endidx; i++) {
-        particles.push_back(_markerParticles[i].position);
+        particles.push_back(positions->at(i));
     }
 
     return particles;
@@ -2109,8 +2173,11 @@ std::vector<vmath::vec3> FluidSimulation::getMarkerParticleVelocities(int starti
     std::vector<vmath::vec3> velocities;
     velocities.reserve(endidx - startidx);
 
+    std::vector<vmath::vec3> *values;
+    _markerParticles.getAttributeValues("VELOCITY", values);
+
     for (int i = startidx; i < endidx; i++) {
-        velocities.push_back(_markerParticles[i].velocity);
+        velocities.push_back(values->at(i));
     }
 
     return velocities;
@@ -2118,29 +2185,6 @@ std::vector<vmath::vec3> FluidSimulation::getMarkerParticleVelocities(int starti
 
 unsigned int FluidSimulation::getNumDiffuseParticles() {
     return _diffuseMaterial.getNumDiffuseParticles();
-}
-
-std::vector<DiffuseParticle> FluidSimulation::getDiffuseParticles() {
-    return getDiffuseParticles(0, _markerParticles.size());
-}
-
-std::vector<DiffuseParticle> FluidSimulation::getDiffuseParticles(int startidx, int endidx) {
-    int size = getNumDiffuseParticles();
-    if (!(startidx >= 0 && startidx <= size) || !(endidx >= 0 && endidx <= size)) {
-        std::string msg = "Error: invalid index range.\n";
-        msg += "start index: " + _toString(startidx) + " end index: " + _toString(endidx) + "\n";
-        throw std::out_of_range(msg);
-    }
-
-    std::vector<DiffuseParticle> particles;
-    particles.reserve(endidx - startidx);
-
-    FragmentedVector<DiffuseParticle> *dps = _diffuseMaterial.getDiffuseParticles();
-    for (int i = startidx; i < endidx; i++) {
-        particles.push_back(dps->at(i));
-    }
-
-    return particles;
 }
 
 std::vector<vmath::vec3> FluidSimulation::getDiffuseParticlePositions() {
@@ -2156,15 +2200,11 @@ std::vector<vmath::vec3> FluidSimulation::getDiffuseParticlePositions(int starti
         throw std::out_of_range(msg);
     }
 
-    std::vector<vmath::vec3> particles;
-    particles.reserve(endidx - startidx);
+    std::vector<vmath::vec3> *positions;
+    ParticleSystem *dps = _diffuseMaterial.getDiffuseParticles();
+    dps->getAttributeValues("POSITION", positions);
 
-    FragmentedVector<DiffuseParticle> *dps = _diffuseMaterial.getDiffuseParticles();
-    for (int i = startidx; i < endidx; i++) {
-        particles.push_back(dps->at(i).position);
-    }
-
-    return particles;
+    return *positions;
 }
 
 std::vector<vmath::vec3> FluidSimulation::getDiffuseParticleVelocities() {
@@ -2180,15 +2220,11 @@ std::vector<vmath::vec3> FluidSimulation::getDiffuseParticleVelocities(int start
         throw std::out_of_range(msg);
     }
 
-    std::vector<vmath::vec3> velocities;
-    velocities.reserve(endidx - startidx);
-
-    FragmentedVector<DiffuseParticle> *dps = _diffuseMaterial.getDiffuseParticles();
-    for (int i = startidx; i < endidx; i++) {
-        velocities.push_back(dps->at(i).velocity);
-    }
-
-    return velocities;
+    std::vector<vmath::vec3> *velocities;
+    ParticleSystem *dps = _diffuseMaterial.getDiffuseParticles();
+    dps->getAttributeValues("VELOCITY", velocities);
+    
+    return *velocities;
 }
 
 std::vector<float> FluidSimulation::getDiffuseParticleLifetimes() {
@@ -2204,15 +2240,11 @@ std::vector<float> FluidSimulation::getDiffuseParticleLifetimes(int startidx, in
         throw std::out_of_range(msg);
     }
 
-    std::vector<float> lifetimes;
-    lifetimes.reserve(endidx - startidx);
-
-    FragmentedVector<DiffuseParticle> *dps = _diffuseMaterial.getDiffuseParticles();
-    for (int i = startidx; i < endidx; i++) {
-        lifetimes.push_back(dps->at(i).lifetime);
-    }
-
-    return lifetimes;
+    std::vector<float> *lifetimes;
+    ParticleSystem *dps = _diffuseMaterial.getDiffuseParticles();
+    dps->getAttributeValues("LIFETIME", lifetimes);
+    
+    return *lifetimes;
 }
 
 std::vector<char> FluidSimulation::getDiffuseParticleTypes() {
@@ -2228,15 +2260,11 @@ std::vector<char> FluidSimulation::getDiffuseParticleTypes(int startidx, int end
         throw std::out_of_range(msg);
     }
 
-    std::vector<char> types;
-    types.reserve(endidx - startidx);
-
-    FragmentedVector<DiffuseParticle> *dps = _diffuseMaterial.getDiffuseParticles();
-    for (int i = startidx; i < endidx; i++) {
-        types.push_back((char)(dps->at(i).type));
-    }
-
-    return types;
+    std::vector<char> *types;
+    ParticleSystem *dps = _diffuseMaterial.getDiffuseParticles();
+    dps->getAttributeValues("TYPE", types);
+    
+    return *types;
 }
 
 MACVelocityField* FluidSimulation::getVelocityField() { 
@@ -2318,9 +2346,12 @@ void FluidSimulation::getMarkerParticlePositionDataRange(int start_idx, int end_
         throw std::domain_error(msg);
     }
 
+    std::vector<vmath::vec3> *values;
+    _markerParticles.getAttributeValues("POSITION", values);
+
     vmath::vec3 *positions = (vmath::vec3*)data;
     for (int i = start_idx; i < end_idx; i++) {
-        positions[i - start_idx] = _markerParticles[i].position * _domainScale + _domainOffset;
+        positions[i - start_idx] = values->at(i) * _domainScale + _domainOffset;
     }
 }
 
@@ -2331,129 +2362,216 @@ void FluidSimulation::getMarkerParticleVelocityDataRange(int start_idx, int end_
         throw std::domain_error(msg);
     }
 
+    std::vector<vmath::vec3> *values;
+    _markerParticles.getAttributeValues("VELOCITY", values);
+
     vmath::vec3 *velocities = (vmath::vec3*)data;
     for (int i = start_idx; i < end_idx; i++) {
-        velocities[i - start_idx] = _markerParticles[i].velocity;
+        velocities[i - start_idx] = values->at(i);
+    }
+}
+
+void FluidSimulation::getMarkerParticleAffineXDataRange(int start_idx, int end_idx, char *data) {
+    if (start_idx < 0 || end_idx > (int)_markerParticles.size() || start_idx > end_idx) {
+        std::string msg = "Error: invalid range.\n";
+        msg += "range: [" + _toString(start_idx) + ", " + _toString(end_idx) + "]\n";
+        throw std::domain_error(msg);
+    }
+
+    std::vector<vmath::vec3> *values;
+    _markerParticles.getAttributeValues("AFFINEX", values);
+
+    vmath::vec3 *dataValues = (vmath::vec3*)data;
+    for (int i = start_idx; i < end_idx; i++) {
+        dataValues[i - start_idx] = values->at(i);
+    }
+}
+
+void FluidSimulation::getMarkerParticleAffineYDataRange(int start_idx, int end_idx, char *data) {
+    if (start_idx < 0 || end_idx > (int)_markerParticles.size() || start_idx > end_idx) {
+        std::string msg = "Error: invalid range.\n";
+        msg += "range: [" + _toString(start_idx) + ", " + _toString(end_idx) + "]\n";
+        throw std::domain_error(msg);
+    }
+
+    std::vector<vmath::vec3> *values;
+    _markerParticles.getAttributeValues("AFFINEY", values);
+
+    vmath::vec3 *dataValues = (vmath::vec3*)data;
+    for (int i = start_idx; i < end_idx; i++) {
+        dataValues[i - start_idx] = values->at(i);
+    }
+}
+
+void FluidSimulation::getMarkerParticleAffineZDataRange(int start_idx, int end_idx, char *data) {
+    if (start_idx < 0 || end_idx > (int)_markerParticles.size() || start_idx > end_idx) {
+        std::string msg = "Error: invalid range.\n";
+        msg += "range: [" + _toString(start_idx) + ", " + _toString(end_idx) + "]\n";
+        throw std::domain_error(msg);
+    }
+
+    std::vector<vmath::vec3> *values;
+    _markerParticles.getAttributeValues("AFFINEZ", values);
+
+    vmath::vec3 *dataValues = (vmath::vec3*)data;
+    for (int i = start_idx; i < end_idx; i++) {
+        dataValues[i - start_idx] = values->at(i);
     }
 }
 
 void FluidSimulation::getDiffuseParticlePositionDataRange(int start_idx, int end_idx, char *data) {
-    FragmentedVector<DiffuseParticle>* dps = _diffuseMaterial.getDiffuseParticles();
+    ParticleSystem *dps = _diffuseMaterial.getDiffuseParticles();
     if (start_idx < 0 || end_idx > (int)dps->size() || start_idx > end_idx) {
         std::string msg = "Error: invalid range.\n";
         msg += "range: [" + _toString(start_idx) + ", " + _toString(end_idx) + "]\n";
         throw std::domain_error(msg);
     }
 
+    std::vector<vmath::vec3> *particlePositions;
+    dps->getAttributeValues("POSITION", particlePositions);
+
     vmath::vec3 *positions = (vmath::vec3*)data;
     for (int i = start_idx; i < end_idx; i++) {
-        positions[i - start_idx] = dps->at(i).position * _domainScale + _domainOffset;
+        positions[i - start_idx] = particlePositions->at(i) * _domainScale + _domainOffset;
     }
 }
 
 void FluidSimulation::getDiffuseParticleVelocityDataRange(int start_idx, int end_idx, char *data) {
-    FragmentedVector<DiffuseParticle>* dps = _diffuseMaterial.getDiffuseParticles();
+    ParticleSystem *dps = _diffuseMaterial.getDiffuseParticles();
     if (start_idx < 0 || end_idx > (int)dps->size() || start_idx > end_idx) {
         std::string msg = "Error: invalid range.\n";
         msg += "range: [" + _toString(start_idx) + ", " + _toString(end_idx) + "]\n";
         throw std::domain_error(msg);
     }
 
+    std::vector<vmath::vec3> *particleVelocities;
+    dps->getAttributeValues("VELOCITY", particleVelocities);
+
     vmath::vec3 *velocities = (vmath::vec3*)data;
     for (int i = start_idx; i < end_idx; i++) {
-        velocities[i - start_idx] = dps->at(i).velocity;
+        velocities[i - start_idx] = particleVelocities->at(i);
     }
 }
 
 void FluidSimulation::getDiffuseParticleLifetimeDataRange(int start_idx, int end_idx, char *data) {
-    FragmentedVector<DiffuseParticle>* dps = _diffuseMaterial.getDiffuseParticles();
+    ParticleSystem *dps = _diffuseMaterial.getDiffuseParticles();
     if (start_idx < 0 || end_idx > (int)dps->size() || start_idx > end_idx) {
         std::string msg = "Error: invalid range.\n";
         msg += "range: [" + _toString(start_idx) + ", " + _toString(end_idx) + "]\n";
         throw std::domain_error(msg);
     }
 
+    std::vector<float> *particleLifetimes;
+    dps->getAttributeValues("LIFETIME", particleLifetimes);
+
     float *lifetimes = (float*)data;
     for (int i = start_idx; i < end_idx; i++) {
-        lifetimes[i - start_idx] = dps->at(i).lifetime;
+        lifetimes[i - start_idx] = particleLifetimes->at(i);
     }
 }
 
 void FluidSimulation::getDiffuseParticleTypeDataRange(int start_idx, int end_idx, char *data) {
-    FragmentedVector<DiffuseParticle>* dps = _diffuseMaterial.getDiffuseParticles();
+    ParticleSystem *dps = _diffuseMaterial.getDiffuseParticles();
     if (start_idx < 0 || end_idx > (int)dps->size() || start_idx > end_idx) {
         std::string msg = "Error: invalid range.\n";
         msg += "range: [" + _toString(start_idx) + ", " + _toString(end_idx) + "]\n";
         throw std::domain_error(msg);
     }
 
+    std::vector<char> *particleTypes;
+    dps->getAttributeValues("TYPE", particleTypes);
+
     for (int i = start_idx; i < end_idx; i++) {
-        data[i - start_idx] = (char)(dps->at(i).type);
+        data[i - start_idx] = particleTypes->at(i);
     }
 }
 
 void FluidSimulation::getDiffuseParticleIdDataRange(int start_idx, int end_idx, char *data) {
-    FragmentedVector<DiffuseParticle>* dps = _diffuseMaterial.getDiffuseParticles();
+    ParticleSystem *dps = _diffuseMaterial.getDiffuseParticles();
     if (start_idx < 0 || end_idx > (int)dps->size() || start_idx > end_idx) {
         std::string msg = "Error: invalid range.\n";
         msg += "range: [" + _toString(start_idx) + ", " + _toString(end_idx) + "]\n";
         throw std::domain_error(msg);
     }
 
+    std::vector<unsigned char> *particleIds;
+    dps->getAttributeValues("TYPE", particleIds);
+
     for (int i = start_idx; i < end_idx; i++) {
-        data[i - start_idx] = (char)(dps->at(i).id);
+        data[i - start_idx] = (char)(particleIds->at(i));
     }
 }
 
 void FluidSimulation::getMarkerParticlePositionData(char *data) {
+    std::vector<vmath::vec3> *values;
+    _markerParticles.getAttributeValues("POSITION", values);
+
     vmath::vec3 *positions = (vmath::vec3*)data;
     for (size_t i = 0; i < _markerParticles.size(); i++) {
-        positions[i] = _markerParticles[i].position * _domainScale + _domainOffset;
+        positions[i] = values->at(i) * _domainScale + _domainOffset;
     }
 }
 
 void FluidSimulation::getMarkerParticleVelocityData(char *data) {
+    std::vector<vmath::vec3> *values;
+    _markerParticles.getAttributeValues("POSITION", values);
+
     vmath::vec3 *velocities = (vmath::vec3*)data;
     for (size_t i = 0; i < _markerParticles.size(); i++) {
-        velocities[i] = _markerParticles[i].velocity;
+        velocities[i] = values->at(i);
     }
 }
 
 void FluidSimulation::getDiffuseParticlePositionData(char *data) {
-    FragmentedVector<DiffuseParticle>* dps = _diffuseMaterial.getDiffuseParticles();
+    std::vector<vmath::vec3> *particlePositions;
+    ParticleSystem* dps = _diffuseMaterial.getDiffuseParticles();
+    dps->getAttributeValues("POSITION", particlePositions);
+
     vmath::vec3 *positions = (vmath::vec3*)data;
     for (size_t i = 0; i < dps->size(); i++) {
-        positions[i] = dps->at(i).position * _domainScale + _domainOffset;
+        positions[i] = particlePositions->at(i) * _domainScale + _domainOffset;
     }
 }
 
 void FluidSimulation::getDiffuseParticleVelocityData(char *data) {
-    FragmentedVector<DiffuseParticle>* dps = _diffuseMaterial.getDiffuseParticles();
+    std::vector<vmath::vec3> *particleVelocities;
+    ParticleSystem* dps = _diffuseMaterial.getDiffuseParticles();
+    dps->getAttributeValues("VELOCITY", particleVelocities);
+
     vmath::vec3 *velocities = (vmath::vec3*)data;
     for (size_t i = 0; i < dps->size(); i++) {
-        velocities[i] = dps->at(i).velocity;
+        velocities[i] = particleVelocities->at(i);
     }
 }
 
 void FluidSimulation::getDiffuseParticleLifetimeData(char *data) {
-    FragmentedVector<DiffuseParticle>* dps = _diffuseMaterial.getDiffuseParticles();
+    std::vector<float> *particleLifetimes;
+    ParticleSystem* dps = _diffuseMaterial.getDiffuseParticles();
+    dps->getAttributeValues("LIFETIME", particleLifetimes);
+
     float *lifetimes = (float*)data;
     for (size_t i = 0; i < dps->size(); i++) {
-        lifetimes[i] = dps->at(i).lifetime;
+        lifetimes[i] = particleLifetimes->at(i);
     }
 }
 
 void FluidSimulation::getDiffuseParticleTypeData(char *data) {
-    FragmentedVector<DiffuseParticle>* dps = _diffuseMaterial.getDiffuseParticles();
+    std::vector<char> *particleTypes;
+    ParticleSystem* dps = _diffuseMaterial.getDiffuseParticles();
+    dps->getAttributeValues("TYPE", particleTypes);
+
     for (size_t i = 0; i < dps->size(); i++) {
-        data[i] = (char)(dps->at(i).type);
+        data[i] = particleTypes->at(i);
     }
 }
 
 void FluidSimulation::getDiffuseParticleIdData(char *data) {
-    FragmentedVector<DiffuseParticle>* dps = _diffuseMaterial.getDiffuseParticles();
+    std::vector<unsigned char> *particleIds;
+    ParticleSystem* dps = _diffuseMaterial.getDiffuseParticles();
+    dps->getAttributeValues("TYPE", particleIds);
+
     for (size_t i = 0; i < dps->size(); i++) {
-        data[i] = (char)(dps->at(i).id);
+        data[i] = (char)(particleIds->at(i));
     }
 }
 
@@ -2504,6 +2622,30 @@ void FluidSimulation::loadMarkerParticleData(FluidSimulationMarkerParticleData d
     }
 
     _markerParticleLoadQueue.push_back(loadData);
+
+    _isMarkerParticleLoadPending = true;
+}
+
+void FluidSimulation::loadMarkerParticleAffineData(FluidSimulationMarkerParticleAffineData data) {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " loadMarkerParticleAffineData: " << data.size << std::endl);
+
+    if (data.size == 0) {
+        return;
+    }
+
+    vmath::vec3 *affineX = (vmath::vec3*)(data.affineX);
+    vmath::vec3 *affineY = (vmath::vec3*)(data.affineY);
+    vmath::vec3 *affineZ = (vmath::vec3*)(data.affineZ);
+
+    MarkerParticleAffineLoadData loadData;
+    loadData.particles.reserve(data.size);
+
+    for (unsigned int i = 0; i < (unsigned int)data.size; i++) {
+        loadData.particles.push_back(MarkerParticleAffine(affineX[i], affineY[i], affineZ[i]));
+    }
+
+    _markerParticleAffineLoadQueue.push_back(loadData);
 
     _isMarkerParticleLoadPending = true;
 }
@@ -2615,6 +2757,17 @@ void FluidSimulation::_initializeSimulationGrids(int isize, int jsize, int ksize
     _triz = std::vector<int>({1, 47, 0, 1, 46, 47, 2, 46, 1, 2, 45, 46, 3, 45, 2, 3, 44, 45, 4, 44, 3, 4, 43, 44, 5, 43, 4, 5, 42, 43, 6, 42, 5, 6, 41, 42, 7, 48, 6, 48, 41, 6, 7, 95, 48, 49, 41, 48, 7, 94, 95, 50, 41, 49, 7, 93, 94, 51, 41, 50, 51, 40, 41, 8, 93, 7, 8, 92, 93, 52, 40, 51, 8, 91, 92, 53, 40, 52, 8, 90, 91, 54, 40, 53, 54, 39, 40, 9, 90, 8, 9, 89, 90, 55, 39, 54, 9, 88, 89, 56, 39, 55, 56, 38, 39, 10, 88, 9, 10, 87, 88, 57, 38, 56, 57, 37, 38, 11, 87, 10, 11, 86, 87, 58, 37, 57, 11, 85, 86, 59, 37, 58, 59, 36, 37, 12, 85, 11, 12, 84, 85, 60, 36, 59, 13, 84, 12, 13, 83, 84, 60, 35, 36, 61, 35, 60, 13, 82, 83, 62, 35, 61, 14, 82, 13, 62, 34, 35, 14, 81, 82, 63, 34, 62, 14, 80, 81, 15, 80, 14, 64, 34, 63, 64, 33, 34, 15, 79, 80, 65, 33, 64, 16, 79, 15, 65, 32, 33, 16, 78, 79, 66, 32, 65, 16, 77, 78, 67, 32, 66, 17, 77, 16, 67, 31, 32, 17, 76, 77, 68, 31, 67, 17, 75, 76, 69, 31, 68, 17, 74, 75, 70, 31, 69, 18, 74, 17, 70, 30, 31, 18, 73, 74, 71, 30, 70, 18, 72, 73, 72, 30, 71, 18, 30, 72, 19, 30, 18, 19, 29, 30, 20, 29, 19, 20, 28, 29, 21, 28, 20, 21, 27, 28, 22, 27, 21, 22, 26, 27, 23, 26, 22, 23, 25, 26, 24, 25, 23, 190, 188, 189, 166, 164, 165, 191, 188, 190, 191, 187, 188, 167, 164, 166, 167, 163, 164, 192, 187, 191, 192, 186, 187, 168, 163, 167, 193, 186, 192, 193, 185, 186, 168, 162, 163, 169, 162, 168, 194, 185, 193, 97, 202, 96, 97, 201, 202, 194, 184, 185, 170, 162, 169, 195, 184, 194, 170, 161, 162, 195, 183, 184, 196, 183, 195, 171, 161, 170, 196, 182, 183, 171, 160, 161, 197, 182, 196, 172, 160, 171, 197, 181, 182, 198, 181, 197, 173, 160, 172, 173, 159, 160, 198, 180, 181, 199, 180, 198, 174, 159, 173, 199, 179, 180, 200, 179, 199, 174, 158, 159, 175, 158, 174, 200, 178, 179, 201, 178, 200, 176, 158, 175, 176, 138, 158, 138, 157, 158, 97, 99, 201, 99, 100, 201, 100, 101, 201, 101, 102, 201, 102, 103, 201, 103, 104, 201, 104, 105, 201, 105, 106, 201, 106, 107, 201, 107, 108, 201, 108, 109, 201, 109, 110, 201, 110, 178, 201, 110, 111, 178, 111, 177, 178, 177, 137, 176, 137, 138, 176, 112, 177, 111, 139, 157, 138, 177, 136, 137, 113, 177, 112, 140, 157, 139, 177, 135, 136, 114, 177, 113, 141, 157, 140, 177, 134, 135, 115, 177, 114, 115, 134, 177, 142, 157, 141, 115, 133, 134, 142, 156, 157, 116, 133, 115, 116, 132, 133, 143, 156, 142, 116, 131, 132, 117, 131, 116, 144, 156, 143, 117, 130, 131, 118, 130, 117, 145, 156, 144, 118, 129, 130, 145, 155, 156, 119, 129, 118, 119, 128, 129, 146, 155, 145, 119, 127, 128, 120, 127, 119, 147, 155, 146, 120, 126, 127, 147, 154, 155, 121, 126, 120, 97, 98, 99, 121, 125, 126, 148, 154, 147, 122, 125, 121, 149, 154, 148, 149, 153, 154, 123, 125, 122, 150, 153, 149, 150, 152, 153, 124, 125, 123, 151, 152, 150, 241, 239, 240, 241, 238, 239, 242, 238, 241, 242, 237, 238, 243, 237, 242, 243, 236, 237, 244, 236, 243, 244, 235, 236, 245, 235, 244, 245, 234, 235, 246, 234, 245, 246, 233, 234, 247, 289, 246, 289, 233, 246, 247, 288, 289, 290, 233, 289, 247, 287, 288, 291, 233, 290, 247, 286, 287, 292, 233, 291, 292, 232, 233, 247, 285, 286, 248, 285, 247, 293, 232, 292, 248, 284, 285, 294, 232, 293, 248, 283, 284, 295, 232, 294, 248, 282, 283, 296, 232, 295, 249, 282, 248, 296, 231, 232, 249, 281, 282, 297, 231, 296, 249, 280, 281, 298, 231, 297, 250, 280, 249, 298, 230, 231, 250, 279, 280, 299, 230, 298, 250, 278, 279, 300, 230, 299, 251, 278, 250, 251, 277, 278, 300, 229, 230, 301, 229, 300, 251, 301, 277, 251, 229, 301, 252, 229, 251, 252, 228, 229, 253, 227, 252, 227, 228, 252, 253, 226, 227, 254, 226, 253, 254, 225, 226, 254, 224, 225, 255, 224, 254, 255, 223, 224, 256, 223, 255, 256, 222, 223, 204, 276, 203, 256, 221, 222, 205, 276, 204, 206, 276, 205, 257, 221, 256, 257, 220, 221, 207, 276, 206, 208, 276, 207, 257, 219, 220, 209, 276, 208, 257, 218, 219, 210, 276, 209, 258, 218, 257, 211, 276, 210, 258, 217, 218, 212, 276, 211, 258, 216, 217, 213, 276, 212, 214, 276, 213, 258, 215, 216, 215, 276, 214, 258, 276, 215, 259, 276, 258, 259, 275, 276, 260, 275, 259, 260, 274, 275, 260, 273, 274, 261, 273, 260, 261, 272, 273, 261, 271, 272, 262, 271, 261, 262, 270, 271, 262, 269, 270, 263, 269, 262, 263, 268, 269, 263, 267, 268, 263, 266, 267, 264, 266, 263, 264, 265, 266, 302, 329, 328, 329, 327, 328, 329, 326, 327, 329, 325, 326, 329, 324, 325, 329, 323, 324, 329, 322, 323, 329, 330, 322, 330, 331, 322, 331, 321, 322, 302, 355, 329, 332, 321, 331, 333, 321, 332, 334, 321, 333, 334, 320, 321, 335, 320, 334, 336, 320, 335, 336, 319, 320, 337, 319, 336, 337, 318, 319, 338, 318, 337, 339, 318, 338, 339, 317, 318, 340, 317, 339, 340, 316, 317, 341, 316, 340, 341, 315, 316, 342, 315, 341, 343, 315, 342, 343, 314, 315, 344, 314, 343, 344, 313, 314, 345, 313, 344, 346, 313, 345, 346, 312, 313, 347, 312, 346, 347, 311, 312, 348, 311, 347, 349, 311, 348, 349, 310, 311, 350, 310, 349, 350, 309, 310, 351, 309, 350, 352, 309, 351, 352, 308, 309, 353, 308, 352, 354, 308, 353, 302, 354, 355, 302, 308, 354, 302, 307, 308, 302, 306, 307, 302, 305, 306, 302, 304, 305, 302, 303, 304, 369, 367, 368, 369, 366, 367, 370, 366, 369, 370, 365, 366, 370, 364, 365, 371, 364, 370, 371, 363, 364, 371, 362, 363, 372, 362, 371, 372, 361, 362, 372, 360, 361, 373, 360, 372, 373, 359, 360, 373, 358, 359, 374, 358, 373, 374, 357, 358, 374, 356, 357, 375, 356, 374, 375, 481, 356, 481, 482, 356, 482, 483, 356, 483, 484, 356, 484, 485, 356, 485, 486, 356, 486, 487, 356, 487, 488, 356, 488, 489, 356, 376, 479, 375, 479, 480, 375, 480, 481, 375, 377, 478, 376, 478, 479, 376, 378, 476, 377, 476, 477, 377, 477, 478, 377, 378, 475, 476, 378, 474, 475, 378, 473, 474, 378, 472, 473, 378, 471, 472, 379, 471, 378, 379, 470, 471, 379, 469, 470, 379, 468, 469, 379, 467, 468, 380, 467, 379, 380, 466, 467, 380, 465, 466, 380, 464, 465, 381, 464, 380, 381, 463, 464, 381, 462, 463, 381, 461, 462, 381, 460, 461, 381, 459, 460, 382, 459, 381, 382, 458, 459, 382, 457, 458, 382, 456, 457, 383, 456, 382, 383, 455, 456, 383, 454, 455, 383, 453, 454, 384, 453, 383, 384, 452, 453, 385, 452, 384, 385, 451, 452, 385, 450, 451, 386, 450, 385, 386, 449, 450, 387, 449, 386, 387, 448, 449, 387, 447, 448, 388, 447, 387, 388, 446, 447, 389, 446, 388, 389, 445, 446, 389, 444, 445, 390, 444, 389, 390, 443, 444, 391, 443, 390, 391, 442, 443, 392, 442, 391, 392, 441, 442, 417, 415, 416, 392, 440, 441, 393, 440, 392, 417, 414, 415, 394, 440, 393, 417, 413, 414, 395, 440, 394, 395, 439, 440, 417, 412, 413, 396, 439, 395, 417, 411, 412, 397, 439, 396, 417, 410, 411, 398, 439, 397, 398, 438, 439, 417, 409, 410, 399, 438, 398, 400, 438, 399, 417, 408, 409, 401, 438, 400, 417, 407, 408, 402, 438, 401, 417, 406, 407, 403, 438, 402, 417, 405, 406, 404, 438, 403, 417, 404, 405, 404, 437, 438, 417, 437, 404, 417, 436, 437, 417, 435, 436, 418, 435, 417, 418, 434, 435, 419, 434, 418, 420, 434, 419, 420, 433, 434, 421, 433, 420, 422, 433, 421, 422, 432, 433, 423, 432, 422, 423, 431, 432, 424, 431, 423, 425, 431, 424, 425, 430, 431, 426, 430, 425, 427, 430, 426, 427, 429, 430, 428, 429, 427, 492, 490, 491, 492, 529, 490, 505, 503, 504, 505, 502, 503, 505, 501, 502, 505, 500, 501, 505, 499, 500, 506, 499, 505, 506, 498, 499, 506, 497, 498, 506, 496, 497, 507, 496, 506, 507, 495, 496, 507, 494, 495, 507, 493, 494, 507, 492, 493, 508, 492, 507, 508, 564, 492, 564, 565, 492, 565, 566, 492, 566, 567, 492, 567, 529, 492, 509, 561, 508, 561, 562, 508, 562, 563, 508, 563, 564, 508, 510, 558, 509, 558, 559, 509, 559, 560, 509, 560, 561, 509, 511, 555, 510, 555, 556, 510, 556, 557, 510, 557, 558, 510, 511, 554, 555, 511, 553, 554, 512, 553, 511, 512, 552, 553, 512, 551, 552, 530, 529, 567, 512, 550, 551, 513, 550, 512, 513, 549, 550, 513, 548, 549, 514, 548, 513, 514, 547, 548, 514, 546, 547, 515, 546, 514, 515, 545, 546, 516, 545, 515, 516, 544, 545, 516, 543, 544, 517, 543, 516, 517, 542, 543, 517, 541, 542, 518, 541, 517, 518, 540, 541, 519, 540, 518, 519, 539, 540, 519, 538, 539, 520, 538, 519, 520, 537, 538, 520, 536, 537, 521, 536, 520, 521, 535, 536, 521, 534, 535, 521, 533, 534, 522, 533, 521, 522, 532, 533, 522, 531, 532, 522, 530, 531, 522, 529, 530, 523, 529, 522, 524, 529, 523, 525, 529, 524, 526, 529, 525, 527, 529, 526, 528, 529, 527, 585, 583, 584, 585, 582, 583, 586, 582, 585, 586, 581, 582, 587, 581, 586, 587, 580, 581, 588, 580, 587, 588, 579, 580, 589, 579, 588, 589, 578, 579, 590, 578, 589, 590, 577, 578, 591, 577, 590, 591, 576, 577, 592, 576, 591, 592, 575, 576, 593, 575, 592, 593, 574, 575, 594, 574, 593, 594, 573, 574, 595, 573, 594, 595, 572, 573, 596, 572, 595, 597, 572, 596, 597, 619, 572, 597, 618, 619, 598, 618, 597, 598, 617, 618, 599, 617, 598, 599, 616, 617, 600, 616, 599, 600, 615, 616, 601, 615, 600, 601, 614, 615, 602, 614, 601, 602, 613, 614, 603, 613, 602, 603, 612, 613, 604, 612, 603, 604, 611, 612, 605, 611, 604, 605, 610, 611, 606, 610, 605, 606, 609, 610, 607, 609, 606, 607, 608, 609, 570, 568, 569, 570, 571, 568, 650, 648, 649, 650, 647, 648, 623, 621, 622, 623, 620, 621, 651, 647, 650, 651, 646, 647, 651, 645, 646, 652, 645, 651, 652, 644, 645, 624, 620, 623, 652, 643, 644, 625, 620, 624, 653, 643, 652, 653, 642, 643, 626, 620, 625, 627, 620, 626, 653, 641, 642, 654, 641, 653, 628, 620, 627, 654, 640, 641, 629, 674, 628, 674, 620, 628, 654, 639, 640, 630, 674, 629, 654, 638, 639, 631, 674, 630, 655, 638, 654, 632, 674, 631, 655, 637, 638, 633, 674, 632, 655, 636, 637, 634, 674, 633, 655, 635, 636, 635, 674, 634, 655, 674, 635, 655, 673, 674, 675, 620, 674, 656, 673, 655, 656, 672, 673, 656, 671, 672, 657, 671, 656, 657, 670, 671, 658, 670, 657, 658, 669, 670, 658, 668, 669, 659, 668, 658, 659, 667, 668, 659, 666, 667, 660, 666, 659, 660, 665, 666, 661, 665, 660, 661, 664, 665, 661, 663, 664, 662, 663, 661, 678, 676, 677, 678, 679, 676, 682, 688, 681, 688, 680, 681, 688, 689, 680, 682, 687, 688, 682, 684, 687, 684, 686, 687, 684, 685, 686, 682, 683, 684, 691, 719, 690, 719, 718, 690, 719, 717, 718, 719, 716, 717, 719, 715, 716, 719, 714, 715, 719, 713, 714, 719, 712, 713, 719, 711, 712, 719, 720, 711, 720, 710, 711, 691, 745, 719, 721, 710, 720, 722, 710, 721, 723, 710, 722, 723, 709, 710, 724, 709, 723, 725, 709, 724, 726, 709, 725, 726, 708, 709, 727, 708, 726, 728, 708, 727, 729, 708, 728, 729, 707, 708, 730, 707, 729, 731, 707, 730, 731, 706, 707, 732, 706, 731, 733, 706, 732, 733, 705, 706, 734, 705, 733, 734, 704, 705, 735, 704, 734, 736, 704, 735, 736, 703, 704, 737, 703, 736, 738, 703, 737, 738, 702, 703, 739, 702, 738, 740, 702, 739, 741, 702, 740, 742, 702, 741, 742, 701, 702, 743, 701, 742, 744, 701, 743, 691, 693, 745, 693, 744, 745, 693, 701, 744, 693, 700, 701, 693, 699, 700, 693, 698, 699, 693, 697, 698, 693, 696, 697, 693, 695, 696, 693, 694, 695, 691, 692, 693, 748, 746, 747, 748, 749, 746, 752, 750, 751, 752, 755, 750, 752, 754, 755, 752, 753, 754, 758, 764, 757, 764, 756, 757, 764, 765, 756, 758, 763, 764, 758, 760, 763, 760, 762, 763, 760, 761, 762, 758, 759, 760});
 }
 
+void FluidSimulation::_initializeParticleSystems() {
+    _markerParticles.addAttributeVector3("POSITION");
+    _markerParticles.addAttributeVector3("VELOCITY");
+
+    if (_velocityTransferMethod == VelocityTransferMethod::APIC) {
+        _markerParticles.addAttributeVector3("AFFINEX");
+        _markerParticles.addAttributeVector3("AFFINEY");
+        _markerParticles.addAttributeVector3("AFFINEZ");
+    }
+}
+
 void FluidSimulation::_initializeForceFieldGrid(int isize, int jsize, int ksize, double dx) {
     int reduction = _forceFieldReductionLevel;
     int isizeff = (int)std::ceil((double)isize / (double)reduction);
@@ -2638,11 +2791,21 @@ vmath::vec3 FluidSimulation::_jitterMarkerParticlePosition(vmath::vec3 p,
     return p;
 }
 
-void FluidSimulation::_addMarkerParticle(vmath::vec3 p, vmath::vec3 velocity) {
-    GridIndex g = Grid3d::positionToGridIndex(p, _dx);
-    if (Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize)) {
-        _markerParticles.push_back(MarkerParticle(p, velocity));
+void FluidSimulation::_addMarkerParticles(std::vector<MarkerParticle> &particles) {
+    std::vector<vmath::vec3> *positions, *velocities;
+    _markerParticles.getAttributeValues("POSITION", positions);
+    _markerParticles.getAttributeValues("VELOCITY", velocities);
+
+    for (size_t i = 0; i < particles.size(); i++) {
+        MarkerParticle mp = particles[i];
+        GridIndex g = Grid3d::positionToGridIndex(mp.position, _dx);
+        if (Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize)) {
+            positions->push_back(mp.position);
+            velocities->push_back(mp.velocity);
+        }
     }
+
+    _markerParticles.update();
 }
 
 void FluidSimulation::_initializeParticleRadii() {
@@ -2664,6 +2827,7 @@ void FluidSimulation::_initializeSimulation() {
                  "Initializing Simulation:" << std::endl);
 
     _initializeSimulationGrids(_isize, _jsize, _ksize, _dx);
+    _initializeParticleSystems();
 
     _initializeParticleRadii();
     _initializeRandomGenerator();
@@ -2694,17 +2858,27 @@ void FluidSimulation::_upscaleParticleData() {
     double dx = _upscalingPreviousCellSize;
     double particleRadius = 0.5 * _liquidSDFParticleScale * dx * sqrt(3.0);
 
+    ParticleSystem markerParticles;
+    markerParticles.addAttributeVector3("POSITION");
+    markerParticles.addAttributeVector3("VELOCITY");
+
+    std::vector<vmath::vec3> *positions, *velocities;
+    markerParticles.getAttributeValues("POSITION", positions);
+    markerParticles.getAttributeValues("VELOCITY", velocities);
+
     AABB bounds(0.0, 0.0, 0.0, isize * dx, jsize * dx, ksize * dx);
-    FragmentedVector<MarkerParticle> markerParticles;
     for (size_t j = 0; j < _markerParticleLoadQueue.size(); j++) {
         for (size_t i = 0; i < _markerParticleLoadQueue[j].particles.size(); i++) {
             MarkerParticle mp = _markerParticleLoadQueue[j].particles[i];
             mp.position = (mp.position - _domainOffset) / _domainScale;
             if (bounds.isPointInside(mp.position)) {
-                markerParticles.push_back(mp);
+                positions->push_back(mp.position);
+                velocities->push_back(mp.velocity);
             }
         }
     }
+
+    markerParticles.update();
 
     if (markerParticles.empty()) {
         return;
@@ -2728,8 +2902,8 @@ void FluidSimulation::_upscaleParticleData() {
     vfield.extrapolateVelocityField(validVelocities, extrapolationLayers);
 
     ParticleMaskGrid maskgrid(_isize, _jsize, _ksize, _dx);
-    for (unsigned int i = 0; i < markerParticles.size(); i++) {
-        maskgrid.addParticle(markerParticles[i].position);
+    for (unsigned int i = 0; i < positions->size(); i++) {
+        maskgrid.addParticle(positions->at(i));
     }
 
     double q = 0.25 * _dx;
@@ -2780,18 +2954,49 @@ void FluidSimulation::_upscaleParticleData() {
     _isMarkerParticleLoadPending = true;
 }
 
-void FluidSimulation::_loadMarkerParticles(MarkerParticleLoadData &data) {
+void FluidSimulation::_loadMarkerParticles(MarkerParticleLoadData &particleData,
+                                           MarkerParticleAffineLoadData &affineData) {
 
-    _markerParticles.reserve(_markerParticles.size() + data.particles.size());
+    if (particleData.particles.empty()) {
+        return;
+    }
+
+    bool load_affine_data = _velocityTransferMethod == VelocityTransferMethod::APIC &&
+                            affineData.particles.size() == particleData.particles.size();
+
+    _markerParticles.reserve(_markerParticles.size() + particleData.particles.size());
+
+    std::vector<vmath::vec3> *positions, *velocities;
+    _markerParticles.getAttributeValues("POSITION", positions);
+    _markerParticles.getAttributeValues("VELOCITY", velocities);
+
+    std::vector<vmath::vec3> *affineX = nullptr;
+    std::vector<vmath::vec3> *affineY = nullptr;
+    std::vector<vmath::vec3> *affineZ = nullptr;
+    if (load_affine_data) {
+        _markerParticles.getAttributeValues("AFFINEX", affineX);
+        _markerParticles.getAttributeValues("AFFINEY", affineY);
+        _markerParticles.getAttributeValues("AFFINEZ", affineZ);
+    }
 
     AABB bounds(0.0, 0.0, 0.0, _isize * _dx, _jsize * _dx, _ksize * _dx);
-    for (size_t i = 0; i < data.particles.size(); i++) {
-        MarkerParticle mp = data.particles[i];
+    for (size_t i = 0; i < particleData.particles.size(); i++) {
+        MarkerParticle mp = particleData.particles[i];
         mp.position = (mp.position - _domainOffset) / _domainScale;
         if (bounds.isPointInside(mp.position)) {
-            _markerParticles.push_back(mp);
+            positions->push_back(mp.position);
+            velocities->push_back(mp.velocity);
+
+            if (load_affine_data) {
+                MarkerParticleAffine ap = affineData.particles[i];
+                affineX->push_back(ap.affineX);
+                affineY->push_back(ap.affineY);
+                affineZ->push_back(ap.affineZ);
+            }
         }
     }
+
+    _markerParticles.update();
 }
 
 void FluidSimulation::_loadDiffuseParticles(DiffuseParticleLoadData &data) {
@@ -2799,10 +3004,14 @@ void FluidSimulation::_loadDiffuseParticles(DiffuseParticleLoadData &data) {
 }
 
 void FluidSimulation::_loadParticles() {
+    bool is_affine_data_available = _markerParticleAffineLoadQueue.size() == _markerParticleLoadQueue.size();
+    MarkerParticleAffineLoadData emptyAffineData;
     for (size_t i = 0; i < _markerParticleLoadQueue.size(); i++) {
-        _loadMarkerParticles(_markerParticleLoadQueue[i]);
+        MarkerParticleAffineLoadData affineData = is_affine_data_available ? _markerParticleAffineLoadQueue[i] : emptyAffineData;
+        _loadMarkerParticles(_markerParticleLoadQueue[i], affineData);
     }
     _markerParticleLoadQueue.clear();
+    _markerParticleAffineLoadQueue.clear();
     _isMarkerParticleLoadPending = false;
     
     for (size_t i = 0; i < _diffuseParticleLoadQueue.size(); i++) {
@@ -3274,6 +3483,12 @@ _logfile.logString(_logfile.getTime() + " BEGIN       Advect Velocity Field");
         params.vfield = &_MACVelocity;
         params.validVelocities = &_validVelocities;
         params.particleRadius = _liquidSDFParticleRadius;
+
+        if (_velocityTransferMethod == VelocityTransferMethod::FLIP) {
+            params.velocityTransferMethod = VelocityAdvectorTransferMethod::FLIP;
+        } else if (_velocityTransferMethod == VelocityTransferMethod::APIC) {
+            params.velocityTransferMethod = VelocityAdvectorTransferMethod::APIC;
+        }
         
         _velocityAdvector.advect(params);
 
@@ -3400,7 +3615,6 @@ void FluidSimulation::_getInflowConstrainedVelocityComponents(ValidVelocityCompo
             float frameInterpolation = frameProgress + (float)subidx * substepFactor;
             inflow->setFrame(_currentFrame, frameInterpolation);
             inflow->update(_currentFrameDeltaTime);
-            MeshLevelSet *inflowSDF = inflow->getMeshLevelSet();
             
             for (int k = 0; k < _ksize; k++) {
                 for (int j = 0; j < _jsize; j++) {
@@ -3409,7 +3623,7 @@ void FluidSimulation::_getInflowConstrainedVelocityComponents(ValidVelocityCompo
                             continue;
                         }
                         vmath::vec3 p = Grid3d::FaceIndexToPositionU(i, j, k, _dx);
-                        if (inflowSDF->trilinearInterpolate(p) < 0.0f) {
+                        if (inflow->trilinearInterpolate(p) < 0.0f) {
                             ex.validU.set(i, j, k, true);
                         }
                     }
@@ -3423,7 +3637,7 @@ void FluidSimulation::_getInflowConstrainedVelocityComponents(ValidVelocityCompo
                             continue;
                         }
                         vmath::vec3 p = Grid3d::FaceIndexToPositionV(i, j, k, _dx);
-                        if (inflowSDF->trilinearInterpolate(p) < 0.0f) {
+                        if (inflow->trilinearInterpolate(p) < 0.0f) {
                             ex.validV.set(i, j, k, true);
                         }
                     }
@@ -3437,7 +3651,7 @@ void FluidSimulation::_getInflowConstrainedVelocityComponents(ValidVelocityCompo
                             continue;
                         }
                         vmath::vec3 p = Grid3d::FaceIndexToPositionW(i, j, k, _dx);
-                        if (inflowSDF->trilinearInterpolate(p) < 0.0f) {
+                        if (inflow->trilinearInterpolate(p) < 0.0f) {
                             ex.validW.set(i, j, k, true);
                         }
                     }
@@ -3638,10 +3852,11 @@ void FluidSimulation::_applyViscosityToVelocityField(double dt) {
     params.liquidSDF = &_liquidSDF;
     params.solidSDF = &_solidSDF;
     params.viscosity = &_viscosity;
+    params.errorTolerance = _viscositySolverErrorTolerance;
 
-    ViscositySolver vsolver;
-    vsolver.applyViscosityToVelocityField(params);
-    _viscositySolverStatus = vsolver.getSolverStatus();
+    _viscositySolver = ViscositySolver();
+    _viscositySolver.applyViscosityToVelocityField(params);
+    _viscositySolverStatus = _viscositySolver.getSolverStatus();
 
     t.stop();
     _timingData.applyViscosityToVelocityField += t.getTime();
@@ -4056,6 +4271,10 @@ void FluidSimulation::_updateSheetSeeding() {
     ParticleSheeter sheeter;
     sheeter.generateSheetParticles(params, sheetParticles);
 
+    std::vector<vmath::vec3> *positions, *velocities;
+    _markerParticles.getAttributeValues("POSITION", positions);
+    _markerParticles.getAttributeValues("VELOCITY", velocities);
+
     float solidSheetingWidth = 2.0f * _dx;
     for (size_t i = 0; i < sheetParticles.size(); i++) {
         vmath::vec3 p = sheetParticles[i];
@@ -4075,9 +4294,11 @@ void FluidSimulation::_updateSheetSeeding() {
         }
 
         vmath::vec3 v = _savedVelocityField.evaluateVelocityAtPositionLinear(p);
-        MarkerParticle m(p, v);
-        _markerParticles.push_back(m);
+        positions->push_back(p);
+        velocities->push_back(v);
     }
+
+    _markerParticles.update();
 
     t.stop();
 
@@ -4089,26 +4310,155 @@ void FluidSimulation::_updateSheetSeeding() {
     #. Update MarkerParticle Velocities
 ********************************************************************************/
 
-void FluidSimulation::_updatePICFLIPMarkerParticleVelocitiesThread(int startidx, int endidx) {
-    for (int i = startidx; i < endidx; i++) {
-        MarkerParticle mp = _markerParticles[i];
-        vmath::vec3 vPIC = _MACVelocity.evaluateVelocityAtPositionLinear(mp.position);
-        vmath::vec3 vFLIP = mp.velocity + vPIC - 
-                            _savedVelocityField.evaluateVelocityAtPositionLinear(mp.position);
-        vmath::vec3 v = (float)_ratioPICFLIP * vPIC + (float)(1 - _ratioPICFLIP) * vFLIP;
+void FluidSimulation::_getIndicesAndGradientWeights(vmath::vec3 p, GridIndex indices[8], vmath::vec3 weights[8], int dir) {
+    int U = 0; int V = 1; int W = 2;
 
-        _markerParticles[i].velocity = v;
+    vmath::vec3 offset;
+    float h = 0.5f * _dx;
+    if (dir == U) {
+        offset = vmath::vec3(0.0f, h, h);
+    } else if (dir == V) {
+        offset = vmath::vec3(h, 0.0f, h);
+    } else if (dir == W) {
+        offset = vmath::vec3(h, h, 0.0f);
+    }
+
+    p -= offset;
+    GridIndex g = Grid3d::positionToGridIndex(p, _dx);
+    vmath::vec3 gpos = Grid3d::GridIndexToPosition(g, _dx);
+    vmath::vec3 ipos = (p - gpos) / _dx;
+
+    indices[0] = GridIndex(g.i,     g.j,     g.k);
+    indices[1] = GridIndex(g.i + 1, g.j,     g.k);
+    indices[2] = GridIndex(g.i,     g.j + 1, g.k);
+    indices[3] = GridIndex(g.i + 1, g.j + 1, g.k);
+    indices[4] = GridIndex(g.i,     g.j,     g.k + 1);
+    indices[5] = GridIndex(g.i + 1, g.j,     g.k + 1);
+    indices[6] = GridIndex(g.i,     g.j + 1, g.k + 1);
+    indices[7] = GridIndex(g.i + 1, g.j + 1, g.k + 1);
+
+    float invdx = 1.0f / _dx;
+    weights[0] = vmath::vec3(
+        -invdx * (1.0f - ipos.y) * (1.0f - ipos.z),
+        -invdx * (1.0f - ipos.x) * (1.0f - ipos.z),
+        -invdx * (1.0f - ipos.x) * (1.0f - ipos.y));
+    weights[1] = vmath::vec3(
+        invdx * (1.0f - ipos.y) * (1.0f - ipos.z),
+        ipos.x * (-invdx) * (1.0f - ipos.z),
+        ipos.x * (1.0f - ipos.y) * (-invdx));
+    weights[2] = vmath::vec3(
+        (-invdx) * ipos.y * (1.0f - ipos.z),
+        (1.0f - ipos.x) * invdx * (1.0f - ipos.z),
+        (1.0f - ipos.x) * ipos.y * (-invdx));
+    weights[3] = vmath::vec3(
+        invdx * ipos.y * (1.0f - ipos.z),
+        ipos.x * invdx * (1.0f - ipos.z),
+        ipos.x * ipos.y * (-invdx));
+    weights[4] = vmath::vec3(
+        (-invdx) * (1.0f - ipos.y) * ipos.z,
+        (1.0f - ipos.x) * (-invdx) * ipos.z,
+        (1.0f - ipos.x) * (1.0f - ipos.y) * invdx);
+    weights[5] = vmath::vec3(
+        invdx * (1.0f - ipos.y) * ipos.z,
+        ipos.x * (-invdx) * ipos.z,
+        ipos.x * (1.0f - ipos.y) * invdx);
+    weights[6] = vmath::vec3(
+        (-invdx) * ipos.y * ipos.z,
+        (1.0f - ipos.x) * invdx * ipos.z,
+        (1.0f - ipos.x) * ipos.y * invdx);
+    weights[7] = vmath::vec3(
+        invdx * ipos.y * ipos.z,
+        ipos.x * invdx * ipos.z,
+        ipos.x * ipos.y * invdx);
+}
+
+void FluidSimulation::_updatePICFLIPMarkerParticleVelocitiesThread(int startidx, int endidx) {
+    std::vector<vmath::vec3> *positions, *velocities;
+    _markerParticles.getAttributeValues("POSITION", positions);
+    _markerParticles.getAttributeValues("VELOCITY", velocities);
+
+    for (int i = startidx; i < endidx; i++) {
+        vmath::vec3 pos = positions->at(i);
+        vmath::vec3 vel = velocities->at(i);
+        vmath::vec3 vPIC = _MACVelocity.evaluateVelocityAtPositionLinear(pos);
+        vmath::vec3 vFLIP = vel + vPIC - _savedVelocityField.evaluateVelocityAtPositionLinear(pos);
+        vmath::vec3 v = (float)_ratioPICFLIP * vPIC + (float)(1 - _ratioPICFLIP) * vFLIP;
+        velocities->at(i) = v;
     }
 }
 
-void FluidSimulation::_updatePICFLIPMarkerParticleVelocities() {
+/*
+    The APIC (Affine Particle-In-Cell) velocity transfer method was adapted from
+    Doyub Kim's 'Fluid Engine Dev' repository:
+        https://github.com/doyubkim/fluid-engine-dev
+*/
+void FluidSimulation::_updatePICAPICMarkerParticleVelocitiesThread(int startidx, int endidx) {
+    std::vector<vmath::vec3> *positions, *velocities;
+    std::vector<vmath::vec3> *affineValuesX, *affineValuesY, *affineValuesZ;
+    _markerParticles.getAttributeValues("POSITION", positions);
+    _markerParticles.getAttributeValues("VELOCITY", velocities);
+    _markerParticles.getAttributeValues("AFFINEX", affineValuesX);
+    _markerParticles.getAttributeValues("AFFINEY", affineValuesY);
+    _markerParticles.getAttributeValues("AFFINEZ", affineValuesZ);
+
+    int U = 0; int V = 1; int W = 2; 
+
+    GridIndex indices[8];
+    vmath::vec3 weights[8];
+    for (int i = startidx; i < endidx; i++) {
+        vmath::vec3 pos = positions->at(i);
+
+        vmath::vec3 affineX;
+        vmath::vec3 affineY;
+        vmath::vec3 affineZ;
+        
+        _getIndicesAndGradientWeights(pos, indices, weights, U);
+        for (int gidx = 0; gidx < 8; gidx++) {
+            GridIndex g = indices[gidx];
+            if (!_MACVelocity.isIndexInRangeU(g)) {
+                continue;
+            }
+            affineX += weights[gidx] * _MACVelocity.U(g);
+        }
+
+        _getIndicesAndGradientWeights(pos, indices, weights, V);
+        for (int gidx = 0; gidx < 8; gidx++) {
+            GridIndex g = indices[gidx];
+            if (!_MACVelocity.isIndexInRangeV(g)) {
+                continue;
+            }
+            affineY += weights[gidx] * _MACVelocity.V(g);
+        }
+
+        _getIndicesAndGradientWeights(pos, indices, weights, W);
+        for (int gidx = 0; gidx < 8; gidx++) {
+            GridIndex g = indices[gidx];
+            if (!_MACVelocity.isIndexInRangeW(g)) {
+                continue;
+            }
+            affineZ += weights[gidx] * _MACVelocity.W(g);
+        }
+
+        velocities->at(i) = _MACVelocity.evaluateVelocityAtPositionLinear(pos);
+        affineValuesX->at(i) = affineX;
+        affineValuesY->at(i) = affineY;
+        affineValuesZ->at(i) = affineZ;
+    }
+}
+
+void FluidSimulation::_updateMarkerParticleVelocitiesThread() {
     int numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, _markerParticles.size());
     std::vector<std::thread> threads(numthreads);
     std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, _markerParticles.size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
-        threads[i] = std::thread(&FluidSimulation::_updatePICFLIPMarkerParticleVelocitiesThread, this,
-                                 intervals[i], intervals[i + 1]);
+        if (_velocityTransferMethod == VelocityTransferMethod::FLIP) {
+            threads[i] = std::thread(&FluidSimulation::_updatePICFLIPMarkerParticleVelocitiesThread, this,
+                                     intervals[i], intervals[i + 1]);
+        } else if (_velocityTransferMethod == VelocityTransferMethod::APIC) {
+            threads[i] = std::thread(&FluidSimulation::_updatePICAPICMarkerParticleVelocitiesThread, this,
+                                     intervals[i], intervals[i + 1]);
+        }
     }
 
     for (int i = 0; i < numthreads; i++) {
@@ -4137,12 +4487,16 @@ void FluidSimulation::_constrainMarkerParticleVelocities(MeshFluidSource *inflow
         isInflowCell.fill(false);
         isInflowCell.set(inflowCells, true);
 
+        std::vector<vmath::vec3> *positions, *velocities;
+        _markerParticles.getAttributeValues("POSITION", positions);
+        _markerParticles.getAttributeValues("VELOCITY", velocities);
+
         MeshLevelSet *inflowSDF = inflow->getMeshLevelSet();
         vmath::vec3 v = inflow->getVelocity();
         RigidBodyVelocity rv = inflow->getRigidBodyVelocity(_currentFrameDeltaTime);
         VelocityFieldData *vdata = inflow->getVelocityFieldData();
-        for (size_t i = 0; i < _markerParticles.size(); i++) {
-            vmath::vec3 p = _markerParticles[i].position;
+        for (size_t i = 0; i < positions->size(); i++) {
+            vmath::vec3 p = positions->at(i);
             GridIndex g = Grid3d::positionToGridIndex(p, _dx);
             if (!isInflowCell(g)) {
                 continue;
@@ -4155,14 +4509,14 @@ void FluidSimulation::_constrainMarkerParticleVelocities(MeshFluidSource *inflow
             if (inflow->isAppendObjectVelocityEnabled()) {
                 if (inflow->isRigidBody()) {
                     vmath::vec3 tv = vmath::cross(rv.angular * rv.axis, p - rv.centroid);
-                    _markerParticles[i].velocity = v + rv.linear + tv;
+                    velocities->at(i) = v + rv.linear + tv;
                 } else {
                     vmath::vec3 datap = p - vdata->offset;
                     vmath::vec3 fv = vdata->vfield.evaluateVelocityAtPositionLinear(datap);
-                    _markerParticles[i].velocity = v + fv;
+                    velocities->at(i) = v + fv;
                 }
             } else {
-                _markerParticles[i].velocity = v;
+                velocities->at(i) = v;
             }
         }
     }
@@ -4185,7 +4539,7 @@ void FluidSimulation::_updateMarkerParticleVelocities() {
     StopWatch t;
     t.start();
 
-    _updatePICFLIPMarkerParticleVelocities();
+    _updateMarkerParticleVelocitiesThread();
     _constrainMarkerParticleVelocities();
 
     t.stop();
@@ -4306,10 +4660,13 @@ vmath::vec3 FluidSimulation::_resolveCollision(vmath::vec3 oldp, vmath::vec3 new
 }
 
 float FluidSimulation::_getMarkerParticleSpeedLimit(double dt) {
+    std::vector<vmath::vec3> *velocities;
+    _markerParticles.getAttributeValues("VELOCITY", velocities);
+
     double speedLimitStep = _CFLConditionNumber * _dx / dt;
     std::vector<int> speedLimitCounts(_maxFrameTimeSteps, 0);
-    for (unsigned int i = 0; i < _markerParticles.size(); i++) {
-        double speed = (double)_markerParticles[i].velocity.length();
+    for (unsigned int i = 0; i < velocities->size(); i++) {
+        double speed = (double)velocities->at(i).length();
         int speedLimitIndex = fmin(floor(speed / speedLimitStep), _maxFrameTimeSteps - 1);
         speedLimitCounts[speedLimitIndex]++;
     }
@@ -4337,15 +4694,21 @@ void FluidSimulation::_removeMarkerParticles(double dt) {
     float maxspeed = _getMarkerParticleSpeedLimit(dt);
     double maxspeedsq = maxspeed * maxspeed;
 
+    std::vector<vmath::vec3> *positions, *velocities;
+    _markerParticles.getAttributeValues("POSITION", positions);
+    _markerParticles.getAttributeValues("VELOCITY", velocities);
+
     std::vector<bool> isRemoved;
-    _solidSDF.trilinearInterpolateSolidPoints(_markerParticles, isRemoved);
+    _solidSDF.trilinearInterpolateSolidPoints(*positions, isRemoved);
     for (unsigned int i = 0; i < _markerParticles.size(); i++) {
         if (isRemoved[i]) {
             continue;
         }
 
-        MarkerParticle mp = _markerParticles[i];
-        GridIndex g = Grid3d::positionToGridIndex(mp.position, _dx);
+        vmath::vec3 position = positions->at(i);
+        vmath::vec3 velocity = velocities->at(i);
+
+        GridIndex g = Grid3d::positionToGridIndex(position, _dx);
         if (countGrid(g) >= _maxMarkerParticlesPerCell) {
             isRemoved[i] = true;
             continue;
@@ -4353,13 +4716,13 @@ void FluidSimulation::_removeMarkerParticles(double dt) {
         countGrid.add(g, 1);
 
         if (_isExtremeVelocityRemovalEnabled && 
-                vmath::dot(mp.velocity, mp.velocity) > maxspeedsq) {
+                vmath::dot(velocity, velocity) > maxspeedsq) {
             isRemoved[i] = true;
             continue;
         }
     }
 
-    _removeItemsFromVector(_markerParticles, isRemoved);
+    _markerParticles.removeParticles(isRemoved);
 }
 
 void FluidSimulation::_advanceMarkerParticles(double dt) {
@@ -4367,21 +4730,21 @@ void FluidSimulation::_advanceMarkerParticles(double dt) {
 
     StopWatch t;
     t.start();
+
+    std::vector<vmath::vec3> *positions, *velocities;
+    _markerParticles.getAttributeValues("POSITION", positions);
+    _markerParticles.getAttributeValues("VELOCITY", velocities);
     
-    std::vector<vmath::vec3> positions;
-    positions.reserve(_markerParticles.size());
-    for (size_t i = 0; i < _markerParticles.size(); i++) {
-        positions.push_back(_markerParticles[i].position);
-    }
+    std::vector<vmath::vec3> positionsCopy = *positions;
 
     int numCPU = ThreadUtils::getMaxThreadCount();
-    int numthreads = (int)fmin(numCPU, positions.size());
+    int numthreads = (int)fmin(numCPU, positionsCopy.size());
     std::vector<std::thread> threads(numthreads);
-    std::vector<vmath::vec3> output(positions.size());
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, positions.size(), numthreads);
+    std::vector<vmath::vec3> output(positionsCopy.size());
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, positionsCopy.size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&FluidSimulation::_advanceMarkerParticlesThread, this,
-                                 dt, intervals[i], intervals[i + 1], &positions, &output);
+                                 dt, intervals[i], intervals[i + 1], &positionsCopy, &output);
     }
 
     for (int i = 0; i < numthreads; i++) {
@@ -4389,7 +4752,14 @@ void FluidSimulation::_advanceMarkerParticles(double dt) {
     }
 
     for (size_t i = 0; i < _markerParticles.size(); i++) {
-        _markerParticles[i].position = output[i];
+        float distanceTravelled = vmath::length(positions->at(i) - output[i]);
+        if (distanceTravelled < 1e-6) {
+            // In the rare case that a particle did not move, it could be
+            // that this particle is stuck. Velocity should be set to 0.0
+            // which helps the particle 'reset' and become unstuck.
+            //velocities->at(i) = vmath::vec3();
+        }
+        positions->at(i) = output[i];
     }
 
     _removeMarkerParticles(_currentFrameDeltaTime);
@@ -4426,6 +4796,7 @@ void FluidSimulation::_addNewFluidCells(std::vector<GridIndex> &cells,
         threads[i].join();
     }
 
+    std::vector<MarkerParticle> newParticles;
     for (size_t vidx = 0; vidx < particleVectors.size(); vidx++) {
         for (size_t i = 0; i < particleVectors[vidx].size(); i++) {
             vmath::vec3 p = particleVectors[vidx][i];
@@ -4433,10 +4804,12 @@ void FluidSimulation::_addNewFluidCells(std::vector<GridIndex> &cells,
                 continue;
             }
 
-            _addMarkerParticle(p, velocity);
+            newParticles.push_back(MarkerParticle(p, velocity));
             maskgrid.addParticle(p);
         }
     }
+
+    _addMarkerParticles(newParticles);
 }
 
 void FluidSimulation::_addNewFluidCells(std::vector<GridIndex> &cells, 
@@ -4462,6 +4835,7 @@ void FluidSimulation::_addNewFluidCells(std::vector<GridIndex> &cells,
         threads[i].join();
     }
 
+    std::vector<MarkerParticle> newParticles;
     for (size_t vidx = 0; vidx < particleVectors.size(); vidx++) {
         for (size_t i = 0; i < particleVectors[vidx].size(); i++) {
             vmath::vec3 p = particleVectors[vidx][i];
@@ -4471,10 +4845,12 @@ void FluidSimulation::_addNewFluidCells(std::vector<GridIndex> &cells,
 
             vmath::vec3 rotv = vmath::cross(rvelocity.angular * rvelocity.axis, p - rvelocity.centroid);
             vmath::vec3 totv = velocity + rvelocity.linear + rotv;
-            _addMarkerParticle(p, totv);
+            newParticles.push_back(MarkerParticle(p, totv));
             maskgrid.addParticle(p);
         }
     }
+
+    _addMarkerParticles(newParticles);
 }
 
 void FluidSimulation::_addNewFluidCells(std::vector<GridIndex> &cells, 
@@ -4496,14 +4872,13 @@ void FluidSimulation::_addNewFluidCells(std::vector<GridIndex> &cells,
     };
 
     double jitter = _getMarkerParticleJitter();
-    GridIndex g;
-    vmath::vec3 p;
+    std::vector<MarkerParticle> newParticles;
     for (size_t i = 0; i < cells.size(); i++) {
-        g = cells[i];
+        GridIndex g = cells[i];
         vmath::vec3 c = Grid3d::GridIndexToCellCenter(g, _dx);
 
         for (unsigned int oidx = 0; oidx < 8; oidx++) {
-            p = c + particleOffsets[oidx];
+            vmath::vec3 p = c + particleOffsets[oidx];
             if (maskgrid.isSubCellSet(p)) {
                 continue;
             }
@@ -4522,11 +4897,13 @@ void FluidSimulation::_addNewFluidCells(std::vector<GridIndex> &cells,
                 vmath::vec3 fv = vdata->vfield.evaluateVelocityAtPositionLinear(datap);
                 vmath::vec3 v = velocity + fv;
 
-                _addMarkerParticle(p, v);
+                newParticles.push_back(MarkerParticle(p, v));
                 maskgrid.addParticle(p);
             }
         }
     }
+
+    _addMarkerParticles(newParticles);
 }
 
 void FluidSimulation::_addNewFluidCellsThread(int startidx, int endidx,
@@ -4643,10 +5020,13 @@ void FluidSimulation::_updateOutflowMeshFluidSource(MeshFluidSource *source) {
         isOutflowCell.set(sourceCells, true);
     }
 
+    std::vector<vmath::vec3> *positions;
+    _markerParticles.getAttributeValues("POSITION", positions);
+
     if (source->isFluidOutflowEnabled()) {
         std::vector<bool> isRemoved(_markerParticles.size(), false);
-        for (int i = 0; i < (int)_markerParticles.size(); i++) {
-            vmath::vec3 p = _markerParticles[i].position;
+        for (size_t i = 0; i < _markerParticles.size(); i++) {
+            vmath::vec3 p = positions->at(i);
             GridIndex g = Grid3d::positionToGridIndex(p, _dx);
             if (isOutflowCell(g)) {
                 float d = sourceSDF->trilinearInterpolate(p - offset);
@@ -4657,14 +5037,17 @@ void FluidSimulation::_updateOutflowMeshFluidSource(MeshFluidSource *source) {
                 }
             }
         }
-        _removeItemsFromVector(_markerParticles, isRemoved);
+        _markerParticles.removeParticles(isRemoved);
     }
     
     if (source->isDiffuseOutflowEnabled()) {
-        FragmentedVector<DiffuseParticle>* dps = _diffuseMaterial.getDiffuseParticles();
+        std::vector<vmath::vec3> *positions;
+        ParticleSystem* dps = _diffuseMaterial.getDiffuseParticles();
+        dps->getAttributeValues("POSITION", positions);
+
         std::vector<bool> isRemoved(dps->size(), false);
-        for (int i = 0; i < (int)dps->size(); i++) {
-            vmath::vec3 p = dps->at(i).position;
+        for (size_t i = 0; i < dps->size(); i++) {
+            vmath::vec3 p = positions->at(i);
             GridIndex g = Grid3d::positionToGridIndex(p, _dx);
             if (!isOutflowCell.isIndexInRange(g)) {
                 continue;
@@ -4679,7 +5062,7 @@ void FluidSimulation::_updateOutflowMeshFluidSource(MeshFluidSource *source) {
                 }
             }
         }
-        _removeItemsFromVector(*dps, isRemoved);
+        dps->removeParticles(isRemoved);
     }
 }
 
@@ -4695,9 +5078,12 @@ void FluidSimulation::_updateInflowMeshFluidSources() {
         return;
     }
 
+    std::vector<vmath::vec3> *positions;
+    _markerParticles.getAttributeValues("POSITION", positions);
+
     ParticleMaskGrid maskgrid(_isize, _jsize, _ksize, _dx);
     for (unsigned int i = 0; i < _markerParticles.size(); i++) {
-        maskgrid.addParticle(_markerParticles[i].position);
+        maskgrid.addParticle(positions->at(i));
     }
 
     for (size_t i = 0; i < _meshFluidSources.size(); i++) {
@@ -4736,9 +5122,12 @@ void FluidSimulation::_updateAddedFluidMeshObjectQueue() {
         return;
     }
 
+    std::vector<vmath::vec3> *positions;
+    _markerParticles.getAttributeValues("POSITION", positions);
+
     ParticleMaskGrid maskgrid(_isize, _jsize, _ksize, _dx);
-    for (unsigned int i = 0; i < _markerParticles.size(); i++) {
-        maskgrid.addParticle(_markerParticles[i].position);
+    for (unsigned int i = 0; i < positions->size(); i++) {
+        maskgrid.addParticle(positions->at(i));
     }
 
     MeshLevelSet meshSDF(_isize, _jsize, _ksize, _dx);
@@ -4780,10 +5169,13 @@ int FluidSimulation::_getNumFluidCells() {
         }
     }
 
+    std::vector<vmath::vec3> *positions;
+    _markerParticles.getAttributeValues("POSITION", positions);
+
     if (count == 0 && !_markerParticles.empty()) {
         Array3d<bool> isFluidCell(_isize, _jsize, _ksize, false);
-        for (unsigned int i = 0; i < _markerParticles.size(); i++) {
-            GridIndex g = Grid3d::positionToGridIndex(_markerParticles[i].position, _dx);
+        for (unsigned int i = 0; i < positions->size(); i++) {
+            GridIndex g = Grid3d::positionToGridIndex(positions->at(i), _dx);
             isFluidCell.set(g, true);
         }
 
@@ -5308,11 +5700,14 @@ void FluidSimulation::_outputSurfaceMeshThread(std::vector<vmath::vec3> *particl
 }
 
 void FluidSimulation::_launchOutputSurfaceMeshThread() {
+    std::vector<vmath::vec3> *positions;
+    _markerParticles.getAttributeValues("POSITION", positions);
+
     // Particles will be deleted within the thread after use
     std::vector<vmath::vec3> *particles = new std::vector<vmath::vec3>();
-    particles->reserve(_markerParticles.size());
-    for (size_t i = 0; i < _markerParticles.size(); i++) {
-        particles->push_back(_markerParticles[i].position);
+    particles->reserve(positions->size());
+    for (size_t i = 0; i < positions->size(); i++) {
+        particles->push_back(positions->at(i));
     }
 
     // solidSDF will be deleted within the thread after use
@@ -5345,6 +5740,7 @@ void FluidSimulation::_outputDiffuseMaterial() {
                                                       &nbubble, 
                                                       &nspray,
                                                       &ndust);
+
         _outputData.frameData.foam.enabled = 1;
         _outputData.frameData.foam.vertices = nfoam;
         _outputData.frameData.foam.triangles = 0;
@@ -5399,13 +5795,16 @@ void FluidSimulation::_outputDiffuseMaterial() {
 }
 
 float FluidSimulation::_calculateParticleSpeedPercentileThreshold(float pct) {
+    std::vector<vmath::vec3> *velocities;
+    _markerParticles.getAttributeValues("VELOCITY", velocities);
+
     float eps = 1e-3;
     float maxs = fmax(_getMaximumMarkerParticleSpeed(), eps);
     float invmax = 1.0f / maxs;
     int nbins = 10000;
     std::vector<int> binCounts(nbins, 0);
     for (size_t i = 0; i < _markerParticles.size(); i++) {
-        float s = vmath::length(_markerParticles[i].velocity);
+        float s = vmath::length(velocities->at(i));
         int binidx = (int)fmin(floor(s * invmax * (nbins - 1)), nbins - 1);
         binCounts[binidx]++;
     }
@@ -5428,12 +5827,16 @@ float FluidSimulation::_calculateParticleSpeedPercentileThreshold(float pct) {
 void FluidSimulation::_outputFluidParticles() {
     if (!_isFluidParticleOutputEnabled) { return; }
 
+    std::vector<vmath::vec3> *positions, *velocities;
+    _markerParticles.getAttributeValues("POSITION", positions);
+    _markerParticles.getAttributeValues("VELOCITY", velocities);
+
     float maxSpeed = _calculateParticleSpeedPercentileThreshold(0.995);
     float invmax = 1.0f / maxSpeed;
     int nbins = 1024;
     std::vector<int> binCounts(nbins, 0);
-    for (size_t i = 0; i < _markerParticles.size(); i++) {
-        float s = vmath::length(_markerParticles[i].velocity);
+    for (size_t i = 0; i < velocities->size(); i++) {
+        float s = vmath::length(velocities->at(i));
         int binidx = (int)fmin(floor(s * invmax * (nbins - 1)), nbins - 1);
         binCounts[binidx]++;
     }
@@ -5450,13 +5853,13 @@ void FluidSimulation::_outputFluidParticles() {
 
     std::vector<vmath::vec3> sortedParticles(_markerParticles.size());
     std::vector<int> binStartsCopy = binStarts;
-    for (size_t i = 0; i < _markerParticles.size(); i++) {
-        float s = vmath::length(_markerParticles[i].velocity);
+    for (size_t i = 0; i < velocities->size(); i++) {
+        float s = vmath::length(velocities->at(i));
         int binidx = (int)fmin(floor(s * invmax * (nbins - 1)), nbins - 1);
         int vidx = binStartsCopy[binidx];
         binStartsCopy[binidx]++;
 
-        vmath::vec3 p = _markerParticles[i].position;
+        vmath::vec3 p = positions->at(i);
         p *= _domainScale;
         p += _domainOffset;
         sortedParticles[vidx] = p;
@@ -5641,11 +6044,13 @@ double FluidSimulation::_predictMaximumMarkerParticleSpeed(double dt) {
 }
 
 double FluidSimulation::_getMaximumMarkerParticleSpeed() {
+    std::vector<vmath::vec3> *velocities;
+    _markerParticles.getAttributeValues("VELOCITY", velocities);
+
     double maxsq = 0.0;
-    MarkerParticle mp;
-    for (unsigned int i = 0; i < _markerParticles.size(); i++) {
-        mp = _markerParticles[i];
-        double distsq = vmath::dot(mp.velocity, mp.velocity);
+    for (unsigned int i = 0; i < velocities->size(); i++) {
+        vmath::vec3 v = velocities->at(i);
+        double distsq = vmath::dot(v, v);
         if (distsq > maxsq) {
             maxsq = distsq;
         }

@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -64,7 +64,12 @@ def get_directory_whitelist():
 def path_is_parent(parent_path, child_path):
     parent_path = os.path.abspath(parent_path)
     child_path = os.path.abspath(child_path)
-    return os.path.commonpath([parent_path]) == os.path.commonpath([parent_path, child_path])
+    try:
+        parent_child_commonpath = os.path.commonpath([parent_path, child_path])
+    except ValueError:
+        # paths not on same drive
+        return False
+    return os.path.commonpath([parent_path]) == parent_child_commonpath
 
 
 def check_extensions_valid(extensions):

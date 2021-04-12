@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2020 Ryan L. Guy
+Copyright (C) 2021 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -1766,6 +1766,21 @@ extern "C" {
         );
     }
 
+    EXPORTDLL double FluidSimulation_get_viscosity_solver_error_tolerance(FluidSimulation* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getViscositySolverErrorTolerance, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_set_viscosity_solver_error_tolerance(FluidSimulation* obj, 
+                                                double tol,
+                                                int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setViscositySolverErrorTolerance, tol, err
+        );
+    }
+
+
     EXPORTDLL double FluidSimulation_get_surface_tension(FluidSimulation* obj, int *err) {
         return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getSurfaceTension, err
@@ -1961,6 +1976,34 @@ extern "C" {
         );
     }
 
+    EXPORTDLL void FluidSimulation_set_velocity_transfer_method_FLIP(FluidSimulation* obj,
+                                                                     int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::setVelocityTransferMethodFLIP, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_set_velocity_transfer_method_APIC(FluidSimulation* obj,
+                                                                     int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::setVelocityTransferMethodAPIC, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_velocity_transfer_method_FLIP(FluidSimulation* obj,
+                                                                   int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isVelocityTransferMethodFLIP, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_velocity_transfer_method_APIC(FluidSimulation* obj,
+                                                                   int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isVelocityTransferMethodAPIC, err
+        );
+    }
+
     EXPORTDLL double FluidSimulation_get_PICFLIP_ratio(FluidSimulation* obj, int *err) {
         return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getPICFLIPRatio, err
@@ -1971,6 +2014,19 @@ extern "C" {
                                                      double ratio, int *err) {
         CBindings::safe_execute_method_void_1param(
             obj, &FluidSimulation::setPICFLIPRatio, ratio, err
+        );
+    }
+
+    EXPORTDLL double FluidSimulation_get_PICAPIC_ratio(FluidSimulation* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getPICAPICRatio, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_set_PICAPIC_ratio(FluidSimulation* obj, 
+                                                     double ratio, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setPICAPICRatio, ratio, err
         );
     }
 
@@ -2155,21 +2211,6 @@ extern "C" {
         return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getNumDiffuseParticles, err
         );
-    }
-
-    EXPORTDLL void FluidSimulation_get_diffuse_particles(
-            FluidSimulation* obj, 
-            int startidx, int endidx,
-            DiffuseParticle_t *out, int *err) {
-
-        std::vector<DiffuseParticle> dps = CBindings::safe_execute_method_ret_2param(
-            obj, &FluidSimulation::getDiffuseParticles,
-            startidx, endidx, err
-        );
-
-        for (unsigned int i = 0; i < dps.size(); i++) {
-            out[i] = CBindings::to_struct(dps[i]);
-        }
     }
 
     EXPORTDLL void FluidSimulation_get_diffuse_particle_positions(
@@ -2709,6 +2750,39 @@ extern "C" {
         }
     }
 
+    EXPORTDLL void FluidSimulation_get_marker_particle_affinex_data_range(FluidSimulation* obj, 
+                                                                          int start_idx, int end_idx, char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            obj->getMarkerParticleAffineXDataRange(start_idx, end_idx, c_data);
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_marker_particle_affiney_data_range(FluidSimulation* obj, 
+                                                                          int start_idx, int end_idx, char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            obj->getMarkerParticleAffineYDataRange(start_idx, end_idx, c_data);
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_marker_particle_affinez_data_range(FluidSimulation* obj, 
+                                                                          int start_idx, int end_idx, char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            obj->getMarkerParticleAffineZDataRange(start_idx, end_idx, c_data);
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
     EXPORTDLL void FluidSimulation_get_diffuse_particle_position_data_range(FluidSimulation* obj, 
                                                                             int start_idx, int end_idx, char *c_data, int *err) {
         *err = CBindings::SUCCESS;
@@ -2818,6 +2892,14 @@ extern "C" {
                                                              int *err) {
         CBindings::safe_execute_method_void_1param(
             obj, &FluidSimulation::loadMarkerParticleData, data, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_load_marker_particle_affine_data(FluidSimulation* obj, 
+                                                                    FluidSimulationMarkerParticleAffineData data, 
+                                                                    int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::loadMarkerParticleAffineData, data, err
         );
     }
 

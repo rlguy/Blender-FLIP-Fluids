@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -56,8 +56,8 @@ def is_property_animated(obj, prop_name, index = 0):
         return False
 
     for fcurve in anim_data.action.fcurves:
-        path = fcurve.data_path.split(".")[-1]
-        if path == prop_name and fcurve.array_index == index:
+        path = fcurve.data_path
+        if path.endswith(prop_name) and fcurve.array_index == index:
             return True
     return False
 
@@ -83,8 +83,8 @@ def is_vector_animated(obj, prop_name, vector_size = 3):
 def get_property_fcurve(obj, prop_name, index = 0):
     anim_data = obj.animation_data
     for fcurve in anim_data.action.fcurves:
-        path = fcurve.data_path.split(".")[-1]
-        if path == prop_name and fcurve.array_index == index:
+        path = fcurve.data_path
+        if path.endswith(prop_name) and fcurve.array_index == index:
             return fcurve
 
 
@@ -120,7 +120,8 @@ def get_property_data_dict(obj, prop_group, prop_name, index = None):
         else:
             return {'is_animated' : True, 'data' : values}
     else:
-        value = getattr(prop_group, prop_name)
+        prop_name_suffix = prop_name.split(".")[-1]
+        value = getattr(prop_group, prop_name_suffix)
         if is_index_set:
             value = value[index]
         return {'is_animated' : False, 'data' : value}
@@ -196,8 +197,15 @@ def get_vector_property_data_dict(obj, prop_group, prop_name, vector_size = 3):
 
 def get_min_max_property_data_dict(obj, prop_group, prop_name):
     prop_group = getattr(prop_group, prop_name)
-    min_dict = get_property_data_dict(obj, prop_group, "value_min")
-    max_dict = get_property_data_dict(obj, prop_group, "value_max")
+
+    # Multiple properties attached to a single object may have 
+    # 'value_min' or 'value_max' as the name. In order to correctly
+    # search for the property, set the identifier as a path 
+    #     Ex: prop_name.value_min
+    identifier_min = prop_name + ".value_min"
+    identifier_max = prop_name + ".value_max"
+    min_dict = get_property_data_dict(obj, prop_group, identifier_min)
+    max_dict = get_property_data_dict(obj, prop_group, identifier_max)
 
     is_animated = min_dict['is_animated'] or max_dict['is_animated']
     if is_animated:

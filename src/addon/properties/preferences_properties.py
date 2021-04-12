@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -116,6 +116,13 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
             ); 
     exec(vcu.convert_attribute_to_28("engine_debug_mode"))
 
+    enable_developer_tools = BoolProperty(
+            name="Enable Developer Tools", 
+            description="Enable Developer Tools", 
+            default=False,
+            ); 
+    exec(vcu.convert_attribute_to_28("enable_developer_tools"))
+
     enable_presets = BoolProperty(
                 name="Enable Presets",
                 description="Presets are a deprecated feature that will no longer be updated. Enable to use the older preset"
@@ -203,6 +210,7 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         row.enabled = self.enable_helper
         row.prop(self, "helper_category_name")
         helper_column.prop(self, "engine_debug_mode")
+        helper_column.prop(self, "enable_developer_tools")
         helper_column.separator()
         helper_column.separator()
 

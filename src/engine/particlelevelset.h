@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2020 Ryan L. Guy
+Copyright (C) 2021 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -36,6 +36,7 @@ SOFTWARE.
 #include "vmath.h"
 #include "blockarray3d.h"
 #include "boundedbuffer.h"
+#include "particlesystem.h"
 
 class MeshLevelSet;
 class ScalarField;
@@ -63,7 +64,7 @@ public:
     float getDistanceAtNode(int i, int j, int k);
     float getDistanceAtNode(GridIndex g);
 
-    void calculateSignedDistanceField(FragmentedVector<MarkerParticle> &particles, 
+    void calculateSignedDistanceField(ParticleSystem &particles, 
                                       double radius);
     void postProcessSignedDistanceField(MeshLevelSet &solidPhi);
     void calculateCurvatureGrid(Array3d<float> &surfacePhi, Array3d<float> &kgrid);

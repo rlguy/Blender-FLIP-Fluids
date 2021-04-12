@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -451,9 +451,17 @@ class FlipFluidClearLinkedGeometryDirectory(bpy.types.Operator):
 def register():
     bpy.utils.register_class(FlipFluidFreeCache)
     bpy.utils.register_class(FlipFluidFreeUnheldCacheFiles)
+
+    # The move, rename, and copy cache operations should not be performed
+    # in Blender and are removed from the UI. There is a potential for Blender 
+    # to crash, which could lead to loss of data. It is best to perform these 
+    # operations through the OS filesystem which is cabable of handling failures.
+    """
     bpy.utils.register_class(FlipFluidMoveCache)
     bpy.utils.register_class(FlipFluidRenameCache)
     bpy.utils.register_class(FlipFluidCopyCache)
+    """
+
     bpy.utils.register_class(FlipFluidRelativeCacheDirectory)
     bpy.utils.register_class(FlipFluidAbsoluteCacheDirectory)
     bpy.utils.register_class(FlipFluidRelativeLinkedGeometryDirectory)
@@ -464,9 +472,13 @@ def register():
 def unregister():
     bpy.utils.unregister_class(FlipFluidFreeCache)
     bpy.utils.unregister_class(FlipFluidFreeUnheldCacheFiles)
+
+    """
     bpy.utils.unregister_class(FlipFluidMoveCache)
     bpy.utils.unregister_class(FlipFluidRenameCache)
     bpy.utils.unregister_class(FlipFluidCopyCache)
+    """
+
     bpy.utils.unregister_class(FlipFluidRelativeCacheDirectory)
     bpy.utils.unregister_class(FlipFluidAbsoluteCacheDirectory)
     bpy.utils.unregister_class(FlipFluidRelativeLinkedGeometryDirectory)

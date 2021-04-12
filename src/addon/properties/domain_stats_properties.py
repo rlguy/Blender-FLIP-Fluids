@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -266,6 +266,9 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
                 self._update_frame_stats()
         elif self.cache_info_type == "CACHE_INFO":
             self._update_cache_stats()
+
+        self._update_estimated_time_remaining()
+
         self.is_stats_current = True
 
 
@@ -303,6 +306,8 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
                     self.current_info_frame = context.scene.frame_current
             self._update_frame_stats()
 
+        self._update_estimated_time_remaining()
+
 
     def _update_lock_info_frame_to_timeline(self, context):
         if self.lock_info_frame_to_timeline:
@@ -321,7 +326,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             self.is_frame_info_available = False
             return
 
-        with open(statsfile, 'r') as f:
+        with open(statsfile, 'r', encoding='utf-8') as f:
             statsdata = json.loads(f.read())
 
         framekey = str(self.current_info_frame)
@@ -463,7 +468,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             self.is_frame_info_available = False
             return
 
-        with open(statsfile, 'r') as f:
+        with open(statsfile, 'r', encoding='utf-8') as f:
             cachedata = json.loads(f.read())
 
         self.is_cache_info_available = True
@@ -625,18 +630,6 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.time_objects.set_time_pct(  100 * time_objects   / total_time)
         self.time_other.set_time_pct(    100 * time_other     / total_time)
 
-        frame_speed = self._get_estimated_frame_speed(cachedata)
-        self.estimated_frame_speed = frame_speed
-        self.is_estimated_time_remaining_available = frame_speed > 0
-
-        if self.is_estimated_time_remaining_available:
-            num_frames = dprops.simulation.frame_end - dprops.simulation.frame_start + 1
-            frames_left = num_frames - dprops.bake.num_baked_frames
-            time_remaining = int(math.ceil((1.0 / frame_speed) * frames_left))
-            time_remaining = min(time_remaining, 2147483648 - 1)
-            self.estimated_time_remaining = time_remaining
-            self.estimated_time_remaining_timestamp = self.get_timestamp()
-
         self._update_cache_size(cachedata)
 
 
@@ -680,6 +673,33 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         for s in frame_speeds:
             average_speed = smoothing_factor * s + (1.0 - smoothing_factor) * average_speed
         return average_speed
+
+
+    def _update_estimated_time_remaining(self):
+        dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+        if dprops is None:
+            return
+
+        cache_directory = dprops.cache.get_cache_abspath()
+        statsfile = os.path.join(cache_directory, self.stats_filename)
+        if not os.path.isfile(statsfile):
+            return
+
+        with open(statsfile, 'r', encoding='utf-8') as f:
+            cachedata = json.loads(f.read())
+
+        frame_speed = self._get_estimated_frame_speed(cachedata)
+        self.estimated_frame_speed = frame_speed
+        self.is_estimated_time_remaining_available = frame_speed > 0
+
+        if self.is_estimated_time_remaining_available:
+            num_frames = dprops.simulation.frame_end - dprops.simulation.frame_start + 1
+            frames_left = num_frames - dprops.bake.num_baked_frames
+            time_remaining = int(math.ceil((1.0 / frame_speed) * frames_left))
+            time_remaining = min(time_remaining, 2147483648 - 1)
+            self.estimated_time_remaining = time_remaining
+            self.estimated_time_remaining_timestamp = self.get_timestamp()
+
 
 
 def register():

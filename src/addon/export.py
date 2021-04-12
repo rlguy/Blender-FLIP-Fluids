@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ def __export_simulation_data_to_file(context, simobjects, filename):
     jsonstr = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
 
     os.makedirs(os.path.dirname(filename), exist_ok=True)
-    with open(filename, "w") as f:
+    with open(filename, 'w', encoding='utf-8') as f:
         f.write(jsonstr)
 
 
@@ -218,7 +218,7 @@ def __export_static_mesh_data(object_data, mesh_directory):
     info = {'mesh_type': 'STATIC'}
     info_json = json.dumps(info, sort_keys=True)
     info_filepath = os.path.join(mesh_directory, "mesh.info")
-    with open(info_filepath, "w") as f:
+    with open(info_filepath, 'w', encoding='utf-8') as f:
         f.write(info_json)
 
     dprops = __get_domain_properties()
@@ -242,7 +242,7 @@ def __export_keyframed_mesh_data(object_data, mesh_directory):
     matrix_data = object_data['data']['matrix_data']
     matrix_json = json.dumps(matrix_data)
     matrix_filepath = os.path.join(mesh_directory, "transforms.data")
-    with open(matrix_filepath, "w") as f:
+    with open(matrix_filepath, 'w', encoding='utf-8') as f:
         f.write(matrix_json)
 
     info = {
@@ -252,7 +252,7 @@ def __export_keyframed_mesh_data(object_data, mesh_directory):
             }
     info_json = json.dumps(info, sort_keys=True)
     info_filepath = os.path.join(mesh_directory, "mesh.info")
-    with open(info_filepath, "w") as f:
+    with open(info_filepath, 'w', encoding='utf-8') as f:
         f.write(info_json)
 
     matrix_filesize = os.stat(matrix_filepath).st_size 
@@ -304,7 +304,7 @@ def __export_animated_mesh_data(object_data, mesh_directory):
             }
     info_json = json.dumps(info, sort_keys=True)
     info_filepath = os.path.join(mesh_directory, "mesh.info")
-    with open(info_filepath, "w") as f:
+    with open(info_filepath, 'w', encoding='utf-8') as f:
         f.write(info_json)
 
     object_data['data']['mesh_data'] = []
