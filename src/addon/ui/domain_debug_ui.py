@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -111,10 +111,19 @@ class FLIPFLUID_PT_DomainTypeDebugPanel(bpy.types.Panel):
                 icon="TRIA_DOWN" if gprops.particle_debug_settings_expanded else "TRIA_RIGHT",
                 icon_only=True, 
                 emboss=False
-            )
+                )
             if not gprops.particle_debug_settings_expanded:
                 row.prop(gprops, "export_fluid_particles", text="")
             row.label(text="Fluid Particle Debugging:")
+
+            next_row = row.row()
+            next_row.alignment = 'RIGHT'
+            next_row.prop(gprops, "fluid_particles_visibility", 
+                text="", 
+                icon=vcu.get_hide_off_icon() if gprops.fluid_particles_visibility else vcu.get_hide_on_icon(),
+                emboss=False
+                )
+
 
             if gprops.particle_debug_settings_expanded:
                 box.prop(gprops, "export_fluid_particles")
@@ -143,7 +152,6 @@ class FLIPFLUID_PT_DomainTypeDebugPanel(bpy.types.Panel):
         if show_advanced:
             box = self.layout.box()
             row = box.row(align=True)
-            row.alignment = 'LEFT'
             row.prop(gprops, "force_field_debug_settings_expanded",
                 icon="TRIA_DOWN" if gprops.force_field_debug_settings_expanded else "TRIA_RIGHT",
                 icon_only=True, 
@@ -152,6 +160,14 @@ class FLIPFLUID_PT_DomainTypeDebugPanel(bpy.types.Panel):
             if not gprops.force_field_debug_settings_expanded:
                 row.prop(gprops, "export_force_field", text="")
             row.label(text="Force Field Debugging:")
+
+            next_row = row.row()
+            next_row.alignment = 'RIGHT'
+            next_row.prop(gprops, "force_field_visibility", 
+                text="", 
+                icon=vcu.get_hide_off_icon() if gprops.force_field_visibility else vcu.get_hide_on_icon(),
+                emboss=False
+                )
 
             if gprops.force_field_debug_settings_expanded:
                 box.prop(gprops, "export_force_field")
@@ -179,10 +195,19 @@ class FLIPFLUID_PT_DomainTypeDebugPanel(bpy.types.Panel):
                 column.prop(gprops, "force_field_display_amount", text="")
                 column.prop(gprops, "force_field_line_size", text="")
 
-        column = self.layout.column(align=True)
-        column.prop(gprops, "export_internal_obstacle_mesh")
+        box = self.layout.box()
+        row = box.row(align=True)
+        row.prop(gprops, "export_internal_obstacle_mesh")
+        next_row = row.row()
+        next_row.alignment = 'RIGHT'
+        next_row.prop(gprops, "internal_obstacle_mesh_visibility", 
+                text="", 
+                icon=vcu.get_hide_off_icon() if gprops.internal_obstacle_mesh_visibility else vcu.get_hide_on_icon(),
+                emboss=False
+                )
 
-        column = self.layout.column(align=True)
+        box = self.layout.box()
+        column = box.column(align=True)
         column.prop(gprops, "display_console_output")
 
 

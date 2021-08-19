@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2020 Ryan L. Guy
+Copyright (C) 2021 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -114,8 +114,13 @@ public:
     void disableAppendObjectVelocity();
     bool isAppendObjectVelocityEnabled();
     RigidBodyVelocity getRigidBodyVelocity(double framedt);
+    bool isGeometryAABB();
     void setObjectVelocityInfluence(float value);
     float getObjectVelocityInfluence();
+    void setSourceID(int id);
+    int getSourceID();
+    void setSourceColor(vmath::vec3 c);
+    vmath::vec3 getSourceColor();
 
     MeshObjectStatus getStatus();
 
@@ -185,6 +190,8 @@ private:
     float _objectVelocityInfluence = 1.0f;
     bool _isObjectStateChanged = false;
     bool _isDomainObject = false;
+    int _sourceID = 0;
+    vmath::vec3 _sourceColor;
 
 
     int _numIslandsForFractureOptimizationTrigger = 25;

@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@ bl_info = {
 if "bpy" in locals():
     import importlib
     reloadable_modules = [
+        'filesystem',
         'utils',
         'objects',
         'materials',
@@ -53,6 +54,7 @@ from bpy.props import (
         )
 
 from . import (
+        filesystem,
         utils,
         objects,
         materials,
@@ -93,6 +95,11 @@ def render_complete(scene):
 @bpy.app.handlers.persistent
 def render_cancel(scene):
     render.render_cancel(scene)
+
+
+@bpy.app.handlers.persistent
+def frame_change_pre(scene, depsgraph=None):
+    pass
 
 
 @bpy.app.handlers.persistent
@@ -155,6 +162,7 @@ def register():
     bpy.app.handlers.render_init.append(render_init)
     bpy.app.handlers.render_complete.append(render_complete)
     bpy.app.handlers.render_cancel.append(render_cancel)
+    bpy.app.handlers.frame_change_pre.append(frame_change_pre)
     bpy.app.handlers.frame_change_post.append(frame_change_post)
     bpy.app.handlers.render_pre.append(render_pre)
     bpy.app.handlers.load_pre.append(load_pre)
@@ -180,6 +188,7 @@ def unregister():
     bpy.app.handlers.render_init.remove(render_init)
     bpy.app.handlers.render_complete.remove(render_complete)
     bpy.app.handlers.render_cancel.remove(render_cancel)
+    bpy.app.handlers.frame_change_pre.remove(frame_change_pre)
     bpy.app.handlers.frame_change_post.remove(frame_change_post)
     bpy.app.handlers.render_pre.remove(render_pre)
     bpy.app.handlers.load_pre.remove(load_pre)

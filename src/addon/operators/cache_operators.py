@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, os, shutil
+import bpy, os, re
+
+from ..filesystem import filesystem_protection_layer as fpl
+from ..utils import version_compatibility_utils as vcu
+
+from bpy.props import (
+        StringProperty,
+        )
 
 
 class FlipFluidFreeCache(bpy.types.Operator):
@@ -23,67 +30,17 @@ class FlipFluidFreeCache(bpy.types.Operator):
     bl_description = "Delete Simulation Cache Files"
 
 
-    def delete_cache_file(self, filepath):
-        try:
-            os.remove(filepath)
-        except OSError:
-            pass
-
-
-    def delete_cache_directory(self, directory, extension):
-        if not os.path.isdir(directory):
-            return
-        
-        for f in os.listdir(directory):
-            if f.endswith(extension):
-                self.delete_cache_file(os.path.join(directory, f))
-
-        if len(os.listdir(directory)) == 0:
-            os.rmdir(directory)
-
-
     def clear_cache(self, context):
         dprops = context.scene.flip_fluid.get_domain_properties()
-        cache_dir = dprops.cache.get_cache_abspath()
-        simfilepath = os.path.join(cache_dir, dprops.bake.export_filename)
-        self.delete_cache_file(simfilepath)
+        cache_directory = dprops.cache.get_cache_abspath()
+        clear_export = dprops.cache.clear_cache_directory_export
+        clear_logs = dprops.cache.clear_cache_directory_logs
 
-        statsfilepath = os.path.join(cache_dir, dprops.stats.stats_filename)
-        self.delete_cache_file(statsfilepath)
-
-        bakefiles_dir = os.path.join(cache_dir, "bakefiles")
-        self.delete_cache_directory(bakefiles_dir, ".bbox")
-        self.delete_cache_directory(bakefiles_dir, ".bobj")
-        self.delete_cache_directory(bakefiles_dir, ".wwp")
-        self.delete_cache_directory(bakefiles_dir, ".fpd")
-        self.delete_cache_directory(bakefiles_dir, ".ffd")
-
-        logs_dir = os.path.join(cache_dir, "logs")
-        if os.path.isdir(logs_dir) and dprops.cache.clear_cache_directory_logs:
-            logs_dir = os.path.join(cache_dir, "logs")
-            self.delete_cache_directory(logs_dir, ".txt")
-
-        export_dir = os.path.join(cache_dir, "export")
-        if os.path.isdir(export_dir) and dprops.cache.clear_cache_directory_export:
-            for subdir in os.listdir(export_dir):
-                object_dir = os.path.join(export_dir, subdir)
-                self.delete_cache_directory(object_dir, ".info")
-                self.delete_cache_directory(object_dir, ".bobj")
-            self.delete_cache_directory(export_dir, ".sim")
-            self.delete_cache_directory(export_dir, ".sqlite3")
-
-        temp_dir = os.path.join(cache_dir, "temp")
-        self.delete_cache_directory(temp_dir, ".data")
-
-        savestates_dir = os.path.join(cache_dir, "savestates")
-        autosave_dir = os.path.join(savestates_dir, "autosave")
-        self.delete_cache_directory(autosave_dir, ".state")
-        self.delete_cache_directory(autosave_dir, ".data")
-        self.delete_cache_directory(savestates_dir, ".state")
-        self.delete_cache_directory(savestates_dir, ".data")
-
-        if len(os.listdir(cache_dir)) == 0:
-            os.rmdir(cache_dir)
+        fpl.clear_cache_directory(cache_directory, 
+            clear_export=clear_export, 
+            clear_logs=clear_logs, 
+            remove_directory=True
+            )
 
 
     @classmethod
@@ -122,13 +79,6 @@ class FlipFluidFreeUnheldCacheFiles(bpy.types.Operator):
     bl_description = "Delete Unheld Simulation Cache Files"
 
 
-    def delete_cache_file(self, filepath):
-        try:
-            os.remove(filepath)
-        except OSError:
-            pass
-
-
     def delete_unheld_cache_directory(self, directory, extension):
         if not os.path.isdir(directory):
             return
@@ -149,7 +99,8 @@ class FlipFluidFreeUnheldCacheFiles(bpy.types.Operator):
                 if frameno == hold_frame:
                     continue
 
-                self.delete_cache_file(os.path.join(directory, f))
+                filepath = os.path.join(directory, f)
+                fpl.delete_file(filepath)
 
 
     def clear_unheld_cache_files(self, context):
@@ -419,6 +370,104 @@ class FlipFluidAbsoluteCacheDirectory(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class FlipFluidMatchFilenameCacheDirectory(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.match_filename_cache_directory"
+    bl_label = "Match Filename"
+    bl_description = ("Set the cache directory name to correspond to the .blend filename." +
+        " Note: this will not rename an existing cache directory")
+
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+
+    def execute(self, context):
+        dprops = context.scene.flip_fluid.get_domain_properties()
+        if dprops is None:
+            return {'CANCELLED'}
+
+        blend_filepath = bpy.path.abspath("//")
+        if not blend_filepath:
+            self.report({"ERROR"}, "The Blend file must be saved to use this operator")
+            return {'CANCELLED'}
+
+        cache_directory = dprops.cache.cache_directory
+        relprefix = "//"
+        is_relative = cache_directory.startswith(relprefix)
+
+        abspath = dprops.cache.get_cache_abspath()
+        parent_path = os.path.dirname(abspath)
+
+        new_directory_name = os.path.basename(bpy.data.filepath)
+        new_directory_name = os.path.splitext(new_directory_name)[0]
+        new_directory_name += "_flip_fluid_cache"
+
+        dprops.cache.cache_directory = os.path.join(parent_path, new_directory_name)
+        if is_relative:
+            bpy.ops.flip_fluid_operators.relative_cache_directory()
+
+        return {'FINISHED'}
+
+
+class FlipFluidIncreaseDecreaseCacheDirectory(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.increment_decrease_cache_directory"
+    bl_label = "Increase/Decrease Cache Directory"
+    bl_description = ("Increase or decrease a numbered suffix on the cache directory." + 
+        " Note: this will not rename an existing cache directory")
+
+    increment_mode = StringProperty(default="INCREASE")
+    exec(vcu.convert_attribute_to_28("increment_mode"))
+
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+
+    def get_trailing_number(self, s):
+        m = re.search(r'\d+$', s)
+        return int(m.group()) if m else None
+
+
+    def execute(self, context):
+        dprops = context.scene.flip_fluid.get_domain_properties()
+        if dprops is None:
+            return {'CANCELLED'}
+
+        cache_directory = dprops.cache.cache_directory
+        relprefix = "//"
+        is_relative = cache_directory.startswith(relprefix)
+
+        abspath = dprops.cache.get_cache_abspath()
+        parent_path = os.path.dirname(abspath)
+        basename = os.path.basename(abspath)
+
+        suffix_number = self.get_trailing_number(basename)
+        if suffix_number:
+            basename = basename[:-len(str(suffix_number))]
+
+        if self.increment_mode == 'INCREASE':
+            if not suffix_number:
+                suffix_number = 0
+            suffix_number += 1
+            new_basename = basename + str(suffix_number)
+        else:
+            if not suffix_number:
+                return {'FINISHED'}
+            if suffix_number <= 1:
+                suffix_string = ""
+            else:
+                suffix_string = str(suffix_number - 1)
+            new_basename = basename + suffix_string
+
+        dprops.cache.cache_directory = os.path.join(parent_path, new_basename)
+        if is_relative:
+            bpy.ops.flip_fluid_operators.relative_cache_directory()
+
+        return {'FINISHED'}
+
+
 class FlipFluidRelativeLinkedGeometryDirectory(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.relative_linked_geometry_directory"
     bl_label = "Make Relative"
@@ -505,11 +554,21 @@ class FlipFluidClearLinkedGeometryDirectory(bpy.types.Operator):
 def register():
     bpy.utils.register_class(FlipFluidFreeCache)
     bpy.utils.register_class(FlipFluidFreeUnheldCacheFiles)
+
+    # The move, rename, and copy cache operations should not be performed
+    # in Blender and are removed from the UI. There is a potential for Blender 
+    # to crash, which could lead to loss of data. It is best to perform these 
+    # operations through the OS filesystem which is cabable of handling failures.
+    """
     bpy.utils.register_class(FlipFluidMoveCache)
     bpy.utils.register_class(FlipFluidRenameCache)
     bpy.utils.register_class(FlipFluidCopyCache)
+    """
+
     bpy.utils.register_class(FlipFluidRelativeCacheDirectory)
     bpy.utils.register_class(FlipFluidAbsoluteCacheDirectory)
+    bpy.utils.register_class(FlipFluidMatchFilenameCacheDirectory)
+    bpy.utils.register_class(FlipFluidIncreaseDecreaseCacheDirectory)
     bpy.utils.register_class(FlipFluidRelativeLinkedGeometryDirectory)
     bpy.utils.register_class(FlipFluidAbsoluteLinkedGeometryDirectory)
     bpy.utils.register_class(FlipFluidClearLinkedGeometryDirectory)
@@ -518,11 +577,17 @@ def register():
 def unregister():
     bpy.utils.unregister_class(FlipFluidFreeCache)
     bpy.utils.unregister_class(FlipFluidFreeUnheldCacheFiles)
+
+    """
     bpy.utils.unregister_class(FlipFluidMoveCache)
     bpy.utils.unregister_class(FlipFluidRenameCache)
     bpy.utils.unregister_class(FlipFluidCopyCache)
+    """
+
     bpy.utils.unregister_class(FlipFluidRelativeCacheDirectory)
     bpy.utils.unregister_class(FlipFluidAbsoluteCacheDirectory)
+    bpy.utils.unregister_class(FlipFluidMatchFilenameCacheDirectory)
+    bpy.utils.unregister_class(FlipFluidIncreaseDecreaseCacheDirectory)
     bpy.utils.unregister_class(FlipFluidRelativeLinkedGeometryDirectory)
     bpy.utils.unregister_class(FlipFluidAbsoluteLinkedGeometryDirectory)
     bpy.utils.unregister_class(FlipFluidClearLinkedGeometryDirectory)

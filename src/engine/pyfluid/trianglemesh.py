@@ -1,6 +1,6 @@
 # MIT License
 # 
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -65,9 +65,9 @@ class TriangleMesh(object):
         num_vertices = len(self.vertices) // 3
         num_triangles = len(self.triangles) // 3
         datastr = struct.pack('i', num_vertices)
-        datastr += self.vertices.tostring()
+        datastr += self.vertices.tobytes()
         datastr += struct.pack('i', num_triangles)
-        datastr += self.triangles.tostring()
+        datastr += self.triangles.tobytes()
 
         return datastr
 

@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,21 +47,7 @@ force_field_types = (
     ('FORCE_FIELD_TYPE_SURFACE',      "Surface Force",                                 "Force field directed towards an object's surface", 'OUTLINER_DATA_SURFACE', 1),
     ('FORCE_FIELD_TYPE_VOLUME',       "Volume Force",                                  "Force field directed to fill an object's volume", 'MESH_MONKEY', 2),
     ('FORCE_FIELD_TYPE_CURVE',        "Curve Guide Force",                             "Force field directed along a curve object", 'FORCE_CURVE', 3),
-    ('FORCE_FIELD_TYPE_OTHER',        "More coming soon! (in development)",            "More force field modes such as vortex, turbublence, and programmable fields are in development! Try our experimental builds to test the latest features", 'FUND', 4),
     )
-
-# Uncomment for experimental builds
-"""
-force_field_types = (
-    ('FORCE_FIELD_TYPE_POINT',        "Point Force",                                   "Force field directed towards a single point", 0),
-    ('FORCE_FIELD_TYPE_SURFACE',      "Surface Force",                                 "Force field directed towards an object's surface", 1),
-    ('FORCE_FIELD_TYPE_VOLUME',       "Volume Force",                                  "Force field directed to fill an object's volume", 2),
-    ('FORCE_FIELD_TYPE_CURVE',        "Curve Guide Force",                             "Force field directed along a curve object", 3),
-    ('FORCE_FIELD_TYPE_VORTEX',       "(Unavailable, in progress) Vortex Force",       "Force field directed to spiral around the object's local Z-axis", 4),
-    ('FORCE_FIELD_TYPE_TURBULENCE',   "(Unavailable, in progress) Turbulence Force",   "Force field directed by random and chaotic 3D noise", 5),
-    ('FORCE_FIELD_TYPE_PROGRAMMABLE', "(Unavailable, in progress) Programmable Force", "Force field directed by a programmable vector field via Python scripting", 6),
-    )
-"""
 
 force_field_resolution_modes = (
     ('FORCE_FIELD_RESOLUTION_LOW',    "Low",    "Low resolution force field grid. Domain resolution divided by 4."),
@@ -190,6 +176,11 @@ obstacle_meshing_modes = (
     ('MESHING_MODE_INSIDE_SURFACE',  "Inside Surface",  "Generate fluid-solid interface on the inside of the obstacle. Fluid surface will penetrate the obstacle."),
     ('MESHING_MODE_ON_SURFACE',      "On Surface",      "Generate fluid-solid interface directly on the obstacle surface. May lead to rendering artifacts."),
     ('MESHING_MODE_OUTSIDE_SURFACE', "Outside Surface", "Generate fluid-solid interface on the outside of the obstacle. Leaves a gap between the fluid surface and obstacle.")
+    )
+
+velocity_transfer_methods = (
+    ('VELOCITY_TRANSFER_METHOD_FLIP', "FLIP", "Choose FLIP for high energy, noisy, and chaotic simulations. Generally better for large scale simulations where noisy splashes are desirable."),
+    ('VELOCITY_TRANSFER_METHOD_APIC', "APIC", "Choose APIC for high vorticity, swirly, and stable simulations. Generally better for small scale simulations where reduced surface noise is desirable or for viscous simulations.")
     )
 
 threading_modes = (

@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -80,8 +80,8 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
         column_right.label(text="Surface Viewport Display:")
         column_right.prop(rprops, "viewport_display", expand=True)
 
-        column = box.column()
-        column.prop(mprops, "surface_material", text="Surface Material")
+        column_left.label(text="Surface Material")
+        column_right.prop(mprops, "surface_material", text="")
 
         # Motion blur rendering is currently not supported due
         # to limitations in Blender
@@ -111,19 +111,27 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
 
         master_box = self.layout.box()
         column = master_box.column()
-        split = column.split()
-        left_column = split.column()
 
-        row = left_column.row(align=True)
-        row.prop(rprops, "whitewater_display_settings_expanded",
-            icon="TRIA_DOWN" if rprops.whitewater_display_settings_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
-        row.label(text="Whitewater Display Settings:")
+        if is_whitewater_enabled:
+            row = column.row(align=True)
+            row.prop(rprops, "whitewater_display_settings_expanded",
+                icon="TRIA_DOWN" if rprops.whitewater_display_settings_expanded else "TRIA_RIGHT",
+                icon_only=True, 
+                emboss=False
+            )
+            row.label(text="Whitewater Display Settings:")
+        else:
+            split = column.split()
+            left_column = split.column()
+            row = left_column.row(align=True)
+            row.prop(rprops, "whitewater_display_settings_expanded",
+                icon="TRIA_DOWN" if rprops.whitewater_display_settings_expanded else "TRIA_RIGHT",
+                icon_only=True, 
+                emboss=False
+            )
+            row.label(text="Whitewater Display Settings:")
 
-        right_column = split.column()
-        if not is_whitewater_enabled:
+            right_column = split.column()
             row = right_column.row()
             row.alignment = 'LEFT'
             c = row.column()
@@ -224,8 +232,7 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
             row.prop(rprops, "whitewater_particle_object_mode", expand=True)
             row = column2.row(align=True)
             row.enabled = rprops.whitewater_particle_object_mode == 'WHITEWATER_PARTICLE_CUSTOM'
-            row.prop_search(rprops, "whitewater_particle_object", 
-                            bpy.data, "objects", text="")
+            row.prop(rprops, "whitewater_particle_object", text="")
             row = column.row()
             row.prop(rprops, "whitewater_particle_scale", text="Particle Scale")
             row.prop(rprops, "only_display_whitewater_in_render", text="Hide particles in viewport")
@@ -240,8 +247,7 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
             row.prop(rprops, "foam_particle_object_mode", expand=True)
             row = column2.row(align=True)
             row.enabled = rprops.foam_particle_object_mode == 'WHITEWATER_PARTICLE_CUSTOM'
-            row.prop_search(rprops, "foam_particle_object", 
-                            bpy.data, "objects", text="")
+            row.prop(rprops, "foam_particle_object", text="")
             row = column.row()
             row.prop(rprops, "foam_particle_scale", text="Particle Scale")
             row.prop(rprops, "only_display_foam_in_render", text="Hide particles in viewport")
@@ -256,8 +262,7 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
             row.prop(rprops, "bubble_particle_object_mode", expand=True)
             row = column2.row(align=True)
             row.enabled = rprops.bubble_particle_object_mode == 'WHITEWATER_PARTICLE_CUSTOM'
-            row.prop_search(rprops, "bubble_particle_object", 
-                            bpy.data, "objects", text="")
+            row.prop(rprops, "bubble_particle_object", text="")
             row = column.row()
             row.prop(rprops, "bubble_particle_scale", text="Particle Scale")
             row.prop(rprops, "only_display_bubble_in_render", text="Hide particles in viewport")
@@ -272,8 +277,7 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
             row.prop(rprops, "spray_particle_object_mode", expand=True)
             row = column2.row(align=True)
             row.enabled = rprops.spray_particle_object_mode == 'WHITEWATER_PARTICLE_CUSTOM'
-            row.prop_search(rprops, "spray_particle_object", 
-                            bpy.data, "objects", text="")
+            row.prop(rprops, "spray_particle_object", text="")
             row = column.row()
             row.prop(rprops, "spray_particle_scale", text="Particle Scale")
             row.prop(rprops, "only_display_spray_in_render", text="Hide particles in viewport")
@@ -288,8 +292,7 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
             row.prop(rprops, "dust_particle_object_mode", expand=True)
             row = column2.row(align=True)
             row.enabled = rprops.dust_particle_object_mode == 'WHITEWATER_PARTICLE_CUSTOM'
-            row.prop_search(rprops, "dust_particle_object", 
-                            bpy.data, "objects", text="")
+            row.prop(rprops, "dust_particle_object", text="")
             row = column.row()
             row.prop(rprops, "dust_particle_scale", text="Particle Scale")
             row.prop(rprops, "only_display_dust_in_render", text="Hide particles in viewport")
@@ -334,6 +337,11 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
                 text="Whitewater particles are not rendered in preview render", 
                 icon="WORLD"
             ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Scene-Troubleshooting#whitewater-particles-are-not-rendered-when-viewport-shading-is-set-to-rendered"
+            column.operator(
+                "wm.url_open", 
+                text="Simulation meshes not appearing in viewport/render", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Scene-Troubleshooting#simulation-meshes-are-not-appearing-in-the-viewport-andor-render"
 
         self.draw_surface_display_settings(context)
         self.draw_whitewater_display_settings(context)

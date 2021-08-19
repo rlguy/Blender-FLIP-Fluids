@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -52,9 +52,19 @@ def get_current_render_frame():
     if dprops is None:
         return 0 
 
+    """
+    # https://developer.blender.org/T71908 currently breaks
+    # this return due to incorrect frame number that is not
+    # available on render_pre.
+    #
+    # Reason for this return is to prevent the Blender compositor
+    # from changing frames while rendering a single frame, but this
+    # use case is rare.
+
     if is_rendering():
         global RENDER_PRE_FRAME_NUMBER
         return RENDER_PRE_FRAME_NUMBER
+    """
 
     return get_current_simulation_frame()
 
@@ -94,14 +104,29 @@ def __update_surface_display_mode():
         render_blur = IS_RENDERING and dprops.render.render_surface_motion_blur
         surface_cache.enable_motion_blur = render_blur
         surface_cache.motion_blur_scale = dprops.render.surface_motion_blur_scale
+        surface_cache.enable_velocity_attribute = dprops.surface.enable_velocity_vector_attribute
+        surface_cache.enable_speed_attribute = dprops.surface.enable_speed_attribute
+        surface_cache.enable_age_attribute = dprops.surface.enable_age_attribute
+        surface_cache.enable_color_attribute = dprops.surface.enable_color_attribute
+        surface_cache.enable_source_id_attribute = dprops.surface.enable_source_id_attribute
     elif display_mode == 'DISPLAY_PREVIEW':
         surface_cache.mesh_prefix = "preview"
         surface_cache.mesh_display_name_prefix = "preview_"
         surface_cache.enable_motion_blur = False
+        surface_cache.enable_velocity_attribute = False
+        surface_cache.enable_speed_attribute = False
+        surface_cache.enable_age_attribute = False
+        surface_cache.enable_color_attribute = False
+        surface_cache.enable_source_id_attribute = False
     elif display_mode == 'DISPLAY_NONE':
         surface_cache.mesh_prefix = "none"
         surface_cache.mesh_display_name_prefix = "none_"
         surface_cache.enable_motion_blur = False
+        surface_cache.enable_velocity_attribute = False
+        surface_cache.enable_speed_attribute = False
+        surface_cache.enable_age_attribute = False
+        surface_cache.enable_color_attribute = False
+        surface_cache.enable_source_id_attribute = False
 
 
 def __load_surface_frame(frameno, force_reload=False, depsgraph=None):
@@ -182,6 +207,26 @@ def __update_whitewater_display_mode():
         cache.bubble.motion_blur_scale = dprops.render.whitewater_motion_blur_scale
         cache.spray.motion_blur_scale = dprops.render.whitewater_motion_blur_scale
         cache.dust.motion_blur_scale = dprops.render.whitewater_motion_blur_scale
+        cache.foam.enable_velocity_attribute = False
+        cache.bubble.enable_velocity_attribute = False
+        cache.spray.enable_velocity_attribute = False
+        cache.dust.enable_velocity_attribute = False
+        cache.foam.enable_speed_attribute = False
+        cache.bubble.enable_speed_attribute = False
+        cache.spray.enable_speed_attribute = False
+        cache.dust.enable_speed_attribute = False
+        cache.foam.enable_age_attribute = False
+        cache.bubble.enable_age_attribute = False
+        cache.spray.enable_age_attribute = False
+        cache.dust.enable_age_attribute = False
+        cache.foam.enable_color_attribute = False
+        cache.bubble.enable_color_attribute = False
+        cache.spray.enable_color_attribute = False
+        cache.dust.enable_color_attribute = False
+        cache.foam.enable_source_id_attribute = False
+        cache.bubble.enable_source_id_attribute = False
+        cache.spray.enable_source_id_attribute = False
+        cache.dust.enable_source_id_attribute = False
     elif display_mode == 'DISPLAY_PREVIEW':
         cache.foam.mesh_prefix = "foam"
         cache.bubble.mesh_prefix = "bubble"
@@ -195,6 +240,26 @@ def __update_whitewater_display_mode():
         cache.bubble.enable_motion_blur = False
         cache.spray.enable_motion_blur = False
         cache.dust.enable_motion_blur = False
+        cache.foam.enable_velocity_attribute = False
+        cache.bubble.enable_velocity_attribute = False
+        cache.spray.enable_velocity_attribute = False
+        cache.dust.enable_velocity_attribute = False
+        cache.foam.enable_speed_attribute = False
+        cache.bubble.enable_speed_attribute = False
+        cache.spray.enable_speed_attribute = False
+        cache.dust.enable_speed_attribute = False
+        cache.foam.enable_age_attribute = False
+        cache.bubble.enable_age_attribute = False
+        cache.spray.enable_age_attribute = False
+        cache.dust.enable_age_attribute = False
+        cache.foam.enable_color_attribute = False
+        cache.bubble.enable_color_attribute = False
+        cache.spray.enable_color_attribute = False
+        cache.dust.enable_color_attribute = False
+        cache.foam.enable_source_id_attribute = False
+        cache.bubble.enable_source_id_attribute = False
+        cache.spray.enable_source_id_attribute = False
+        cache.dust.enable_source_id_attribute = False
     elif display_mode == 'DISPLAY_NONE':
         cache.foam.mesh_prefix = "foam_none"
         cache.bubble.mesh_prefix = "bubble_none"
@@ -208,6 +273,26 @@ def __update_whitewater_display_mode():
         cache.bubble.enable_motion_blur = False
         cache.spray.enable_motion_blur = False
         cache.dust.enable_motion_blur = False
+        cache.foam.enable_velocity_attribute = False
+        cache.bubble.enable_velocity_attribute = False
+        cache.spray.enable_velocity_attribute = False
+        cache.dust.enable_velocity_attribute = False
+        cache.foam.enable_speed_attribute = False
+        cache.bubble.enable_speed_attribute = False
+        cache.spray.enable_speed_attribute = False
+        cache.dust.enable_speed_attribute = False
+        cache.foam.enable_age_attribute = False
+        cache.bubble.enable_age_attribute = False
+        cache.spray.enable_age_attribute = False
+        cache.dust.enable_age_attribute = False
+        cache.foam.enable_color_attribute = False
+        cache.bubble.enable_color_attribute = False
+        cache.spray.enable_color_attribute = False
+        cache.dust.enable_color_attribute = False
+        cache.foam.enable_source_id_attribute = False
+        cache.bubble.enable_source_id_attribute = False
+        cache.spray.enable_source_id_attribute = False
+        cache.dust.enable_source_id_attribute = False
 
     foam_pct, bubble_pct, spray_pct, dust_pct = __get_whitewater_display_percentages()
     cache.foam.wwp_import_percentage = foam_pct
@@ -281,16 +366,16 @@ def __get_whitewater_particle_object_geometry(whitewater_type):
 
     if whitewater_type == 'FOAM':
         particle_mode = rprops.foam_particle_object_mode
-        particle_object_name = rprops.foam_particle_object
+        particle_object = rprops.foam_particle_object
     elif whitewater_type == 'BUBBLE':
         particle_mode = rprops.bubble_particle_object_mode
-        particle_object_name = rprops.bubble_particle_object
+        particle_object = rprops.bubble_particle_object
     elif whitewater_type == 'SPRAY':
         particle_mode = rprops.spray_particle_object_mode
-        particle_object_name = rprops.spray_particle_object
+        particle_object = rprops.spray_particle_object
     elif whitewater_type == 'DUST':
         particle_mode = rprops.dust_particle_object_mode
-        particle_object_name = rprops.dust_particle_object
+        particle_object = rprops.dust_particle_object
 
     merge_settings = rprops.whitewater_particle_object_settings_mode == 'WHITEWATER_OBJECT_SETTINGS_WHITEWATER'
     if merge_settings:
@@ -306,9 +391,9 @@ def __get_whitewater_particle_object_geometry(whitewater_type):
             return __generate_cube_geometry()
     else:
         if merge_settings:
-            object_name = rprops.whitewater_particle_object
+            object_name = rprops.whitewater_particle_object.name
         else:
-            object_name = particle_object_name
+            object_name = particle_object.name
         bl_object = bpy.data.objects.get(object_name)
 
         if bl_object is not None:
@@ -475,7 +560,7 @@ def __load_obstacle_debug_frame(frameno, force_reload=False):
         return
 
     dprops = __get_domain_properties()
-    if not dprops.debug.export_internal_obstacle_mesh:
+    if not dprops.debug.export_internal_obstacle_mesh or not dprops.debug.internal_obstacle_mesh_visibility:
         return
 
     force_load = force_reload or IS_RENDERING

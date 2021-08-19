@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -82,6 +82,7 @@ def draw_bake_operator_UI_element(context, ui_box):
             if simprops.get_num_savestate_enums() < 100:
                 column_left.prop(simprops, "selected_savestate", text="")
             else:
+                column_right.alert = False
                 row = column_left.row(align=True)
                 row.prop(simprops, "selected_savestate_int", text="Resume from frame")
                 column_right.label(text=simprops.selected_savestate_int_label)
@@ -283,9 +284,11 @@ class FLIPFLUID_PT_DomainTypePanel(bpy.types.Panel):
         dprops = obj.flip_fluid.domain
         sprops = dprops.simulation
         wprops = dprops.world
+        aprops = dprops.advanced
         show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
+        show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
 
-        box.label(text="Domain Simulation Grid")
+        box.label(text="Domain Simulation Grid:")
 
         subbox = box.box()
         column = subbox.column(align=True)
@@ -322,6 +325,19 @@ class FLIPFLUID_PT_DomainTypePanel(bpy.types.Panel):
             column.label(text=indent*" " + "     Cache resolution:    " + str(old_resolution))
             column.label(text=indent*" " + "     Current resolution:  " + str(sprops.resolution))
 
+        subbox = box.box()
+        column = subbox.column(align=True)
+        column.label(text="Simulation Method:")
+        row = subbox.row(align=True)
+        row.prop(aprops, "velocity_transfer_method", expand=True)
+
+        if show_documentation:
+            column = subbox.column(align=True)
+            column.operator(
+                "wm.url_open", 
+                text="FLIP vs APIC", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Advanced-Settings#flip-vs-apic"
         
         subbox = box.box()
         column = subbox.column(align=True)
@@ -344,6 +360,15 @@ class FLIPFLUID_PT_DomainTypePanel(bpy.types.Panel):
             row.alignment = 'RIGHT'
             row.label(text="Domain Length = ")
             column_right.prop(wprops, "world_scale_absolute")
+
+
+        if show_documentation:
+            column = subbox.column(align=True)
+            column.operator(
+                    "wm.url_open", 
+                    text="World Scaling Documentation", 
+                    icon="WORLD"
+                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-World-Settings#world-size"
 
         subbox = box.box()
         row = subbox.row()
@@ -416,6 +441,14 @@ class FLIPFLUID_PT_DomainTypePanel(bpy.types.Panel):
             column_right.label(text=dimensions_str)
             column_right.label(text=voxel_size_str)
             column_right.label(text=voxel_count_str)
+
+        if show_documentation:
+            column = subbox.column(align=True)
+            column.operator(
+                    "wm.url_open", 
+                    text="What is the simulation grid?", 
+                    icon="WORLD"
+                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Simulation-Settings#what-is-the-domain-simulation-grid"
 
 
     def draw_time_settings(self, context, box):

@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,12 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, os, glob, json, threading, shutil
+import bpy, os, glob, json, threading
 
 from .. import bake
 from ..objects import flip_fluid_geometry_exporter
 from .. import export
 from ..utils import installation_utils
+from ..filesystem import filesystem_protection_layer as fpl
+from ..utils import version_compatibility_utils as vcu
 
 _IS_BAKE_OPERATOR_RUNNING = False
 
@@ -39,19 +41,12 @@ def is_bake_operator_running():
     return _IS_BAKE_OPERATOR_RUNNING
 
 
-def _delete_cache_file(filepath):
-    try:
-        os.remove(filepath)
-    except OSError:
-        pass
-
-
 def _update_stats(context):
     dprops = bpy.context.scene.flip_fluid.get_domain_properties()
     cache_dir = dprops.cache.get_cache_abspath()
     statsfilepath = os.path.join(cache_dir, dprops.stats.stats_filename)
     if not os.path.isfile(statsfilepath):
-        with open(statsfilepath, 'w') as f:
+        with open(statsfilepath, 'w', encoding='utf-8') as f:
             f.write(json.dumps({}, sort_keys=True, indent=4))
 
     temp_dir = os.path.join(cache_dir, "temp")
@@ -60,13 +55,13 @@ def _update_stats(context):
     if not stat_files:
         return
 
-    with open(statsfilepath, 'r') as f:
+    with open(statsfilepath, 'r', encoding='utf-8') as f:
         stats_dict = json.loads(f.read())
 
     for statpath in stat_files:
         filename = os.path.basename(statpath)
         frameno = int(filename[len("framestats"):-len(".data")])
-        with open(statpath, 'r') as frame_stats:
+        with open(statpath, 'r', encoding='utf-8') as frame_stats:
             try:
                 frame_stats_dict = json.loads(frame_stats.read())
             except:
@@ -75,9 +70,9 @@ def _update_stats(context):
                 # process the next time stats are updated.
                 continue
             stats_dict[str(frameno)] = frame_stats_dict
-        _delete_cache_file(statpath)
+        fpl.delete_file(statpath, error_ok=True)
 
-    with open(statsfilepath, 'w') as f:
+    with open(statsfilepath, 'w', encoding='utf-8') as f:
             f.write(json.dumps(stats_dict, sort_keys=True, indent=4))
 
     dprops.stats.is_stats_current = False
@@ -133,13 +128,6 @@ class BakeFluidSimulation(bpy.types.Operator):
         dprops.bake.num_baked_frames = 0
         dprops.stats.refresh_stats()
         self.data.reset()
-
-
-    def _delete_cache_file(self, filepath):
-        try:
-            os.remove(filepath)
-        except OSError:
-            pass
 
 
     def _initialize_domain_properties_frame_range(self, context):
@@ -454,27 +442,23 @@ class BakeFluidSimulationCommandLine(bpy.types.Operator):
                 return
 
 
-    def _delete_cache_file(self, filepath):
-        try:
-            os.remove(filepath)
-        except OSError:
-            pass
-
-
     def _update_simulation_stats(self, context):
         _update_stats(context)
 
 
     def _run_fluid_simulation(self, context):
+        preferences = vcu.get_addon_preferences()
+
         print("Running fluid simulation...")
         dprops = self._get_domain_properties()
         savestate_id = dprops.simulation.get_selected_savestate_id()
+        max_baking_retries = preferences.cmd_bake_max_attempts
         cache_directory = dprops.cache.get_cache_abspath()
         dprops.bake.export_filepath = self._get_export_filepath()
         self.data.progress = 0.0
         self.data.is_console_output_enabled = True
         self._update_simulation_stats(context)
-        bake.bake(dprops.bake.export_filepath, cache_directory, self.data, savestate_id)
+        bake.bake(dprops.bake.export_filepath, cache_directory, self.data, savestate_id, max_baking_retries)
         self._update_simulation_stats(context)
 
 
@@ -549,44 +533,25 @@ class FlipFluidResetBake(bpy.types.Operator):
                       " operation will delete previously baked simulation data.")
 
 
-    def _delete_cache_file(self, filepath):
-        try:
-            os.remove(filepath)
-        except OSError:
-            pass
-
-
-    def _delete_cache_directory(self, directory, extension):
-        if not os.path.isdir(directory):
-            return
-        
-        for f in os.listdir(directory):
-            if f.endswith(extension):
-                self._delete_cache_file(os.path.join(directory, f))
-
-        if len(os.listdir(directory)) == 0:
-            os.rmdir(directory)
-
-
     def _clear_cache(self, context):
         dprops = bpy.context.scene.flip_fluid.get_domain_properties()
-        cache_dir = dprops.cache.get_cache_abspath()
+        cache_directory = dprops.cache.get_cache_abspath()
+        fpl.clear_cache_directory(cache_directory, 
+            clear_export=False, 
+            clear_logs=False, 
+            remove_directory=False
+            )
 
-        statsfilepath = os.path.join(cache_dir, dprops.stats.stats_filename)
-        self._delete_cache_file(statsfilepath)
 
-        bakefiles_dir = os.path.join(cache_dir, "bakefiles")
-        self._delete_cache_directory(bakefiles_dir, ".bbox")
-        self._delete_cache_directory(bakefiles_dir, ".bobj")
-        self._delete_cache_directory(bakefiles_dir, ".wwp")
-        self._delete_cache_directory(bakefiles_dir, ".fpd")
-        self._delete_cache_directory(bakefiles_dir, ".ffd")
+    def _reset_property_data(self):
+        dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+        dprops.mesh_cache.reset_cache_objects()
+        dprops.stats.refresh_stats()
+        dprops.stats.reset_time_remaining()
+        dprops.stats.reset_stats_values()
+        dprops.bake.check_autosave()
+        dprops.render.reset_bake()
 
-        temp_dir = os.path.join(cache_dir, "temp")
-        self._delete_cache_directory(temp_dir, ".data")
-
-        savestates_dir = os.path.join(cache_dir, "savestates")
-        shutil.rmtree(savestates_dir)
 
 
     @classmethod
@@ -601,21 +566,15 @@ class FlipFluidResetBake(bpy.types.Operator):
         dprops = bpy.context.scene.flip_fluid.get_domain_properties()
         cache_path = dprops.cache.get_cache_abspath()
         if not os.path.isdir(cache_path):
-            self.report({"ERROR"}, "Current cache directory does not exist")
-            return {'CANCELLED'}
+            self._reset_property_data()
+            self.report({"INFO"}, "Current cache directory does not exist - skipping cache reset")
+            return {'FINISHED'}
+
         dprops.cache.mark_cache_directory_set()
-
         self._clear_cache(context)
-        dprops.mesh_cache.reset_cache_objects()
-        
+        self._reset_property_data()
+
         self.report({"INFO"}, "Successfully reset bake")
-
-        dprops.stats.refresh_stats()
-        dprops.stats.reset_time_remaining()
-        dprops.stats.reset_stats_values()
-        dprops.bake.check_autosave()
-        dprops.render.reset_bake()
-
         return {'FINISHED'}
 
 

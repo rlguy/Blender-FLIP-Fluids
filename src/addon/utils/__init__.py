@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ if "bpy" in locals():
         'installation_utils',
         'version_compatibility_utils',
         'cache_utils',
+        'api_workaround_utils',
     ]
     for module_name in reloadable_modules:
         if module_name in locals():
@@ -37,4 +38,5 @@ from . import (
     installation_utils,
     version_compatibility_utils,
     cache_utils,
+    api_workaround_utils,
     )

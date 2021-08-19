@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -76,6 +76,13 @@ class DomainAdvancedProperties(bpy.types.PropertyGroup):
             " initial fluid shape",
             default=False,
             ); exec(conv("jitter_surface_particles"))
+    velocity_transfer_method = EnumProperty(
+            name="Velocity Transfer Method",
+            description="Simulation method to use",
+            items=types.velocity_transfer_methods,
+            default='VELOCITY_TRANSFER_METHOD_FLIP',
+            options={'HIDDEN'},
+            ); exec(conv("velocity_transfer_method"))
     PICFLIP_ratio = FloatProperty(
             name="PIC/FLIP Ratio",
             description="Ratio of PIC velocity to FLIP velocity update mixture."
@@ -88,6 +95,14 @@ class DomainAdvancedProperties(bpy.types.PropertyGroup):
             precision=2,
             subtype='FACTOR',
             ); exec(conv("PICFLIP_ratio"))
+    PICAPIC_ratio = FloatProperty(
+            name="PIC/APIC Ratio",
+            description="Placeholder",
+            min=0.0, max=1.0,
+            default=0.00,
+            precision=2,
+            subtype='FACTOR',
+            ); exec(conv("PICAPIC_ratio"))
     CFL_condition_number = IntProperty(
             name="Safety Factor (CFL Number)",
             description="Maximum number of grid cells a particle can travel"
@@ -167,6 +182,15 @@ class DomainAdvancedProperties(bpy.types.PropertyGroup):
             options={'HIDDEN'},
             ); exec(conv("disable_changing_topology_warning"))
 
+    surface_tension_substeps_exceeded_tooltip = BoolProperty(
+            name="Warning: Not Enough Max Substeps", 
+            description="The estimated number of Surface Tension substeps per frame exceeds the Max Frame"
+                " Substeps value. This can cause an unstable simulation. Either decrease the amount of"
+                " Surface Tension in the FLIP Fluid World panel to lower the number of required substeps or"
+                " increase the number of allowed Max Frame Substeps in the FLIP Fluid Advanced panel", 
+            default=True,
+            ); exec(conv("surface_tension_substeps_exceeded_tooltip"))
+
 
     def register_preset_properties(self, registry, path):
         add = registry.add_property
@@ -175,7 +199,9 @@ class DomainAdvancedProperties(bpy.types.PropertyGroup):
         add(path + ".enable_adaptive_force_field_time_stepping", "Adaptive Force Field Stepping",      group_id=0)
         add(path + ".particle_jitter_factor",                    "Jitter Factor",                      group_id=0)
         add(path + ".jitter_surface_particles",                  "Jitter Surface Particles",           group_id=0)
+        add(path + ".velocity_transfer_method",                  "Velocity Transfer Method",           group_id=0)
         add(path + ".PICFLIP_ratio",                             "PIC/FLIP Ratio",                     group_id=0)
+        add(path + ".PICAPIC_ratio",                             "PIC/APIC Ratio",                     group_id=0)
         add(path + ".CFL_condition_number",                      "CFL",                                group_id=0)
         add(path + ".enable_extreme_velocity_removal",           "Enable Extreme Velocity Removal",    group_id=0)
         add(path + ".enable_gpu_features",                       "Enable GPU Features",                group_id=1)

@@ -1,6 +1,6 @@
 # MIT License
 # 
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -184,3 +184,30 @@ class MeshObject():
         libfunc = lib.MeshObject_set_object_velocity_influence
         pb.init_lib_func(libfunc, [c_void_p, c_float, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), value])
+
+    @property
+    def source_id(self):
+        libfunc = lib.MeshObject_get_source_id
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @source_id.setter
+    def source_id(self, n):
+        libfunc = lib.MeshObject_set_source_id
+        pb.init_lib_func(libfunc, [c_void_p, c_int, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), int(n)])
+
+    def get_source_color(self):
+        libfunc = lib.MeshObject_get_source_color
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], Vector3_t)
+        cvect = pb.execute_lib_func(libfunc, [self()])
+        return Vector3.from_struct(cvect)
+
+    @decorators.xyz_or_vector
+    def set_source_color(self, r, g, b):
+        libfunc = lib.MeshObject_set_source_color
+        pb.init_lib_func(
+            libfunc, 
+            [c_void_p, c_double, c_double, c_double, c_void_p], None
+        )
+        pb.execute_lib_func(libfunc, [self(), r, g, b])

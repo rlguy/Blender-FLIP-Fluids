@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2020 Ryan L. Guy
+Copyright (C) 2021 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -251,6 +251,22 @@ RigidBodyVelocity MeshFluidSource::getRigidBodyVelocity(double framedt) {
 
 int MeshFluidSource::getID() {
     return _ID;
+}
+
+void MeshFluidSource::setSourceID(int id) {
+    _meshObject.setSourceID(id);
+}
+
+int MeshFluidSource::getSourceID() {
+    return _meshObject.getSourceID();
+}
+
+void MeshFluidSource::setSourceColor(vmath::vec3 c) {
+    _meshObject.setSourceColor(c);
+}
+
+vmath::vec3 MeshFluidSource::getSourceColor() {
+    return _meshObject.getSourceColor();
 }
 
 void MeshFluidSource::_initializeID() {

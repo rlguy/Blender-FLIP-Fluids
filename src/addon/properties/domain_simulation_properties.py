@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -205,25 +205,37 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
 
     grid_voxels_tooltip = BoolProperty(
             name="Grid Voxels Tooltip", 
-            description="The domain is a 3D grid of cubes called voxels, or cells. This info shows the number of voxels on each of the X/Y/Z axis of the domain. The voxels in the 3D grid are similar to the 2D pixels in a 2D image. Instead of storing color data, the voxels store physics data", 
+            description="The domain is a 3D grid of cubes called voxels, or cells. This info shows the"
+            " number of voxels on each of the X/Y/Z axis of the domain. The voxels in the 3D grid are"
+            " similar to the 2D pixels in a 2D image, except instead of storing color data, the voxels store"
+            " physics data", 
             default=True,
             ); exec(conv("grid_voxels_tooltip"))
 
     grid_dimensions_tooltip = BoolProperty(
             name="Grid Dimensions Tooltip", 
-            description="Displays the physical scale of the domain on the X/Y/Z axis in meters. Setting an appropriate scale can be an important factor for realistic motion and speed of your simulated fluid", 
+            description="Displays the physical scale of the domain on the X/Y/Z axis in meters."
+            " Setting an appropriate scale can be an important factor for realistic motion and speed"
+            " of your simulated fluid", 
             default=True,
             ); exec(conv("grid_dimensions_tooltip"))
 
     grid_voxel_size_tooltip = BoolProperty(
             name="Voxel Size Tooltip", 
-            description="Displays the physical size of a single voxel. You can think of a voxel as being the 3D version of a 2D image pixel. In an image, the pixel size is the minimum amount of detail that can be resolved in the picture. In the domain, the voxel size is the minimum amount of physics detail that can be resolved in the simulation such as the smallest droplets and ripples or the thinnest splashes", 
+            description="Displays the physical size of a single voxel. You can think of a voxel as"
+            " the 3D version of a 2D image pixel. In an image, the pixel size is the minimum"
+            " amount of detail that can be resolved in the picture. In the domain, the voxel size is"
+            " the minimum amount of physics detail that can be resolved in the simulation such as the"
+            " smallest droplets and ripples or the thinnest splashes", 
             default=True,
             ); exec(conv("grid_voxel_size_tooltip"))
 
     grid_voxel_count_tooltip = BoolProperty(
             name="Voxel Count Tooltip", 
-            description="Displays the total number of voxels in the domain. Physics are computed each voxel and the total count can be a measure for how much work your system will be doing. Small simulation = around 2 million. Medium =  around 10M. Large = around 40M. Very Large = over 80M", 
+            description="Displays the total number of voxels in the domain. Physics are computed for each"
+            " voxel and the total count can be a measure for how much work your system will be doing."
+            " Small simulation = around 2 Million. Medium = around 10M. Large = around 40M."
+            " Very Large = over 80M", 
             default=True,
             ); exec(conv("grid_voxel_count_tooltip"))
 
@@ -532,7 +544,7 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
         if not os.path.isfile(autosave_info_file):
             return
 
-        with open(autosave_info_file, 'r') as f:
+        with open(autosave_info_file, 'r', encoding='utf-8') as f:
             autosave_info = json.loads(f.read())
 
         try:

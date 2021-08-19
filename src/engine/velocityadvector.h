@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2020 Ryan L. Guy
+Copyright (C) 2021 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -58,13 +58,22 @@ USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "blockarray3d.h"
 #include "boundedbuffer.h"
 #include "macvelocityfield.h"
+#include "particlesystem.h"
+
+
+enum class VelocityAdvectorTransferMethod : char { 
+    FLIP = 0x00, 
+    APIC = 0x01
+};
 
 struct VelocityAdvectorParameters {
-    FragmentedVector<MarkerParticle> *particles;
+    ParticleSystem *particles;
     MACVelocityField *vfield;
     ValidVelocityComponentGrid *validVelocities;
     double particleRadius = 1.0;
+    VelocityAdvectorTransferMethod velocityTransferMethod = VelocityAdvectorTransferMethod::FLIP;
 };
+
 
 class VelocityAdvector {
 
@@ -109,9 +118,22 @@ private:
                     : x(px), y(py), z(pz), v(vel) {}
     };
 
+    struct AffineData {
+        float x = 0.0f;
+        float y = 0.0f;
+        float z = 0.0f;
+
+        AffineData() {}
+        AffineData(float vx, float vy, float vz)
+                    : x(vx), y(vy), z(vz) {}
+        AffineData(vmath::vec3 v)
+                    : x(v.x), y(v.y), z(v.z) {}
+    };
+
     struct ComputeBlock {
         GridBlock<ScalarData> gridBlock;
-        PointData *particleData;
+        PointData *particleData = nullptr;
+        AffineData *affineData = nullptr;
         int numParticles = 0;
         float radius = 0.0f;
     };
@@ -134,18 +156,31 @@ private:
                                      Direction dir);
     void _sortParticlesIntoBlocks(ParticleGridCountData &countdata, 
                                   std::vector<PointData> &sortedParticleData, 
+                                  std::vector<AffineData> &sortedAffineData, 
                                   std::vector<int> &blockToParticleIndex,
                                   Direction dir);
 
-    void _advectionProducerThread(BoundedBuffer<ComputeBlock> *blockQueue, 
+    void _advectionFLIPProducerThread(BoundedBuffer<ComputeBlock> *blockQueue, 
                                   BoundedBuffer<ComputeBlock> *finishedBlockQueue);
+    void _advectionAPICProducerThread(BoundedBuffer<ComputeBlock> *blockQueue, 
+                                      BoundedBuffer<ComputeBlock> *finishedBlockQueue);
+
+    inline bool _isFLIP() { return _velocityTransferMethod == VelocityAdvectorTransferMethod::FLIP; }
+    inline bool _isAPIC() { return _velocityTransferMethod == VelocityAdvectorTransferMethod::APIC; }
 
     // Parameters
-    FragmentedVector<MarkerParticle> *_particles;
+    ParticleSystem *_particles;
     MACVelocityField *_vfield;
     ValidVelocityComponentGrid *_validVelocities;
     std::vector<vmath::vec3> _points;
     std::vector<vmath::vec3> _velocities;
+    VelocityAdvectorTransferMethod _velocityTransferMethod = VelocityAdvectorTransferMethod::FLIP;
+
+    // APIC Data
+    std::vector<vmath::vec3> _affineX;
+    std::vector<vmath::vec3> _affineY;
+    std::vector<vmath::vec3> _affineZ;
+
     double _dx = 0.0;
     double _chunkdx = 0.0;
     double _particleRadius = 0.0;

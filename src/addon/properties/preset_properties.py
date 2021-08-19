@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -822,7 +822,7 @@ class ExportPresetPackageSettings(bpy.types.PropertyGroup):
     export_directory = StringProperty(
             name="",
             description="Preset package will be exported to this directory",
-            default=vcu.get_blender_preferences(bpy.context).filepaths.temporary_directory, 
+            default=vcu.get_blender_preferences_temporary_directory(), 
             subtype='DIR_PATH',
             ); exec(conv("export_directory"))
     export_filename = StringProperty(

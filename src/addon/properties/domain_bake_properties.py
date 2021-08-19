@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -92,14 +92,14 @@ class DomainBakeProperties(bpy.types.PropertyGroup):
             return
 
         try:
-            with open(autosave_info_file, 'r') as f:
+            with open(autosave_info_file, 'r', encoding='utf-8') as f:
                 autosave_info = json.loads(f.read())
         except:
             # Autosave file might not be completely written. Wait and try again.
             import time
             time.sleep(0.25)
             try:
-                with open(autosave_info_file, 'r') as f:
+                with open(autosave_info_file, 'r', encoding='utf-8') as f:
                     autosave_info = json.loads(f.read())
             except:
                 # skip this autosave frame if it still cannot be read. The autosave
@@ -144,8 +144,9 @@ class DomainBakeProperties(bpy.types.PropertyGroup):
         dprops = bpy.context.scene.flip_fluid.get_domain_properties()
         cache_directory = dprops.cache.get_cache_abspath()
         savestates_directory = os.path.join(cache_directory, "savestates")
-        subdirs = os.listdir(savestates_directory)
-        subdirs.remove("autosave")
+        subdirs = [d for d in os.listdir(savestates_directory) if os.path.isdir(os.path.join(savestates_directory, d))]
+        if "autosave" in subdirs:
+            subdirs.remove("autosave")
         autosave_frame = self.autosave_frame
 
         savestate_frames = []

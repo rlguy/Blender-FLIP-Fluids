@@ -68,6 +68,7 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                     row = column.row(align=True)
                     row.operator("flip_fluid_operators.relative_cache_directory")
                     row.operator("flip_fluid_operators.absolute_cache_directory")
+                    row.operator("flip_fluid_operators.match_filename_cache_directory")
                     column.separator()
                 else:
                     row = box.row(align=True)
@@ -128,17 +129,31 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
             column = box.column(align=True)
             column.operator("flip_fluid_operators.helper_remove_objects", text="Remove")
 
-            column = box.column(align=True)
+            column = box.column()
             column.label(text="Object Display:")
             row = column.row(align=True)
             row.operator(
                     "flip_fluid_operators.helper_set_object_viewport_display", 
-                    text="Solid"
+                    text="Solid",
+                    icon="MESH_CUBE" if vcu.is_blender_28() else "NONE"
                     ).display_mode="DISPLAY_MODE_SOLID"
             row.operator(
                     "flip_fluid_operators.helper_set_object_viewport_display", 
-                    text="Wireframe"
+                    text="Wireframe",
+                    icon="CUBE" if vcu.is_blender_28() else "NONE"
                     ).display_mode="DISPLAY_MODE_WIREFRAME"
+
+            row = column.row(align=True)
+            row.operator(
+                    "flip_fluid_operators.helper_set_object_render_display", 
+                    text="Show Render",
+                    icon="RESTRICT_RENDER_OFF" if vcu.is_blender_28() else "NONE"
+                    ).hide_render=False
+            row.operator(
+                    "flip_fluid_operators.helper_set_object_render_display", 
+                    text="Hide Render",
+                    icon="RESTRICT_RENDER_ON" if vcu.is_blender_28() else "NONE"
+                    ).hide_render=True
 
         #
         # Select Objects
@@ -232,9 +247,18 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
             row = column.row(align=True)
             row.operator("flip_fluid_operators.helper_command_line_bake")
             row.operator("flip_fluid_operators.helper_command_line_bake_to_clipboard", text="", icon='COPYDOWN')
+            column = box.column(align=True)
             row = column.row(align=True)
             row.operator("flip_fluid_operators.helper_command_line_render")
             row.operator("flip_fluid_operators.helper_command_line_render_to_clipboard", text="", icon='COPYDOWN')
+
+            system = platform.system()
+            if system == "Windows":
+                row = column.row(align=True)
+                row.operator("flip_fluid_operators.helper_cmd_render_to_scriptfile")
+                row.operator("flip_fluid_operators.helper_run_scriptfile", text="", icon='PLAY')
+                row.operator("flip_fluid_operators.helper_open_outputfolder", text="", icon='FILE_FOLDER')
+                column.separator()
 
         #
         # Beginner Tools
@@ -263,6 +287,11 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                 ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Helper-Menu-Settings"
                 column.separator()
 
+            column.operator(
+                "wm.url_open", 
+                text="Video Learning Series", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Video-Learning-Series"
             column.operator(
                 "wm.url_open", 
                 text="Documentation and Wiki", 
@@ -410,8 +439,17 @@ class FLIPFLUID_PT_HelperPanelDisplay(bpy.types.Panel):
             row = column.row(align=True)
             row.operator("flip_fluid_operators.helper_command_line_render", text="Launch Command Line Render")
             row.operator("flip_fluid_operators.helper_command_line_render_to_clipboard", text="", icon='COPYDOWN')
-            column.separator()
-            column.separator()
+
+            system = platform.system()
+            if system == "Windows":
+                row = column.row(align=True)
+                row.operator("flip_fluid_operators.helper_cmd_render_to_scriptfile")
+                row.operator("flip_fluid_operators.helper_run_scriptfile", text="", icon='PLAY')
+                row.operator("flip_fluid_operators.helper_open_outputfolder", text="", icon='FILE_FOLDER')
+                
+                column.separator()
+                column.separator()
+
 
             if vcu.is_blender_28():
                 lock_interface = context.scene.render.use_lock_interface

@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,14 +19,34 @@ import bpy
 from bpy.props import (
         BoolProperty,
         StringProperty,
+        IntProperty,
         FloatProperty,
         CollectionProperty,
         EnumProperty
         )
 
+from ..objects import flip_fluid_map
 from ..ui import helper_ui
 from ..utils import installation_utils
 from ..utils import version_compatibility_utils as vcu
+
+
+# Due to a bug in Blender 2.93 (https://developer.blender.org/T87629), preferences
+# may not be accessible. In this case, a fake set of preferences can be used in 
+# it's place with default values. The values will be populated in 
+# FLIPFluidAddonPreferences
+FAKE_PREFERENCES = flip_fluid_map.Map({})
+
+
+def get_addon_preferences(context=None):
+    if context is None:
+        context = bpy.context
+    id_name = __name__.split(".")[0]
+    prefs = vcu.get_blender_preferences(context)
+    if id_name not in prefs.addons:
+        global FAKE_PREFERENCES
+        return FAKE_PREFERENCES
+    return prefs.addons[id_name].preferences
 
 
 class FLIPFluidGPUDevice(bpy.types.PropertyGroup):
@@ -54,6 +74,7 @@ def update_helper_category_name(self, context):
 
 
 class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
+    global FAKE_PREFERENCES
     bl_idname = __name__.split(".")[0]
 
     enable_helper = BoolProperty(
@@ -65,6 +86,7 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
                 options={'HIDDEN'},
                 )
     exec(vcu.convert_attribute_to_28("enable_helper"))
+    FAKE_PREFERENCES.enable_helper = True
 
     helper_category_name = StringProperty(
                 name="Panel Category",
@@ -73,6 +95,7 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
                 update=lambda self, context: self._update_helper_category_name(context),
                 )
     exec(vcu.convert_attribute_to_28("helper_category_name"))
+    FAKE_PREFERENCES.helper_category_name = "FLIP Fluids"
 
     beginner_friendly_mode = BoolProperty(
                 name="Beginner Friendly Mode",
@@ -85,6 +108,7 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
                 options={'HIDDEN'},
                 )
     exec(vcu.convert_attribute_to_28("beginner_friendly_mode"))
+    FAKE_PREFERENCES.beginner_friendly_mode = False
 
     beginner_friendly_mode_tooltip = BoolProperty(
             name="Beginner Friendly Mode Tooltip", 
@@ -94,6 +118,7 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
             default=True,
             ); 
     exec(vcu.convert_attribute_to_28("beginner_friendly_mode_tooltip"))
+    FAKE_PREFERENCES.beginner_friendly_mode_tooltip = True
 
     show_documentation_in_ui = BoolProperty(
                 name="Display documentation links in UI",
@@ -103,6 +128,7 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
                 options={'HIDDEN'},
                 )
     exec(vcu.convert_attribute_to_28("show_documentation_in_ui"))
+    FAKE_PREFERENCES.show_documentation_in_ui = False
 
     engine_debug_mode = BoolProperty(
             name="Engine Debug Mode", 
@@ -115,6 +141,36 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
             default=False,
             ); 
     exec(vcu.convert_attribute_to_28("engine_debug_mode"))
+    FAKE_PREFERENCES.engine_debug_mode = False
+
+    enable_experimental_build_warning = BoolProperty(
+            name="Show Experimental Build Warning", 
+            description="Disable to hide the experimental build warning/notification in the Physics menu", 
+            default=True,
+            ); 
+    exec(vcu.convert_attribute_to_28("enable_experimental_build_warning"))
+    FAKE_PREFERENCES.enable_experimental_build_warning = True
+
+    enable_developer_tools = BoolProperty(
+            name="Enable Developer Tools", 
+            description="Enable Developer Tools. Enable to unlock features that may be experimental, not yet completed,"
+                " or considered unstable. Not recommended for production use", 
+            default=False,
+            ); 
+    exec(vcu.convert_attribute_to_28("enable_developer_tools"))
+    FAKE_PREFERENCES.enable_developer_tools = False
+
+    cmd_bake_max_attempts = IntProperty(
+            name="Max Attempts",
+            description="When using the command line baking operator, if a bake fails due to a crash or an error, attempt"
+                " to automatically re-launch and resume the baking process. This value is the maximum number of attempts that"
+                " the addon will try to resume the baking process. Set a value greater than 0 to activate",
+            min=0,
+            default=5,
+            options={'HIDDEN'},
+            )
+    exec(vcu.convert_attribute_to_28("cmd_bake_max_attempts"))
+    FAKE_PREFERENCES.cmd_bake_max_attempts = False
 
     enable_presets = BoolProperty(
                 name="Enable Presets",
@@ -125,6 +181,7 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
                 options={'HIDDEN'},
                 )
     exec(vcu.convert_attribute_to_28("enable_presets"))
+    FAKE_PREFERENCES.enable_presets = False
 
     selected_gpu_device = EnumProperty(
                 name="GPU Compute Device",
@@ -132,12 +189,15 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
                 items=lambda self, context=None: self._get_gpu_device_enums(context),
                 )
     exec(vcu.convert_attribute_to_28("selected_gpu_device"))
+    FAKE_PREFERENCES.selected_gpu_device = None
 
     gpu_devices = CollectionProperty(type=FLIPFluidGPUDevice)
     exec(vcu.convert_attribute_to_28("gpu_devices"))
+    FAKE_PREFERENCES.gpu_devices = []
 
     is_gpu_devices_initialized = BoolProperty(False)
     exec(vcu.convert_attribute_to_28("is_gpu_devices_initialized"))
+    FAKE_PREFERENCES.is_gpu_devices_initialized = False
 
 
     def _update_enable_helper(self, context):
@@ -201,8 +261,8 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
 
         box = self.layout.box()
         box.enabled = is_installation_complete
-        helper_column = box.column()
-        helper_column.label(text="Options:")
+        helper_column = box.column(align=True)
+        helper_column.label(text="UI Options:")
         helper_column.prop(self, "beginner_friendly_mode")
         helper_column.prop(self, "show_documentation_in_ui")
 
@@ -213,9 +273,20 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         row.alignment = 'LEFT'
         row.enabled = self.enable_helper
         row.prop(self, "helper_category_name")
+        helper_column.separator()
+
+        helper_column.separator()
+        helper_column.label(text="Command Line Tools:")
+        row = helper_column.row()
+        row.label(text="     Re-launch bake after crash:")
+        row.prop(self, "cmd_bake_max_attempts")
+        row.label(text="")
+
+        helper_column.separator()
+        helper_column.label(text="Experimental & Debug Tools:")
+        #helper_column.prop(self, "enable_experimental_build_warning")
+        helper_column.prop(self, "enable_developer_tools")
         helper_column.prop(self, "engine_debug_mode")
-        helper_column.separator()
-        helper_column.separator()
 
         """
         helper_column.separator()
@@ -310,7 +381,7 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
 
 def load_post():
     id_name = __name__.split(".")[0]
-    preferences = vcu.get_blender_preferences(bpy.context).addons[id_name].preferences
+    preferences = vcu.get_addon_preferences()
     if not preferences.enable_helper:
         helper_ui.unregister()
 
@@ -320,7 +391,7 @@ def register():
     bpy.utils.register_class(FLIPFluidAddonPreferences)
 
     id_name = __name__.split(".")[0]
-    preferences = vcu.get_blender_preferences(bpy.context).addons[id_name].preferences
+    preferences = vcu.get_addon_preferences()
     update_helper_category_name(preferences, bpy.context)
 
 

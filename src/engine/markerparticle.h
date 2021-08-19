@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2020 Ryan L. Guy
+Copyright (C) 2021 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -40,6 +40,35 @@ struct MarkerParticle {
 
     MarkerParticle(double x, double y, double z) : 
                                   position(x, y, z) {}
+};
+
+struct MarkerParticleAffine {
+    vmath::vec3 affineX;
+    vmath::vec3 affineY;
+    vmath::vec3 affineZ;
+
+    MarkerParticleAffine(vmath::vec3 ax, vmath::vec3 ay, vmath::vec3 az) : 
+                                  affineX(ax),
+                                  affineY(ay),
+                                  affineZ(az) {}
+};
+
+struct MarkerParticleAge {
+    float age;
+
+    MarkerParticleAge(float a) : age(a) {}
+};
+
+struct MarkerParticleColor {
+    vmath::vec3 color;
+
+    MarkerParticleColor(vmath::vec3 c) : color(c) {}
+};
+
+struct MarkerParticleSourceID {
+    int sourceid;
+
+    MarkerParticleSourceID(int id) : sourceid(id) {}
 };
 
 #endif

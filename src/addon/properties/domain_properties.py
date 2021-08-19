@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -63,6 +63,7 @@ from . import (
 from .. import types
 from ..objects import flip_fluid_cache
 from ..utils import version_compatibility_utils as vcu
+from ..utils import api_workaround_utils
 
 
 class FlipFluidDomainProperties(bpy.types.PropertyGroup):
@@ -262,12 +263,13 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
 
 
     def frame_change_post(self, scene, depsgraph=None):
+        api_workaround_utils.frame_change_post_apply_T71908_workaround(bpy.context, depsgraph)
         self.world.frame_change_post(scene)
         self.stats.frame_change_post(scene, depsgraph)
 
 
     def load_pre(self):
-        self.cache.load_pre()
+        pass
 
 
     def load_post(self):

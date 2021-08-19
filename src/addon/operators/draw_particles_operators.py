@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ from bpy.props import (
 from ..objects.flip_fluid_aabb import AABB
 from ..utils import ui_utils
 from ..utils import version_compatibility_utils as vcu
+from .. import render
 
 if vcu.is_blender_28():
     import gpu
@@ -33,11 +34,19 @@ particle_vertex_colors = []
 particle_shader = None
 particle_batch_draw = None
 def update_debug_particle_geometry(context):
+    if render.is_rendering():
+        # This method does not need to be run while rendering. Can cause
+        # crashes on certain systems.
+        return
+
     global particle_vertices
     global particle_vertex_colors
 
     dprops = context.scene.flip_fluid.get_domain_properties()
     if dprops is None or not dprops.debug.export_fluid_particles:
+        return
+
+    if not dprops.debug.fluid_particles_visibility:
         return
 
     particle_vertices = []
@@ -83,7 +92,6 @@ def update_debug_particle_geometry(context):
 
         vertex_shader = """
             uniform mat4 ModelViewProjectionMatrix;
-            uniform float pointsize;
 
             in vec3 pos;
             in vec4 color;
@@ -92,7 +100,6 @@ def update_debug_particle_geometry(context):
 
             void main()
             {
-                gl_PointSize = pointsize;
                 gl_Position = ModelViewProjectionMatrix * vec4(pos, 1.0);
                 finalColor = color;
             }
@@ -109,7 +116,6 @@ def update_debug_particle_geometry(context):
         """
 
         particle_shader = gpu.types.GPUShader(vertex_shader, fragment_shader)
-        particle_shader.uniform_float('pointsize', dprops.debug.particle_size)
         particle_batch_draw = batch_for_shader(
             particle_shader, 'POINTS',
             {"pos": particle_vertices, "color": particle_vertex_colors},
@@ -187,12 +193,20 @@ class FlipFluidDrawGLParticles(bpy.types.Operator):
 
 
     def draw_callback_3d(self, context):
+        if render.is_rendering():
+            # This method does not need to be run while rendering. Can cause
+            # crashes on certain systems.
+            return
+
         global particle_vertices
         global particle_vertex_colors
 
         domain = context.scene.flip_fluid.get_domain_object()
         dprops = context.scene.flip_fluid.get_domain_properties()
         if domain is None or len(particle_vertices) == 0:
+            return
+
+        if not dprops.debug.fluid_particles_visibility:
             return
 
         if vcu.get_object_hide_viewport(domain):

@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -69,6 +69,11 @@ class FLIPFLUID_PT_DomainTypeWhitewaterPanel(bpy.types.Panel):
                 text="Whitewater particles are not exported to Alembic", 
                 icon="WORLD"
             ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Alembic-Export-Support#rendering-alembic-whitewater-on-a-render-farm"
+            column.operator(
+                "wm.url_open", 
+                text="Whitewater rendering tips", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Whitewater-Settings#whitewater-rendering-tips"
 
 
         column = self.layout.column(align=True)

@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ from ..utils import version_compatibility_utils as vcu
 
 class DomainCacheProperties(bpy.types.PropertyGroup):
     conv = vcu.convert_attribute_to_28
-    temp_directory = vcu.get_blender_preferences(bpy.context).filepaths.temporary_directory
+    temp_directory = vcu.get_blender_preferences_temporary_directory()
     default_cache_directory_str = os.path.join(temp_directory, "untitled_flip_fluid_cache")
     
     cache_directory = StringProperty(
@@ -164,10 +164,6 @@ class DomainCacheProperties(bpy.types.PropertyGroup):
         self.is_cache_directory_set = True
 
 
-    def load_pre(self):
-        self._delete_unsaved_cache_directory()
-
-
     def load_post(self):
         self._check_cache_directory()
 
@@ -181,6 +177,24 @@ class DomainCacheProperties(bpy.types.PropertyGroup):
         dprops = context.scene.flip_fluid.get_domain_properties()
         if dprops is None:
             return
+
+        relprefix = "//"
+        if self.cache_directory == "" or self.cache_directory == relprefix:
+            # Don't want the user to set an empty path
+            if bpy.data.filepath:
+                base = os.path.basename(bpy.data.filepath)
+                save_file = os.path.splitext(base)[0]
+                cache_folder_parent = os.path.dirname(bpy.data.filepath)
+
+                cache_folder = save_file + "_flip_fluid_cache"
+                cache_path = os.path.join(cache_folder_parent, cache_folder)
+                relpath = os.path.relpath(cache_path, cache_folder_parent)
+
+                default_cache_directory_str = relprefix + relpath
+            else:
+                temp_directory = vcu.get_blender_preferences_temporary_directory()
+                default_cache_directory_str = os.path.join(temp_directory, "untitled_flip_fluid_cache")
+            self["cache_directory"] = default_cache_directory_str
 
         dprops.stats.refresh_stats()
         dprops.bake.check_autosave()
@@ -213,16 +227,6 @@ class DomainCacheProperties(bpy.types.PropertyGroup):
         relprefix = "//"
         self.cache_directory = relprefix + relpath
         self.is_cache_directory_set = True
-
-
-    def _delete_unsaved_cache_directory(self):
-        base = os.path.basename(bpy.data.filepath)
-        save_file = os.path.splitext(base)[0]
-        if not base or not save_file:
-            cache_directory = self.get_cache_abspath()
-            if os.path.exists(cache_directory):
-                shutil.rmtree(cache_directory, True)
-
 
 
 def register():

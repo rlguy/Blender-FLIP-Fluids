@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,6 +50,7 @@ from . import (
         )
 from .. import types
 from ..utils import version_compatibility_utils as vcu
+from ..utils import api_workaround_utils
 
 
 class ObjectViewSettings(bpy.types.PropertyGroup):
@@ -137,8 +138,7 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
         # not updated to reflect the above 'hide_render' change. Toggling
         # the hide_viewport option on and off is a workaround to get the viewport
         # to update.
-        vcu.toggle_outline_eye_icon(bl_object)
-        vcu.toggle_outline_eye_icon(bl_object)
+        api_workaround_utils.toggle_viewport_visibility_to_update_rendered_viewport_workaround(bl_object)
 
 
     def get_object_type():

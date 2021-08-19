@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2020 Ryan L. Guy
+Copyright (C) 2021 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -427,12 +427,60 @@ RigidBodyVelocity MeshObject::getRigidBodyVelocity(double framedt) {
     return rv;
 }
 
+bool MeshObject::isGeometryAABB() {
+    TriangleMesh m = _meshCurrent;
+    AABB bbox(m.vertices);
+
+    bool isAABB = true;
+    float eps = 1e-4;
+    for (size_t i = 0; i < m.triangles.size(); i++) {
+        Triangle t = m.triangles[i];
+        vmath::vec3 v1 = m.vertices[t.tri[0]];
+        vmath::vec3 v2 = m.vertices[t.tri[1]];
+        vmath::vec3 v3 = m.vertices[t.tri[2]];
+
+        if (std::abs(bbox.getSignedDistance(v1)) > eps ||
+                std::abs(bbox.getSignedDistance(v2)) > eps ||
+                std::abs(bbox.getSignedDistance(v3)) > eps) {
+            isAABB = false;
+            break;
+        }
+
+        bool isPlaneX = std::abs(v1.x - v2.x) < eps && std::abs(v1.x - v3.x) < eps;
+        bool isPlaneY = std::abs(v1.y - v2.y) < eps && std::abs(v1.y - v3.y) < eps;
+        bool isPlaneZ = std::abs(v1.z - v2.z) < eps && std::abs(v1.z - v3.z) < eps;
+
+        if (!(isPlaneX || isPlaneY || isPlaneZ)) {
+            isAABB = false;
+            break;
+        }
+    }
+
+    return isAABB;
+}
+
 void MeshObject::setObjectVelocityInfluence(float value) {
     _objectVelocityInfluence = value;
 }
 
 float MeshObject::getObjectVelocityInfluence() {
     return _objectVelocityInfluence;
+}
+
+void MeshObject::setSourceID(int id) {
+    _sourceID = id;
+}
+
+int MeshObject::getSourceID() {
+    return _sourceID;
+}
+
+void MeshObject::setSourceColor(vmath::vec3 c) {
+    _sourceColor = c;
+}
+
+vmath::vec3 MeshObject::getSourceColor() {
+    return _sourceColor;
 }
 
 MeshObjectStatus MeshObject::getStatus() {
@@ -731,6 +779,11 @@ bool MeshObject::_isTopologyConsistent(TriangleMesh &m1, TriangleMesh &m2) {
         return false;
     }
 
+    // Ignore cases where topology changes due to changing face configurations.
+    // The topology may not be consistent, but for many cases the calculated
+    // vertex velocities could still make sense.
+
+    /*
     TriangleMesh tempm1 = m1;
     TriangleMesh tempm2 = m2;
     std::vector<int> indexcounts1(tempm1.vertices.size(), 0);
@@ -784,6 +837,7 @@ bool MeshObject::_isTopologyConsistent(TriangleMesh &m1, TriangleMesh &m2) {
             }
         }
     }
+    */
 
     return true;
 }

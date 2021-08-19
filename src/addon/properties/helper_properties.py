@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -75,8 +75,7 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
 
 
     def get_addon_preferences(self):
-        id_name = __name__.split(".")[0]
-        return vcu.get_blender_preferences(bpy.context).addons[id_name].preferences
+        return vcu.get_addon_preferences()
 
 
     def frame_complete_callback(self):

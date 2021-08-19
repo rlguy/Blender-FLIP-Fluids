@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -75,10 +75,15 @@ class FLIPFLUID_PT_DomainTypeCachePanel(bpy.types.Panel):
         column.label(text="Current Cache Directory:")
         subcolumn = column.column(align=True)
         subcolumn.enabled = not dprops.bake.is_simulation_running
-        subcolumn.prop(cprops, "cache_directory")
+        row = subcolumn.row(align=True)
+        row.prop(cprops, "cache_directory")
+        row.operator("flip_fluid_operators.increment_decrease_cache_directory", text="", icon="REMOVE").increment_mode = "DECREASE"
+        row.operator("flip_fluid_operators.increment_decrease_cache_directory", text="", icon="ADD").increment_mode = "INCREASE"
+
         row = column.row(align=True)
         row.operator("flip_fluid_operators.relative_cache_directory")
         row.operator("flip_fluid_operators.absolute_cache_directory")
+        row.operator("flip_fluid_operators.match_filename_cache_directory")
         column.separator()
 
         if not show_advanced:

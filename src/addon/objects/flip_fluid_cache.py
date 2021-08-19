@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -73,21 +73,31 @@ class FLIPFluidMeshBounds(bpy.types.PropertyGroup):
 
 class FlipFluidLoadedMeshData(bpy.types.PropertyGroup):
     conv = vcu.convert_attribute_to_28
-    mesh_prefix =           StringProperty(default="mesh_prefix"); exec(conv("mesh_prefix"))
-    enable_motion_blur =    BoolProperty(default=False);           exec(conv("enable_motion_blur"))
-    motion_blur_scale =     FloatProperty(default=-1.0);           exec(conv("motion_blur_scale"))
-    wwp_import_percentage = IntProperty(default=0);                exec(conv("wwp_import_percentage"))
-    duplivert_scale =       FloatProperty(default=1.0);            exec(conv("duplivert_scale"))
-    duplivert_vertices =    IntProperty(default=-1);               exec(conv("duplivert_vertices"))
-    duplivert_faces =       IntProperty(default=-1);               exec(conv("duplivert_faces"))
-    is_rendering =          BoolProperty(default=True);            exec(conv("is_rendering"))
-    frame =                 IntProperty(default=-1);               exec(conv("frame"))
+    mesh_prefix =                StringProperty(default="mesh_prefix"); exec(conv("mesh_prefix"))
+    enable_motion_blur =         BoolProperty(default=False);           exec(conv("enable_motion_blur"))
+    motion_blur_scale =          FloatProperty(default=-1.0);           exec(conv("motion_blur_scale"))
+    enable_velocity_attribute =  BoolProperty(default=False);           exec(conv("enable_velocity_attribute"))
+    enable_speed_attribute =     BoolProperty(default=False);           exec(conv("enable_speed_attribute"))
+    enable_age_attribute =       BoolProperty(default=False);           exec(conv("enable_age_attribute"))
+    enable_color_attribute =     BoolProperty(default=False);           exec(conv("enable_color_attribute"))
+    enable_source_id_attribute = BoolProperty(default=False);           exec(conv("enable_source_id_attribute"))
+    wwp_import_percentage =      IntProperty(default=0);                exec(conv("wwp_import_percentage"))
+    duplivert_scale =            FloatProperty(default=1.0);            exec(conv("duplivert_scale"))
+    duplivert_vertices =         IntProperty(default=-1);               exec(conv("duplivert_vertices"))
+    duplivert_faces =            IntProperty(default=-1);               exec(conv("duplivert_faces"))
+    is_rendering =               BoolProperty(default=True);            exec(conv("is_rendering"))
+    frame =                      IntProperty(default=-1);               exec(conv("frame"))
 
 
     def reset(self):
         self.property_unset("mesh_prefix")
         self.property_unset("enable_motion_blur")
         self.property_unset("motion_blur_scale")
+        self.property_unset("enable_velocity_attribute")
+        self.property_unset("enable_speed_attribute")
+        self.property_unset("enable_age_attribute")
+        self.property_unset("enable_color_attribute")
+        self.property_unset("enable_source_id_attribute")
         self.property_unset("wwp_import_percentage")
         self.property_unset("duplivert_scale")
         self.property_unset("is_rendering")
@@ -98,19 +108,24 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
     conv = vcu.convert_attribute_to_28
 
     # Mesh properties
-    mesh_prefix =               StringProperty(default="");                       exec(conv("mesh_prefix"))
-    mesh_display_name_prefix =  StringProperty(default="");                       exec(conv("mesh_display_name_prefix"))
-    mesh_file_extension =       StringProperty(default="");                       exec(conv("mesh_file_extension"))
-    enable_motion_blur =        BoolProperty(default=False);                      exec(conv("enable_motion_blur"))
-    motion_blur_scale =         FloatProperty(default=1.0);                       exec(conv("motion_blur_scale"))
-    cache_object_default_name = StringProperty(default="");                       exec(conv("cache_object_default_name"))
-    cache_object =              PointerProperty(type=bpy.types.Object);           exec(conv("cache_object"))
-    is_mesh_shading_smooth =    BoolProperty(default=True);                       exec(conv("is_mesh_shading_smooth"))
-    current_loaded_frame =      IntProperty(default=-1);                          exec(conv("current_loaded_frame"))
-    import_function_name =      StringProperty(default="import_empty");           exec(conv("import_function_name"))
-    wwp_import_percentage =     IntProperty(default=100);                         exec(conv("wwp_import_percentage"))
-    duplivert_scale =           FloatProperty(default=1.0);                       exec(conv("duplivert_scale"))
-    cache_object_type =         StringProperty(default="CACHE_OBJECT_TYPE_NONE"); exec(conv("cache_object_type"))
+    mesh_prefix =                StringProperty(default="");                       exec(conv("mesh_prefix"))
+    mesh_display_name_prefix =   StringProperty(default="");                       exec(conv("mesh_display_name_prefix"))
+    mesh_file_extension =        StringProperty(default="");                       exec(conv("mesh_file_extension"))
+    enable_motion_blur =         BoolProperty(default=False);                      exec(conv("enable_motion_blur"))
+    motion_blur_scale =          FloatProperty(default=1.0);                       exec(conv("motion_blur_scale"))
+    enable_velocity_attribute =  BoolProperty(default=False);                      exec(conv("enable_velocity_attribute"))
+    enable_speed_attribute =     BoolProperty(default=False);                      exec(conv("enable_speed_attribute"))
+    enable_age_attribute =       BoolProperty(default=False);                      exec(conv("enable_age_attribute"))
+    enable_color_attribute =     BoolProperty(default=False);                      exec(conv("enable_color_attribute"))
+    enable_source_id_attribute = BoolProperty(default=False);                      exec(conv("enable_source_id_attribute"))
+    cache_object_default_name =  StringProperty(default="");                       exec(conv("cache_object_default_name"))
+    cache_object =               PointerProperty(type=bpy.types.Object);           exec(conv("cache_object"))
+    is_mesh_shading_smooth =     BoolProperty(default=True);                       exec(conv("is_mesh_shading_smooth"))
+    current_loaded_frame =       IntProperty(default=-1);                          exec(conv("current_loaded_frame"))
+    import_function_name =       StringProperty(default="import_empty");           exec(conv("import_function_name"))
+    wwp_import_percentage =      IntProperty(default=100);                         exec(conv("wwp_import_percentage"))
+    duplivert_scale =            FloatProperty(default=1.0);                       exec(conv("duplivert_scale"))
+    cache_object_type =          StringProperty(default="CACHE_OBJECT_TYPE_NONE"); exec(conv("cache_object_type"))
 
     # Duplivert properties
     current_duplivert_loaded_frame = IntProperty(default=-1);                exec(conv("current_duplivert_loaded_frame"))
@@ -175,6 +190,11 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         smooth_mod = cache_object.modifiers.new("Smooth", "SMOOTH")
         smooth_mod.iterations = 0
 
+        # Motion blur not supported. Leaving motion blur enabled can cause
+        # slow render in versions of Blender 2.91+. Workaround is to
+        # automatically disable motion blur on the object.
+        cache_object.cycles.use_motion_blur = False
+
         self._initialize_cache_object_octane(cache_object)
 
         self.cache_object = cache_object
@@ -226,21 +246,31 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
     def _is_loaded_frame_up_to_date(self, frameno):
         d = self.loaded_frame_data
-        return not (self.mesh_prefix           != d.mesh_prefix or 
-                    self.enable_motion_blur    != d.enable_motion_blur or
-                    self.motion_blur_scale     != d.motion_blur_scale or
-                    self.wwp_import_percentage != d.wwp_import_percentage or
-                    render.is_rendering()      != d.is_rendering or
-                    self.current_loaded_frame  != frameno)
+        return not (self.mesh_prefix                != d.mesh_prefix or 
+                    self.enable_motion_blur         != d.enable_motion_blur or
+                    self.motion_blur_scale          != d.motion_blur_scale or
+                    self.enable_velocity_attribute  != d.enable_velocity_attribute or
+                    self.enable_speed_attribute     != d.enable_speed_attribute or
+                    self.enable_age_attribute       != d.enable_age_attribute or
+                    self.enable_color_attribute     != d.enable_color_attribute or
+                    self.enable_source_id_attribute != d.enable_source_id_attribute or
+                    self.wwp_import_percentage      != d.wwp_import_percentage or
+                    render.is_rendering()           != d.is_rendering or
+                    self.current_loaded_frame       != frameno)
 
 
     def _commit_loaded_frame_data(self, frameno):
         d = self.loaded_frame_data
-        d.mesh_prefix           = self.mesh_prefix
-        d.enable_motion_blur    = self.enable_motion_blur
-        d.motion_blur_scale     = self.motion_blur_scale
-        d.wwp_import_percentage = self.wwp_import_percentage
-        d.is_rendering          = render.is_rendering()
+        d.mesh_prefix                = self.mesh_prefix
+        d.enable_motion_blur         = self.enable_motion_blur
+        d.motion_blur_scale          = self.motion_blur_scale
+        d.enable_velocity_attribute  = self.enable_velocity_attribute
+        d.enable_speed_attribute     = self.enable_speed_attribute
+        d.enable_age_attribute       = self.enable_age_attribute
+        d.enable_color_attribute     = self.enable_color_attribute
+        d.enable_source_id_attribute = self.enable_source_id_attribute
+        d.wwp_import_percentage      = self.wwp_import_percentage
+        d.is_rendering               = render.is_rendering()
         d.frame  = frameno
 
 
@@ -259,15 +289,12 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         if self._is_loaded_frame_up_to_date(frameno) and not force_load:
             return False
 
-        is_render_backloading = current_frame == self.loaded_frame_data.frame - 1
-        if render.is_rendering() and self.enable_motion_blur and is_render_backloading:
-            return False
-
         return True
 
 
     def _update_motion_blur(self, frameno):
-        if not self.enable_motion_blur:
+        is_motion_blur_support = False
+        if not self.enable_motion_blur or not is_motion_blur_support:
             return
 
         cache_object = self.get_cache_object()
@@ -302,6 +329,106 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
             shape_key.value = 0
 
 
+    def _update_velocity_attribute(self, frameno):
+        if not vcu.is_blender_293() or not self.enable_velocity_attribute:
+            return
+
+        cache_object = self.get_cache_object()
+        frame_string = self._frame_number_to_string(frameno)
+        velocity_data = self._import_velocity_attribute_data(frameno)
+
+        attribute_name = "flip_velocity"
+        mesh = cache_object.data
+        try:
+            mesh.attributes.remove(mesh.attributes.get(attribute_name))
+        except:
+            pass
+
+        attribute = mesh.attributes.new(attribute_name, "FLOAT_VECTOR", "POINT")
+        for i,value in enumerate(attribute.data):
+            value.vector = velocity_data[i]
+
+
+    def _update_speed_attribute(self, frameno):
+        if not vcu.is_blender_293() or not self.enable_speed_attribute:
+            return
+
+        cache_object = self.get_cache_object()
+        frame_string = self._frame_number_to_string(frameno)
+        speed_data = self._import_speed_attribute_data(frameno)
+
+        attribute_name = "flip_speed"
+        mesh = cache_object.data
+        try:
+            mesh.attributes.remove(mesh.attributes.get(attribute_name))
+        except:
+            pass
+
+        attribute = mesh.attributes.new(attribute_name, "FLOAT", "POINT")
+        for i,value in enumerate(attribute.data):
+            value.value = speed_data[i]
+
+
+    def _update_age_attribute(self, frameno):
+        if not vcu.is_blender_293() or not self.enable_age_attribute:
+            return
+
+        cache_object = self.get_cache_object()
+        frame_string = self._frame_number_to_string(frameno)
+        age_data = self._import_age_attribute_data(frameno)
+
+        attribute_name = "flip_age"
+        mesh = cache_object.data
+        try:
+            mesh.attributes.remove(mesh.attributes.get(attribute_name))
+        except:
+            pass
+
+        attribute = mesh.attributes.new(attribute_name, "FLOAT", "POINT")
+        for i,value in enumerate(attribute.data):
+            value.value = age_data[i]
+
+
+    def _update_color_attribute(self, frameno):
+        if not vcu.is_blender_293() or not self.enable_color_attribute:
+            return
+
+        cache_object = self.get_cache_object()
+        frame_string = self._frame_number_to_string(frameno)
+        color_data = self._import_color_attribute_data(frameno)
+
+        attribute_name = "flip_color"
+        mesh = cache_object.data
+        try:
+            mesh.attributes.remove(mesh.attributes.get(attribute_name))
+        except:
+            pass
+
+        attribute = mesh.attributes.new(attribute_name, "FLOAT_VECTOR", "POINT")
+        for i,value in enumerate(attribute.data):
+            value.vector = color_data[i]
+
+
+    def _update_source_id_attribute(self, frameno):
+        if not vcu.is_blender_293() or not self.enable_source_id_attribute:
+            return
+
+        cache_object = self.get_cache_object()
+        frame_string = self._frame_number_to_string(frameno)
+        source_id_data = self._import_source_id_attribute_data(frameno)
+
+        attribute_name = "flip_source_id"
+        mesh = cache_object.data
+        try:
+            mesh.attributes.remove(mesh.attributes.get(attribute_name))
+        except:
+            pass
+
+        attribute = mesh.attributes.new(attribute_name, "INT", "POINT")
+        for i,value in enumerate(attribute.data):
+            value.value = source_id_data[i]
+
+
     def load_frame(self, frameno, force_load=False, depsgraph=None):
         if not self._is_load_frame_valid(frameno, force_load):
             return
@@ -330,18 +457,26 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
                                            octane_mesh_type)
 
         self.update_transforms()
-        if self.enable_motion_blur:
-            self._update_motion_blur(frameno)
+        self._update_motion_blur(frameno)
+        self._update_velocity_attribute(frameno)
+        self._update_speed_attribute(frameno)
+        self._update_age_attribute(frameno)
+        self._update_color_attribute(frameno)
+        self._update_source_id_attribute(frameno)
 
         self.current_loaded_frame = render.get_current_render_frame()
         self._commit_loaded_frame_data(frameno)
 
+        use_persistent_data = bpy.context.scene.render.use_persistent_data
         if vcu.is_blender_279() or render.is_rendering():
-            # This statement causes crashes if exporting Alembic in Blender 2.8x.
-            if depsgraph is not None:
-                depsgraph.update()
-            else:
-                vcu.depsgraph_update()
+            if not use_persistent_data:
+                # Updating depsgraph when 'Persistent Data' option is enabled
+                # causes incorrect render. Note: ignoring the depsgraph update
+                # can result in more frequent render crashes. 
+                if depsgraph is not None:
+                    depsgraph.update()
+                else:
+                    vcu.depsgraph_update()
 
 
     def update_transforms(self):
@@ -388,28 +523,38 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
     def _is_loaded_duplivert_frame_up_to_date(self, frameno):
         d = self.loaded_duplivert_frame_data
-        return not (self.mesh_prefix           != d.mesh_prefix or 
-                    self.enable_motion_blur    != d.enable_motion_blur or
-                    self.motion_blur_scale     != d.motion_blur_scale or
-                    self.wwp_import_percentage != d.wwp_import_percentage or
-                    self.duplivert_scale       != d.duplivert_scale or
-                    self.duplivert_vertices    != d.duplivert_vertices or
-                    self.duplivert_faces       != d.duplivert_faces or
-                    render.is_rendering()      != d.is_rendering or
-                    self.current_loaded_frame  != frameno)
+        return not (self.mesh_prefix                != d.mesh_prefix or 
+                    self.enable_motion_blur         != d.enable_motion_blur or
+                    self.motion_blur_scale          != d.motion_blur_scale or
+                    self.enable_velocity_attribute  != d.enable_velocity_attribute or
+                    self.enable_speed_attribute     != d.enable_speed_attribute or
+                    self.enable_age_attribute       != d.enable_age_attribute or
+                    self.enable_color_attribute     != d.enable_color_attribute or
+                    self.enable_source_id_attribute != d.enable_source_id_attribute or
+                    self.wwp_import_percentage      != d.wwp_import_percentage or
+                    self.duplivert_scale            != d.duplivert_scale or
+                    self.duplivert_vertices         != d.duplivert_vertices or
+                    self.duplivert_faces            != d.duplivert_faces or
+                    render.is_rendering()           != d.is_rendering or
+                    self.current_loaded_frame       != frameno)
 
 
     def _commit_loaded_duplivert_frame_data(self, frameno):
         d = self.loaded_duplivert_frame_data
-        d.mesh_prefix           = self.mesh_prefix
-        d.enable_motion_blur    = self.enable_motion_blur
-        d.motion_blur_scale     = self.motion_blur_scale
-        d.wwp_import_percentage = self.wwp_import_percentage
-        d.duplivert_scale       = self.duplivert_scale
-        d.duplivert_vertices    = self.duplivert_vertices
-        d.duplivert_faces       = self.duplivert_faces
-        d.is_rendering          = render.is_rendering()
-        d.current_loaded_frame  = frameno
+        d.mesh_prefix                = self.mesh_prefix
+        d.enable_motion_blur         = self.enable_motion_blur
+        d.motion_blur_scale          = self.motion_blur_scale
+        d.enable_velocity_attribute  = self.enable_velocity_attribute
+        d.enable_speed_attribute     = self.enable_speed_attribute
+        d.enable_age_attribute       = self.enable_age_attribute
+        d.enable_color_attribute     = self.enable_color_attribute
+        d.enable_source_id_attribute = self.enable_source_id_attribute
+        d.wwp_import_percentage      = self.wwp_import_percentage
+        d.duplivert_scale            = self.duplivert_scale
+        d.duplivert_vertices         = self.duplivert_vertices
+        d.duplivert_faces            = self.duplivert_faces
+        d.is_rendering               = render.is_rendering()
+        d.current_loaded_frame       = frameno
 
 
     def _is_load_duplivert_object_valid(self, force_load=False):
@@ -467,6 +612,11 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         self._initialize_duplivert_object_octane(cache_object, duplivert_object)
         vcu.set_object_instance_type(cache_object, instance_type)
         vcu.set_object_hide_viewport(duplivert_object, True)
+
+        # Motion blur not supported. Leaving motion blur enabled can cause
+        # slow render in versions of Blender 2.91+. Workaround is to
+        # automatically disable motion blur on the object.
+        duplivert_object.cycles.use_motion_blur = False
 
         self.duplivert_object = duplivert_object
 
@@ -609,6 +759,34 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         return vertices, triangles
 
 
+    def import_floats(self, filename):
+        with open(filename, "rb") as f:
+            float_data = f.read()
+
+        if len(float_data) == 0:
+            return []
+
+        datasize = len(float_data)
+        num_floats = datasize // 4
+        floats = list(struct.unpack_from('{0}f'.format(num_floats), float_data, 0))
+
+        return floats
+
+
+    def import_ints(self, filename):
+        with open(filename, "rb") as f:
+            int_data = f.read()
+
+        if len(int_data) == 0:
+            return []
+
+        datasize = len(int_data)
+        num_int = datasize // 4
+        ints = list(struct.unpack_from('{0}i'.format(num_int), int_data, 0))
+
+        return ints
+
+
     def import_empty(self, filename):
         return [], []
 
@@ -653,6 +831,46 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         filename = ("blur" + self.mesh_prefix + 
                     self._frame_number_to_string(frameno) + 
                     "." + self.mesh_file_extension)
+        bakefiles_directory = self._get_bakefiles_directory()
+        return os.path.join(bakefiles_directory, filename)
+
+
+    def _get_velocity_attribute_filepath(self, frameno):
+        filename = ("velocity" + self.mesh_prefix + 
+                    self._frame_number_to_string(frameno) + 
+                    "." + self.mesh_file_extension)
+        bakefiles_directory = self._get_bakefiles_directory()
+        return os.path.join(bakefiles_directory, filename)
+
+
+    def _get_speed_attribute_filepath(self, frameno):
+        filename = ("speed" + self.mesh_prefix + 
+                    self._frame_number_to_string(frameno) + 
+                    ".data")
+        bakefiles_directory = self._get_bakefiles_directory()
+        return os.path.join(bakefiles_directory, filename)
+
+
+    def _get_age_attribute_filepath(self, frameno):
+        filename = ("age" + self.mesh_prefix + 
+                    self._frame_number_to_string(frameno) + 
+                    ".data")
+        bakefiles_directory = self._get_bakefiles_directory()
+        return os.path.join(bakefiles_directory, filename)
+
+
+    def _get_color_attribute_filepath(self, frameno):
+        filename = ("color" + self.mesh_prefix + 
+                    self._frame_number_to_string(frameno) + 
+                    "." + self.mesh_file_extension)
+        bakefiles_directory = self._get_bakefiles_directory()
+        return os.path.join(bakefiles_directory, filename)
+
+
+    def _get_source_id_attribute_filepath(self, frameno):
+        filename = ("sourceid" + self.mesh_prefix + 
+                    self._frame_number_to_string(frameno) + 
+                    ".data")
         bakefiles_directory = self._get_bakefiles_directory()
         return os.path.join(bakefiles_directory, filename)
 
@@ -784,6 +1002,71 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         return translation_data
 
 
+    def _import_velocity_attribute_data(self, frameno):
+        if not self._is_domain_set() or not self._is_frame_cached(frameno):
+            return []
+
+        filepath = self._get_velocity_attribute_filepath(frameno)
+        if not os.path.exists(filepath):
+            return []
+
+        import_function = getattr(self, self.import_function_name)
+        if import_function == self.import_wwp:
+            velocity_data, _ = import_function(filepath, self.wwp_import_percentage)
+        else:
+            velocity_data, _ = import_function(filepath)
+        return velocity_data
+
+
+    def _import_speed_attribute_data(self, frameno):
+        if not self._is_domain_set() or not self._is_frame_cached(frameno):
+            return []
+
+        filepath = self._get_speed_attribute_filepath(frameno)
+        if not os.path.exists(filepath):
+            return []
+        speed_data = self.import_floats(filepath)
+        return speed_data
+
+
+    def _import_age_attribute_data(self, frameno):
+        if not self._is_domain_set() or not self._is_frame_cached(frameno):
+            return []
+
+        filepath = self._get_age_attribute_filepath(frameno)
+        if not os.path.exists(filepath):
+            return []
+        age_data = self.import_floats(filepath)
+        return age_data
+
+
+    def _import_color_attribute_data(self, frameno):
+        if not self._is_domain_set() or not self._is_frame_cached(frameno):
+            return []
+
+        filepath = self._get_color_attribute_filepath(frameno)
+        if not os.path.exists(filepath):
+            return []
+
+        import_function = getattr(self, self.import_function_name)
+        if import_function == self.import_wwp:
+            color_data, _ = import_function(filepath, self.wwp_import_percentage)
+        else:
+            color_data, _ = import_function(filepath)
+        return color_data
+
+
+    def _import_source_id_attribute_data(self, frameno):
+        if not self._is_domain_set() or not self._is_frame_cached(frameno):
+            return []
+
+        filepath = self._get_source_id_attribute_filepath(frameno)
+        if not os.path.exists(filepath):
+            return []
+        source_id_data = self.import_ints(filepath)
+        return source_id_data
+
+
     def _get_bounds_filepath(self, frameno):
         filename = ("bounds" + 
                     self._frame_number_to_string(frameno) + 
@@ -796,7 +1079,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         filepath = self._get_bounds_filepath(frameno)
         bounds_data = None
         if os.path.isfile(filepath):
-            with open(filepath, 'r') as f:
+            with open(filepath, 'r', encoding='utf-8') as f:
                 bounds_data = json.loads(f.read())
         self.bounds.set(bounds_data)
 

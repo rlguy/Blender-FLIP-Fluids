@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -87,6 +87,10 @@ class FLIPFluidPreferencesExportUserData(bpy.types.Operator):
 
 
     def create_archive(self):
+        pass
+
+        # Deprecated function - do not uncomment until updating to use filesystem_protection_layer
+        """
         temp_dir = self.get_temp_directory()
         if not os.path.exists(temp_dir):
             try:
@@ -98,7 +102,7 @@ class FLIPFluidPreferencesExportUserData(bpy.types.Operator):
 
         user_info_str = json.dumps(user_info, sort_keys=True, indent=4)
         user_info_filepath = os.path.join(temp_dir, "user_settings.info")
-        with open(user_info_filepath, 'w') as f:
+        with open(user_info_filepath, 'w', encoding='utf-8') as f:
             f.write(user_info_str)
 
         addon_path = _get_addon_directory()
@@ -122,6 +126,7 @@ class FLIPFluidPreferencesExportUserData(bpy.types.Operator):
             shutil.rmtree(temp_dir)
         except Exception as e:
             return str(e)
+        """
 
 
     def execute(self, context):
@@ -155,7 +160,7 @@ class FLIPFluidPreferencesExportUserData(bpy.types.Operator):
 
 
     def invoke(self, context, event):
-        default_directory = vcu.get_blender_preferences(context).filepaths.temporary_directory
+        default_directory = vcu.get_blender_preferences_temporary_directory()
         if bpy.data.is_saved:
             default_directory = os.path.dirname(bpy.data.filepath)
         self.filepath = os.path.join(default_directory, "flip_fluid_user_settings.zip")
@@ -190,6 +195,10 @@ class FLIPFluidPreferencesImportUserData(bpy.types.Operator, ImportHelper):
 
 
     def import_user_data(self):
+        pass
+
+        # Deprecated function - do not uncomment until updating to use filesystem_protection_layer
+        """
         temp_dir = self.get_temp_directory()
         try:
             zfile = zipfile.ZipFile(self.filepath, "r")
@@ -220,6 +229,7 @@ class FLIPFluidPreferencesImportUserData(bpy.types.Operator, ImportHelper):
             shutil.rmtree(temp_dir)
         except Exception as e:
             return str(e)
+        """
 
 
     def execute(self, context):
@@ -245,8 +255,7 @@ class FLIPFluidPreferencesFindGPUDevices(bpy.types.Operator):
     bl_description = "Search for GPU compute devices"
 
     def execute(self, context):
-        id_name = __name__.split(".")[0]
-        preferences = vcu.get_blender_preferences(context).addons[id_name].preferences
+        preferences = vcu.get_addon_preferences()
 
         devices = gpu_utils.find_gpu_devices()
         preferences.gpu_devices.clear()

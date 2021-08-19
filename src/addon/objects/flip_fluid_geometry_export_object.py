@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -67,16 +67,16 @@ def get_matrix_world_at_frame(obj, frame_id):
     if rotation_mode == 'AXIS_ANGLE':
         axis_angle = get_vector4_at_frame(obj, "rotation_axis_angle", frame_id)
         angle = axis_angle[0]
-        axis = Vector(axis_angle[1], axis_angle[2], axis_angle[3])
+        axis = Vector((axis_angle[1], axis_angle[2], axis_angle[3]))
         rotation_matrix = Matrix.Rotation(angle, 4, axis)
     elif rotation_mode == 'QUATERNION':
         rotation_quat = get_vector4_at_frame(obj, "rotation_quaternion", frame_id)
-        quat = Quaternion(rotation_quat)
-        rotation_matrix = quat.to_matrix().to_4x4()
+        quaternion = Quaternion(rotation_quat)
+        rotation_matrix = quaternion.to_euler().to_matrix().to_4x4()
     else:
         rotation = get_vector3_at_frame(obj, "rotation_euler", frame_id)
-        e = Euler(rotation, rotation_mode)
-        rotation_matrix = e.to_matrix().to_4x4()
+        euler_rotation = Euler(rotation, rotation_mode)
+        rotation_matrix = euler_rotation.to_matrix().to_4x4()
         
     location = get_vector3_at_frame(obj, "location", frame_id)
     location_matrix = Matrix.Translation(location).to_4x4()
@@ -140,7 +140,7 @@ def curve_to_triangle_mesh(bl_curve_object, apply_transforms=True):
     spline = bl_curve_object.data.splines[0]
     if spline.type == 'BEZIER':
         num_curve_points = len(spline.bezier_points)
-    elif spline.type == 'NURBS':
+    elif spline.type == 'NURBS' or spline.type == 'POLY':
         num_curve_points = len(spline.points)
     
     extra_vertex = 0 if spline.use_cyclic_u else 1

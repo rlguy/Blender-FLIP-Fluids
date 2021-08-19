@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2020 Ryan L. Guy
+Copyright (C) 2021 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -580,6 +580,57 @@ void TriangleMesh::smooth(double value, int iterations) {
         _smoothTriangleMesh(value);
     }
     _vertexTriangles.clear();
+}
+
+std::vector<vmath::vec3> TriangleMesh::_smoothTriangleMeshColors(double value, std::vector<vmath::vec3> &colors) {
+    std::vector<vmath::vec3> newcolors;
+    newcolors.reserve(vertices.size());
+
+    vmath::vec3 c;
+    vmath::vec3 nc;
+    vmath::vec3 avg;
+    Triangle t;
+    for (unsigned int i = 0; i < vertices.size(); i++) {
+        int count = 0;
+        avg = vmath::vec3();
+        for (unsigned int j = 0; j < _vertexTriangles[i].size(); j++) {
+            t = triangles[_vertexTriangles[i][j]];
+            if (t.tri[0] != (int)i) {
+                avg += colors[t.tri[0]];
+                count++;
+            }
+            if (t.tri[1] != (int)i) {
+                avg += colors[t.tri[1]];
+                count++;
+            }
+            if (t.tri[2] != (int)i) {
+                avg += colors[t.tri[2]];
+                count++;
+            }
+        }
+
+        avg /= (float)count;
+        c = colors[i];
+        nc = c + (float)value * (avg - c);
+        newcolors.push_back(nc);
+    }
+
+    return newcolors;
+}
+
+std::vector<vmath::vec3> TriangleMesh::smoothColors(double value, int iterations, std::vector<vmath::vec3> colors) {
+    if (iterations == 0) {
+        return colors;
+    }
+
+    _vertexTriangles.clear();
+    _updateVertexTriangles();
+    for (int i = 0; i < iterations; i++) {
+        colors = _smoothTriangleMeshColors(value, colors);
+    }
+    _vertexTriangles.clear();
+
+    return colors;
 }
 
 void TriangleMesh::updateVertexTriangles() {

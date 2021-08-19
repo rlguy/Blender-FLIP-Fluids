@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -68,8 +68,8 @@ def append_to_PHYSICS_PT_add_panel(self, context):
                 )
 
         if obj.flip_fluid.is_domain():
-            row.prop(context.scene.flip_fluid, "show_render", icon="RESTRICT_RENDER_OFF", text="")
             row.prop(context.scene.flip_fluid, "show_viewport", icon="RESTRICT_VIEW_OFF", text="")
+            row.prop(context.scene.flip_fluid, "show_render", icon="RESTRICT_RENDER_OFF", text="")
 
         addon_prefs = vcu.get_addon_preferences(context)
         if addon_prefs.beginner_friendly_mode:
@@ -79,20 +79,20 @@ def append_to_PHYSICS_PT_add_panel(self, context):
             row.prop(addon_prefs, "beginner_friendly_mode_tooltip", icon='QUESTION', emboss=False, text="")
             row.label(text="FLIP Fluids Beginner Friendly Mode is enabled")
 
-        # Uncomment for experimental builds
-        """
+        
         # Experimental Build Warning
-        box = self.layout.box()
-        column = box.column(align=True)
-        column.label(text="This is an experimental build of the FLIP Fluids addon", icon='ERROR')
-        column.label(text="Not for production. Use at your own risk.", icon='ERROR')
-        column.label(text="Please read before using:", icon='ERROR')
-        column.operator(
-                "wm.url_open", 
-                text="Force Field Experimental Builds", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Force-Field-Experimental-Builds"
-        """
+        addon_prefs.enable_experimental_build_warning = False    # Remove this line for experimental release
+        if addon_prefs.enable_experimental_build_warning:
+            box = self.layout.box()
+            column = box.column(align=True)
+            column.label(text="This is an experimental build of the FLIP Fluids addon", icon='ERROR')
+            column.label(text="Not for production. Use at your own risk.", icon='ERROR')
+            column.label(text="Please read before using:", icon='ERROR')
+            column.operator(
+                    "wm.url_open", 
+                    text="Experimental Builds", 
+                    icon="WORLD"
+                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Experimental-Builds"
 
         is_saved = bool(bpy.data.filepath)
         if not is_saved and obj.flip_fluid.is_domain():

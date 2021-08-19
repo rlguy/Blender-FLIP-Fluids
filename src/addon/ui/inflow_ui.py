@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@ class FLIPFLUID_PT_InflowTypePanel(bpy.types.Panel):
         obj = vcu.get_active_object(context)
         obj_props = obj.flip_fluid
         inflow_props = obj_props.inflow
+        dprops = context.scene.flip_fluid.get_domain_properties()
         show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
         show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
 
@@ -137,6 +138,24 @@ class FLIPFLUID_PT_InflowTypePanel(bpy.types.Panel):
             column.prop(inflow_props, "append_object_velocity_influence")
             column = box.column(align=True)
             column.prop(inflow_props, "constrain_fluid_velocity")
+
+        if vcu.get_addon_preferences().enable_developer_tools:
+            box = self.layout.box()
+            box.label(text="Geometry Attributes:")
+            column = box.column(align=True)
+            if vcu.is_blender_293():
+                show_color = dprops is not None and dprops.surface.enable_color_attribute
+                column.enabled = show_color
+                column.prop(inflow_props, "color")
+
+                column.separator()
+                show_source_id = dprops is not None and dprops.surface.enable_source_id_attribute
+                column.enabled = show_source_id
+                column.prop(inflow_props, "source_id")
+            else:
+                column.enabled = False
+                column.label(text="Geometry attribute features are only available in", icon='ERROR')
+                column.label(text="Blender 2.93 or later", icon='ERROR')
 
         box = self.layout.box()
         box.label(text="Mesh Data Export:")

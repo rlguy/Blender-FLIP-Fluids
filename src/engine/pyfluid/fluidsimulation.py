@@ -1,6 +1,6 @@
 # MIT License
 # 
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -499,6 +499,81 @@ class FluidSimulation(object):
             libfunc = lib.FluidSimulation_enable_whitewater_motion_blur
         else:
             libfunc = lib.FluidSimulation_disable_whitewater_motion_blur
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_surface_velocity_attribute(self):
+        libfunc = lib.FluidSimulation_is_surface_velocity_attribute_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_surface_velocity_attribute.setter
+    def enable_surface_velocity_attribute(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_surface_velocity_attribute
+        else:
+            libfunc = lib.FluidSimulation_disable_surface_velocity_attribute
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_surface_speed_attribute(self):
+        libfunc = lib.FluidSimulation_is_surface_speed_attribute_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_surface_speed_attribute.setter
+    def enable_surface_speed_attribute(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_surface_speed_attribute
+        else:
+            libfunc = lib.FluidSimulation_disable_surface_speed_attribute
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_surface_age_attribute(self):
+        libfunc = lib.FluidSimulation_is_surface_age_attribute_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_surface_age_attribute.setter
+    def enable_surface_age_attribute(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_surface_age_attribute
+        else:
+            libfunc = lib.FluidSimulation_disable_surface_age_attribute
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_surface_color_attribute(self):
+        libfunc = lib.FluidSimulation_is_surface_color_attribute_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_surface_color_attribute.setter
+    def enable_surface_color_attribute(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_surface_color_attribute
+        else:
+            libfunc = lib.FluidSimulation_disable_surface_color_attribute
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_surface_source_id_attribute(self):
+        libfunc = lib.FluidSimulation_is_surface_source_id_attribute_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_surface_source_id_attribute.setter
+    def enable_surface_source_id_attribute(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_surface_source_id_attribute
+        else:
+            libfunc = lib.FluidSimulation_disable_surface_source_id_attribute
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self()])
 
@@ -1460,6 +1535,19 @@ class FluidSimulation(object):
         pb.execute_lib_func(libfunc, [self(), value])
 
     @property
+    def viscosity_solver_error_tolerance(self):
+        libfunc = lib.FluidSimulation_get_viscosity_solver_error_tolerance
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @viscosity_solver_error_tolerance.setter
+    @decorators.check_ge_zero
+    def viscosity_solver_error_tolerance(self, value):
+        libfunc = lib.FluidSimulation_set_viscosity_solver_error_tolerance
+        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), value])
+
+    @property
     def surface_tension(self):
         libfunc = lib.FluidSimulation_get_surface_tension
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
@@ -1626,6 +1714,26 @@ class FluidSimulation(object):
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self()])
 
+    def set_velocity_transfer_method_FLIP(self):
+        libfunc = lib.FluidSimulation_set_velocity_transfer_method_FLIP
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    def set_velocity_transfer_method_APIC(self):
+        libfunc = lib.FluidSimulation_set_velocity_transfer_method_APIC
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    def is_velocity_transfer_method_FLIP(self):
+        libfunc = lib.FluidSimulation_is_velocity_transfer_method_FLIP
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    def is_velocity_transfer_method_APIC(self):
+        libfunc = lib.FluidSimulation_is_velocity_transfer_method_APIC
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
     @property
     def PICFLIP_ratio(self):
         libfunc = lib.FluidSimulation_get_PICFLIP_ratio
@@ -1637,6 +1745,20 @@ class FluidSimulation(object):
     @decorators.check_le(1.0)
     def PICFLIP_ratio(self, ratio):
         libfunc = lib.FluidSimulation_set_PICFLIP_ratio
+        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), ratio])
+
+    @property
+    def PICAPIC_ratio(self):
+        libfunc = lib.FluidSimulation_get_PICAPIC_ratio
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @PICAPIC_ratio.setter
+    @decorators.check_ge_zero
+    @decorators.check_le(1.0)
+    def PICAPIC_ratio(self, ratio):
+        libfunc = lib.FluidSimulation_set_PICAPIC_ratio
         pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), ratio])
 
@@ -1770,19 +1892,6 @@ class FluidSimulation(object):
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
         return pb.execute_lib_func(libfunc, [self()])
 
-    def get_diffuse_particles(self, startidx = None, endidx = None):
-        nparticles = self.get_num_diffuse_particles()
-        startidx, endidx = self._check_range(startidx, endidx, 0, nparticles)
-        n = endidx - startidx
-        out = (DiffuseParticle_t * n)()
-
-        libfunc = lib.FluidSimulation_get_diffuse_particles
-        pb.init_lib_func(libfunc, 
-                         [c_void_p, c_int, c_int, c_void_p, c_void_p], None)
-        pb.execute_lib_func(libfunc, [self(), startidx, endidx, out])
-
-        return out
-
     def get_diffuse_particle_positions(self, startidx = None, endidx = None):
         nparticles = self.get_num_diffuse_particles()
         startidx, endidx = self._check_range(startidx, endidx, 0, nparticles)
@@ -1854,6 +1963,26 @@ class FluidSimulation(object):
     def get_surface_blur_data(self):
         return self._get_output_data(lib.FluidSimulation_get_surface_blur_data_size,
                                      lib.FluidSimulation_get_surface_blur_data)
+
+    def get_surface_velocity_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_surface_velocity_attribute_data_size,
+                                     lib.FluidSimulation_get_surface_velocity_attribute_data)
+
+    def get_surface_speed_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_surface_speed_attribute_data_size,
+                                     lib.FluidSimulation_get_surface_speed_attribute_data)
+
+    def get_surface_age_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_surface_age_attribute_data_size,
+                                     lib.FluidSimulation_get_surface_age_attribute_data)
+
+    def get_surface_color_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_surface_color_attribute_data_size,
+                                     lib.FluidSimulation_get_surface_color_attribute_data)
+
+    def get_surface_source_id_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_surface_source_id_attribute_data_size,
+                                     lib.FluidSimulation_get_surface_source_id_attribute_data)
 
     def get_diffuse_data(self):
         return self._get_output_data(lib.FluidSimulation_get_diffuse_data_size,
@@ -1965,6 +2094,36 @@ class FluidSimulation(object):
         return self._get_output_data_range(lib.FluidSimulation_get_marker_particle_velocity_data_range,
                                            start_idx, end_idx, size_of_vector)
 
+    def get_marker_particle_affinex_data_range(self, start_idx, end_idx):
+        size_of_vector = 12
+        return self._get_output_data_range(lib.FluidSimulation_get_marker_particle_affinex_data_range,
+                                           start_idx, end_idx, size_of_vector)
+
+    def get_marker_particle_affiney_data_range(self, start_idx, end_idx):
+        size_of_vector = 12
+        return self._get_output_data_range(lib.FluidSimulation_get_marker_particle_affiney_data_range,
+                                           start_idx, end_idx, size_of_vector)
+
+    def get_marker_particle_affinez_data_range(self, start_idx, end_idx):
+        size_of_vector = 12
+        return self._get_output_data_range(lib.FluidSimulation_get_marker_particle_affinez_data_range,
+                                           start_idx, end_idx, size_of_vector)
+
+    def get_marker_particle_age_data_range(self, start_idx, end_idx):
+        size_of_float = 4
+        return self._get_output_data_range(lib.FluidSimulation_get_marker_particle_age_data_range,
+                                           start_idx, end_idx, size_of_float)
+
+    def get_marker_particle_color_data_range(self, start_idx, end_idx):
+        size_of_vector = 12
+        return self._get_output_data_range(lib.FluidSimulation_get_marker_particle_color_data_range,
+                                           start_idx, end_idx, size_of_vector)
+
+    def get_marker_particle_source_id_data_range(self, start_idx, end_idx):
+        size_of_int = 4
+        return self._get_output_data_range(lib.FluidSimulation_get_marker_particle_source_id_data_range,
+                                           start_idx, end_idx, size_of_int)
+
     def get_diffuse_particle_position_data_range(self, start_idx, end_idx):
         size_of_vector = 12
         return self._get_output_data_range(lib.FluidSimulation_get_diffuse_particle_position_data_range,
@@ -2030,6 +2189,54 @@ class FluidSimulation(object):
         pb.init_lib_func(libfunc, [c_void_p, FluidSimulationMarkerParticleData_t, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), pdata])
 
+    def load_marker_particle_affine_data(self, num_particles, affinex_data, affiney_data, affinez_data):
+        c_affinex_data = (c_char * len(affinex_data)).from_buffer_copy(affinex_data)
+        c_affiney_data = (c_char * len(affiney_data)).from_buffer_copy(affiney_data)
+        c_affinez_data = (c_char * len(affinez_data)).from_buffer_copy(affinez_data)
+
+        pdata = FluidSimulationMarkerParticleAffineData_t()
+        pdata.size = c_int(num_particles)
+        pdata.affinex = ctypes.cast(c_affinex_data, c_char_p)
+        pdata.affiney = ctypes.cast(c_affiney_data, c_char_p)
+        pdata.affinez = ctypes.cast(c_affinez_data, c_char_p)
+
+        libfunc = lib.FluidSimulation_load_marker_particle_affine_data
+        pb.init_lib_func(libfunc, [c_void_p, FluidSimulationMarkerParticleAffineData_t, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), pdata])
+
+    def load_marker_particle_age_data(self, num_particles, age_data):
+        c_age_data = (c_char * len(age_data)).from_buffer_copy(age_data)
+
+        pdata = FluidSimulationMarkerParticleAgeData_t()
+        pdata.size = c_int(num_particles)
+        pdata.age = ctypes.cast(c_age_data, c_char_p)
+
+        libfunc = lib.FluidSimulation_load_marker_particle_age_data
+        pb.init_lib_func(libfunc, [c_void_p, FluidSimulationMarkerParticleAgeData_t, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), pdata])
+
+    def load_marker_particle_color_data(self, num_particles, color_data):
+        c_color_data = (c_char * len(color_data)).from_buffer_copy(color_data)
+
+        pdata = FluidSimulationMarkerParticleColorData_t()
+        pdata.size = c_int(num_particles)
+        pdata.color = ctypes.cast(c_color_data, c_char_p)
+
+        libfunc = lib.FluidSimulation_load_marker_particle_color_data
+        pb.init_lib_func(libfunc, [c_void_p, FluidSimulationMarkerParticleColorData_t, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), pdata])
+
+    def load_marker_particle_source_id_data(self, num_particles, id_data):
+        c_id_data = (c_char * len(id_data)).from_buffer_copy(id_data)
+
+        pdata = FluidSimulationMarkerParticleSourceIDData_t()
+        pdata.size = c_int(num_particles)
+        pdata.sourceid = ctypes.cast(c_id_data, c_char_p)
+
+        libfunc = lib.FluidSimulation_load_marker_particle_source_id_data
+        pb.init_lib_func(libfunc, [c_void_p, FluidSimulationMarkerParticleSourceIDData_t, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), pdata])
+
     def load_diffuse_particle_data(self, num_particles, position_data, velocity_data,
                                          lifetime_data, type_data, id_data):
         c_position_data = (c_char * len(position_data)).from_buffer_copy(position_data)
@@ -2087,6 +2294,11 @@ class FluidSimulationFrameStats_t(ctypes.Structure):
                 ("surface", FluidSimulationMeshStats_t),
                 ("preview", FluidSimulationMeshStats_t),
                 ("surfaceblur", FluidSimulationMeshStats_t),
+                ("surfacevelocity", FluidSimulationMeshStats_t),
+                ("surfacespeed", FluidSimulationMeshStats_t),
+                ("surfaceage", FluidSimulationMeshStats_t),
+                ("surfacecolor", FluidSimulationMeshStats_t),
+                ("surfacesourceid", FluidSimulationMeshStats_t),
                 ("foam", FluidSimulationMeshStats_t),
                 ("bubble", FluidSimulationMeshStats_t),
                 ("spray", FluidSimulationMeshStats_t),
@@ -2104,6 +2316,24 @@ class FluidSimulationMarkerParticleData_t(ctypes.Structure):
     _fields_ = [("size", c_int),
                 ("positions", c_char_p),
                 ("velocities", c_char_p)]
+
+class FluidSimulationMarkerParticleAffineData_t(ctypes.Structure):
+    _fields_ = [("size", c_int),
+                ("affinex", c_char_p),
+                ("affiney", c_char_p),
+                ("affinez", c_char_p)]
+
+class FluidSimulationMarkerParticleAgeData_t(ctypes.Structure):
+    _fields_ = [("size", c_int),
+                ("age", c_char_p)]
+
+class FluidSimulationMarkerParticleColorData_t(ctypes.Structure):
+    _fields_ = [("size", c_int),
+                ("color", c_char_p)]
+
+class FluidSimulationMarkerParticleSourceIDData_t(ctypes.Structure):
+    _fields_ = [("size", c_int),
+                ("sourceid", c_char_p)]
 
 class FluidSimulationDiffuseParticleData_t(ctypes.Structure):
     _fields_ = [("size", c_int),

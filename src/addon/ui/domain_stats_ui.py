@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -207,6 +207,41 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
                 column3.label(text="")
                 column4.label(text=self.format_bytes(sprops.surfaceblur_mesh.bytes.get()))
                 total_bytes += sprops.surfaceblur_mesh.bytes.get()
+
+            if sprops.surfacevelocity_mesh.enabled:
+                column1.label(text="Velocity")
+                column2.label(text=self.format_number(sprops.surfacevelocity_mesh.verts))
+                column3.label(text="")
+                column4.label(text=self.format_bytes(sprops.surfacevelocity_mesh.bytes.get()))
+                total_bytes += sprops.surfacevelocity_mesh.bytes.get()
+
+            if sprops.surfacespeed_mesh.enabled:
+                column1.label(text="Speed")
+                column2.label(text=self.format_number(sprops.surfacespeed_mesh.verts))
+                column3.label(text="")
+                column4.label(text=self.format_bytes(sprops.surfacespeed_mesh.bytes.get()))
+                total_bytes += sprops.surfacespeed_mesh.bytes.get()
+
+            if sprops.surfaceage_mesh.enabled:
+                column1.label(text="Age")
+                column2.label(text=self.format_number(sprops.surfaceage_mesh.verts))
+                column3.label(text="")
+                column4.label(text=self.format_bytes(sprops.surfaceage_mesh.bytes.get()))
+                total_bytes += sprops.surfaceage_mesh.bytes.get()
+
+            if sprops.surfacecolor_mesh.enabled:
+                column1.label(text="Color")
+                column2.label(text=self.format_number(sprops.surfacecolor_mesh.verts))
+                column3.label(text="")
+                column4.label(text=self.format_bytes(sprops.surfacecolor_mesh.bytes.get()))
+                total_bytes += sprops.surfacecolor_mesh.bytes.get()
+
+            if sprops.surfacesourceid_mesh.enabled:
+                column1.label(text="Source ID")
+                column2.label(text=self.format_number(sprops.surfacesourceid_mesh.verts))
+                column3.label(text="")
+                column4.label(text=self.format_bytes(sprops.surfacesourceid_mesh.bytes.get()))
+                total_bytes += sprops.surfacesourceid_mesh.bytes.get()
 
             if sprops.foam_mesh.enabled:
                 column1.label(text="Foam")
@@ -424,6 +459,11 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
             stats_exist = (sprops.surface_mesh.enabled or 
                            sprops.preview_mesh.enabled or 
                            sprops.surfaceblur_mesh.enabled or 
+                           sprops.surfacevelocity_mesh.enabled or 
+                           sprops.surfacespeed_mesh.enabled or 
+                           sprops.surfaceage_mesh.enabled or 
+                           sprops.surfacecolor_mesh.enabled or 
+                           sprops.surfacesourceid_mesh.enabled or 
                            sprops.foam_mesh.enabled or 
                            sprops.bubble_mesh.enabled or 
                            sprops.spray_mesh.enabled or 
@@ -458,6 +498,36 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
                 column2.label(text=self.format_bytes(sprops.surfaceblur_mesh.bytes.get()))
                 row_count += 1
                 total_size += sprops.surfaceblur_mesh.bytes.get()
+
+            if sprops.surfacevelocity_mesh.enabled:
+                column1.label(text="Velocity")
+                column2.label(text=self.format_bytes(sprops.surfacevelocity_mesh.bytes.get()))
+                row_count += 1
+                total_size += sprops.surfacevelocity_mesh.bytes.get()
+
+            if sprops.surfacespeed_mesh.enabled:
+                column1.label(text="Speed")
+                column2.label(text=self.format_bytes(sprops.surfacespeed_mesh.bytes.get()))
+                row_count += 1
+                total_size += sprops.surfacespeed_mesh.bytes.get()
+
+            if sprops.surfaceage_mesh.enabled:
+                column1.label(text="Age")
+                column2.label(text=self.format_bytes(sprops.surfaceage_mesh.bytes.get()))
+                row_count += 1
+                total_size += sprops.surfaceage_mesh.bytes.get()
+
+            if sprops.surfacecolor_mesh.enabled:
+                column1.label(text="Color")
+                column2.label(text=self.format_bytes(sprops.surfacecolor_mesh.bytes.get()))
+                row_count += 1
+                total_size += sprops.surfacecolor_mesh.bytes.get()
+
+            if sprops.surfacesourceid_mesh.enabled:
+                column1.label(text="Source ID")
+                column2.label(text=self.format_bytes(sprops.surfacesourceid_mesh.bytes.get()))
+                row_count += 1
+                total_size += sprops.surfacesourceid_mesh.bytes.get()
 
             if sprops.foam_mesh.enabled:
                 column1.label(text="Foam")

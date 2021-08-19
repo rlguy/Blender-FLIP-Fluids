@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,6 +25,18 @@ def is_blender_28():
 
 def is_blender_281():
     return bpy.app.version >= (2, 81, 0)
+
+
+def is_blender_29():
+    return bpy.app.version >= (2, 90, 0)
+
+
+def is_blender_293():
+    return bpy.app.version >= (2, 93, 0)
+
+
+def is_blender_30():
+    return bpy.app.version >= (3, 0, 0)
 
 
 def is_blender_279():
@@ -392,11 +404,15 @@ def get_blender_preferences(context=None):
         return context.user_preferences
 
 
-def get_addon_preferences(context=None):
+def get_blender_preferences_temporary_directory(context=None):
     if context is None:
         context = bpy.context
-    id_name = __name__.split(".")[0]
-    return get_blender_preferences(context).addons[id_name].preferences
+    return get_blender_preferences(context).filepaths.temporary_directory
+
+
+def get_addon_preferences(context=None):
+    from ..properties import preferences_properties
+    return preferences_properties.get_addon_preferences(context)
 
 
 #
@@ -430,3 +446,15 @@ def get_file_folder_icon():
         return "FILEBROWSER"
     else:
         return "FILESEL"
+
+def get_hide_off_icon():
+    if is_blender_28():
+        return "HIDE_OFF"
+    else:
+        return "RESTRICT_VIEW_OFF"
+
+def get_hide_on_icon():
+    if is_blender_28():
+        return "HIDE_ON"
+    else:
+        return "RESTRICT_VIEW_ON"

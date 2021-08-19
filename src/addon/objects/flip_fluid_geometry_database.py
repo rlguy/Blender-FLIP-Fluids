@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
 import bpy, os, sqlite3, math
 
 from .flip_fluid_geometry_export_object import GeometryExportType, MotionExportType
+from ..filesystem import filesystem_protection_layer as fpl
 
 
 class GeometryDatabase():
@@ -902,7 +903,7 @@ class GeometryDatabase():
 
     def _initialize_database(self, db_filepath, clear_database=False):
         if clear_database and os.path.isfile(db_filepath):
-            os.remove(db_filepath)
+            fpl.delete_file(db_filepath)
 
         if os.path.isfile(db_filepath):
             return sqlite3.connect(db_filepath)

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2020 Ryan L. Guy
+Copyright (C) 2021 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -67,6 +67,7 @@ TriangleMesh getTriangleMeshFromAABB(AABB bbox) {
 }
 
 int main() {
+
     // This example will drop a box of fluid in the center
     // of the fluid simulation domain.
     int isize = 64;

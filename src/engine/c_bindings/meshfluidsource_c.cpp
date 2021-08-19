@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2020 Ryan L. Guy
+Copyright (C) 2021 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -252,6 +252,34 @@ extern "C" {
     EXPORTDLL int MeshFluidSource_is_outflow_inversed(MeshFluidSource* obj, int *err) {
         return CBindings::safe_execute_method_ret_0param(
             obj, &MeshFluidSource::isOutflowInversed, err
+        );
+    }
+
+    EXPORTDLL int MeshFluidSource_get_source_id(MeshFluidSource* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &MeshFluidSource::getSourceID, err
+        );
+    }
+
+    EXPORTDLL void MeshFluidSource_set_source_id(MeshFluidSource* obj, int id, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &MeshFluidSource::setSourceID, id, err
+        );
+    }
+
+    EXPORTDLL Vector3_t MeshFluidSource_get_source_color(MeshFluidSource* obj, int *err) {
+        vmath::vec3 color = CBindings::safe_execute_method_ret_0param(
+            obj, &MeshFluidSource::getSourceColor, err
+        );
+        return CBindings::to_struct(color);
+    }
+
+    EXPORTDLL void MeshFluidSource_set_source_color(MeshFluidSource* obj,
+                                             double r, double g, double b,
+                                             int *err) {
+        vmath::vec3 color(r, g, b);
+        CBindings::safe_execute_method_void_1param(
+            obj, &MeshFluidSource::setSourceColor, color, err
         );
     }
 

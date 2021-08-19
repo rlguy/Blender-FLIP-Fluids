@@ -4,7 +4,7 @@ The **FLIP Fluids addon** is a tool that helps you set up, run, and render liqui
 
 With our reputation for delivering high quality software and outstanding customer support, the FLIP Fluids addon is one of the best selling products on the Blender Market.
 
-- 5000+ sales, 5 star rating, excellent value
+- 6000+ sales, 5 star rating, excellent value
 - No subscriptions, all future updates included
 - [Try out our free demo! We're sure you'll like it :)](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/FLIP-Fluids-Demo-Addon)
 - [Frequently Asked Questions (FAQ)](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Frequently-Asked-Questions)
@@ -27,7 +27,7 @@ See our [Blender Market product page](https://blendermarket.com/products/flipflu
 
 - Windows, MacOS, or Linux operating system
 - Blender 2.79 or 2.8+* or 2.9+ (64-bit)
-- CPU 64-bit Intel® or AMD® multi-core processor
+- CPU 64-bit Intel® or AMD® or Apple Silicon multi-core processor
 - 8 GB RAM minimum, 16 GB or more of RAM memory is highly recommended
 
 ***Blender Support on MacOS:** Due to a MacOS specific [Blender bug](https://developer.blender.org/T68243) in versions 2.80, 2.81, and 2.82, these Blender versions cannot be supported. Blender 2.79 or 2.83+ or 2.9+ are required for MacOS.
@@ -105,5 +105,5 @@ Once successfully built, the FLIP Fluids addon will be located in the ```build/b
 - [Documentation and Wiki](https://github.com/rlguy/Blender-FLIP-Fluids/wiki)
 - [Bug/Issue Tracker](https://github.com/rlguy/Blender-FLIP-Fluids/issues)
 - [FLIP Fluids Homepage](http://flipfluids.com)
-- [Weekly Development Notes](http://flipfluids.com/blog)
+- [Development Notes](http://flipfluids.com/blog)
 - [Twitter](https://twitter.com/flipfluids) | [Instagram](https://www.instagram.com/flip.fluids/) | [Facebook](https://www.facebook.com/FLIPFluids/) | [YouTube](https://www.youtube.com/flipfluids)

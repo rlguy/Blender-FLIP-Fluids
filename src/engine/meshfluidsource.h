@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2020 Ryan L. Guy
+Copyright (C) 2021 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -97,6 +97,12 @@ public:
     RigidBodyVelocity getRigidBodyVelocity(double framedt);
     VelocityFieldData* getVelocityFieldData();
     int getID();
+
+    void setSourceID(int id);
+    int getSourceID();
+
+    void setSourceColor(vmath::vec3 c);
+    vmath::vec3 getSourceColor();
 
 private:
 

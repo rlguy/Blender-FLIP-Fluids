@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2020 Ryan L. Guy
+Copyright (C) 2021 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -85,8 +85,11 @@ void ParticleSheeter::_initializeParameters(ParticleSheeterParameters params) {
 }
 
 void ParticleSheeter::_getMarkerParticleCellCounts(Array3d<unsigned char> &countGrid) {
-    for (size_t i = 0; i < _particles->size(); i++) {
-        vmath::vec3 p = _particles->at(i).position;
+    std::vector<vmath::vec3> *positions;
+    _particles->getAttributeValues("POSITION", positions);
+
+    for (size_t i = 0; i < positions->size(); i++) {
+        vmath::vec3 p = positions->at(i);
         GridIndex g = Grid3d::positionToGridIndex(p, _dx);
         if ((int)(countGrid(g)) == 255) {
             continue;
@@ -122,8 +125,11 @@ void ParticleSheeter::_identifySheetParticlesPhase1Thread(int startidx, int endi
     float eps = 1e-5;
     vmath::vec3 hdx(0.5*_dx, 0.5*_dx, 0.5*_dx);
 
+    std::vector<vmath::vec3> *positions;
+    _particles->getAttributeValues("POSITION", positions);
+
     for (int i = startidx; i < endidx; i++) {
-        vmath::vec3 p = _particles->at(i).position;
+        vmath::vec3 p = positions->at(i);
         GridIndex g = Grid3d::positionToGridIndex(p, _dx);
         if ((int)(countGrid->get(g)) >= _maxParticlesPerCell) {
             // too dense to be a sheet that needs reseeding
@@ -247,10 +253,13 @@ void ParticleSheeter::_identifySheetParticlesPhase2Thread(int startidx, int endi
                                                           Array3d<bool> *sheetCells,
                                                           Array3d<unsigned char> *countGrid, 
                                                           std::vector<vmath::vec3> *result) {
+    std::vector<vmath::vec3> *positions;
+    _particles->getAttributeValues("POSITION", positions);
+
     vmath::vec3 hdx(0.5*_dx, 0.5*_dx, 0.5*_dx);
     float maxdepth = _maxSheetDepth * _dx;
     for (int i = startidx; i < endidx; i++) {
-        vmath::vec3 p = _particles->at(i).position;
+        vmath::vec3 p = positions->at(i);
         GridIndex g = Grid3d::positionToGridIndex(p, _dx);
         if (!sheetCells->get(g)) {
             continue;
@@ -275,8 +284,11 @@ void ParticleSheeter::_identifySheetParticlesPhase2Thread(int startidx, int endi
 }
 
 void ParticleSheeter::_initializeMaskGrid(ParticleMaskGrid &maskgrid) {
-    for (size_t i = 0; i < _particles->size(); i++) {
-        maskgrid.addParticle(_particles->at(i).position);
+    std::vector<vmath::vec3> *positions;
+    _particles->getAttributeValues("POSITION", positions);
+
+    for (size_t i = 0; i < positions->size(); i++) {
+        maskgrid.addParticle(positions->at(i));
     }
 }
 

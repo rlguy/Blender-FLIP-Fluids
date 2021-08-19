@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2020 Ryan L. Guy
+Copyright (C) 2021 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -673,7 +673,7 @@ void ParticleMesher::_addComputeChunkScalarFieldToPreviewField(ScalarFieldData &
     AABB bbox(offset, width, height, depth);
 
     vmath::vec3 pv;
-    double eps = 0.001;
+    double eps = _dx * 1e-3;
     for (int k = 0; k < _pksize + 1; k++) {
         for (int j = 0; j < _pjsize + 1; j++) {
             for (int i = 0; i < _pisize + 1; i++) {

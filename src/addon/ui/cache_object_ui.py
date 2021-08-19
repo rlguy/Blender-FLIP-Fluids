@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2021 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -127,7 +127,7 @@ class FLIPFLUID_PT_CacheObjectTypePanel(bpy.types.Panel):
         row.prop(rprops, particle_object_mode_prop, expand=True)
         row = column2.row(align=True)
         row.enabled = getattr(rprops, particle_object_mode_prop) == 'WHITEWATER_PARTICLE_CUSTOM'
-        row.prop_search(rprops, object_prop, bpy.data, "objects", text="")
+        row.prop(rprops, object_prop, text="")
         row = column.row()
         row.prop(rprops, scale_prop, text="Particle Scale")
         row.prop(rprops, render_display_prop, text="Hide particles in viewport")
@@ -154,7 +154,12 @@ class FLIPFLUID_PT_CacheObjectTypePanel(bpy.types.Panel):
 
         column = self.layout.column()
         column.separator()
-        column.prop(dprops.materials, 'surface_material', text="Surface Material")
+        split = column.split()
+        column_left = split.column(align=True)
+        column_right = split.column(align=True)
+
+        column_left.label(text="Surface Material")
+        column_right.prop(dprops.materials, "surface_material", text="")
 
 
     def draw_foam(self, cache_props, domain_props):
