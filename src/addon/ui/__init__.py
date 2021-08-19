@@ -81,8 +81,8 @@ def append_to_PHYSICS_PT_add_panel(self, context):
 
         
         # Experimental Build Warning
-        show_experimental_build_warning = False
-        if show_experimental_build_warning:
+        addon_prefs.enable_experimental_build_warning = False    # Remove this line for experimental release
+        if addon_prefs.enable_experimental_build_warning:
             box = self.layout.box()
             column = box.column(align=True)
             column.label(text="This is an experimental build of the FLIP Fluids addon", icon='ERROR')
@@ -90,7 +90,7 @@ def append_to_PHYSICS_PT_add_panel(self, context):
             column.label(text="Please read before using:", icon='ERROR')
             column.operator(
                     "wm.url_open", 
-                    text="Force Field Experimental Builds", 
+                    text="Experimental Builds", 
                     icon="WORLD"
                 ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Experimental-Builds"
 

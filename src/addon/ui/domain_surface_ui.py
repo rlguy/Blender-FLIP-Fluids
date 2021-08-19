@@ -128,6 +128,21 @@ class FLIPFLUID_PT_DomainTypeFluidSurfacePanel(bpy.types.Panel):
         #column.separator()
         #column.prop(sprops, "generate_motion_blur_data")
 
+        if vcu.get_addon_preferences().enable_developer_tools:
+            box = self.layout.box()
+            box.label(text="Geometry Attributes:")
+            column = box.column(align=True)
+            if vcu.is_blender_293():
+                column.prop(sprops, "enable_velocity_vector_attribute")
+                column.prop(sprops, "enable_speed_attribute")
+                column.prop(sprops, "enable_age_attribute")
+                column.prop(sprops, "enable_color_attribute")
+                column.prop(sprops, "enable_source_id_attribute")
+            else:
+                column.enabled = False
+                column.label(text="Geometry attribute features are only available in", icon='ERROR')
+                column.label(text="Blender 2.93 or later", icon='ERROR')
+
 
 def register():
     bpy.utils.register_class(FLIPFLUID_PT_DomainTypeFluidSurfacePanel)

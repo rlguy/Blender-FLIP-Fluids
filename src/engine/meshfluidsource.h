@@ -98,6 +98,12 @@ public:
     VelocityFieldData* getVelocityFieldData();
     int getID();
 
+    void setSourceID(int id);
+    int getSourceID();
+
+    void setSourceColor(vmath::vec3 c);
+    vmath::vec3 getSourceColor();
+
 private:
 
     void _initializeID();

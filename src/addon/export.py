@@ -95,8 +95,7 @@ def __get_domain_data_dict(context, dobj):
     initialize_properties['delete_outdated_savestates'] = dprops.simulation.delete_outdated_savestates
     initialize_properties['delete_outdated_meshes'] = dprops.simulation.delete_outdated_meshes
 
-    id_name = __name__.split(".")[0]
-    preferences = vcu.get_blender_preferences(context).addons[id_name].preferences
+    preferences = vcu.get_addon_preferences()
     if len(preferences.gpu_devices) > 0:
         initialize_properties['gpu_device'] = preferences.selected_gpu_device
     else:

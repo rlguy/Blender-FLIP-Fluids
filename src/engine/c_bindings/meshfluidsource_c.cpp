@@ -255,4 +255,32 @@ extern "C" {
         );
     }
 
+    EXPORTDLL int MeshFluidSource_get_source_id(MeshFluidSource* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &MeshFluidSource::getSourceID, err
+        );
+    }
+
+    EXPORTDLL void MeshFluidSource_set_source_id(MeshFluidSource* obj, int id, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &MeshFluidSource::setSourceID, id, err
+        );
+    }
+
+    EXPORTDLL Vector3_t MeshFluidSource_get_source_color(MeshFluidSource* obj, int *err) {
+        vmath::vec3 color = CBindings::safe_execute_method_ret_0param(
+            obj, &MeshFluidSource::getSourceColor, err
+        );
+        return CBindings::to_struct(color);
+    }
+
+    EXPORTDLL void MeshFluidSource_set_source_color(MeshFluidSource* obj,
+                                             double r, double g, double b,
+                                             int *err) {
+        vmath::vec3 color(r, g, b);
+        CBindings::safe_execute_method_void_1param(
+            obj, &MeshFluidSource::setSourceColor, color, err
+        );
+    }
+
 }

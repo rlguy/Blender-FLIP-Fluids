@@ -253,6 +253,22 @@ int MeshFluidSource::getID() {
     return _ID;
 }
 
+void MeshFluidSource::setSourceID(int id) {
+    _meshObject.setSourceID(id);
+}
+
+int MeshFluidSource::getSourceID() {
+    return _meshObject.getSourceID();
+}
+
+void MeshFluidSource::setSourceColor(vmath::vec3 c) {
+    _meshObject.setSourceColor(c);
+}
+
+vmath::vec3 MeshFluidSource::getSourceColor() {
+    return _meshObject.getSourceColor();
+}
+
 void MeshFluidSource::_initializeID() {
     _ID = _IDCounter++;
 }

@@ -75,8 +75,7 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
 
 
     def get_addon_preferences(self):
-        id_name = __name__.split(".")[0]
-        return vcu.get_blender_preferences(bpy.context).addons[id_name].preferences
+        return vcu.get_addon_preferences()
 
 
     def frame_complete_callback(self):

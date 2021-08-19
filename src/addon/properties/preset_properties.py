@@ -822,7 +822,7 @@ class ExportPresetPackageSettings(bpy.types.PropertyGroup):
     export_directory = StringProperty(
             name="",
             description="Preset package will be exported to this directory",
-            default=vcu.get_blender_preferences(bpy.context).filepaths.temporary_directory, 
+            default=vcu.get_blender_preferences_temporary_directory(), 
             subtype='DIR_PATH',
             ); exec(conv("export_directory"))
     export_filename = StringProperty(

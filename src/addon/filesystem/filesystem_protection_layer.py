@@ -19,6 +19,7 @@ import bpy, os, pathlib
 
 __EXTENSION_WHITELIST = [
     ".backup",
+    ".bat",
     ".bbox",
     ".bobj",
     ".data",
@@ -123,14 +124,21 @@ def delete_files_in_directory(base_directory, extensions, remove_directory=False
         os.rmdir(base_directory)
 
 
-def delete_file(filepath):
+def delete_file(filepath, error_ok=False):
     if not os.path.isfile(filepath):
         return
 
     extension = pathlib.Path(filepath).suffix
     check_extensions_valid([extension])
     check_directory_valid(filepath)
-    os.remove(filepath)
+
+    try:
+        os.remove(filepath)
+    except Exception as e:
+        if error_ok:
+            pass
+        else:
+            raise e
 
 
 def clear_cache_directory(cache_directory, clear_export=False, clear_logs=False, remove_directory=False):
@@ -138,12 +146,16 @@ def clear_cache_directory(cache_directory, clear_export=False, clear_logs=False,
     delete_file(stats_filepath)
 
     bakefiles_dir = os.path.join(cache_directory, "bakefiles")
-    extensions = [".bbox", ".bobj", ".wwp", ".fpd", ".ffd"]
+    extensions = [".bbox", ".bobj", ".data", ".wwp", ".fpd", ".ffd"]
     delete_files_in_directory(bakefiles_dir, extensions, remove_directory=True)
 
     temp_dir = os.path.join(cache_directory, "temp")
     extensions = [".data"]
     delete_files_in_directory(temp_dir, extensions, remove_directory=True)
+
+    scripts_dir = os.path.join(cache_directory, "scripts")
+    extensions = [".bat"]
+    delete_files_in_directory(scripts_dir, extensions, remove_directory=True)
 
     savestates_dir = os.path.join(cache_directory, "savestates")
     if os.path.isdir(savestates_dir):

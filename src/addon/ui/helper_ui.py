@@ -68,6 +68,7 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                     row = column.row(align=True)
                     row.operator("flip_fluid_operators.relative_cache_directory")
                     row.operator("flip_fluid_operators.absolute_cache_directory")
+                    row.operator("flip_fluid_operators.match_filename_cache_directory")
                     column.separator()
                 else:
                     row = box.row(align=True)

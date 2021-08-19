@@ -31,6 +31,14 @@ def is_blender_29():
     return bpy.app.version >= (2, 90, 0)
 
 
+def is_blender_293():
+    return bpy.app.version >= (2, 93, 0)
+
+
+def is_blender_30():
+    return bpy.app.version >= (3, 0, 0)
+
+
 def is_blender_279():
     return bpy.app.version <= (2, 79, 999)
     
@@ -396,11 +404,15 @@ def get_blender_preferences(context=None):
         return context.user_preferences
 
 
-def get_addon_preferences(context=None):
+def get_blender_preferences_temporary_directory(context=None):
     if context is None:
         context = bpy.context
-    id_name = __name__.split(".")[0]
-    return get_blender_preferences(context).addons[id_name].preferences
+    return get_blender_preferences(context).filepaths.temporary_directory
+
+
+def get_addon_preferences(context=None):
+    from ..properties import preferences_properties
+    return preferences_properties.get_addon_preferences(context)
 
 
 #

@@ -140,7 +140,7 @@ def curve_to_triangle_mesh(bl_curve_object, apply_transforms=True):
     spline = bl_curve_object.data.splines[0]
     if spline.type == 'BEZIER':
         num_curve_points = len(spline.bezier_points)
-    elif spline.type == 'NURBS':
+    elif spline.type == 'NURBS' or spline.type == 'POLY':
         num_curve_points = len(spline.points)
     
     extra_vertex = 0 if spline.use_cyclic_u else 1

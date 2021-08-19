@@ -262,6 +262,8 @@ class FlipFluidHelperCreateDomain(bpy.types.Operator):
         vcu.set_active_object(active_object)
         vcu.select_set(active_object, True)
 
+        bpy.ops.ed.undo_push()
+
 
     def set_as_inverse_obstacle_and_generate_domain(self, active_object):
         bpy.ops.flip_fluid_operators.flip_fluid_add()
@@ -525,7 +527,7 @@ class FlipFluidHelperAddObjects(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         for obj in context.selected_objects:
-            if obj.type == 'MESH':
+            if obj.type == 'MESH' or obj.type == 'CURVE' or obj.type == 'EMPTY':
                 return True
         return False
 
@@ -1033,6 +1035,9 @@ class FlipFluidHelperCommandLineBake(bpy.types.Operator):
         if system == "Windows":
             if vcu.is_blender_28():
                 blender_exe_path = bpy.app.binary_path
+                if " " in blender_exe_path:
+                    # Some versions of Blender 2.8+ don't support spaces in the executable path
+                    blender_exe_path = "blender.exe"
             else:
                 # subproccess.call() in Blender 2.79 Python does not seem to support spaces in the 
                 # executable path, so we'll just use blender.exe and hope that no other addon has
@@ -1046,9 +1051,36 @@ class FlipFluidHelperCommandLineBake(bpy.types.Operator):
             # Feature not available on Linux
             return {'CANCELLED'}
 
-        subprocess.call(command, shell=True)
-
         command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" --python \"" + script_path + "\""
+        prefs = vcu.get_addon_preferences()
+        launch_attempts = prefs.cmd_bake_max_attempts
+        launch_attempts_text = str(launch_attempts + 1)
+
+        if launch_attempts == 0:
+            # Launch with a single command
+            subprocess.call(command, shell=True)
+        else:
+            # Launch using .bat file that can re-launch after crash is detected
+            bat_template_path = os.path.dirname(os.path.realpath(__file__))
+            bat_template_path = os.path.dirname(bat_template_path)
+            bat_template_path = script_path = os.path.join(bat_template_path, "resources", "command_line_scripts", "cmd_bake_template.bat")
+            with open(bat_template_path, 'r') as f:
+                bat_text = f.read()
+
+            bat_text = bat_text.replace("MAX_LAUNCH_ATTEMPTS", launch_attempts_text)
+            bat_text = bat_text.replace("COMMAND_OPERATION", command_text)
+            
+            dprops = context.scene.flip_fluid.get_domain_properties()
+            cache_directory = dprops.cache.get_cache_abspath()
+            cache_scripts_directory = os.path.join(cache_directory, "scripts")
+            if not os.path.exists(cache_scripts_directory):
+                os.makedirs(cache_scripts_directory)
+
+            cmd_bake_script_filepath = os.path.join(cache_scripts_directory, "cmd_bake.bat")
+            with open(cmd_bake_script_filepath, 'w') as f:
+                f.write(bat_text)
+
+            os.startfile(cmd_bake_script_filepath)
 
         info_msg = "Launched command line baking window. If the baking process did not begin,"
         info_msg += " this may be caused by a conflict with another addon or a security feature of your OS that restricts"
@@ -1115,6 +1147,9 @@ class FlipFluidHelperCommandLineRender(bpy.types.Operator):
         if system == "Windows":
             if vcu.is_blender_28():
                 blender_exe_path = bpy.app.binary_path
+                if " " in blender_exe_path:
+                    # Some versions of Blender 2.8+ don't support spaces in the executable path
+                    blender_exe_path = "blender.exe"
             else:
                 # subproccess.call() in Blender 2.79 Python does not seem to support spaces in the 
                 # executable path, so we'll just use blender.exe and hope that no other addon has
@@ -1171,6 +1206,39 @@ class FlipFluidHelperCommandLineRenderToClipboard(bpy.types.Operator):
         return {'FINISHED'}
 
 
+def get_render_output_info():
+    full_path = bpy.path.abspath(bpy.context.scene.render.filepath)
+    directory_path = full_path
+
+    file_prefix = os.path.basename(directory_path)
+    if file_prefix:
+       directory_path = os.path.dirname(directory_path)
+
+    file_format_to_suffix = {
+        "BMP"                 : ".bmp",
+        "IRIS"                : ".rgb",
+        "PNG"                 : ".png",
+        "JPEG"                : ".jpg",
+        "JPEG2000"            : ".jp2",
+        "TARGA"               : ".tga",
+        "TARGA_RAW"           : ".tga",
+        "CINEON"              : ".cin",
+        "DPX"                 : ".dpx",
+        "OPEN_EXR_MULTILAYER" : ".exr",
+        "OPEN_EXR"            : ".exr",
+        "HDR"                 : ".hdr",
+        "TIFF"                : ".tif"
+    }
+
+    file_format = bpy.context.scene.render.image_settings.file_format
+    if file_format not in file_format_to_suffix:
+        self.report({'ERROR'}, "Render output file format must be an image format.")
+        return None, None, None
+
+    file_suffix = file_format_to_suffix[file_format]
+
+    return directory_path, file_prefix, file_suffix
+
 
 class FlipFluidHelperCommandLineRenderToScriptfile(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.helper_cmd_render_to_scriptfile"
@@ -1185,66 +1253,80 @@ class FlipFluidHelperCommandLineRenderToScriptfile(bpy.types.Operator):
         return bool(bpy.data.filepath) and system == "Windows"
 
 
-    def execute(self, context):
-        
-        output_message = "No batch file generated! All frames have been rendered."
-        output_message_2 = "Click the folder-icon to see the rendered files."
-        render_directory = os.path.dirname(bpy.data.scenes[0].render.filepath)
-        
-        render_absolutedirectory = bpy.path.abspath(render_directory)
-        render_filename = bpy.context.scene.render.filepath
-        
+    def get_missing_frames(self):
+        directory_path, file_prefix, file_suffix = get_render_output_info()
+
+        filenames = [f for f in os.listdir(directory_path) if os.path.isfile(os.path.join(directory_path, f))]
+        filenames = [f for f in filenames if f.startswith(file_prefix) and f.endswith(file_suffix)]
+        frame_numbers = []
+        for f in filenames:
+            try:
+                f = f[len(file_prefix):-len(file_suffix)]
+                frame_numbers.append(int(f))
+            except:
+                pass
+
+        frame_exists = {}
+        for n in frame_numbers:
+            frame_exists[n] = True
+
         frame_start = bpy.context.scene.frame_start
         frame_end = bpy.context.scene.frame_end
-        frames_total = (frame_end +1)  - frame_start
-                
-        rendered_files_format = bpy.context.scene.render.image_settings.file_format
-        
-        rendered_files_format_fixed = rendered_files_format        
-        
-        
-        if os.path.exists(render_directory) == False:
-            os.makedirs(render_directory)
-            output_message_2 = "Created the directory " + render_absolutedirectory
-        
-        if rendered_files_format == "JPEG":
-            rendered_files_format_fixed = "JPG"
-        
-        file_text_contents = ""
-        file_text_contents += "echo.\n"
+        missing_frames = []
+        for i in range(frame_start, frame_end + 1):
+            if not i in frame_exists:
+                missing_frames.append(i)
 
-        counter_rendered_files = len(fnmatch.filter(os.listdir(render_absolutedirectory),"*." + rendered_files_format_fixed.casefold()))
-        
-        if counter_rendered_files != frames_total:
-            output_message = "A batch file has been generated here: "
-            output_message_2 = "Rendered files can be found here: " + render_absolutedirectory
-            formatted_blender_exe_path = "\"" + bpy.app.binary_path + "\""
-            formatted_blendfile_path = "\"" + bpy.data.filepath + "\""
-            for comparison in range(frames_total):
-                frame_value = frame_start + comparison
-                frame_value_string = str(frame_value)
-                frame_amount = "{:04d}".format(frame_value)
-                setpoint_filename = render_filename + frame_amount + "." + rendered_files_format_fixed
-                
-                if not os.path.exists(setpoint_filename):
-                    command_text = formatted_blender_exe_path + " --background " + formatted_blendfile_path + " -s " + frame_value_string + " -e " + frame_value_string + " -a"
-                    file_text_contents += command_text + "\n"
-        
-        directory = os.path.dirname(bpy.data.filepath)
-        filename = bpy.path.basename(bpy.context.blend_data.filepath)
-        renderscript_filepath = os.path.join(directory, "RENDER_" + filename + ".bat")
-        with open(renderscript_filepath, "w") as renderscript_file:
-            renderscript_file.write(file_text_contents + "\n")   
-                
-        info_msg = output_message_2 + "\n"
-        info_msg += output_message + "\n\n"
-        info_msg += renderscript_filepath + "\n\n"
-        info_msg += "For more information on batch rendering, visit our documentation:\n"
-        info_msg += "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Helper-Menu-Settings#command-line-tools"
+        return missing_frames
+
+
+    def generate_file_string(self, missing_frames):
+        blender_exe_path = "\"" + bpy.app.binary_path + "\""
+        blend_path = "\"" + bpy.data.filepath + "\""
+
+        file_text = "echo.\n"
+        for n in missing_frames:
+            command_text = blender_exe_path + " -b " + blend_path + " -f " + str(n)
+            file_text += command_text + "\n"
+
+        return file_text
+
+
+    def execute(self, context):
+        directory_path, file_prefix, file_suffix = get_render_output_info()
+        if not directory_path:
+            return {'CANCELLED'}
+
+        more_info_string = "For more information on batch rendering, visit our documentation:\n"
+        more_info_string += "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Helper-Menu-Settings#command-line-tools\n"
+        render_output_info_string = "View the rendered files at <" + directory_path + ">\n"
+
+        if not os.path.exists(directory_path):
+            os.makedirs(directory_path)
+
+        missing_frames = self.get_missing_frames()
+        if not missing_frames:
+            info_msg = "No batch file generated! All frames have already been rendered.\n"
+            info_msg += render_output_info_string + "\n"
+            info_msg += more_info_string
+            self.report({'INFO'}, info_msg)
+            return {'FINISHED'}
+
+        file_text = self.generate_file_string(missing_frames)
+        blend_directory = os.path.dirname(bpy.data.filepath)
+        batch_filename = "RENDER_" + bpy.path.basename(bpy.context.blend_data.filepath) + ".bat"
+        batch_filepath = os.path.join(blend_directory, batch_filename)
+        with open(batch_filepath, "w") as renderscript_file:
+            renderscript_file.write(file_text)
+
+        total_frames = bpy.context.scene.frame_end - bpy.context.scene.frame_start + 1
+        info_msg = "\nA batch file has been generated here: <" + batch_filepath + ">\n"
+        info_msg += render_output_info_string + "\n"
+        info_msg += str(total_frames - len(missing_frames)) + " frames in the " + file_suffix + " file format have already been rendered!\n"
+        info_msg += str(len(missing_frames)) + " frames are not yet rendered!\n\n"
+        info_msg += more_info_string
+
         self.report({'INFO'}, info_msg)
-        
-        print(str(counter_rendered_files) + " frames in the " + rendered_files_format_fixed.casefold() + " format has been rendered!")
-        print(str(max(frames_total - counter_rendered_files, 0)) + " frames are missing!")
         
         return {'FINISHED'}
 
@@ -1274,11 +1356,12 @@ class FlipFluidHelperRunScriptfile(bpy.types.Operator):
 
         os.startfile(batch_filepath)
           
-        info_msg = "Running now the renderscript!\n\n"
+        info_msg = "Beginning to run the renderscript!\n\n"
         info_msg += "For more information on batchfile rendering, visit our documentation:\n"
         info_msg += "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Helper-Menu-Settings#command-line-tools"
         self.report({'INFO'}, info_msg)
         return {'FINISHED'}
+
     
 class FlipFluidHelperOpenOutputFolder(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.helper_open_outputfolder"
@@ -1293,21 +1376,11 @@ class FlipFluidHelperOpenOutputFolder(bpy.types.Operator):
 
 
     def execute(self, context):
-        
-        render_directory = os.path.dirname(bpy.data.scenes[0].render.filepath)
-        render_absolutedirectory = bpy.path.abspath(render_directory)
-        
-        output_message_2 = "Opening the directory " + render_absolutedirectory
-        if os.path.exists(render_absolutedirectory) == False:
-            os.makedirs(render_absolutedirectory)
-            output_message_2 = "Created the directory " + render_absolutedirectory
-        
-        os.startfile(os.path.realpath(render_absolutedirectory))
-        
-        info_msg = output_message_2
-          
+        directory_path, file_prefix, file_suffix = get_render_output_info()
+        if not os.path.exists(directory_path):
+            os.makedirs(directory_path)
+        os.startfile(directory_path)
         return {'FINISHED'}
-
 
 
 class FlipFluidHelperStableRendering279(bpy.types.Operator):

@@ -28,6 +28,10 @@ from .. import types
 from ..utils import version_compatibility_utils as vcu
 
 
+def object_is_mesh_type_poll(self, obj):
+    return obj.type == 'MESH'
+
+
 class DomainRenderProperties(bpy.types.PropertyGroup):
     conv = vcu.convert_attribute_to_28
     
@@ -169,25 +173,35 @@ class DomainRenderProperties(bpy.types.PropertyGroup):
             items=types.whitewater_view_settings_modes,
             default='VIEW_SETTINGS_WHITEWATER',
             ); exec(conv("whitewater_view_settings_mode"))
-    whitewater_particle_object = StringProperty(
+    whitewater_particle_object = PointerProperty(
             name="Whitewater",
-            description="Show this object in place of whitewater particles",
+            description="Show this mesh object in place of whitewater particles",
+            type=bpy.types.Object,
+            poll=object_is_mesh_type_poll,
             ); exec(conv("whitewater_particle_object"))
-    foam_particle_object = StringProperty(
+    foam_particle_object = PointerProperty(
             name="Foam",
-            description="Show this object in place of foam particles",
+            description="Show this mesh object in place of foam particles",
+            type=bpy.types.Object,
+            poll=object_is_mesh_type_poll,
             ); exec(conv("foam_particle_object"))
-    bubble_particle_object = StringProperty(
+    bubble_particle_object = PointerProperty(
             name="Bubble",
-            description="Show this object in place of bubble particles",
+            description="Show this mesh object in place of bubble particles",
+            type=bpy.types.Object,
+            poll=object_is_mesh_type_poll,
             ); exec(conv("bubble_particle_object"))
-    spray_particle_object = StringProperty(
+    spray_particle_object = PointerProperty(
             name="Spray",
-            description="Show this object in place of spray particles",
+            description="Show this mesh object in place of spray particles",
+            type=bpy.types.Object,
+            poll=object_is_mesh_type_poll,
             ); exec(conv("spray_particle_object"))
-    dust_particle_object = StringProperty(
+    dust_particle_object = PointerProperty(
             name="Dust",
-            description="Show this object in place of dust particles",
+            description="Show this mesh object in place of dust particles",
+            type=bpy.types.Object,
+            poll=object_is_mesh_type_poll,
             ); exec(conv("dust_particle_object"))
     whitewater_particle_object_mode = EnumProperty(
             name="Particle Object Settings Mode",

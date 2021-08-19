@@ -271,8 +271,7 @@ class FLIPFLUID_PT_DomainTypePresetsPanel(bpy.types.Panel):
 
 
 def register():
-    id_name = __name__.split(".")[0]
-    preferences = vcu.get_blender_preferences(bpy.context).addons[id_name].preferences
+    preferences = vcu.get_addon_preferences()
     if preferences.enable_presets:
         bpy.utils.register_class(FLIPFLUID_PT_DomainTypePresetsPanel)
 

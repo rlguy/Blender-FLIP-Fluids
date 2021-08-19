@@ -88,6 +88,11 @@ struct FluidSimulationFrameStats {
     FluidSimulationMeshStats surface;
     FluidSimulationMeshStats preview;
     FluidSimulationMeshStats surfaceblur;
+    FluidSimulationMeshStats surfacevelocity;
+    FluidSimulationMeshStats surfacespeed;
+    FluidSimulationMeshStats surfaceage;
+    FluidSimulationMeshStats surfacecolor;
+    FluidSimulationMeshStats surfacesourceid;
     FluidSimulationMeshStats foam;
     FluidSimulationMeshStats bubble;
     FluidSimulationMeshStats spray;
@@ -113,6 +118,21 @@ struct FluidSimulationMarkerParticleAffineData {
     char *affineX;
     char *affineY;
     char *affineZ;
+};
+
+struct FluidSimulationMarkerParticleAgeData {
+    int size = 0;
+    char *age;
+};
+
+struct FluidSimulationMarkerParticleColorData {
+    int size = 0;
+    char *color;
+};
+
+struct FluidSimulationMarkerParticleSourceIDData {
+    int size = 0;
+    char *sourceid;
 };
 
 struct FluidSimulationDiffuseParticleData {
@@ -377,6 +397,38 @@ public:
     void enableWhitewaterMotionBlur();
     void disableWhitewaterMotionBlur();
     bool isWhitewaterMotionBlurEnabled();
+
+    /*
+        Generate velocity vector or speed attributes at fluid surface mesh vertices
+    */
+    void enableSurfaceVelocityAttribute();
+    void disableSurfaceVelocityAttribute();
+    bool isSurfaceVelocityAttributeEnabled();
+
+    void enableSurfaceSpeedAttribute();
+    void disableSurfaceSpeedAttribute();
+    bool isSurfaceSpeedAttributeEnabled();
+
+    /*
+        Generate age attributes (in seconds) at fluid surface mesh vertices
+    */
+    void enableSurfaceAgeAttribute();
+    void disableSurfaceAgeAttribute();
+    bool isSurfaceAgeAttributeEnabled();
+
+    /*
+        Generate color attributes (in rgb) at fluid surface mesh vertices
+    */
+    void enableSurfaceColorAttribute();
+    void disableSurfaceColorAttribute();
+    bool isSurfaceColorAttributeEnabled();
+
+    /*
+        Generate source ID attributes at fluid surface mesh vertices
+    */
+    void enableSurfaceSourceIDAttribute();
+    void disableSurfaceSourceIDAttribute();
+    bool isSurfaceSourceIDAttributeEnabled();
 
     /*
         Remove parts of mesh that are near the domain boundary
@@ -1101,6 +1153,11 @@ public:
     std::vector<char>* getSurfaceData();
     std::vector<char>* getSurfacePreviewData();
     std::vector<char>* getSurfaceBlurData();
+    std::vector<char>* getSurfaceVelocityAttributeData();
+    std::vector<char>* getSurfaceSpeedAttributeData();
+    std::vector<char>* getSurfaceAgeAttributeData();
+    std::vector<char>* getSurfaceColorAttributeData();
+    std::vector<char>* getSurfaceSourceIDAttributeData();
     std::vector<char>* getDiffuseData();
     std::vector<char>* getDiffuseFoamData();
     std::vector<char>* getDiffuseBubbleData();
@@ -1121,6 +1178,9 @@ public:
     void getMarkerParticleAffineXDataRange(int start_idx, int end_idx, char *data);
     void getMarkerParticleAffineYDataRange(int start_idx, int end_idx, char *data);
     void getMarkerParticleAffineZDataRange(int start_idx, int end_idx, char *data);
+    void getMarkerParticleAgeDataRange(int start_idx, int end_idx, char *data);
+    void getMarkerParticleColorDataRange(int start_idx, int end_idx, char *data);
+    void getMarkerParticleSourceIDDataRange(int start_idx, int end_idx, char *data);
     void getDiffuseParticlePositionDataRange(int start_idx, int end_idx, char *data);
     void getDiffuseParticleVelocityDataRange(int start_idx, int end_idx, char *data);
     void getDiffuseParticleLifetimeDataRange(int start_idx, int end_idx, char *data);
@@ -1147,6 +1207,9 @@ public:
     */
     void loadMarkerParticleData(FluidSimulationMarkerParticleData data);
     void loadMarkerParticleAffineData(FluidSimulationMarkerParticleAffineData data);
+    void loadMarkerParticleAgeData(FluidSimulationMarkerParticleAgeData data);
+    void loadMarkerParticleColorData(FluidSimulationMarkerParticleColorData data);
+    void loadMarkerParticleSourceIDData(FluidSimulationMarkerParticleSourceIDData data);
     void loadDiffuseParticleData(FluidSimulationDiffuseParticleData data);
 
 private:   
@@ -1169,6 +1232,11 @@ private:
         std::vector<char> surfaceData;
         std::vector<char> surfacePreviewData;
         std::vector<char> surfaceBlurData;
+        std::vector<char> surfaceVelocityAttributeData;
+        std::vector<char> surfaceSpeedAttributeData;
+        std::vector<char> surfaceAgeAttributeData;
+        std::vector<char> surfaceColorAttributeData;
+        std::vector<char> surfaceSourceIDAttributeData;
         std::vector<char> diffuseData;
         std::vector<char> diffuseFoamData;
         std::vector<char> diffuseBubbleData;
@@ -1192,6 +1260,23 @@ private:
 
     struct MarkerParticleAffineLoadData {
         FragmentedVector<MarkerParticleAffine> particles;
+    };
+
+    struct MarkerParticleAgeLoadData {
+        FragmentedVector<MarkerParticleAge> particles;
+    };
+
+    struct MarkerParticleColorLoadData {
+        FragmentedVector<MarkerParticleColor> particles;
+    };
+
+    struct MarkerParticleSourceIDLoadData {
+        FragmentedVector<MarkerParticleSourceID> particles;
+    };
+
+    struct MarkerParticleAttributes {
+        int sourceID = 0;
+        vmath::vec3 sourceColor;
     };
 
     struct DiffuseParticleLoadData {
@@ -1267,17 +1352,21 @@ private:
     void _initializeLogFile();
     void _initializeSimulationGrids(int isize, int jsize, int ksize, double dx);
     void _initializeForceFieldGrid(int isize, int jsize, int ksize, double dx);
+    void _initializeAttributeGrids(int isize, int jsize, int ksize);
     void _initializeParticleSystems();
     void _initializeSimulation();
     void _initializeParticleRadii();
     void _initializeRandomGenerator();
     double _getMarkerParticleJitter();
     vmath::vec3 _jitterMarkerParticlePosition(vmath::vec3 p, double jitter);
-    void _addMarkerParticles(std::vector<MarkerParticle> &particles);
+    void _addMarkerParticles(std::vector<MarkerParticle> &particles, MarkerParticleAttributes attributes);
     void _upscaleParticleData();
     void _loadParticles();
     void _loadMarkerParticles(MarkerParticleLoadData &particleData,
-                              MarkerParticleAffineLoadData &affineData);
+                              MarkerParticleAffineLoadData &affineData,
+                              MarkerParticleAgeLoadData &ageData,
+                              MarkerParticleColorLoadData &colorData,
+                              MarkerParticleSourceIDLoadData &sourceIDData);
     void _loadDiffuseParticles(DiffuseParticleLoadData &data);
 
     /*
@@ -1404,6 +1493,16 @@ private:
     void _constrainMarkerParticleVelocities(MeshFluidSource *inflow);
 
     /*
+        Update Marker Particle Attributes
+    */
+
+    void _updateMarkerParticleAgeAttributeGrid(double dt);
+    void _updateMarkerParticleAgeAttribute(double dt);
+    void _updateMarkerParticleColorAttributeGrid();
+    void _updateMarkerParticleColorAttribute();
+    void _updateMarkerParticleAttributes(double dt);
+
+    /*
         Advance MarkerParticles
     */
     void _advanceMarkerParticles(double dt);
@@ -1429,19 +1528,26 @@ private:
                            vmath::vec3 velocity,
                            MeshLevelSet &meshsdf,
                            vmath::vec3 sdfoffset,
+                           MarkerParticleAttributes attributes,
                            ParticleMaskGrid &maskgrid);
     void _addNewFluidCells(std::vector<GridIndex> &cells, 
                            vmath::vec3 velocity,
                            RigidBodyVelocity rvelocity,
                            MeshLevelSet &meshsdf,
                            vmath::vec3 sdfoffset,
+                           MarkerParticleAttributes attributes,
                            ParticleMaskGrid &maskgrid);
     void _addNewFluidCells(std::vector<GridIndex> &cells, 
                            vmath::vec3 velocity,
                            VelocityFieldData *vdata,
                            MeshLevelSet &meshsdf,
                            vmath::vec3 sdfoffset,
+                           MarkerParticleAttributes attributes,
                            ParticleMaskGrid &maskgrid);
+    void _addNewFluidCellsAABB(AABB bbox, 
+                               vmath::vec3 velocity,
+                               MarkerParticleAttributes attributes,
+                               ParticleMaskGrid &maskgrid);
     void _addNewFluidCellsThread(int startidx, int endidx,
                                  std::vector<GridIndex> *cells, 
                                  MeshLevelSet *meshSDF,
@@ -1460,8 +1566,17 @@ private:
         Output Simulation Data
     */
     void _outputSimulationData();
+    void _generateSurfaceMotionBlurData(TriangleMesh &surface, MACVelocityField *vfield);
+    void _generateSurfaceVelocityAttributeData(TriangleMesh &surface, MACVelocityField *vfield);
+    void _generateSurfaceAgeAttributeData(TriangleMesh &surface);
+    void _generateSurfaceColorAttributeData(TriangleMesh &surface);
+    void _generateSurfaceSourceIDAttributeData(TriangleMesh &surface, std::vector<vmath::vec3> &positions, std::vector<int> *sourceID);
+    void _generateSurfaceSourceColorAttributeData(TriangleMesh &surface, std::vector<vmath::vec3> &positions, std::vector<vmath::vec3> *colors);
     void _outputSurfaceMeshThread(std::vector<vmath::vec3> *particles,
-                                  MeshLevelSet *solidSDF);
+                                  MeshLevelSet *solidSDF,
+                                  MACVelocityField *vfield,
+                                  std::vector<int> *sourceID,
+                                  std::vector<vmath::vec3> *colors);
     void _updateMeshingVolumeSDF();
     void _applyMeshingVolumeToSDF(MeshLevelSet *sdf);
     void _filterParticlesOutsideMeshingVolume(std::vector<vmath::vec3> *particles);
@@ -1485,7 +1600,7 @@ private:
     void _invertContactNormals(TriangleMesh &mesh);
     void _removeMeshNearDomain(TriangleMesh &mesh);
     void _computeDomainBoundarySDF(MeshLevelSet *sdf);
-    void _polygonizeOutputSurface(TriangleMesh &surface, TriangleMesh &preview,
+    void _generateOutputSurface(TriangleMesh &surface, TriangleMesh &preview,
                                   std::vector<vmath::vec3> *particles,
                                   MeshLevelSet *soldSDF);
     void _outputSimulationLogFile();
@@ -1574,6 +1689,9 @@ private:
     bool _isDiffuseParticleLoadPending = false;
     std::vector<MarkerParticleLoadData> _markerParticleLoadQueue;
     std::vector<MarkerParticleAffineLoadData> _markerParticleAffineLoadQueue;
+    std::vector<MarkerParticleAgeLoadData> _markerParticleAgeLoadQueue;
+    std::vector<MarkerParticleColorLoadData> _markerParticleColorLoadQueue;
+    std::vector<MarkerParticleSourceIDLoadData> _markerParticleSourceIDLoadQueue;
     std::vector<DiffuseParticleLoadData> _diffuseParticleLoadQueue;
 
     // Update obstacles
@@ -1604,6 +1722,11 @@ private:
     bool _isInvertedContactNormalsEnabled = false;
     bool _isSurfaceMotionBlurEnabled = false;
     bool _isWhitewaterMotionBlurEnabled = false;
+    bool _isSurfaceVelocityAttributeEnabled = false;
+    bool _isSurfaceSpeedAttributeEnabled = false;
+    bool _isSurfaceAgeAttributeEnabled = false;
+    bool _isSurfaceSourceColorAttributeEnabled = false;
+    bool _isSurfaceSourceIDAttributeEnabled = false;
     double _contactThresholdDistance = 0.08;          // in # of grid cells
     bool _isObstacleMeshingOffsetEnabled = true;
     double _obstacleMeshingOffset = 0.0;                 // in # of grid cells
@@ -1698,6 +1821,17 @@ private:
     double _ratioPICAPIC = 0.00;
     MACVelocityField _MACVelocity;
     MACVelocityField _savedVelocityField;
+
+    // Update Attributes
+    Array3d<float> _ageAttributeGrid;
+    Array3d<int> _ageAttributeCountGrid;
+    Array3d<bool> _ageAttributeValidGrid;
+
+    Array3d<float> _colorAttributeGridR;
+    Array3d<float> _colorAttributeGridG;
+    Array3d<float> _colorAttributeGridB;
+    Array3d<int> _colorAttributeCountGrid;
+    Array3d<bool> _colorAttributeValidGrid;
 
     // Advance MarkerParticles
     int _maxParticlesPerParticleAdvection = 10e6;

@@ -20,6 +20,7 @@ from bpy.props import (
         )
 
 from ..objects import flip_fluid_material_library
+from ..utils import version_compatibility_utils as vcu
 
 
 def get_surface_material_enums_ui(scene=None, context=None):
@@ -85,6 +86,10 @@ def __get_non_material_library_enums_by_type():
     enums = []
     for m in bpy.data.materials:
         if not m.flip_fluid_material_library.is_library_material:
+            if vcu.is_blender_30():
+                # material preview can be None in Blender 3.0. Use the preview_ensure function
+                # to make sure the preview is loaded
+                m.preview_ensure()
             e = (m.name, m.name, "", m.preview.icon_id, __get_non_material_library_material_hash(m))
             enums.append(e)
     return enums

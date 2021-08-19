@@ -53,4 +53,22 @@ struct MarkerParticleAffine {
                                   affineZ(az) {}
 };
 
+struct MarkerParticleAge {
+    float age;
+
+    MarkerParticleAge(float a) : age(a) {}
+};
+
+struct MarkerParticleColor {
+    vmath::vec3 color;
+
+    MarkerParticleColor(vmath::vec3 c) : color(c) {}
+};
+
+struct MarkerParticleSourceID {
+    int sourceid;
+
+    MarkerParticleSourceID(int id) : sourceid(id) {}
+};
+
 #endif

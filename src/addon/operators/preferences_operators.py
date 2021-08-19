@@ -160,7 +160,7 @@ class FLIPFluidPreferencesExportUserData(bpy.types.Operator):
 
 
     def invoke(self, context, event):
-        default_directory = vcu.get_blender_preferences(context).filepaths.temporary_directory
+        default_directory = vcu.get_blender_preferences_temporary_directory()
         if bpy.data.is_saved:
             default_directory = os.path.dirname(bpy.data.filepath)
         self.filepath = os.path.join(default_directory, "flip_fluid_user_settings.zip")
@@ -255,8 +255,7 @@ class FLIPFluidPreferencesFindGPUDevices(bpy.types.Operator):
     bl_description = "Search for GPU compute devices"
 
     def execute(self, context):
-        id_name = __name__.split(".")[0]
-        preferences = vcu.get_blender_preferences(context).addons[id_name].preferences
+        preferences = vcu.get_addon_preferences()
 
         devices = gpu_utils.find_gpu_devices()
         preferences.gpu_devices.clear()

@@ -210,4 +210,32 @@ extern "C" {
             obj, &MeshObject::setObjectVelocityInfluence, value, err
         );
     }
+
+    EXPORTDLL int MeshObject_get_source_id(MeshObject* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &MeshObject::getSourceID, err
+        );
+    }
+
+    EXPORTDLL void MeshObject_set_source_id(MeshObject* obj, int id, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &MeshObject::setSourceID, id, err
+        );
+    }
+
+    EXPORTDLL Vector3_t MeshObject_get_source_color(MeshObject* obj, int *err) {
+        vmath::vec3 color = CBindings::safe_execute_method_ret_0param(
+            obj, &MeshObject::getSourceColor, err
+        );
+        return CBindings::to_struct(color);
+    }
+
+    EXPORTDLL void MeshObject_set_source_color(MeshObject* obj,
+                                             double r, double g, double b,
+                                             int *err) {
+        vmath::vec3 color(r, g, b);
+        CBindings::safe_execute_method_void_1param(
+            obj, &MeshObject::setSourceColor, color, err
+        );
+    }
 }

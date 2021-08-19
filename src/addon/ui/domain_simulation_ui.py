@@ -288,7 +288,7 @@ class FLIPFLUID_PT_DomainTypePanel(bpy.types.Panel):
         show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
         show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
 
-        box.label(text="Domain Simulation Grid")
+        box.label(text="Domain Simulation Grid:")
 
         subbox = box.box()
         column = subbox.column(align=True)

@@ -14,9 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, os
+import bpy, os, re
 
 from ..filesystem import filesystem_protection_layer as fpl
+from ..utils import version_compatibility_utils as vcu
+
+from bpy.props import (
+        StringProperty,
+        )
 
 
 class FlipFluidFreeCache(bpy.types.Operator):
@@ -365,6 +370,104 @@ class FlipFluidAbsoluteCacheDirectory(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class FlipFluidMatchFilenameCacheDirectory(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.match_filename_cache_directory"
+    bl_label = "Match Filename"
+    bl_description = ("Set the cache directory name to correspond to the .blend filename." +
+        " Note: this will not rename an existing cache directory")
+
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+
+    def execute(self, context):
+        dprops = context.scene.flip_fluid.get_domain_properties()
+        if dprops is None:
+            return {'CANCELLED'}
+
+        blend_filepath = bpy.path.abspath("//")
+        if not blend_filepath:
+            self.report({"ERROR"}, "The Blend file must be saved to use this operator")
+            return {'CANCELLED'}
+
+        cache_directory = dprops.cache.cache_directory
+        relprefix = "//"
+        is_relative = cache_directory.startswith(relprefix)
+
+        abspath = dprops.cache.get_cache_abspath()
+        parent_path = os.path.dirname(abspath)
+
+        new_directory_name = os.path.basename(bpy.data.filepath)
+        new_directory_name = os.path.splitext(new_directory_name)[0]
+        new_directory_name += "_flip_fluid_cache"
+
+        dprops.cache.cache_directory = os.path.join(parent_path, new_directory_name)
+        if is_relative:
+            bpy.ops.flip_fluid_operators.relative_cache_directory()
+
+        return {'FINISHED'}
+
+
+class FlipFluidIncreaseDecreaseCacheDirectory(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.increment_decrease_cache_directory"
+    bl_label = "Increase/Decrease Cache Directory"
+    bl_description = ("Increase or decrease a numbered suffix on the cache directory." + 
+        " Note: this will not rename an existing cache directory")
+
+    increment_mode = StringProperty(default="INCREASE")
+    exec(vcu.convert_attribute_to_28("increment_mode"))
+
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+
+    def get_trailing_number(self, s):
+        m = re.search(r'\d+$', s)
+        return int(m.group()) if m else None
+
+
+    def execute(self, context):
+        dprops = context.scene.flip_fluid.get_domain_properties()
+        if dprops is None:
+            return {'CANCELLED'}
+
+        cache_directory = dprops.cache.cache_directory
+        relprefix = "//"
+        is_relative = cache_directory.startswith(relprefix)
+
+        abspath = dprops.cache.get_cache_abspath()
+        parent_path = os.path.dirname(abspath)
+        basename = os.path.basename(abspath)
+
+        suffix_number = self.get_trailing_number(basename)
+        if suffix_number:
+            basename = basename[:-len(str(suffix_number))]
+
+        if self.increment_mode == 'INCREASE':
+            if not suffix_number:
+                suffix_number = 0
+            suffix_number += 1
+            new_basename = basename + str(suffix_number)
+        else:
+            if not suffix_number:
+                return {'FINISHED'}
+            if suffix_number <= 1:
+                suffix_string = ""
+            else:
+                suffix_string = str(suffix_number - 1)
+            new_basename = basename + suffix_string
+
+        dprops.cache.cache_directory = os.path.join(parent_path, new_basename)
+        if is_relative:
+            bpy.ops.flip_fluid_operators.relative_cache_directory()
+
+        return {'FINISHED'}
+
+
 class FlipFluidRelativeLinkedGeometryDirectory(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.relative_linked_geometry_directory"
     bl_label = "Make Relative"
@@ -464,6 +567,8 @@ def register():
 
     bpy.utils.register_class(FlipFluidRelativeCacheDirectory)
     bpy.utils.register_class(FlipFluidAbsoluteCacheDirectory)
+    bpy.utils.register_class(FlipFluidMatchFilenameCacheDirectory)
+    bpy.utils.register_class(FlipFluidIncreaseDecreaseCacheDirectory)
     bpy.utils.register_class(FlipFluidRelativeLinkedGeometryDirectory)
     bpy.utils.register_class(FlipFluidAbsoluteLinkedGeometryDirectory)
     bpy.utils.register_class(FlipFluidClearLinkedGeometryDirectory)
@@ -481,6 +586,8 @@ def unregister():
 
     bpy.utils.unregister_class(FlipFluidRelativeCacheDirectory)
     bpy.utils.unregister_class(FlipFluidAbsoluteCacheDirectory)
+    bpy.utils.unregister_class(FlipFluidMatchFilenameCacheDirectory)
+    bpy.utils.unregister_class(FlipFluidIncreaseDecreaseCacheDirectory)
     bpy.utils.unregister_class(FlipFluidRelativeLinkedGeometryDirectory)
     bpy.utils.unregister_class(FlipFluidAbsoluteLinkedGeometryDirectory)
     bpy.utils.unregister_class(FlipFluidClearLinkedGeometryDirectory)

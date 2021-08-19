@@ -21,6 +21,7 @@ from ..objects import flip_fluid_geometry_exporter
 from .. import export
 from ..utils import installation_utils
 from ..filesystem import filesystem_protection_layer as fpl
+from ..utils import version_compatibility_utils as vcu
 
 _IS_BAKE_OPERATOR_RUNNING = False
 
@@ -69,7 +70,7 @@ def _update_stats(context):
                 # process the next time stats are updated.
                 continue
             stats_dict[str(frameno)] = frame_stats_dict
-        fpl.delete_file(statpath)
+        fpl.delete_file(statpath, error_ok=True)
 
     with open(statsfilepath, 'w', encoding='utf-8') as f:
             f.write(json.dumps(stats_dict, sort_keys=True, indent=4))
@@ -446,15 +447,18 @@ class BakeFluidSimulationCommandLine(bpy.types.Operator):
 
 
     def _run_fluid_simulation(self, context):
+        preferences = vcu.get_addon_preferences()
+
         print("Running fluid simulation...")
         dprops = self._get_domain_properties()
         savestate_id = dprops.simulation.get_selected_savestate_id()
+        max_baking_retries = preferences.cmd_bake_max_attempts
         cache_directory = dprops.cache.get_cache_abspath()
         dprops.bake.export_filepath = self._get_export_filepath()
         self.data.progress = 0.0
         self.data.is_console_output_enabled = True
         self._update_simulation_stats(context)
-        bake.bake(dprops.bake.export_filepath, cache_directory, self.data, savestate_id)
+        bake.bake(dprops.bake.export_filepath, cache_directory, self.data, savestate_id, max_baking_retries)
         self._update_simulation_stats(context)
 
 

@@ -29,7 +29,7 @@ from ..utils import version_compatibility_utils as vcu
 
 class DomainCacheProperties(bpy.types.PropertyGroup):
     conv = vcu.convert_attribute_to_28
-    temp_directory = vcu.get_blender_preferences(bpy.context).filepaths.temporary_directory
+    temp_directory = vcu.get_blender_preferences_temporary_directory()
     default_cache_directory_str = os.path.join(temp_directory, "untitled_flip_fluid_cache")
     
     cache_directory = StringProperty(
@@ -178,7 +178,8 @@ class DomainCacheProperties(bpy.types.PropertyGroup):
         if dprops is None:
             return
 
-        if self.cache_directory == "":
+        relprefix = "//"
+        if self.cache_directory == "" or self.cache_directory == relprefix:
             # Don't want the user to set an empty path
             if bpy.data.filepath:
                 base = os.path.basename(bpy.data.filepath)
@@ -189,10 +190,9 @@ class DomainCacheProperties(bpy.types.PropertyGroup):
                 cache_path = os.path.join(cache_folder_parent, cache_folder)
                 relpath = os.path.relpath(cache_path, cache_folder_parent)
 
-                relprefix = "//"
                 default_cache_directory_str = relprefix + relpath
             else:
-                temp_directory = vcu.get_blender_preferences(bpy.context).filepaths.temporary_directory
+                temp_directory = vcu.get_blender_preferences_temporary_directory()
                 default_cache_directory_str = os.path.join(temp_directory, "untitled_flip_fluid_cache")
             self["cache_directory"] = default_cache_directory_str
 

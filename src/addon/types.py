@@ -47,21 +47,7 @@ force_field_types = (
     ('FORCE_FIELD_TYPE_SURFACE',      "Surface Force",                                 "Force field directed towards an object's surface", 'OUTLINER_DATA_SURFACE', 1),
     ('FORCE_FIELD_TYPE_VOLUME',       "Volume Force",                                  "Force field directed to fill an object's volume", 'MESH_MONKEY', 2),
     ('FORCE_FIELD_TYPE_CURVE',        "Curve Guide Force",                             "Force field directed along a curve object", 'FORCE_CURVE', 3),
-    ('FORCE_FIELD_TYPE_OTHER',        "More modes are in development!",                "More force field modes such as vortex, turbublence, and programmable fields are in development! Try our experimental builds to test the latest features", 'FUND', 4),
     )
-
-# Uncomment/comment for experimental builds
-"""
-force_field_types = (
-    ('FORCE_FIELD_TYPE_POINT',        "Point Force",                                   "Force field directed towards a single point", 'EMPTY_AXIS', 0),
-    ('FORCE_FIELD_TYPE_SURFACE',      "Surface Force",                                 "Force field directed towards an object's surface", 'OUTLINER_DATA_SURFACE', 1),
-    ('FORCE_FIELD_TYPE_VOLUME',       "Volume Force",                                  "Force field directed to fill an object's volume", 'MESH_MONKEY', 2),
-    ('FORCE_FIELD_TYPE_CURVE',        "Curve Guide Force",                             "Force field directed along a curve object", 'FORCE_CURVE', 3),
-    ('FORCE_FIELD_TYPE_VORTEX',       "(Unavailable, in progress) Vortex Force",       "Force field directed to spiral around the object's local Z-axis", 'PANEL_CLOSE', 4),
-    ('FORCE_FIELD_TYPE_TURBULENCE',   "(Unavailable, in progress) Turbulence Force",   "Force field directed by random and chaotic 3D noise", 'PANEL_CLOSE', 5),
-    ('FORCE_FIELD_TYPE_PROGRAMMABLE', "(Unavailable, in progress) Programmable Force", "Force field directed by a programmable vector field via Python scripting", 'PANEL_CLOSE', 6),
-    )
-"""
 
 force_field_resolution_modes = (
     ('FORCE_FIELD_RESOLUTION_LOW',    "Low",    "Low resolution force field grid. Domain resolution divided by 4."),

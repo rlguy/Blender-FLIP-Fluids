@@ -60,6 +60,7 @@ public:
     void updateVertexTriangles();
     void clearVertexTriangles();
     void smooth(double value, int iterations);
+    std::vector<vmath::vec3> smoothColors(double value, int iterations, std::vector<vmath::vec3> colors);
     void getFaceNeighbours(unsigned int tidx, std::vector<int> &n);
     void getFaceNeighbours(Triangle t, std::vector<int> &n);
     void getVertexNeighbours(unsigned int vidx, std::vector<int> &n);
@@ -91,6 +92,7 @@ private:
     void _updateVertexTriangles();
     bool _trianglesEqual(Triangle &t1, Triangle &t2);
     void _smoothTriangleMesh(double value);
+    std::vector<vmath::vec3> _smoothTriangleMeshColors(double value, std::vector<vmath::vec3> &colors);
 
     void _getPolyhedra(std::vector<std::vector<int> > &polyList);
     void _getPolyhedronFromTriangle(int triangle, 
