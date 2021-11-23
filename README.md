@@ -1,19 +1,19 @@
 # FLIP Fluids
 
-The **[FLIP Fluids addon](https://blendermarket.com/products/flipfluids)** is a tool that helps you set up, run, and render liquid simulation effects. Our custom built fluid engine is based around the popular FLIP simulation technique that is also found in many other professional liquid simulation tools. The FLIP Fluids engine has been in constant development for over four years with a large focus on tightly integrating the simulator into Blender as an addon. It just feels like a native Blender tool!
+The **FLIP Fluids addon** is a tool that helps you set up, run, and render liquid simulation effects. Our custom built fluid engine is based around the popular FLIP simulation technique that is also found in many other professional liquid simulation tools. The FLIP Fluids engine has been in constant development for over four years with a large focus on tightly integrating the simulator into Blender as an addon. It just feels like a native Blender tool!
 
 With our reputation for delivering high quality software and outstanding customer support, the FLIP Fluids addon is one of the best selling products on the Blender Market.
 
-- 6000+ sales, 5 star rating, excellent value
+- 7000+ sales, 5 star rating, excellent value
 - No subscriptions, all future updates included
 - [Try out our free demo! We're sure you'll like it :)](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/FLIP-Fluids-Demo-Addon)
 - [Frequently Asked Questions (FAQ)](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Frequently-Asked-Questions)
 - [What is the difference between Blender's Mantaflow FLIP simulator and the FLIP Fluids addon?](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Frequently-Asked-Questions#what-is-the-difference-between-blenders-mantaflow-fluid-simulator-and-the-flip-fluids-addon)
-- Have any questions? Do not hesitate to ask on the [Blender Market](https://blendermarket.com/products/flipfluids) or at support@flipfluids.com!
+Have any question? Do not hesitate to ask us here or at support@flipfluids.com!
 
 ## Getting the FLIP Fluids Addon
 
-You may purchase the **FLIP Fluids** addon through our product page on the [Blender Market](https://www.blendermarket.com/products/flipfluids). Purchasing a license entitles you to to full FLIP Fluids feature set and content, tool support, and helps ensure the continued development of the addon. Thanks to the amazing support of the Blender community, we have been able to further develop the addon on a full-time basis since our initial release in May 2018!
+You may purchase the **FLIP Fluids** addon on the [Blender Market](https://www.blendermarket.com/products/flipfluids). Purchasing a license entitles you to to full FLIP Fluids feature set and content, tool support, and helps ensure the continued development of the addon. Thanks to the amazing support of the Blender community, we have been able to further develop the addon on a full-time basis since its initial release in May 2018!
 
 #### Getting Support
 
@@ -26,17 +26,15 @@ See our [Blender Market product page](https://blendermarket.com/products/flipflu
 ## System Requirements
 
 - Windows, MacOS, or Linux operating system
-- Blender 2.79 or 2.8+* or 2.9+ (64-bit)
+- Blender 2.79 or 2.8+* or 2.9+ or 3.0+ (64-bit)
 - CPU 64-bit Intel® or AMD® or Apple Silicon multi-core processor
 - 8 GB RAM minimum, 16 GB or more of RAM memory is highly recommended
 
-***Blender Support on MacOS:** Due to a MacOS specific [Blender bug](https://developer.blender.org/T68243) in versions 2.80, 2.81, and 2.82, these Blender versions cannot be supported. Blender 2.79 or 2.83+ or 2.9+ are required for MacOS.
+***Blender Support on MacOS:** Due to a MacOS specific [Blender bug](https://developer.blender.org/T68243) in versions 2.80, 2.81, and 2.82, these Blender versions cannot be supported. Blender 2.79 or 2.83+ or 2.9+ or 3.0+ are required for MacOS.
 
 ## Release Notes
 
-**FLIP Fluids Version 1.0.9** - Our biggest update yet adds new [force field features](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Example-Scene-Descriptions#force-field-examples) and many more improvements! [See new example scene animations](https://gfycat.com/amusedlongkitfox).
-
-For full release notes, see this page: [Release Notes](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Release-Notes)
+For release notes, see this page: [Release Notes](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Release-Notes)
 
 ## License
 
@@ -105,5 +103,4 @@ Once successfully built, the FLIP Fluids addon will be located in the ```build/b
 - [Documentation and Wiki](https://github.com/rlguy/Blender-FLIP-Fluids/wiki)
 - [Bug/Issue Tracker](https://github.com/rlguy/Blender-FLIP-Fluids/issues)
 - [FLIP Fluids Homepage](http://flipfluids.com)
-- [Development Notes](http://flipfluids.com/blog)
 - [Twitter](https://twitter.com/flipfluids) | [Instagram](https://www.instagram.com/flip.fluids/) | [Facebook](https://www.facebook.com/FLIPFluids/) | [YouTube](https://www.youtube.com/flipfluids)

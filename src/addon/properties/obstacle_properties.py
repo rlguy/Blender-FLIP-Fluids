@@ -110,7 +110,7 @@ class FlipFluidObstacleProperties(bpy.types.PropertyGroup):
                 " can be used to prevent fluid from slipping through small"
                 " cracks between touching obstacles. This setting is meant only to be"
                 " used to prevent leakage in fractured objects and only small values"
-                " should be used.",
+                " should be used",
             default=0.0,
             soft_min=-0.05, soft_max=0.05,
             step=0.01,

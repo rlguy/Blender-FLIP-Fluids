@@ -377,10 +377,28 @@ def swap_object_mesh_data_geometry(bl_object, vertices=[], triangles=[],
                                    smooth_mesh=False,
                                    octane_mesh_type='Global'):
     if is_blender_281():
+        uv_layer_names = [uv.name for uv in bl_object.data.uv_layers]
+        is_uv_layer_active = [uv.active for uv in bl_object.data.uv_layers]
+        is_uv_layer_active_render = [uv.active_render for uv in bl_object.data.uv_layers]
+
+        vc_layer_names = [uv.name for uv in bl_object.data.vertex_colors]
+        is_vc_layer_active = [uv.active for uv in bl_object.data.vertex_colors]
+        is_vc_layer_active_render = [uv.active_render for uv in bl_object.data.vertex_colors]
+
         bl_object.data.clear_geometry()
         bl_object.data.from_pydata(vertices, [], triangles)
         _set_mesh_smoothness(bl_object.data, smooth_mesh)
         _set_octane_mesh_type(bl_object, octane_mesh_type)
+
+        for i, name in enumerate(uv_layer_names):
+            uv_layer = bl_object.data.uv_layers.new(name=name)
+            uv_layer.active = is_uv_layer_active[i]
+            uv_layer.active_render = is_uv_layer_active_render[i]
+
+        for i, name in enumerate(vc_layer_names):
+            vc_layer = bl_object.data.vertex_colors.new(name=name)
+            vc_layer.active = is_vc_layer_active[i]
+            vc_layer.active_render = is_vc_layer_active_render[i]
     else:
         old_mesh_data = bl_object.data
         new_mesh_data = bpy.data.meshes.new(mesh_name)

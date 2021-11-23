@@ -89,7 +89,7 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
             name="Enable",
             description="Enable smooth meshing against obstacles. If disabled,"
                 " obstacles will not be considered during meshing and all fluid"
-                " particles will be converted to a mesh.",
+                " particles will be converted to a mesh",
             default=True,
             ); exec(conv("enable_meshing_offset"))
     obstacle_meshing_mode = EnumProperty(
@@ -109,8 +109,8 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
     remove_mesh_near_domain_distance = IntProperty(
             name="Distance",
             description="Distance from domain boundary to remove mesh parts."
-                " This value is in number of grid cells. If a meshing volume"
-                " object is set, this distance will be limited to 1 grid cell",
+                " This value is in number of voxels. If a meshing volume"
+                " object is set, this distance will be limited to 1 voxel",
             min=1,
             default=1,
             ); exec(conv("remove_mesh_near_domain_distance"))
@@ -284,12 +284,24 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
         vcu.set_object_display_type(obj, 'WIRE')
         obj.show_name = True
 
-        obj.cycles_visibility.camera = False
-        obj.cycles_visibility.transmission = False
-        obj.cycles_visibility.diffuse = False
-        obj.cycles_visibility.scatter = False
-        obj.cycles_visibility.glossy = False
-        obj.cycles_visibility.shadow = False
+        try:
+            # Cycles may not be enabled in the user's preferences
+            if vcu.is_blender_30():
+                obj.visible_camera = is_enabled
+                obj.visible_diffuse = is_enabled
+                obj.visible_glossy = is_enabled
+                obj.visible_transmission = is_enabled
+                obj.visible_volume_scatter = is_enabled
+                obj.visible_shadow = is_enabled
+            else:
+                obj.cycles_visibility.camera = is_enabled
+                obj.cycles_visibility.transmission = is_enabled
+                obj.cycles_visibility.diffuse = is_enabled
+                obj.cycles_visibility.scatter = is_enabled
+                obj.cycles_visibility.glossy = is_enabled
+                obj.cycles_visibility.shadow = is_enabled
+        except:
+            pass
 
 
     def _poll_meshing_volume_object(self, obj):

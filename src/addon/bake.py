@@ -457,17 +457,24 @@ def __check_bake_cancelled(bakedata):
     return False
 
 
-def __get_parameter_data(parameter, frameno = 0):
+def __get_parameter_data(parameter, frameno=0, value_min=None, value_max=None):
     if parameter is None:
         raise IndexError()
 
-    if not hasattr(parameter, 'is_animated'):
-        return parameter
-
-    if parameter.is_animated:
-        return parameter.data[frameno]
+    if hasattr(parameter, 'data') and hasattr(parameter, 'is_animated'):
+        if parameter.is_animated:
+            value = parameter.data[frameno]
+        else:
+            value = parameter.data
     else:
-        return parameter.data
+        value = parameter
+
+    if value_min is not None:
+        value = max(value, value_min)
+    if value_max is not None:
+        value = min(value, value_max)
+
+    return value
 
 
 def __get_limit_behaviour_enum(b):
@@ -514,13 +521,15 @@ def __get_obstacle_meshing_offset(obstacle_meshing_mode):
 def __get_viscosity_value(world_data, frameno):
     base = __get_parameter_data(world_data.viscosity, frameno)
     exp = __get_parameter_data(world_data.viscosity_exponent, frameno)
-    return base * (10**(-exp))
+    viscosity = max(base * (10**(-exp)), 0.0)
+    return viscosity
 
 
 def __get_surface_tension_value(world_data, frameno):
     base = __get_parameter_data(world_data.surface_tension, frameno)
     exp = __get_parameter_data(world_data.surface_tension_exponent, frameno)
-    return world_data.native_surface_tension_scale * base * (10**(-exp))
+    value = world_data.native_surface_tension_scale * base * (10**(-exp))
+    return max(value, 0.0)
 
 
 def __read_save_state_file_data(file_data_path, start_byte, end_byte):
@@ -756,9 +765,9 @@ def __load_save_state_data(fluidsim, data, cache_directory, savestate_id):
 
     init_data = data.domain_data.initialize
     if init_data.delete_outdated_savestates:
-        __delete_outdated_savestates(cache_directory, savestate_id)
+        __delete_outdated_savestates(cache_directory, autosave_info["frame"])
     if init_data.delete_outdated_meshes:
-        __delete_outdated_meshes(cache_directory, savestate_id)
+        __delete_outdated_meshes(cache_directory, autosave_info["frame"])
 
 
 def __initialize_fluid_simulation_settings(fluidsim, data):
@@ -947,14 +956,17 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
         surface_tension_number = mincfl + (1.0 - accuracy_pct) * (maxcfl - mincfl)
         fluidsim.surface_tension_condition_number = surface_tension_number
 
+        st_solver_mode = __get_parameter_data(world.surface_tension_solver_method, frameno)
+        fluidsim.enable_smooth_surface_tension_kernel = st_solver_mode == 'SURFACE_TENSION_SOLVER_METHOD_SMOOTH'
+
     is_sheet_seeding_enabled = __get_parameter_data(world.enable_sheet_seeding, frameno)
     if is_sheet_seeding_enabled:
         fluidsim.enable_sheet_seeding = is_sheet_seeding_enabled
-        fluidsim.sheet_fill_rate = __get_parameter_data(world.sheet_fill_rate, frameno)
-        threshold = __get_parameter_data(world.sheet_fill_threshold, frameno)
+        fluidsim.sheet_fill_rate = __get_parameter_data(world.sheet_fill_rate, frameno, value_min=0.0, value_max=1.0)
+        threshold = __get_parameter_data(world.sheet_fill_threshold, frameno, value_min=0.0, value_max=1.0)
         fluidsim.sheet_fill_threshold = threshold - 1
 
-    friction = __get_parameter_data(world.boundary_friction, frameno)
+    friction = __get_parameter_data(world.boundary_friction, frameno, value_min=0.0, value_max=1.0)
     fluidsim.boundary_friction = friction
 
     # Surface Settings
@@ -1471,11 +1483,11 @@ def __update_animatable_obstacle_properties(data, frameid):
             __update_dynamic_object_mesh(mesh_object, data)
 
         mesh_object.enable = __get_parameter_data(data.is_enabled, frameid)
-        mesh_object.friction = __get_parameter_data(data.friction, frameid)
-        mesh_object.whitewater_influence = __get_parameter_data(data.whitewater_influence, frameid)
-        mesh_object.dust_emission_strength = __get_parameter_data(data.dust_emission_strength, frameid)
-        mesh_object.sheeting_strength = __get_parameter_data(data.sheeting_strength, frameid)
-        mesh_object.mesh_expansion = __get_parameter_data(data.mesh_expansion, frameid)
+        mesh_object.friction = __get_parameter_data(data.friction, frameid, value_min=0.0)
+        mesh_object.whitewater_influence = __get_parameter_data(data.whitewater_influence, frameid, value_min=0.0)
+        mesh_object.dust_emission_strength = __get_parameter_data(data.dust_emission_strength, frameid, value_min=0.0)
+        mesh_object.sheeting_strength = __get_parameter_data(data.sheeting_strength, frameid, value_min=0.0)
+        mesh_object.mesh_expansion = __get_parameter_data(data.mesh_expansion, frameid, value_min=0.0)
 
 
 def __update_animatable_meshing_volume_properties(data, frameid):
@@ -1494,7 +1506,12 @@ def __update_animatable_meshing_volume_properties(data, frameid):
         volume_object.update_mesh_animated(mesh_previous, mesh_current, mesh_next)
 
 
-def __set_property(obj, pname, value):
+def __set_property(obj, pname, value, value_min=None, value_max=None):
+    if value_min is not None:
+        value = max(value, value_min)
+    if value_max is not None:
+        value = min(value, value_max)
+
     eps = 1e-6
     old_value = getattr(obj, pname)
     if isinstance(value, list):
@@ -1713,11 +1730,11 @@ def __update_animatable_domain_properties(fluidsim, data, frameno):
         sheet_fill_rate = __get_parameter_data(world.sheet_fill_rate, frameno)
         threshold = __get_parameter_data(world.sheet_fill_threshold, frameno)
         __set_property(fluidsim, 'enable_sheet_seeding', is_sheet_seeding_enabled)
-        __set_property(fluidsim, 'sheet_fill_rate', sheet_fill_rate)
-        __set_property(fluidsim, 'sheet_fill_threshold', threshold - 1)
+        __set_property(fluidsim, 'sheet_fill_rate', sheet_fill_rate, value_min=0, value_max=1.0)
+        __set_property(fluidsim, 'sheet_fill_threshold', threshold - 1, value_min=0, value_max=1.0)
 
     friction = __get_parameter_data(world.boundary_friction, frameno)
-    __set_property(fluidsim, 'boundary_friction', friction)
+    __set_property(fluidsim, 'boundary_friction', friction, value_min=0, value_max=1.0)
 
     # Surface Settings
 
@@ -2451,8 +2468,11 @@ def bake(datafile, cache_directory, bakedata, savestate_id=None, bake_retries=0)
 
             error_string = str(e)
             errmsg = error_string
+            do_not_attempt_relaunch = False
             if "std::bad_alloc" in errmsg:
                 errmsg = "Out of memory. "
+            elif "No space left on device" in errmsg:
+                do_not_attempt_relaunch = True
             elif not errmsg:
                 errmsg = "Unknown error. "
             if not errmsg.endswith(". "):
@@ -2469,10 +2489,13 @@ def bake(datafile, cache_directory, bakedata, savestate_id=None, bake_retries=0)
             print("\nThank you for using FLIP Fluids!")
             print("------------------------------------------------------------")
 
-            if retry_num == max_baking_retries:
+            if retry_num == max_baking_retries or do_not_attempt_relaunch:
                 bakedata.error_message = errmsg
                 break
             else:
+                # Setting to a negative value will default to the most recent savestate on the next attempt.
+                savestate_id = -1
+
                 retry_msg = "Attempting to re-launch bake... "
                 retry_msg += "(retry attempt " + str(retry_num + 1) + "/" + str(max_baking_retries) + ")"
                 print(retry_msg)

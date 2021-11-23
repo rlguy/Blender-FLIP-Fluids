@@ -1644,6 +1644,27 @@ class FluidSimulation(object):
         pb.execute_lib_func(libfunc, [self(), n])
 
     @property
+    def enable_smooth_surface_tension_kernel(self):
+        libfunc = lib.FluidSimulation_is_smooth_surface_tension_kernel_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_smooth_surface_tension_kernel.setter
+    def enable_smooth_surface_tension_kernel(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_smooth_surface_tension_kernel
+        else:
+            libfunc = lib.FluidSimulation_disable_smooth_surface_tension_kernel
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_adaptive_force_field_time_stepping(self):
+        libfunc = lib.FluidSimulation_is_adaptive_force_field_time_stepping_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @property
     def min_time_steps_per_frame(self):
         libfunc = lib.FluidSimulation_get_min_time_steps_per_frame
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)

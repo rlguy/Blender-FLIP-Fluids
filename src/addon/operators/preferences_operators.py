@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, os, shutil, json, zipfile, urllib.request, sys, textwrap
+import bpy, os, shutil, json, zipfile, urllib.request, sys, textwrap, platform
 from bpy_extras.io_utils import ImportHelper
 
 from bpy.props import (
@@ -384,6 +384,143 @@ class FlipFluidCheckForUpdates(bpy.types.Operator):
         return context.window_manager.invoke_props_dialog(self, width=self.window_width)
 
 
+def get_system_info_dict():
+    def prepr(v):
+        r = repr(v)
+        vt = type(v)
+        if vt is bytes:
+            r = r[2:-1]
+        elif vt is list or vt is tuple:
+            r = r[1:-1]
+        return r
+
+    bl_info = sys.modules["flip_fluids_addon"].bl_info
+
+    blender_version = ("%s, %s, %s %s, %s" % (
+            bpy.app.version_string,
+            prepr(bpy.app.build_branch),
+            prepr(bpy.app.build_commit_date),
+            prepr(bpy.app.build_commit_time),
+            prepr(bpy.app.build_hash),
+            ))
+
+    gpu_string = "Unknown (fill in)"
+    if not bpy.app.background:
+        try:
+            import gpu
+            gpu_string = gpu.platform.renderer_get() + " " + gpu.platform.vendor_get() + " " + gpu.platform.version_get()
+        except:
+            pass
+
+    cpu_string = "Unknown (fill in)"
+    try:
+        from ..third_party import cpuinfo
+        cpu_string = cpuinfo.cpu.info[0]['ProcessorNameString']
+    except:
+        pass
+
+    d = {}
+    d['blender_version'] = blender_version
+    d['addon_version'] = bl_info.get('description', "Missing Version Label")
+    d['operating_system'] = platform.platform()
+    d['cpu'] = cpu_string
+    d['gpu'] = gpu_string
+    d['ram'] = "Unknown (fill in)"
+    return d
+
+
+class FlipFluidReportBugPrefill(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.report_bug_prefill"
+    bl_label = "Report a Bug (GitHub)"
+    bl_description = ("Start a bug report on the FLIP Fluids addon issue tracker." + 
+                      " This operator will automatically" + 
+                      " pre-fill the report with your system and version information." + 
+                      " Not all information may be found depending on system." + 
+                      " A GitHub account is required.")
+
+
+    def execute(self, context):
+        return {'FINISHED'}
+
+
+    def invoke(self, context, event):
+        sys_info = get_system_info_dict()
+        
+        user_info = ""
+        user_info += "#### System Information\n\n"
+        user_info += "**Blender Version:** " + sys_info['blender_version'] + "\n"
+        user_info += "**Addon Version:** " + sys_info['addon_version'] + "\n"
+        user_info += "**OS:** " + sys_info['operating_system'] + "\n"
+        user_info += "**GPU:** " + sys_info['gpu'] + "\n"
+        user_info += "**CPU:** " + sys_info['cpu'] + "\n"
+        user_info += "**RAM:** " + sys_info['ram'] + "\n\n"
+        user_info += "#### Describe the bug\n\n"
+        user_info += "Provide a clear and concise description of what the actual bug/issue is that you are experiencing.\n\n"
+        user_info += "#### To Reproduce\n\n"
+        user_info += "Provide descriptive instructions for how to reproduce the issue or how to use your .blend file.\n\n"
+        user_info += "#### Expected Behaviour\n\n"
+        user_info += "A description of what you expected to happen.\n\n"
+        user_info += "#### Actual Behaviour\n\n"
+        user_info += "A description of what actually happened.\n\n"
+        user_info += "#### Screenshots\n\n"
+        user_info += "If applicable, add screenshots to help explain your problem.\n\n"
+
+        user_info = user_info.replace(" ", "%20")
+        user_info = user_info.replace("\n", "%0A")
+        user_info = user_info.replace("#", "%23")
+
+        base_url = "https://github.com/rlguy/Blender-FLIP-Fluids/issues/new?body="
+        full_url = base_url + user_info
+        bpy.ops.wm.url_open(url=full_url)
+
+        return {'FINISHED'}
+
+
+class FlipFluidCopySystemInfo(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.copy_system_info"
+    bl_label = "Copy System Info"
+    bl_description = ("Copy your system and version info to the clipboard." + 
+                      " Paste this info into messages to us sent through the" + 
+                      " Blender Market, support@flipfluids.com, or elsewhere." + 
+                      " Not all information may be found depending on system")
+
+
+    def execute(self, context):
+        return {'FINISHED'}
+
+
+    def invoke(self, context, event):
+        sys_info = get_system_info_dict()
+        
+        user_info = ""
+        user_info += "Blender Version: " + sys_info['blender_version'] + "\n"
+        user_info += "Addon Version: " + sys_info['addon_version'] + "\n"
+        user_info += "OS: " + sys_info['operating_system'] + "\n"
+        user_info += "GPU: " + sys_info['gpu'] + "\n"
+        user_info += "CPU: " + sys_info['cpu'] + "\n"
+        user_info += "RAM: " + sys_info['ram'] + "\n\n"
+        bpy.context.window_manager.clipboard = user_info
+
+        print("*** Copied system info to clipboard: ***")
+        print(user_info)
+
+        return {'FINISHED'}
+
+
+class FLIPFLUIDS_MT_help_menu(bpy.types.Menu):
+    bl_label = "FLIP Fluids"
+    bl_idname = "FLIPFLUIDS_MT_help_menu"
+
+    def draw(self, context):
+        self.layout.operator("flip_fluid_operators.report_bug_prefill", icon="URL")
+        self.layout.operator("flip_fluid_operators.copy_system_info", icon="COPYDOWN")
+
+
+def draw_flip_fluids_help_menu(self, context):
+    self.layout.separator()
+    self.layout.menu(FLIPFLUIDS_MT_help_menu.bl_idname)
+
+
 def register():
     bpy.utils.register_class(FLIPFluidPreferencesExportUserData)
     bpy.utils.register_class(FLIPFluidPreferencesImportUserData)
@@ -391,6 +528,23 @@ def register():
 
     bpy.utils.register_class(VersionDataTextEntry)
     bpy.utils.register_class(FlipFluidCheckForUpdates)
+
+    bpy.utils.register_class(FlipFluidReportBugPrefill)
+    bpy.utils.register_class(FlipFluidCopySystemInfo)
+
+    bpy.utils.register_class(FLIPFLUIDS_MT_help_menu)
+
+    try:
+        # Blender 2.8+
+        bpy.types.TOPBAR_MT_help.append(draw_flip_fluids_help_menu)
+    except:
+        pass
+
+    try:
+        # Blender 2.79
+        bpy.types.INFO_MT_help.append(draw_flip_fluids_help_menu)
+    except:
+        pass
 
 
 def unregister():
@@ -400,3 +554,20 @@ def unregister():
 
     bpy.utils.unregister_class(VersionDataTextEntry)
     bpy.utils.unregister_class(FlipFluidCheckForUpdates)
+
+    bpy.utils.unregister_class(FlipFluidReportBugPrefill)
+    bpy.utils.unregister_class(FlipFluidCopySystemInfo)
+
+    bpy.utils.unregister_class(FLIPFLUIDS_MT_help_menu)
+    
+    try:
+        # Blender 2.8+
+        bpy.types.TOPBAR_MT_help.remove(draw_flip_fluids_help_menu)
+    except:
+        pass
+
+    try:
+        # Blender 2.79
+        bpy.types.INFO_MT_help.remove(draw_flip_fluids_help_menu)
+    except:
+        pass

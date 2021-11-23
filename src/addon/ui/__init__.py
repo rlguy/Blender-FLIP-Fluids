@@ -78,6 +78,8 @@ def append_to_PHYSICS_PT_add_panel(self, context):
             row.alignment = 'LEFT'
             row.prop(addon_prefs, "beginner_friendly_mode_tooltip", icon='QUESTION', emboss=False, text="")
             row.label(text="FLIP Fluids Beginner Friendly Mode is enabled")
+            row = tooltip_column.row(align=True)
+            row.label(text="       Some options will be hidden")
 
         
         # Experimental Build Warning

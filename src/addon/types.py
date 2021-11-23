@@ -183,6 +183,11 @@ velocity_transfer_methods = (
     ('VELOCITY_TRANSFER_METHOD_APIC', "APIC", "Choose APIC for high vorticity, swirly, and stable simulations. Generally better for small scale simulations where reduced surface noise is desirable or for viscous simulations.")
     )
 
+surface_tension_solver_methods = (
+    ('SURFACE_TENSION_SOLVER_METHOD_REGULAR', "Regular", "Choose for general purpose surface tension effects."),
+    ('SURFACE_TENSION_SOLVER_METHOD_SMOOTH',  "Smooth",  "Choose for improved stability and smoother results in small-scale surface tension effects. Good for thin streams/strands of liquid and for high surface tension effects. Not recommended for highly chaotic liquid motion or large volumes of liquid as this can result in volume increase issues.")
+    )
+
 threading_modes = (
     ('THREADING_MODE_AUTO_DETECT', "Auto-detect", "Automatically determine the number of threads, based on CPUs"),
     ('THREADING_MODE_FIXED',       "Fixed",       "Manually determine the number of threads")

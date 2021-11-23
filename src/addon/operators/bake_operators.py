@@ -41,13 +41,20 @@ def is_bake_operator_running():
     return _IS_BAKE_OPERATOR_RUNNING
 
 
-def _update_stats(context):
+def update_stats(context=None):
+    if context is None:
+        context = bpy.context
+
     dprops = bpy.context.scene.flip_fluid.get_domain_properties()
     cache_dir = dprops.cache.get_cache_abspath()
     statsfilepath = os.path.join(cache_dir, dprops.stats.stats_filename)
     if not os.path.isfile(statsfilepath):
-        with open(statsfilepath, 'w', encoding='utf-8') as f:
-            f.write(json.dumps({}, sort_keys=True, indent=4))
+        try:
+            # Case that the cache directory path is not valid
+            with open(statsfilepath, 'w', encoding='utf-8') as f:
+                f.write(json.dumps({}, sort_keys=True, indent=4))
+        except:
+            return
 
     temp_dir = os.path.join(cache_dir, "temp")
     match_str = "framestats" + "[0-9]"*6 + ".data"
@@ -164,7 +171,7 @@ class BakeFluidSimulation(bpy.types.Operator):
 
 
     def _update_stats(self, context):
-        _update_stats(context)
+        update_stats(context)
 
 
     def _update_status(self, context):
@@ -443,7 +450,7 @@ class BakeFluidSimulationCommandLine(bpy.types.Operator):
 
 
     def _update_simulation_stats(self, context):
-        _update_stats(context)
+        update_stats(context)
 
 
     def _run_fluid_simulation(self, context):

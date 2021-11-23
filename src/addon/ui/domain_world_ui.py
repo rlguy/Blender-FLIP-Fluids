@@ -260,6 +260,11 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
             column_left.prop(wprops, "enable_surface_tension")
             column_left.label(text="")
             column_left.label(text="")
+            column_left = column_left.column(align=True)
+            column_left.enabled = wprops.enable_surface_tension
+            row = column_left.row(align=True)
+            row.alignment = 'RIGHT'
+            row.label(text="Surface Tension Solver: ")
             row = column_left.row(align=True)
             row.enabled = wprops.enable_surface_tension
             row.alignment='RIGHT'
@@ -278,6 +283,8 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
             column_right.prop(wprops, "surface_tension", text="Base")
             column_right.prop(wprops, "surface_tension_exponent", text="Exponent")
             column_right.prop(wprops, "surface_tension_accuracy", text="Accuracy")
+            row = column_right.row()
+            row.prop(wprops, "surface_tension_solver_method", expand=True)
             column_right.label(text=surface_tension_str)
             column_right.label(text=str(wprops.minimum_surface_tension_substeps))
 

@@ -915,6 +915,15 @@ public:
     void setSurfaceTensionConditionNumber(double n);
 
     /*
+        If enabled, uses a larger particle kernel radius. Good for surface tension stability
+        in thin strands on liquid or for high surface tension effects. Not good for chaotic
+        fluid motion as this can lead to volume increase.
+    */
+    void enableSmoothSurfaceTensionKernel();
+    void disableSmoothSurfaceTensionKernel();
+    bool isSmoothSurfaceTensionKernelEnabled();
+
+    /*
         Min/max time step calculations per frame update
     */
     int getMinTimeStepsPerFrame();
@@ -1712,8 +1721,10 @@ private:
     bool _isSolidLevelSetUpToDate = false;
     bool _isPrecomputedSolidLevelSetUpToDate = false;
     int _solidLevelSetExactBand = 3;
+    bool _isSmoothSurfaceTensionKernelEnabled = false;
     double _liquidSDFParticleScale = 1.0;
     double _liquidSDFParticleRadius = 0.0;
+    double _liquidSDFSurfaceTensionParticleScale = 2.0;
     std::thread _updateLiquidLevelSetThread;
 
     // Reconstruct output fluid surface

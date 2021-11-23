@@ -1986,6 +1986,27 @@ extern "C" {
         );
     }
 
+    EXPORTDLL void FluidSimulation_enable_smooth_surface_tension_kernel(FluidSimulation* obj,
+                                                                        int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableSmoothSurfaceTensionKernel, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_smooth_surface_tension_kernel(FluidSimulation* obj,
+                                                                         int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableSmoothSurfaceTensionKernel, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_smooth_surface_tension_kernel_enabled(FluidSimulation* obj,
+                                                                           int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isSmoothSurfaceTensionKernelEnabled, err
+        );
+    }
+
     EXPORTDLL int FluidSimulation_get_min_time_steps_per_frame(
             FluidSimulation* obj, int *err) {
 

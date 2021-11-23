@@ -62,7 +62,7 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
             description="Visualize the domain voxel grid in the 3D viewport."
                 " Try scaling different sides of the domain to better understand how the grid works."
                 " Try enabling the Lock Cell Size option in the FLIP Fluid Simulation panel and compare"
-                " the differences in how the grid changes as the domain is resized.",
+                " the differences in how the grid changes as the domain is resized",
             default=False,
             update=lambda self, context: self._update_display_simulation_grid(context),
             ); exec(conv("display_simulation_grid"))
@@ -75,7 +75,7 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
             ); exec(conv("grid_display_mode"))
     grid_display_scale = IntProperty(
             name="Grid Display Scale",
-            description="Number of grid cells that a single grid cell in the"
+            description="Number of voxels that a single grid spacing in the"
                 " viewport represents",
             min = 1, soft_max = 10,
             default=1,
@@ -268,7 +268,7 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
             ); exec(conv("force_field_gradient_mode"))
     force_field_display_amount = IntProperty(
             name="Display Amount", 
-            description="Amount of force field lines to display in the viewport.", 
+            description="Amount of force field lines to display in the viewport", 
             min=0, max=100,
             default=25,
             subtype='PERCENTAGE',
@@ -386,6 +386,26 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
             print("No version history")
         for idx,vdata in enumerate(self.version_history):
             print(idx, vdata.get_info_string())
+
+
+    def get_last_saved_blender_version(self):
+        unresolved_version = (-1, -1, -1)
+        if len(self.version_history) == 0:
+            return unresolved_version
+
+        try:
+            valid_chars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.']
+            bl_version_str = self.version_history[-1].blender_version
+            bl_version_str = ''.join([c for c in bl_version_str if c in valid_chars])
+            version_numbers = bl_version_str.split('.')
+            major = int(version_numbers[0])
+            minor = int(version_numbers[1])
+            revision = int(version_numbers[2])
+            version_tuple = (major, minor, revision)
+        except:
+            return unresolved_version
+
+        return version_tuple
 
 
     def clear_version_history(self):

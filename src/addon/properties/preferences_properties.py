@@ -78,8 +78,8 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
     bl_idname = __name__.split(".")[0]
 
     enable_helper = BoolProperty(
-                name="Enable Helper Toolbox",
-                description="Enable the FLIP Fluid helper menu in the 3D view toolbox."
+                name="Enable Helper Sidebar",
+                description="Enable the FLIP Fluid helper menu in the 3D view sidebar."
                     " This menu contains operators to help with workflow and simulation setup",
                 default=True,
                 update=lambda self, context: self._update_enable_helper(context),
@@ -103,7 +103,7 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
                     " and hide more advanced settings that are not as commonly used in basic"
                     " simulations. Enabling this will simplify the UI and help you focus on the"
                     " simulation settings that matter the most while you learn. This setting is"
-                    " also available from the FLIP Fluids toolbox menu",
+                    " also available from the FLIP Fluids sidebar menu",
                 default=False,
                 options={'HIDDEN'},
                 )
@@ -123,7 +123,7 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
     show_documentation_in_ui = BoolProperty(
                 name="Display documentation links in UI",
                 description="Display relevant documentation links within the UI. Documentation links will open in your browser."
-                    " This setting is also available from the FLIP Fluids toolbox menu",
+                    " This setting is also available from the FLIP Fluids sidebar menu",
                 default=False,
                 options={'HIDDEN'},
                 )
@@ -155,7 +155,7 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
             name="Enable Developer Tools", 
             description="Enable Developer Tools. Enable to unlock features that may be experimental, not yet completed,"
                 " or considered unstable. Not recommended for production use", 
-            default=False,
+            default=True,
             ); 
     exec(vcu.convert_attribute_to_28("enable_developer_tools"))
     FAKE_PREFERENCES.enable_developer_tools = False
@@ -224,7 +224,7 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
             box.operator(
                     "wm.url_open", 
                     text="Installation Instructions", 
-                    icon="WORLD"
+                    icon="URL"
                 ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Addon-Installation-and-Uninstallation"
 
         box = column.box()
@@ -248,7 +248,7 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
             box.operator(
                     "wm.url_open", 
                     text="Blender 2.80 Known Issues and Workarounds", 
-                    icon="WORLD"
+                    icon="URL"
                 ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Blender-2.8-Support#known-issues"
             column.separator()
             column.separator()
@@ -275,14 +275,19 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         row.prop(self, "helper_category_name")
         helper_column.separator()
 
-        helper_column.separator()
+        box = self.layout.box()
+        box.enabled = is_installation_complete
+        helper_column = box.column(align=True)
         helper_column.label(text="Command Line Tools:")
         row = helper_column.row()
         row.label(text="     Re-launch bake after crash:")
         row.prop(self, "cmd_bake_max_attempts")
         row.label(text="")
-
         helper_column.separator()
+
+        box = self.layout.box()
+        box.enabled = is_installation_complete
+        helper_column = box.column(align=True)
         helper_column.label(text="Experimental & Debug Tools:")
         #helper_column.prop(self, "enable_experimental_build_warning")
         helper_column.prop(self, "enable_developer_tools")
@@ -306,42 +311,69 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         split = column.split()
         column_left = split.column(align=True)
         column_right = split.column()
+        
+        column_left.label(text="Help and Support:")
+        column_left.operator(
+                "wm.url_open", 
+                text="Frequently Asked Questions", 
+                icon="URL"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Frequently-Asked-Questions"
+        column_left.operator(
+                "wm.url_open", 
+                text="Scene Troubleshooting Tips", 
+                icon="URL"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Scene-Troubleshooting"
+        column_left.operator(
+                "wm.url_open", 
+                text="Example Scenes", 
+                icon="URL"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Example-Scene-Descriptions"
+        column_left.operator(
+                "wm.url_open", 
+                text="Tutorials and Learning Resources", 
+                icon="URL"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Video-Learning-Series"
 
-        # These operators need to be reworked to support both 2.79 and 2.80
-        """
-        column_left.label(text="User Settings:")
-        column_left.operator("flip_fluid_operators.preferences_import_user_data", icon="IMPORT")
-        column_left.operator("flip_fluid_operators.preferences_export_user_data", icon="EXPORT")
-        column_left.separator()
-        column_left.separator()
-        """
+        column_left.label(text="Report a Bug:")
+        column_left.operator(
+                "wm.url_open", 
+                text="Bug Report Guidelines", 
+                icon="URL"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Guidelines-for-Reporting-Bugs-and-Issues"
+        column_left.operator("flip_fluid_operators.report_bug_prefill", icon="URL")
+        column_left.operator("flip_fluid_operators.copy_system_info", icon="COPYDOWN")
+
+        column = box.column(align=True)
+        column.label(text="Reports can also be sent through the Blender Market or to support@flipfluids.com")
+
+        box = self.layout.box()
+        box.enabled = is_installation_complete
+        column = box.column(align=True)
+        split = column.split()
+        column_left = split.column(align=True)
+        column_right = split.column()
 
         column_left.label(text="Info and Links:")
         column_left.operator(
                 "wm.url_open", 
+                text="Documentation and Wiki", 
+                icon="URL"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki"
+        column_left.operator(
+                "wm.url_open", 
                 text="Recommended Documentation Topics", 
-                icon="WORLD"
+                icon="URL"
             ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki#the-most-important-documentation-topics"
         column_left.operator(
                 "wm.url_open", 
-                text="Frequently Asked Questions", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Frequently-Asked-Questions"
+                text="Blender Market Page", 
+                icon="URL"
+            ).url = "https://blendermarket.com/products/flipfluids"
         column_left.operator(
                 "wm.url_open", 
-                text="Scene Troubleshooting", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Scene-Troubleshooting"
-        column_left.operator(
-                "wm.url_open", 
-                text="Tutorials and Learning Resources", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Video-Learning-Series"
-        column_left.operator(
-                "wm.url_open", 
-                text="Development Blog", 
-                icon="WORLD"
-            ).url = "http://flipfluids.com/blog/"
+                text="FLIP Fluids Homepage", 
+                icon="URL"
+            ).url = "http://flipfluids.com"
 
         column_left.separator()
         row = column_left.row(align=True)
@@ -360,15 +392,7 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         row.operator(
                 "wm.url_open", 
                 text="YouTube", 
-            ).url = "https://www.youtube.com/channel/UCJlVTm456gRwxt86vfGvyRg"
-
-        column_left.separator()
-        column_left.operator(
-                "flip_fluid_operators.check_for_updates", 
-                text="Check for Updates", 
-                icon="WORLD"
-            )
-        column_left.separator()
+            ).url = "https://www.youtube.com/FLIPFluids"
 
 
     def _get_gpu_device_enums(self, context=None):
@@ -376,7 +400,6 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         for d in self.gpu_devices:
             device_enums.append((d.name, d.name, d.description))
         return device_enums
-
 
 
 def load_post():
