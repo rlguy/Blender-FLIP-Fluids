@@ -147,6 +147,8 @@ class FLIPFLUID_PT_InflowTypePanel(bpy.types.Panel):
                 show_color = dprops is not None and dprops.surface.enable_color_attribute
                 column.enabled = show_color
                 column.prop(inflow_props, "color")
+                column = box.column(align=True)
+
 
                 column.separator()
                 show_source_id = dprops is not None and dprops.surface.enable_source_id_attribute

@@ -105,11 +105,11 @@ class DomainAdvancedProperties(bpy.types.PropertyGroup):
             ); exec(conv("PICAPIC_ratio"))
     CFL_condition_number = IntProperty(
             name="Safety Factor (CFL Number)",
-            description="Maximum number of grid cells a particle can travel"
+            description="Maximum number of voxels that a particle can travel"
                 " in a single substep. A larger number may speed up simulation"
                 " baking by reducing the number of required substeps at the"
-                " cost of accuracy",
-            min=1, max=20,
+                " cost of simulation accuracy",
+            min=1, max=30,
             default=5,
             ); exec(conv("CFL_condition_number"))
     enable_extreme_velocity_removal = BoolProperty(

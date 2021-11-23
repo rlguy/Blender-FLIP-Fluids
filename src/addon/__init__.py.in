@@ -23,7 +23,7 @@ bl_info = {
     "location" : "Properties > Physics > FLIP Fluid",
     "warning" : "",
     "wiki_url" : "https://github.com/rlguy/Blender-FLIP-Fluids/wiki",
-    "tracker_url" : "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Guidelines-for-Reporting-Bugs-and-Issues",
+    "doc_url" : "https://github.com/rlguy/Blender-FLIP-Fluids/wiki",
     "category" : "Animation"
 }
 

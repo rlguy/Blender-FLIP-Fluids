@@ -1900,6 +1900,24 @@ void FluidSimulation::setSurfaceTensionConditionNumber(double n) {
     _surfaceTensionConditionNumber = n;
 }
 
+bool FluidSimulation::isSmoothSurfaceTensionKernelEnabled() {
+    return _isSmoothSurfaceTensionKernelEnabled;
+}
+
+void FluidSimulation::enableSmoothSurfaceTensionKernel() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " enableSmoothSurfaceTensionKernel" << std::endl);
+
+    _isSmoothSurfaceTensionKernelEnabled = true;
+}
+
+void FluidSimulation::disableSmoothSurfaceTensionKernel() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " disableSmoothSurfaceTensionKernel" << std::endl);
+
+    _isSmoothSurfaceTensionKernelEnabled = false;
+}
+
 int FluidSimulation::getMinTimeStepsPerFrame() {
     return _minFrameTimeSteps;
 }
@@ -3779,7 +3797,12 @@ void FluidSimulation::_updateLiquidLevelSet() {
     StopWatch t;
     t.start();
 
-    _liquidSDF.calculateSignedDistanceField(_markerParticles, _liquidSDFParticleRadius);
+    double radius = _liquidSDFParticleRadius;
+    if (_isSurfaceTensionEnabled && _isSmoothSurfaceTensionKernelEnabled) {
+        radius = _liquidSDFSurfaceTensionParticleScale * _liquidSDFParticleRadius;
+    }
+
+    _liquidSDF.calculateSignedDistanceField(_markerParticles, radius);
 
     t.stop();
 
@@ -3810,11 +3833,16 @@ _logfile.logString(_logfile.getTime() + " BEGIN       Advect Velocity Field");
     _validVelocities.reset();
     _MACVelocity.clear();
     if (!_markerParticles.empty()) {
+        double radius = _liquidSDFParticleRadius;
+        if (_isSurfaceTensionEnabled && _isSmoothSurfaceTensionKernelEnabled) {
+            radius = _liquidSDFSurfaceTensionParticleScale * _liquidSDFParticleRadius;
+        }
+
         VelocityAdvectorParameters params;
         params.particles = &_markerParticles;
         params.vfield = &_MACVelocity;
         params.validVelocities = &_validVelocities;
-        params.particleRadius = _liquidSDFParticleRadius;
+        params.particleRadius = radius;
 
         if (_velocityTransferMethod == VelocityTransferMethod::FLIP) {
             params.velocityTransferMethod = VelocityAdvectorTransferMethod::FLIP;
@@ -5384,6 +5412,7 @@ void FluidSimulation::_addNewFluidCellsAABB(AABB bbox,
     vmath::vec3 p2 = bbox.getMaxPoint();
     GridIndex g1 = Grid3d::positionToGridIndex(p1, _dx);
     GridIndex g2 = Grid3d::positionToGridIndex(p2, _dx);
+
     g1.i = std::max(g1.i, 1);
     g1.j = std::max(g1.j, 1);
     g1.k = std::max(g1.k, 1);
@@ -5398,14 +5427,15 @@ void FluidSimulation::_addNewFluidCellsAABB(AABB bbox,
                 GridIndex g(i, j, k);
                 vmath::vec3 c = Grid3d::GridIndexToCellCenter(g, _dx);
 
+                bool isSurfaceParticle = i == g1.i || j == g1.j || k == g1.k || 
+                                         i == g2.i || j == g2.j || k == g2.k;
                 for (unsigned int oidx = 0; oidx < 8; oidx++) {
                     vmath::vec3 p = c + particleOffsets[oidx];
                     if (maskgrid.isSubCellSet(p)) {
                         continue;
                     }
 
-                    float d = bbox.getSignedDistance(p);
-                    if (_isJitterSurfaceMarkerParticlesEnabled || d < -_dx) {
+                    if (_isJitterSurfaceMarkerParticlesEnabled || !isSurfaceParticle) {
                         p = _jitterMarkerParticlePosition(p, jitter);
                     }
 
@@ -5875,7 +5905,7 @@ void FluidSimulation::_removeMeshNearDomain(TriangleMesh &mesh) {
                                 mesh.vertices[t.tri[1]] + 
                                 mesh.vertices[t.tri[2]]) / 3.0;
         GridIndex g = Grid3d::positionToGridIndex(centroid, _dx);
-        if (!validCells(g)) {
+        if (!validCells.isIndexInRange(g) || !validCells(g)) {
             removalTriangles.push_back(tidx);
         } else {
             if (_isMeshingVolumeSet) {

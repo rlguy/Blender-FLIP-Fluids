@@ -518,10 +518,16 @@ vmath::vec3 AABB::getNearestPointInsideAABB(vmath::vec3 p, double eps) {
 }
 
 float AABB::getSignedDistance(vmath::vec3 p) {
-    float dx = fmax(fmax(position.x - p.x, p.x - (position.x + width)), 0.0f);
-    float dy = fmax(fmax(position.y - p.y, p.y - (position.y + height)), 0.0f);
-    float dz = fmax(fmax(position.z - p.z, p.z - (position.z + depth)), 0.0f);
+    //float dx = fmax(fmax(position.x - p.x, p.x - (position.x + width)), 0.0f);
+    //float dy = fmax(fmax(position.y - p.y, p.y - (position.y + height)), 0.0f);
+    //float dz = fmax(fmax(position.z - p.z, p.z - (position.z + depth)), 0.0f);
+    //float d = sqrt(dx*dx + dy*dy + dz*dz);
+
+    float dx = std::min(std::abs(p.x - position.x), std::abs(p.x - (position.x + (float)width)));
+    float dy = std::min(std::abs(p.y - position.y), std::abs(p.y - (position.y + (float)height)));
+    float dz = std::min(std::abs(p.z - position.z), std::abs(p.z - (position.z + (float)depth)));
     float d = sqrt(dx*dx + dy*dy + dz*dz);
+
     if (isPointInside(p)) {
         d = -d;
     }

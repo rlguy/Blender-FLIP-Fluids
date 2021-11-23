@@ -196,12 +196,24 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
 
 
     def _toggle_cycles_ray_visibility(self, obj, is_enabled):
-        obj.cycles_visibility.camera = is_enabled
-        obj.cycles_visibility.transmission = is_enabled
-        obj.cycles_visibility.diffuse = is_enabled
-        obj.cycles_visibility.scatter = is_enabled
-        obj.cycles_visibility.glossy = is_enabled
-        obj.cycles_visibility.shadow = is_enabled
+        # Cycles may not be enabled in the user's preferences
+        try:
+            if vcu.is_blender_30():
+                obj.visible_camera = is_enabled
+                obj.visible_diffuse = is_enabled
+                obj.visible_glossy = is_enabled
+                obj.visible_transmission = is_enabled
+                obj.visible_volume_scatter = is_enabled
+                obj.visible_shadow = is_enabled
+            else:
+                obj.cycles_visibility.camera = is_enabled
+                obj.cycles_visibility.transmission = is_enabled
+                obj.cycles_visibility.diffuse = is_enabled
+                obj.cycles_visibility.scatter = is_enabled
+                obj.cycles_visibility.glossy = is_enabled
+                obj.cycles_visibility.shadow = is_enabled
+        except:
+            pass
 
 
     def _lock_interface(self):
@@ -307,6 +319,126 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
                     popup_width=600
                     )
 
+            return
+
+        if obj.type == 'FONT' and self.object_type != 'TYPE_NONE':
+            errmsg = "Text type objects are not supported."
+            errdesc = "Text type objects are not supported. Please convert to a mesh object before setting as FLIP Fluid object."
+            bpy.ops.flip_fluid_operators.display_error(
+                'INVOKE_DEFAULT',
+                error_message=errmsg,
+                error_description=errdesc,
+                popup_width=600
+                )
+            self.object_type = 'TYPE_NONE'
+            return
+
+        if obj.type == 'META' and self.object_type != 'TYPE_NONE':
+            errmsg = "Metaball type objects are not supported."
+            errdesc = "Metaball type objects are not supported. Please convert to a mesh object before setting as FLIP Fluid object."
+            bpy.ops.flip_fluid_operators.display_error(
+                'INVOKE_DEFAULT',
+                error_message=errmsg,
+                error_description=errdesc,
+                popup_width=600
+                )
+            self.object_type = 'TYPE_NONE'
+            return
+
+        if obj.type == 'VOLUME' and self.object_type != 'TYPE_NONE':
+            errmsg = "Volume type objects are not supported."
+            errdesc = "Volume type objects are not supported. Please convert to a mesh object before setting as FLIP Fluid object."
+            bpy.ops.flip_fluid_operators.display_error(
+                'INVOKE_DEFAULT',
+                error_message=errmsg,
+                error_description=errdesc,
+                popup_width=600
+                )
+            self.object_type = 'TYPE_NONE'
+            return
+
+        if obj.type == 'ARMATURE' and self.object_type != 'TYPE_NONE':
+            errmsg = "Armature type objects are not supported."
+            errdesc = "Armature type objects are not supported. Use the mesh associated with the armature before setting as FLIP Fluid object."
+            bpy.ops.flip_fluid_operators.display_error(
+                'INVOKE_DEFAULT',
+                error_message=errmsg,
+                error_description=errdesc,
+                popup_width=600
+                )
+            self.object_type = 'TYPE_NONE'
+            return
+
+        if obj.type == 'LIGHT' and self.object_type != 'TYPE_NONE':
+            errmsg = "Light type objects are not supported."
+            errdesc = "Light objects are not supported as a FLIP Fluid object type."
+            bpy.ops.flip_fluid_operators.display_error(
+                'INVOKE_DEFAULT',
+                error_message=errmsg,
+                error_description=errdesc,
+                popup_width=600
+                )
+            self.object_type = 'TYPE_NONE'
+            return
+
+        if obj.type == 'LIGHT_PROBE' and self.object_type != 'TYPE_NONE':
+            errmsg = "Light Probe type objects are not supported."
+            errdesc = "Light Probe objects are not supported as a FLIP Fluid object type."
+            bpy.ops.flip_fluid_operators.display_error(
+                'INVOKE_DEFAULT',
+                error_message=errmsg,
+                error_description=errdesc,
+                popup_width=600
+                )
+            self.object_type = 'TYPE_NONE'
+            return
+
+        if obj.type == 'GPENCIL' and self.object_type != 'TYPE_NONE':
+            errmsg = "Grease Pencil type objects are not supported."
+            errdesc = "Grease Pencil objects are not supported as a FLIP Fluid object type."
+            bpy.ops.flip_fluid_operators.display_error(
+                'INVOKE_DEFAULT',
+                error_message=errmsg,
+                error_description=errdesc,
+                popup_width=600
+                )
+            self.object_type = 'TYPE_NONE'
+            return
+
+        if obj.type == 'LATTICE' and self.object_type != 'TYPE_NONE':
+            errmsg = "Lattice type objects are not supported."
+            errdesc = "Lattice objects are not supported as a FLIP Fluid object type."
+            bpy.ops.flip_fluid_operators.display_error(
+                'INVOKE_DEFAULT',
+                error_message=errmsg,
+                error_description=errdesc,
+                popup_width=600
+                )
+            self.object_type = 'TYPE_NONE'
+            return
+
+        if obj.type == 'CAMERA' and self.object_type != 'TYPE_NONE':
+            errmsg = "Camera type objects are not supported."
+            errdesc = "Camera objects are not supported as a FLIP Fluid object type."
+            bpy.ops.flip_fluid_operators.display_error(
+                'INVOKE_DEFAULT',
+                error_message=errmsg,
+                error_description=errdesc,
+                popup_width=600
+                )
+            self.object_type = 'TYPE_NONE'
+            return
+
+        if obj.type == 'SPEAKER' and self.object_type != 'TYPE_NONE':
+            errmsg = "Speaker type objects are not supported."
+            errdesc = "Speaker objects are not supported as a FLIP Fluid object type."
+            bpy.ops.flip_fluid_operators.display_error(
+                'INVOKE_DEFAULT',
+                error_message=errmsg,
+                error_description=errdesc,
+                popup_width=600
+                )
+            self.object_type = 'TYPE_NONE'
             return
 
 

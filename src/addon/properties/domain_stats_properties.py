@@ -26,6 +26,7 @@ from bpy.props import (
 
 from .. import types
 from ..utils import version_compatibility_utils as vcu
+from ..operators import bake_operators
 
 # ##############################################################################
 #   STATS PROPERTIES
@@ -295,6 +296,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
 
 
     def load_post(self):
+        bake_operators.update_stats()
         self.refresh_stats()
 
 

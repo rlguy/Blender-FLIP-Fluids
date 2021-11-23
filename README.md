@@ -2,17 +2,15 @@ Want to try FLIP Fluids addon before buying the full [Blender Market Product](ht
 
 ### Limitations
 
-- _**New:**_ Unlimited simulation frames (previous limit of 250) 
-- _**New:**_ Unlimited number of simulation objects (previous limit of 1 per object type) 
 - Simulation meshes are watermarked with _FLIP Fluids Demo_ text
 
 ### Getting Started
 
-Download the latest FLIP Fluids Demo installation file here: [FLIP_Fluids_addon_0.1.0_demo_(20_aug_2021.zip)](https://github.com/rlguy/Blender-FLIP-Fluids/releases/download/0.1.0/FLIP_Fluids_addon_0.1.0_demo_.20_aug_2021.zip)
+Download the latest FLIP Fluids Demo installation file here: [FLIP_Fluids_addon_0.2.0_demo_(25_nov_2021.zip)](https://github.com/rlguy/Blender-FLIP-Fluids/releases/download/0.2.0/FLIP_Fluids_addon_0.2.0_demo_.25_nov_2021.zip)
 
 After downloading the demo addon, follow our [Installation Instructions](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Addon-Installation-and-Uninstallation). The instructions are similar to installing any other Blender addon.
 
-Get started creating your first simulation with our [beginners guide](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Creating-Your-First-FLIP-Fluids-Simulation)!
+Get started creating your first simulation with our [beginners guide](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Creating-Your-First-FLIP-Fluids-Simulation) or [video learning series](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Video-Learning-Series)!
 
 ### Have any questions?
 

@@ -193,7 +193,11 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         # Motion blur not supported. Leaving motion blur enabled can cause
         # slow render in versions of Blender 2.91+. Workaround is to
         # automatically disable motion blur on the object.
-        cache_object.cycles.use_motion_blur = False
+        try:
+            # Cycles may not be enabled in the user's preferences
+            cache_object.cycles.use_motion_blur = False
+        except:
+            pass
 
         self._initialize_cache_object_octane(cache_object)
 
@@ -337,6 +341,9 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         frame_string = self._frame_number_to_string(frameno)
         velocity_data = self._import_velocity_attribute_data(frameno)
 
+        if not velocity_data:
+            return
+
         attribute_name = "flip_velocity"
         mesh = cache_object.data
         try:
@@ -356,6 +363,9 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         cache_object = self.get_cache_object()
         frame_string = self._frame_number_to_string(frameno)
         speed_data = self._import_speed_attribute_data(frameno)
+
+        if not speed_data:
+            return
 
         attribute_name = "flip_speed"
         mesh = cache_object.data
@@ -377,6 +387,9 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         frame_string = self._frame_number_to_string(frameno)
         age_data = self._import_age_attribute_data(frameno)
 
+        if not age_data:
+            return
+
         attribute_name = "flip_age"
         mesh = cache_object.data
         try:
@@ -397,6 +410,9 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         frame_string = self._frame_number_to_string(frameno)
         color_data = self._import_color_attribute_data(frameno)
 
+        if not color_data:
+            return
+
         attribute_name = "flip_color"
         mesh = cache_object.data
         try:
@@ -416,6 +432,9 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         cache_object = self.get_cache_object()
         frame_string = self._frame_number_to_string(frameno)
         source_id_data = self._import_source_id_attribute_data(frameno)
+
+        if not source_id_data:
+            return
 
         attribute_name = "flip_source_id"
         mesh = cache_object.data
@@ -616,7 +635,11 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         # Motion blur not supported. Leaving motion blur enabled can cause
         # slow render in versions of Blender 2.91+. Workaround is to
         # automatically disable motion blur on the object.
-        duplivert_object.cycles.use_motion_blur = False
+        try:
+            # Cycles may not be enabled in the user's preferences
+            duplivert_object.cycles.use_motion_blur = False
+        except:
+            pass
 
         self.duplivert_object = duplivert_object
 

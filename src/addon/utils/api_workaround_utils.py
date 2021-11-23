@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import bpy
 from . import version_compatibility_utils as vcu
 from .. import render
 
@@ -82,3 +83,56 @@ def toggle_viewport_visibility_to_update_rendered_viewport_workaround(bl_object)
     vcu.toggle_outline_eye_icon(bl_object)
     if is_selected:
         vcu.select_set(bl_object, True)
+
+
+# Due to API changes in Cycles visibility properties in Blender 3.0, this will
+# break compatibility when opening a .blend file saved in Blender 3.0 in earlier
+# versions of Blender. This method updates FLIP Fluid object cycles visibility
+# settings for 
+def load_post_update_cycles_visibility_forward_compatibility_from_blender_3():
+    dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+    if dprops is None:
+        return
+
+    last_version = dprops.debug.get_last_saved_blender_version()
+    current_version = bpy.app.version
+
+    if last_version == (-1, -1, -1):
+        # Skip, file contains no version history.
+        return
+
+    if current_version >= last_version:
+        # No compatibility update needed
+        return
+
+    # Downgrading from Blender 3.x. Compatibility update needed.
+    def set_cycles_ray_visibility(bl_object, is_enabled):
+        # Cycles may not be enabled in the user's preferences
+        try:
+            if vcu.is_blender_30():
+                bl_object.visible_camera = is_enabled
+                bl_object.visible_diffuse = is_enabled
+                bl_object.visible_glossy = is_enabled
+                bl_object.visible_transmission = is_enabled
+                bl_object.visible_volume_scatter = is_enabled
+                bl_object.visible_shadow = is_enabled
+            else:
+                bl_object.cycles_visibility.camera = is_enabled
+                bl_object.cycles_visibility.transmission = is_enabled
+                bl_object.cycles_visibility.diffuse = is_enabled
+                bl_object.cycles_visibility.scatter = is_enabled
+                bl_object.cycles_visibility.glossy = is_enabled
+                bl_object.cycles_visibility.shadow = is_enabled
+        except:
+            pass
+
+    flip_props = bpy.context.scene.flip_fluid
+    invisible_objects = ([flip_props.get_domain_object()] +
+                         flip_props.get_fluid_objects() +
+                         flip_props.get_inflow_objects() +
+                         flip_props.get_outflow_objects() +
+                         flip_props.get_force_field_objects())
+
+    for bl_object in invisible_objects:
+        set_cycles_ray_visibility(bl_object, False)
+        toggle_viewport_visibility_to_update_rendered_viewport_workaround(bl_object)

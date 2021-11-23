@@ -284,6 +284,8 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
         self.mesh_cache.load_post()
         self._initialize_property_registry()
 
+        api_workaround_utils.load_post_update_cycles_visibility_forward_compatibility_from_blender_3()
+
 
     def save_pre(self):
         self.debug.save_pre()

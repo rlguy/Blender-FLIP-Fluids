@@ -242,6 +242,11 @@ class FlipFluidDrawDebugGrid(bpy.types.Operator):
             xstart = 50
 
         font_id = 0
+        try:
+            # Not all Blender versions have functionality to set font color with this method
+            blf.color(font_id, 1.0, 1.0, 1.0, 1.0)
+        except:
+            pass
         if dprops.debug.grid_display_mode == 'GRID_DISPLAY_SIMULATION':
             blf.size(font_id, 20, 72)
             blf.position(font_id, xstart, height - 50, 0)
@@ -258,10 +263,10 @@ class FlipFluidDrawDebugGrid(bpy.types.Operator):
             blf.draw(font_id, "Grid Dimensions: " + str(dimx) + "m x " + str(dimy) + "m x " + str(dimz) + "m")
 
             blf.position(font_id, xstart + 10, height - 130, 0)
-            blf.draw(font_id, "Grid Cell Count: " + format(isize*jsize*ksize, ",").replace(",", " "))
+            blf.draw(font_id, "Voxel Count: " + format(isize*jsize*ksize, ",").replace(",", " "))
 
             blf.position(font_id, xstart + 10, height - 155, 0)
-            blf.draw(font_id, "Grid Cell Width: " + str(round(simulation_dx, 4)) + "m")
+            blf.draw(font_id, "Voxel Width: " + str(round(simulation_dx, 4)) + "m")
         elif dprops.debug.grid_display_mode == 'GRID_DISPLAY_MESH':
             if dprops.surface.compute_chunk_mode == 'COMPUTE_CHUNK_MODE_AUTO':
                 compute_chunks = dprops.surface.compute_chunks_auto
@@ -286,10 +291,10 @@ class FlipFluidDrawDebugGrid(bpy.types.Operator):
             num_cells_str = format(num_cells, ",").replace(",", " ")
             chunk_cells_str = format(math.ceil(num_cells / compute_chunks), ",").replace(",", " ")
             blf.position(font_id, xstart + 10, height - 155, 0)
-            blf.draw(font_id, "Grid Cell Count: " + num_cells_str + " (" + chunk_cells_str + " / chunk)")
+            blf.draw(font_id, "Voxel Count: " + num_cells_str + " (" + chunk_cells_str + " / chunk)")
 
             blf.position(font_id, xstart + 10, height - 180, 0)
-            blf.draw(font_id, "Grid Cell Width: " + str(round(simulation_dx, 4)))
+            blf.draw(font_id, "Voxel Width: " + str(round(simulation_dx, 4)))
         elif dprops.debug.grid_display_mode == 'GRID_DISPLAY_PREVIEW':
             blf.size(font_id, 20, 72)
             blf.position(font_id, xstart, height - 50, 0)
@@ -302,7 +307,7 @@ class FlipFluidDrawDebugGrid(bpy.types.Operator):
             num_cells = isize*jsize*ksize
             num_cells_str = format(num_cells, ",").replace(",", " ")
             blf.position(font_id, xstart + 10, height - 105, 0)
-            blf.draw(font_id, "Grid Cell Width: " + str(round(simulation_dx, 4)))
+            blf.draw(font_id, "Voxel Width: " + str(round(simulation_dx, 4)))
         elif dprops.debug.grid_display_mode == 'GRID_DISPLAY_FORCE_FIELD':
             blf.size(font_id, 20, 72)
             blf.position(font_id, xstart, height - 50, 0)
@@ -318,7 +323,7 @@ class FlipFluidDrawDebugGrid(bpy.types.Operator):
             num_cells = isize*jsize*ksize
             num_cells_str = format(num_cells, ",").replace(",", " ")
             blf.position(font_id, xstart + 10, height - 130, 0)
-            blf.draw(font_id, "Grid Cell Width: " + str(round(simulation_dx, 4)))
+            blf.draw(font_id, "Voxel Width: " + str(round(simulation_dx, 4)))
 
 
     def draw_callback_3d(self, context):

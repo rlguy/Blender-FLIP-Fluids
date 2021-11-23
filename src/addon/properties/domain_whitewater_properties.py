@@ -83,7 +83,7 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
             description="Enable solving for dust particles. Dust particles are"
                 " generated near obstacle surfaces and are advected with the"
                 " fluid velocity while sinking towards the ground. If disabled,"
-                " these particles will not be generated.",
+                " these particles will not be generated",
             default=False,
             ); exec(conv("enable_dust"))
     generate_whitewater_motion_blur_data = BoolProperty(
@@ -311,7 +311,7 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
             name_min="Min Foam Density", 
             description_min="Foam densities less than this value will not increase"
                 " the lifetime of a foam particle. Foam density units are in"
-                " number of particles per grid cell", 
+                " number of particles per voxel", 
             min_min=0,
             default_min=20,
 
@@ -319,7 +319,7 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
             description_max="Foam densities that are greater than the min value,"
                 " and less than the max value, proportionally increase the"
                 " particle lifetime based on the Foam Preservation Rate. Foam"
-                " density units are in number of particles per grid cell", 
+                " density units are in number of particles per voxel", 
             min_max=0,
             default_max=45,
             ); exec(conv("min_max_foam_density"))
@@ -364,7 +364,7 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
             description="Controls how quickly dust particles sink towards"
                 " the ground. Decreasing this value will cause particles to sink"
                 " more quickly. If set to a positive value, dust will float towards"
-                " fluid surface.", 
+                " fluid surface", 
             default=-3.0,
             precision=2,
             step=0.3,

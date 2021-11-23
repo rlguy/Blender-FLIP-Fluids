@@ -141,8 +141,8 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
             options={'HIDDEN'},
             ); exec(conv("auto_preview_resolution"))
     lock_cell_size = BoolProperty(
-            name="Lock Cell Size",
-            description="Lock the current grid cell size and update the grid"
+            name="Lock Voxel Size",
+            description="Lock the current voxel size and update the grid"
                 " resolution as the domain dimensions are changed. Enable this"
                 " option before resizing the domain to maintain a constant level"
                 " of simulation detail",

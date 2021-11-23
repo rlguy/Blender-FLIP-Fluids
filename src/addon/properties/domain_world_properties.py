@@ -145,27 +145,35 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
             ); exec(conv("surface_tension_exponent"))
     surface_tension_accuracy = IntProperty(
             name="Surface Tension Accuracy", 
-            description="Amount of accuracy when calculating surface tension. "
+            description="Amount of accuracy when calculating surface tension."
                 " Increasing accuracy will produce more accurate surface tension"
-                " results but will require more substeps and increase baking time", 
+                " results and reduce rippling artifacts but will require more substeps"
+                " and increase baking time", 
             min=0, max=100,
             default=90,
             subtype='PERCENTAGE',
             ); exec(conv("surface_tension_accuracy"))
+    surface_tension_solver_method = EnumProperty(
+            name="Surface Tension Solver",
+            description="Surface tension solving method to use",
+            items=types.surface_tension_solver_methods,
+            default='SURFACE_TENSION_SOLVER_METHOD_REGULAR',
+            options={'HIDDEN'},
+            ); exec(conv("surface_tension_solver_method"))
     enable_sheet_seeding = BoolProperty(
             name="Enable Sheeting Effects",
             description="Fluid sheeting fills in gaps between fluid particles to"
                 " help preserve thin fluid sheets and splashes. Tip: Sheeting will"
                 " add fluid to the domain and prolonged use can result in an increased"
                 " fluid volume. Keyframing the Sheeting Strength down to 0.0 when no longer"
-                " needed can help prevent increased volume.",
+                " needed can help prevent increased volume",
             default=False,
             ); exec(conv("enable_sheet_seeding"))
     sheet_fill_rate = FloatProperty(
             name="Sheeting Strength", 
             description="The rate at which new sheeting particles are added."
                 " A higher value will add sheeting particles more often and"
-                " fill in gaps more quickly.", 
+                " fill in gaps more quickly", 
             min=0.0, max=1.0,
             default=0.5,
             precision=2,
@@ -260,6 +268,7 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
         add(path + ".surface_tension",                  "Surface Tension",           group_id=0)
         add(path + ".surface_tension_exponent",         "Surface Tension Exponent",  group_id=0)
         add(path + ".surface_tension_accuracy",         "Surface Tension Accuracy",  group_id=0)
+        add(path + ".surface_tension_solver_method",    "Surface Tension Solver",    group_id=0)
         add(path + ".enable_sheet_seeding",             "Enable Sheeting Effects",   group_id=0)
         add(path + ".sheet_fill_rate",                  "Sheeting Strength",         group_id=0)
         add(path + ".sheet_fill_threshold",             "Sheeting Thickness",        group_id=0)

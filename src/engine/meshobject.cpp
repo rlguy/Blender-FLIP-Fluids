@@ -456,7 +456,20 @@ bool MeshObject::isGeometryAABB() {
         }
     }
 
-    return isAABB;
+    if (!isAABB) {
+        return false;
+    }
+
+    std::vector<vmath::vec3> tempVertexVelocities(m.vertices.size());
+    std::vector<TriangleMesh> meshIslands;
+    std::vector<std::vector<vmath::vec3> > tempIslandVertexVelocities;
+    MeshUtils::splitIntoMeshIslands(m, tempVertexVelocities, meshIslands, tempIslandVertexVelocities);
+
+    if (meshIslands.size() > 1) {
+        return false;
+    }
+
+    return true;
 }
 
 void MeshObject::setObjectVelocityInfluence(float value) {

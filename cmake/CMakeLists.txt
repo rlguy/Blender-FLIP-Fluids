@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ]]
 
-cmake_minimum_required(VERSION 2.8.9)
+cmake_minimum_required(VERSION 3.0)
 
 function(set_output_directories DIR)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${DIR} PARENT_SCOPE)
@@ -41,13 +41,17 @@ option(WITH_OPENCL "Compile project with OpenCL features" OFF)
 option(WITH_ENGINE_TEST "Compile engine test executable" OFF)
 option(WITH_PYFLUID_MODULE "Compile pyfluid Python module" OFF)
 
+if(APPLE)
+    set(MACOSX_DEPLOYMENT_TARGET 10.10)
+endif()
+
 project(bl_flip_fluids)
 set(CMAKE_BUILD_TYPE Release)
 
 set(FLUIDENGINE_VERSION_MAJOR 0)
-set(FLUIDENGINE_VERSION_MINOR 1)
+set(FLUIDENGINE_VERSION_MINOR 2)
 set(FLUIDENGINE_VERSION_REVISION 0)
-set(FLUIDENGINE_VERSION_LABEL "0.1.0 Demo 20-AUG-2021")
+set(FLUIDENGINE_VERSION_LABEL "0.2.0 Demo 25-NOV-2021")
 
 if(BUILD_DEBUG)
     set(FLUIDENGINE_VERSION_LABEL "${FLUIDENGINE_VERSION_LABEL} (DEBUG BUILD)") 
@@ -176,7 +180,6 @@ if(DISTRIBUTE_SOURCE)
     set(SOURCE_COPY_PATHS
         "${CMAKE_SOURCE_DIR}/src"
         "${CMAKE_SOURCE_DIR}/.gitignore"
-        "${CMAKE_SOURCE_DIR}/CMakeLists.txt"
         "${CMAKE_SOURCE_DIR}/LICENSE_GPLv3.md"
         "${CMAKE_SOURCE_DIR}/LICENSE_MIT.md"
         "${CMAKE_SOURCE_DIR}/LICENSE_Standard_Royalty_Free.md"
