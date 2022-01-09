@@ -28,7 +28,7 @@ See our [Blender Market product page](https://blendermarket.com/products/flipflu
 - Windows, MacOS, or Linux operating system
 - Blender 2.79 or 2.8+* or 2.9+ or 3.0+ (64-bit)
 - CPU 64-bit Intel® or AMD® or Apple Silicon multi-core processor
-- 8 GB RAM minimum, 16 GB or more of RAM memory is highly recommended
+- 8 GB RAM minimum, 16 GB of RAM or more is highly recommended
 
 ***Blender Support on MacOS:** Due to a MacOS specific [Blender bug](https://developer.blender.org/T68243) in versions 2.80, 2.81, and 2.82, these Blender versions cannot be supported. Blender 2.79 or 2.83+ or 2.9+ or 3.0+ are required for MacOS.
 
