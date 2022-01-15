@@ -28,6 +28,7 @@ SOFTWARE.
 #include <string>
 #include <vector>
 #include <sstream>
+#include <limits>
 
 #include "vmath.h"
 #include "triangle.h"
