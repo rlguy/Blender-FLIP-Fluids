@@ -13,7 +13,7 @@ Have any question? Do not hesitate to ask us here or at support@flipfluids.com!
 
 ## Getting the FLIP Fluids Addon
 
-You may purchase the **FLIP Fluids** addon on an [official marketplaces where the FLIP Fluids addon is sold](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Official-Marketplaces-of-the-FLIP-Fluids-Addon). Purchasing a license entitles you to to full FLIP Fluids feature set and content, tool support, and helps ensure the continued development of the addon. Thanks to the amazing support of the Blender community, we have been able to further develop the addon on a full-time basis since its initial release in May 2018!
+You may purchase the **FLIP Fluids** addon on [official marketplaces where the FLIP Fluids addon is sold](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Official-Marketplaces-of-the-FLIP-Fluids-Addon). Purchasing a license entitles you to to full FLIP Fluids feature set and content, tool support, and helps ensure the continued development of the addon. Thanks to the amazing support of the Blender community, we have been able to further develop the addon on a full-time basis since its initial release in May 2018!
 
 #### Getting Support
 
