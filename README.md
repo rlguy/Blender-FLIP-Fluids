@@ -2,9 +2,9 @@
 
 The **[FLIP Fluids addon](https://blendermarket.com/products/flipfluids)** is a tool that helps you set up, run, and render liquid simulation effects. Our custom built fluid engine is based around the popular FLIP simulation technique that is also found in many other professional liquid simulation tools. The FLIP Fluids engine has been in constant development for over four years with a large focus on tightly integrating the simulator into Blender as an addon. It just feels like a native Blender tool!
 
-With our reputation for delivering high quality software and outstanding customer support, the FLIP Fluids addon is one of the best selling products on the Blender Market.
+With our reputation for delivering high quality software and outstanding customer support, the FLIP Fluids addon is one of the best selling products in the Blender community.
 
-- 7000+ sales, 5 star rating, excellent value
+- 8000+ sales, 5 star rating, excellent value
 - No subscriptions, all future updates included
 - [Try out our free demo! We're sure you'll like it :)](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/FLIP-Fluids-Demo-Addon)
 - [Frequently Asked Questions (FAQ)](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Frequently-Asked-Questions)
@@ -13,15 +13,15 @@ Have any question? Do not hesitate to ask us here or at support@flipfluids.com!
 
 ## Getting the FLIP Fluids Addon
 
-You may purchase the **FLIP Fluids** addon on the [Blender Market](https://www.blendermarket.com/products/flipfluids). Purchasing a license entitles you to to full FLIP Fluids feature set and content, tool support, and helps ensure the continued development of the addon. Thanks to the amazing support of the Blender community, we have been able to further develop the addon on a full-time basis since its initial release in May 2018!
+You may purchase the **FLIP Fluids** addon on an [official marketplaces where the FLIP Fluids addon is sold](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Official-Marketplaces-of-the-FLIP-Fluids-Addon). Purchasing a license entitles you to to full FLIP Fluids feature set and content, tool support, and helps ensure the continued development of the addon. Thanks to the amazing support of the Blender community, we have been able to further develop the addon on a full-time basis since its initial release in May 2018!
 
 #### Getting Support
 
-You can get support for the **FLIP Fluids** addon by reading the [documentation and wiki](https://github.com/rlguy/Blender-FLIP-Fluids-Beta/wiki) or through the Blender Market messaging system. Support is granted to all customers whom have purchased a license.
+You can get support for the **FLIP Fluids** addon by reading the [documentation and wiki](https://github.com/rlguy/Blender-FLIP-Fluids-Beta/wiki) or through the marketplace messaging systems where you have purchased the FLIP Fluids addon product. Support is granted to all customers whom have purchased a license.
 
 ## Key Features
 
-See our [Blender Market product page](https://blendermarket.com/products/flipfluids) for information on features.
+See any of our [market place product pages](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Official-Marketplaces-of-the-FLIP-Fluids-Addon#where-to-buy-the-flip-fluids-addon) for information on features.
 
 ## System Requirements
 
@@ -50,7 +50,7 @@ Source code files will state their license at the top of the file. Assets will i
 
 To build the FLIP Fluids addon, some programming experience or prior experience building C/C++ applications is recommended. The basics of navigation and executing commands using the command line is also recommended.
 
-Like our FLIP Fluids addon? If you can afford, please consider purchasing a license on the [Blender Market](https://blendermarket.com/products/flipfluids) to help support our continued development of the project. Development of the FLIP Fluids addon is funded solely through sales on the marketplace, and as a small team we truly appreciate your support.
+Like our FLIP Fluids addon? If you can afford, please consider purchasing a license on an [official marketplace](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Official-Marketplaces-of-the-FLIP-Fluids-Addon) to help support our continued development of the project. Development of the FLIP Fluids addon is funded solely through sales through marketplaces, and as a small team we truly appreciate your support.
 
 ### Source Code Dependencies
 
