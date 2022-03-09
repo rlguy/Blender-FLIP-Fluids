@@ -522,6 +522,42 @@ bool FluidSimulation::isSurfaceVelocityAttributeEnabled() {
     return _isSurfaceVelocityAttributeEnabled;
 }
 
+void FluidSimulation::enableWhitewaterVelocityAttribute() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " enableWhitewaterVelocityAttribute" << std::endl);
+
+    _isWhitewaterVelocityAttributeEnabled = true;
+}
+
+void FluidSimulation::disableWhitewaterVelocityAttribute() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " disableWhitewaterVelocityAttribute" << std::endl);
+
+    _isWhitewaterVelocityAttributeEnabled = false;
+}
+
+bool FluidSimulation::isWhitewaterVelocityAttributeEnabled() {
+    return _isWhitewaterVelocityAttributeEnabled;
+}
+
+void FluidSimulation::enableSurfaceVorticityAttribute() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " enableSurfaceVorticityAttribute" << std::endl);
+
+    _isSurfaceVorticityAttributeEnabled = true;
+}
+
+void FluidSimulation::disableSurfaceVorticityAttribute() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " disableSurfaceVorticityAttribute" << std::endl);
+
+    _isSurfaceVorticityAttributeEnabled = false;
+}
+
+bool FluidSimulation::isSurfaceVorticityAttributeEnabled() {
+    return _isSurfaceVorticityAttributeEnabled;
+}
+
 void FluidSimulation::enableSurfaceSpeedAttribute() {
     _logfile.log(std::ostringstream().flush() << 
                  _logfile.getTime() << " enableSurfaceSpeedAttribute" << std::endl);
@@ -592,6 +628,42 @@ void FluidSimulation::disableSurfaceSourceIDAttribute() {
 
 bool FluidSimulation::isSurfaceSourceIDAttributeEnabled() {
     return _isSurfaceSourceIDAttributeEnabled;
+}
+
+void FluidSimulation::enableWhitewaterIDAttribute() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " enableWhitewaterIDAttribute" << std::endl);
+
+    _isWhitewaterIDAttributeEnabled = true;
+}
+
+void FluidSimulation::disableWhitewaterIDAttribute() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " disableWhitewaterIDAttribute" << std::endl);
+
+    _isWhitewaterIDAttributeEnabled = false;
+}
+
+bool FluidSimulation::isWhitewaterIDAttributeEnabled() {
+    return _isWhitewaterIDAttributeEnabled;
+}
+
+void FluidSimulation::enableWhitewaterLifetimeAttribute() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " enableWhitewaterLifetimeAttribute" << std::endl);
+
+    _isWhitewaterLifetimeAttributeEnabled = true;
+}
+
+void FluidSimulation::disableWhitewaterLifetimeAttribute() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " disableWhitewaterLifetimeAttribute" << std::endl);
+
+    _isWhitewaterLifetimeAttributeEnabled = false;
+}
+
+bool FluidSimulation::isWhitewaterLifetimeAttributeEnabled() {
+    return _isWhitewaterLifetimeAttributeEnabled;
 }
 
 void FluidSimulation::enableRemoveSurfaceNearDomain() {
@@ -2391,6 +2463,10 @@ std::vector<char>* FluidSimulation::getSurfaceVelocityAttributeData() {
     return &_outputData.surfaceVelocityAttributeData;
 }
 
+std::vector<char>* FluidSimulation::getSurfaceVorticityAttributeData() {
+    return &_outputData.surfaceVorticityAttributeData;
+}
+
 std::vector<char>* FluidSimulation::getSurfaceSpeedAttributeData() {
     return &_outputData.surfaceSpeedAttributeData;
 }
@@ -2445,6 +2521,54 @@ std::vector<char>* FluidSimulation::getDiffuseSprayBlurData() {
 
 std::vector<char>* FluidSimulation::getDiffuseDustBlurData() {
     return &_outputData.diffuseDustBlurData;
+}
+
+std::vector<char>* FluidSimulation::getWhitewaterFoamVelocityAttributeData() {
+    return &_outputData.whitewaterFoamVelocityAttributeData;
+}
+
+std::vector<char>* FluidSimulation::getWhitewaterBubbleVelocityAttributeData() {
+    return &_outputData.whitewaterBubbleVelocityAttributeData;
+}
+
+std::vector<char>* FluidSimulation::getWhitewaterSprayVelocityAttributeData() {
+    return &_outputData.whitewaterSprayVelocityAttributeData;
+}
+
+std::vector<char>* FluidSimulation::getWhitewaterDustVelocityAttributeData() {
+    return &_outputData.whitewaterDustVelocityAttributeData;
+}
+
+std::vector<char>* FluidSimulation::getWhitewaterFoamIDAttributeData() {
+    return &_outputData.whitewaterFoamIDAttributeData;
+}
+
+std::vector<char>* FluidSimulation::getWhitewaterBubbleIDAttributeData() {
+    return &_outputData.whitewaterBubbleIDAttributeData;
+}
+
+std::vector<char>* FluidSimulation::getWhitewaterSprayIDAttributeData() {
+    return &_outputData.whitewaterSprayIDAttributeData;
+}
+
+std::vector<char>* FluidSimulation::getWhitewaterDustIDAttributeData() {
+    return &_outputData.whitewaterDustIDAttributeData;
+}
+
+std::vector<char>* FluidSimulation::getWhitewaterFoamLifetimeAttributeData() {
+    return &_outputData.whitewaterFoamLifetimeAttributeData;
+}
+
+std::vector<char>* FluidSimulation::getWhitewaterBubbleLifetimeAttributeData() {
+    return &_outputData.whitewaterBubbleLifetimeAttributeData;
+}
+
+std::vector<char>* FluidSimulation::getWhitewaterSprayLifetimeAttributeData() {
+    return &_outputData.whitewaterSprayLifetimeAttributeData;
+}
+
+std::vector<char>* FluidSimulation::getWhitewaterDustLifetimeAttributeData() {
+    return &_outputData.whitewaterDustLifetimeAttributeData;
 }
 
 std::vector<char>* FluidSimulation::getFluidParticleData() {
@@ -3039,6 +3163,10 @@ void FluidSimulation::_initializeForceFieldGrid(int isize, int jsize, int ksize,
 }
 
 void FluidSimulation::_initializeAttributeGrids(int isize, int jsize, int ksize) {
+    if (_isSurfaceVorticityAttributeEnabled) {
+        _vorticityAttributeGrid = Array3d<vmath::vec3>(isize, jsize, ksize);
+    }
+
     if (_isSurfaceAgeAttributeEnabled) {
         _ageAttributeGrid = Array3d<float>(isize, jsize, ksize, 0.0f);
         _ageAttributeCountGrid = Array3d<int>(isize, jsize, ksize, 0);
@@ -4912,6 +5040,10 @@ void FluidSimulation::_updateMarkerParticleVelocities() {
     #. Update Marker Particle Attributes
 ********************************************************************************/
 
+void FluidSimulation::_updateMarkerParticleVorticityAttributeGrid() {
+    _MACVelocity.generateCurlAtCellCenter(_vorticityAttributeGrid);
+}
+
 void FluidSimulation::_updateMarkerParticleAgeAttributeGrid(double dt) {
     _ageAttributeGrid.fill(0.0f);
     _ageAttributeCountGrid.fill(0);
@@ -4988,6 +5120,16 @@ void FluidSimulation::_updateMarkerParticleColorAttributeGrid() {
     GridUtils::extrapolateGrid(&_colorAttributeGridB, &_colorAttributeValidGrid, 1.5 * _CFLConditionNumber);
 }
 
+void FluidSimulation::_updateMarkerParticleVorticityAttribute() {
+    if (!_isSurfaceVorticityAttributeEnabled) {
+        return;
+    }
+
+    if (_currentFrameTimeStepNumber == 0) {
+        _updateMarkerParticleVorticityAttributeGrid();
+    }
+}
+
 void FluidSimulation::_updateMarkerParticleAgeAttribute(double dt) {
     if (!_isSurfaceAgeAttributeEnabled) {
         return;
@@ -5020,6 +5162,7 @@ void FluidSimulation::_updateMarkerParticleAttributes(double dt) {
     StopWatch t;
     t.start();
 
+    _updateMarkerParticleVorticityAttribute();
     _updateMarkerParticleAgeAttribute(dt);
     _updateMarkerParticleColorAttribute();
 
@@ -5943,7 +6086,7 @@ void FluidSimulation::_computeDomainBoundarySDF(MeshLevelSet *sdf) {
         for (int j = 0; j < _jsize + 1; j++) {
             for (int i = gmin.i; i <= gmin.i + 1; i++) {
                 vmath::vec3 p = Grid3d::GridIndexToPosition(i, j, k, _dx);
-                float d = bbox.getSignedDistance(p);
+                float d = std::max(bbox.getSignedDistance(p), 0.0f);
                 sdf->set(i, j, k, d);
             }   
         }
@@ -5954,7 +6097,7 @@ void FluidSimulation::_computeDomainBoundarySDF(MeshLevelSet *sdf) {
         for (int j = 0; j < _jsize + 1; j++) {
             for (int i = gmax.i; i <= gmax.i + 1; i++) {
                 vmath::vec3 p = Grid3d::GridIndexToPosition(i, j, k, _dx);
-                float d = bbox.getSignedDistance(p);
+                float d = std::max(bbox.getSignedDistance(p), 0.0f);
                 sdf->set(i, j, k, d);
             }   
         }
@@ -5965,7 +6108,7 @@ void FluidSimulation::_computeDomainBoundarySDF(MeshLevelSet *sdf) {
         for (int j = gmin.j; j <= gmin.j + 1; j++) {
             for (int i = 0; i < _isize + 1; i++) {
                 vmath::vec3 p = Grid3d::GridIndexToPosition(i, j, k, _dx);
-                float d = bbox.getSignedDistance(p);
+                float d = std::max(bbox.getSignedDistance(p), 0.0f);
                 sdf->set(i, j, k, d);
             }   
         }
@@ -5976,7 +6119,7 @@ void FluidSimulation::_computeDomainBoundarySDF(MeshLevelSet *sdf) {
         for (int j = gmax.j; j <= gmax.j + 1; j++) {
             for (int i = 0; i < _isize + 1; i++) {
                 vmath::vec3 p = Grid3d::GridIndexToPosition(i, j, k, _dx);
-                float d = bbox.getSignedDistance(p);
+                float d = std::max(bbox.getSignedDistance(p), 0.0f);
                 sdf->set(i, j, k, d);
             }   
         }
@@ -5987,7 +6130,7 @@ void FluidSimulation::_computeDomainBoundarySDF(MeshLevelSet *sdf) {
         for (int j = 0; j < _jsize + 1; j++) {
             for (int i = 0; i < _isize + 1; i++) {
                 vmath::vec3 p = Grid3d::GridIndexToPosition(i, j, k, _dx);
-                float d = bbox.getSignedDistance(p);
+                float d = std::max(bbox.getSignedDistance(p), 0.0f);
                 sdf->set(i, j, k, d);
             }   
         }
@@ -5998,7 +6141,7 @@ void FluidSimulation::_computeDomainBoundarySDF(MeshLevelSet *sdf) {
         for (int j = 0; j < _jsize + 1; j++) {
             for (int i = 0; i < _isize + 1; i++) {
                 vmath::vec3 p = Grid3d::GridIndexToPosition(i, j, k, _dx);
-                float d = bbox.getSignedDistance(p);
+                float d = std::max(bbox.getSignedDistance(p), 0.0f);
                 sdf->set(i, j, k, d);
             }   
         }
@@ -6022,9 +6165,11 @@ void FluidSimulation::_generateOutputSurface(TriangleMesh &surface, TriangleMesh
         float eps = 1e-9;
         float offset = (float)(_obstacleMeshingOffset * _dx);
         if (std::abs(offset) > eps) {
-            for (int k = 2; k < _ksize - 1; k++) {
-                for (int j = 2; j < _jsize - 1; j++) {
-                    for (int i = 2; i < _isize - 1; i++) {
+            // Values near boundary are unchanged so that the mesh is generated
+            // directly against domain boundary
+            for (int k = 3; k < _ksize - 2; k++) {
+                for (int j = 3; j < _jsize - 2; j++) {
+                    for (int i = 3; i < _isize - 2; i++) {
                         solidSDF->set(i, j, k, solidSDF->get(i, j, k) + offset);
                     }
                 }
@@ -6187,6 +6332,28 @@ void FluidSimulation::_generateSurfaceVelocityAttributeData(TriangleMesh &surfac
         _outputData.frameData.surfacespeed.triangles = 0;
         _outputData.frameData.surfacespeed.bytes = (unsigned int)_outputData.surfaceSpeedAttributeData.size();
     }
+}
+
+void FluidSimulation::_generateSurfaceVorticityAttributeData(TriangleMesh &surface) {
+    if (!_isSurfaceVorticityAttributeEnabled) {
+        return;
+    }
+
+    TriangleMesh vorticityData;
+    vorticityData.vertices.reserve(surface.vertices.size());
+
+    vmath::vec3 offset(0.5 * _dx, 0.5 * _dx, 0.5 * _dx);
+    for (size_t i = 0; i < surface.vertices.size(); i++) {
+        vmath::vec3 p = surface.vertices[i] - offset;
+        vmath::vec3 curl = Interpolation::trilinearInterpolate(p, _dx, _vorticityAttributeGrid);
+        vorticityData.vertices.push_back(curl);
+    }
+
+    _getTriangleMeshFileData(vorticityData, _outputData.surfaceVorticityAttributeData);
+    _outputData.frameData.surfacevorticity.enabled = 1;
+    _outputData.frameData.surfacevorticity.vertices = (int)vorticityData.vertices.size();
+    _outputData.frameData.surfacevorticity.triangles = (int)vorticityData.triangles.size();
+    _outputData.frameData.surfacevorticity.bytes = (unsigned int)_outputData.surfaceVorticityAttributeData.size();
 }
 
 void FluidSimulation::_generateSurfaceAgeAttributeData(TriangleMesh &surface) {
@@ -6616,6 +6783,8 @@ void FluidSimulation::_outputSurfaceMeshThread(std::vector<vmath::vec3> *particl
     _generateSurfaceVelocityAttributeData(surfacemesh, vfield);
     delete vfield;
 
+    _generateSurfaceVorticityAttributeData(surfacemesh);
+
     _generateSurfaceSourceIDAttributeData(surfacemesh, particlesCopy, sourceID);
     delete sourceID;
 
@@ -6776,6 +6945,87 @@ void FluidSimulation::_outputDiffuseMaterial() {
             _outputData.frameData.dustblur.vertices = ndust;
             _outputData.frameData.dustblur.triangles = 0;
             _outputData.frameData.dustblur.bytes = (unsigned int)_outputData.diffuseDustBlurData.size();
+        }
+
+        if (_isWhitewaterVelocityAttributeEnabled) {
+            _diffuseMaterial.getFoamParticleVelocityAttributeFileDataWWP(_outputData.whitewaterFoamVelocityAttributeData);
+            _diffuseMaterial.getBubbleParticleVelocityAttributeFileDataWWP(_outputData.whitewaterBubbleVelocityAttributeData);
+            _diffuseMaterial.getSprayParticleVelocityAttributeFileDataWWP(_outputData.whitewaterSprayVelocityAttributeData);
+            _diffuseMaterial.getDustParticleVelocityAttributeFileDataWWP(_outputData.whitewaterDustVelocityAttributeData);
+
+            _outputData.frameData.foamvelocity.enabled = 1;
+            _outputData.frameData.foamvelocity.vertices = nfoam;
+            _outputData.frameData.foamvelocity.triangles = 0;
+            _outputData.frameData.foamvelocity.bytes = (unsigned int)_outputData.whitewaterFoamVelocityAttributeData.size();
+
+            _outputData.frameData.bubblevelocity.enabled = 1;
+            _outputData.frameData.bubblevelocity.vertices = nbubble;
+            _outputData.frameData.bubblevelocity.triangles = 0;
+            _outputData.frameData.bubblevelocity.bytes = (unsigned int)_outputData.whitewaterBubbleVelocityAttributeData.size();
+
+            _outputData.frameData.sprayvelocity.enabled = 1;
+            _outputData.frameData.sprayvelocity.vertices = nspray;
+            _outputData.frameData.sprayvelocity.triangles = 0;
+            _outputData.frameData.sprayvelocity.bytes = (unsigned int)_outputData.whitewaterSprayVelocityAttributeData.size();
+
+            _outputData.frameData.dustvelocity.enabled = 1;
+            _outputData.frameData.dustvelocity.vertices = ndust;
+            _outputData.frameData.dustvelocity.triangles = 0;
+            _outputData.frameData.dustvelocity.bytes = (unsigned int)_outputData.whitewaterDustVelocityAttributeData.size();
+        }
+
+        if (_isWhitewaterIDAttributeEnabled) {
+            _diffuseMaterial.getFoamParticleIDAttributeFileDataWWI(_outputData.whitewaterFoamIDAttributeData);
+            _diffuseMaterial.getBubbleParticleIDAttributeFileDataWWI(_outputData.whitewaterBubbleIDAttributeData);
+            _diffuseMaterial.getSprayParticleIDAttributeFileDataWWI(_outputData.whitewaterSprayIDAttributeData);
+            _diffuseMaterial.getDustParticleIDAttributeFileDataWWI(_outputData.whitewaterDustIDAttributeData);
+
+            _outputData.frameData.foamid.enabled = 1;
+            _outputData.frameData.foamid.vertices = nfoam;
+            _outputData.frameData.foamid.triangles = 0;
+            _outputData.frameData.foamid.bytes = (unsigned int)_outputData.whitewaterFoamIDAttributeData.size();
+
+            _outputData.frameData.bubbleid.enabled = 1;
+            _outputData.frameData.bubbleid.vertices = nbubble;
+            _outputData.frameData.bubbleid.triangles = 0;
+            _outputData.frameData.bubbleid.bytes = (unsigned int)_outputData.whitewaterBubbleIDAttributeData.size();
+
+            _outputData.frameData.sprayid.enabled = 1;
+            _outputData.frameData.sprayid.vertices = nspray;
+            _outputData.frameData.sprayid.triangles = 0;
+            _outputData.frameData.sprayid.bytes = (unsigned int)_outputData.whitewaterSprayIDAttributeData.size();
+
+            _outputData.frameData.dustid.enabled = 1;
+            _outputData.frameData.dustid.vertices = ndust;
+            _outputData.frameData.dustid.triangles = 0;
+            _outputData.frameData.dustid.bytes = (unsigned int)_outputData.whitewaterDustIDAttributeData.size();
+        }
+
+        if (_isWhitewaterLifetimeAttributeEnabled) {
+            _diffuseMaterial.getFoamParticleLifetimeAttributeFileDataWWF(_outputData.whitewaterFoamLifetimeAttributeData);
+            _diffuseMaterial.getBubbleParticleLifetimeAttributeFileDataWWF(_outputData.whitewaterBubbleLifetimeAttributeData);
+            _diffuseMaterial.getSprayParticleLifetimeAttributeFileDataWWF(_outputData.whitewaterSprayLifetimeAttributeData);
+            _diffuseMaterial.getDustParticleLifetimeAttributeFileDataWWF(_outputData.whitewaterDustLifetimeAttributeData);
+
+            _outputData.frameData.foamlifetime.enabled = 1;
+            _outputData.frameData.foamlifetime.vertices = nfoam;
+            _outputData.frameData.foamlifetime.triangles = 0;
+            _outputData.frameData.foamlifetime.bytes = (unsigned int)_outputData.whitewaterFoamLifetimeAttributeData.size();
+
+            _outputData.frameData.bubblelifetime.enabled = 1;
+            _outputData.frameData.bubblelifetime.vertices = nbubble;
+            _outputData.frameData.bubblelifetime.triangles = 0;
+            _outputData.frameData.bubblelifetime.bytes = (unsigned int)_outputData.whitewaterBubbleLifetimeAttributeData.size();
+
+            _outputData.frameData.spraylifetime.enabled = 1;
+            _outputData.frameData.spraylifetime.vertices = nspray;
+            _outputData.frameData.spraylifetime.triangles = 0;
+            _outputData.frameData.spraylifetime.bytes = (unsigned int)_outputData.whitewaterSprayLifetimeAttributeData.size();
+
+            _outputData.frameData.dustlifetime.enabled = 1;
+            _outputData.frameData.dustlifetime.vertices = ndust;
+            _outputData.frameData.dustlifetime.triangles = 0;
+            _outputData.frameData.dustlifetime.bytes = (unsigned int)_outputData.whitewaterDustLifetimeAttributeData.size();
         }
 
     } else {

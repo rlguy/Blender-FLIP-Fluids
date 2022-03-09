@@ -285,6 +285,18 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
         primary_layer = 0
         object_layer = 14
 
+        if self.object_type == 'TYPE_DOMAIN':
+            if bpy.context.scene.flip_fluid.get_num_domain_objects() > 1:
+                self.object_type = 'TYPE_NONE'
+                errmsg = "Only 1 Domain object is supported per Blend file."
+                bpy.ops.flip_fluid_operators.display_error(
+                    'INVOKE_DEFAULT',
+                    error_message=errmsg,
+                    error_description="",
+                    popup_width=600
+                    )
+                return
+
         if (obj.type == 'EMPTY' or obj.type == 'CURVE') and self.object_type != 'TYPE_FORCE_FIELD' and self.object_type != 'TYPE_NONE':
             flip_type = ""
             if self.object_type == 'TYPE_DOMAIN':

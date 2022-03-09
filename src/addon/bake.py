@@ -809,6 +809,15 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
         fluidsim.enable_whitewater_motion_blur = \
             __get_parameter_data(whitewater.generate_whitewater_motion_blur_data, frameno)
 
+        fluidsim.enable_whitewater_velocity_attribute = \
+            __get_parameter_data(whitewater.enable_velocity_vector_attribute, frameno)
+
+        fluidsim.enable_whitewater_id_attribute = \
+            __get_parameter_data(whitewater.enable_id_attribute, frameno)
+
+        fluidsim.enable_whitewater_lifetime_attribute = \
+            __get_parameter_data(whitewater.enable_lifetime_attribute, frameno)
+
         is_generating_whitewater = __get_parameter_data(whitewater.enable_whitewater_emission, frameno)
         fluidsim.enable_diffuse_particle_emission = is_generating_whitewater
 
@@ -1012,6 +1021,8 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
         __get_parameter_data(surface.enable_velocity_vector_attribute, frameno)
     fluidsim.enable_surface_speed_attribute = \
         __get_parameter_data(surface.enable_speed_attribute, frameno)
+    fluidsim.enable_surface_vorticity_attribute = \
+        __get_parameter_data(surface.enable_vorticity_vector_attribute, frameno)
     fluidsim.enable_surface_age_attribute = \
         __get_parameter_data(surface.enable_age_attribute, frameno)
     fluidsim.enable_surface_color_attribute = \
@@ -1904,6 +1915,13 @@ def __write_surface_data(cache_directory, fluidsim, frameno):
         with open(velocity_filepath, 'wb') as f:
             f.write(filedata)
 
+    if fluidsim.enable_surface_vorticity_attribute:
+        vorticity_filename = "vorticity" + fstring + ".bobj"
+        vorticity_filepath = os.path.join(cache_directory, "bakefiles", vorticity_filename)
+        filedata = fluidsim.get_surface_vorticity_attribute_data()
+        with open(vorticity_filepath, 'wb') as f:
+            f.write(filedata)
+
     if fluidsim.enable_surface_speed_attribute:
         speed_filename = "speed" + fstring + ".data"
         speed_filepath = os.path.join(cache_directory, "bakefiles", speed_filename)
@@ -1991,6 +2009,81 @@ def __write_whitewater_data(cache_directory, fluidsim, frameno):
         with open(dust_blur_filepath, 'wb') as f:
             f.write(filedata)
 
+    if fluidsim.enable_whitewater_velocity_attribute:
+        foam_velocity_filename = "velocityfoam" + fstring + ".wwp"
+        foam_velocity_filepath = os.path.join(cache_directory, "bakefiles", foam_velocity_filename)
+        filedata = fluidsim.get_whitewater_foam_velocity_attribute_data()
+        with open(foam_velocity_filepath, 'wb') as f:
+            f.write(filedata)
+
+        bubble_velocity_filename = "velocitybubble" + fstring + ".wwp"
+        bubble_velocity_filepath = os.path.join(cache_directory, "bakefiles", bubble_velocity_filename)
+        filedata = fluidsim.get_whitewater_bubble_velocity_attribute_data()
+        with open(bubble_velocity_filepath, 'wb') as f:
+            f.write(filedata)
+
+        spray_velocity_filename = "velocityspray" + fstring + ".wwp"
+        spray_velocity_filepath = os.path.join(cache_directory, "bakefiles", spray_velocity_filename)
+        filedata = fluidsim.get_whitewater_spray_velocity_attribute_data()
+        with open(spray_velocity_filepath, 'wb') as f:
+            f.write(filedata)
+
+        dust_velocity_filename = "velocitydust" + fstring + ".wwp"
+        dust_velocity_filepath = os.path.join(cache_directory, "bakefiles", dust_velocity_filename)
+        filedata = fluidsim.get_whitewater_dust_velocity_attribute_data()
+        with open(dust_velocity_filepath, 'wb') as f:
+            f.write(filedata)
+
+    if fluidsim.enable_whitewater_id_attribute:
+        foam_id_filename = "idfoam" + fstring + ".wwi"
+        foam_id_filepath = os.path.join(cache_directory, "bakefiles", foam_id_filename)
+        filedata = fluidsim.get_whitewater_foam_id_attribute_data()
+        with open(foam_id_filepath, 'wb') as f:
+            f.write(filedata)
+
+        bubble_id_filename = "idbubble" + fstring + ".wwi"
+        bubble_id_filepath = os.path.join(cache_directory, "bakefiles", bubble_id_filename)
+        filedata = fluidsim.get_whitewater_bubble_id_attribute_data()
+        with open(bubble_id_filepath, 'wb') as f:
+            f.write(filedata)
+
+        spray_id_filename = "idspray" + fstring + ".wwi"
+        spray_id_filepath = os.path.join(cache_directory, "bakefiles", spray_id_filename)
+        filedata = fluidsim.get_whitewater_spray_id_attribute_data()
+        with open(spray_id_filepath, 'wb') as f:
+            f.write(filedata)
+
+        dust_id_filename = "iddust" + fstring + ".wwi"
+        dust_id_filepath = os.path.join(cache_directory, "bakefiles", dust_id_filename)
+        filedata = fluidsim.get_whitewater_dust_id_attribute_data()
+        with open(dust_id_filepath, 'wb') as f:
+            f.write(filedata)
+
+    if fluidsim.enable_whitewater_lifetime_attribute:
+        foam_lifetime_filename = "lifetimefoam" + fstring + ".wwf"
+        foam_lifetime_filepath = os.path.join(cache_directory, "bakefiles", foam_lifetime_filename)
+        filedata = fluidsim.get_whitewater_foam_lifetime_attribute_data()
+        with open(foam_lifetime_filepath, 'wb') as f:
+            f.write(filedata)
+
+        bubble_lifetime_filename = "lifetimebubble" + fstring + ".wwf"
+        bubble_lifetime_filepath = os.path.join(cache_directory, "bakefiles", bubble_lifetime_filename)
+        filedata = fluidsim.get_whitewater_bubble_lifetime_attribute_data()
+        with open(bubble_lifetime_filepath, 'wb') as f:
+            f.write(filedata)
+
+        spray_lifetime_filename = "lifetimespray" + fstring + ".wwf"
+        spray_lifetime_filepath = os.path.join(cache_directory, "bakefiles", spray_lifetime_filename)
+        filedata = fluidsim.get_whitewater_spray_lifetime_attribute_data()
+        with open(spray_lifetime_filepath, 'wb') as f:
+            f.write(filedata)
+
+        dust_lifetime_filename = "lifetimedust" + fstring + ".wwf"
+        dust_lifetime_filepath = os.path.join(cache_directory, "bakefiles", dust_lifetime_filename)
+        filedata = fluidsim.get_whitewater_dust_lifetime_attribute_data()
+        with open(dust_lifetime_filepath, 'wb') as f:
+            f.write(filedata)
+
 
 def __write_fluid_particle_data(cache_directory, fluidsim, frameno):
     fstring = __frame_number_to_string(frameno)
@@ -2064,6 +2157,7 @@ def __get_frame_stats_dict(cstats):
     stats["surfaceblur"] = __get_mesh_stats_dict(cstats.surfaceblur)
     stats["surfacevelocity"] = __get_mesh_stats_dict(cstats.surfacevelocity)
     stats["surfacespeed"] = __get_mesh_stats_dict(cstats.surfacespeed)
+    stats["surfacevorticity"] = __get_mesh_stats_dict(cstats.surfacevorticity)
     stats["surfaceage"] = __get_mesh_stats_dict(cstats.surfaceage)
     stats["surfacecolor"] = __get_mesh_stats_dict(cstats.surfacecolor)
     stats["surfacesourceid"] = __get_mesh_stats_dict(cstats.surfacesourceid)
@@ -2075,6 +2169,18 @@ def __get_frame_stats_dict(cstats):
     stats["bubbleblur"] = __get_mesh_stats_dict(cstats.bubbleblur)
     stats["sprayblur"] = __get_mesh_stats_dict(cstats.sprayblur)
     stats["dustblur"] = __get_mesh_stats_dict(cstats.dustblur)
+    stats["foamvelocity"] = __get_mesh_stats_dict(cstats.foamvelocity)
+    stats["bubblevelocity"] = __get_mesh_stats_dict(cstats.bubblevelocity)
+    stats["sprayvelocity"] = __get_mesh_stats_dict(cstats.sprayvelocity)
+    stats["dustvelocity"] = __get_mesh_stats_dict(cstats.dustvelocity)
+    stats["foamid"] = __get_mesh_stats_dict(cstats.foamid)
+    stats["bubbleid"] = __get_mesh_stats_dict(cstats.bubbleid)
+    stats["sprayid"] = __get_mesh_stats_dict(cstats.sprayid)
+    stats["dustid"] = __get_mesh_stats_dict(cstats.dustid)
+    stats["foamlifetime"] = __get_mesh_stats_dict(cstats.foamlifetime)
+    stats["bubblelifetime"] = __get_mesh_stats_dict(cstats.bubblelifetime)
+    stats["spraylifetime"] = __get_mesh_stats_dict(cstats.spraylifetime)
+    stats["dustlifetime"] = __get_mesh_stats_dict(cstats.dustlifetime)
     stats["particles"] = __get_mesh_stats_dict(cstats.particles)
     stats["obstacle"] = __get_mesh_stats_dict(cstats.obstacle)
     stats["timing"] = __get_timing_stats_dict(cstats.timing)
@@ -2397,7 +2503,9 @@ def set_console_output(boolval):
 
 
 def __get_addon_version():
-    module = sys.modules["flip_fluids_addon"]
+    module_dir = os.path.dirname(os.path.realpath(__file__))
+    module_name = os.path.basename(os.path.normpath(module_dir))
+    module = sys.modules[module_name]
     addon_major, addon_minor, addon_revision = module.bl_info.get('version', (-1, -1, -1))
     return str(addon_major) + "." + str(addon_minor) + "." + str(addon_revision)
 

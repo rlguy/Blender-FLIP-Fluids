@@ -53,6 +53,7 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
     outliner_organization_expanded = BoolProperty(default=False); exec(conv("outliner_organization_expanded"))
     quick_select_expanded = BoolProperty(default=False); exec(conv("quick_select_expanded"))
     command_line_tools_expanded = BoolProperty(default=False); exec(conv("command_line_tools_expanded"))
+    geometry_node_tools_expanded = BoolProperty(default=False); exec(conv("geometry_node_tools_expanded"))
     beginner_tools_expanded = BoolProperty(default=False); exec(conv("beginner_tools_expanded"))
 
     quick_viewport_display_expanded = BoolProperty(default=True); exec(conv("quick_viewport_display_expanded"))

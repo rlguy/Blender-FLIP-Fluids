@@ -83,8 +83,7 @@ def append_to_PHYSICS_PT_add_panel(self, context):
 
         
         # Experimental Build Warning
-        addon_prefs.enable_experimental_build_warning = False    # Remove this line for experimental release
-        if addon_prefs.enable_experimental_build_warning:
+        if installation_utils.is_experimental_build() and addon_prefs.enable_experimental_build_warning:
             box = self.layout.box()
             column = box.column(align=True)
             column.label(text="This is an experimental build of the FLIP Fluids addon", icon='ERROR')
@@ -138,6 +137,18 @@ def append_to_PHYSICS_PT_add_panel(self, context):
         box.label(text="IMPORTANT: Blender restart required", icon="ERROR")
         box.label(text="Please restart Blender to complete")
         box.label(text="installation of the FLIP Fluids add-on.")
+
+    addon_prefs = vcu.get_addon_preferences(context)
+    flip_fluids_installations = installation_utils.get_enabled_flip_fluids_addon_installations()
+    if len(flip_fluids_installations) > 1:
+        box = self.layout.box()
+        box.label(text="Installation Error Detected", icon="ERROR")
+        box.label(text="Multiple version of the FLIP Fluids add-on enabled:", icon="ERROR")
+        for install in flip_fluids_installations:
+            box.label(text=" "*10 + install['addon_name'] + " (" + install['module_name'] + ")")
+        box.label(text="Only 1 version of the add-on can be enabled", icon="ERROR")
+        box.label(text="Disable all other versions in the Blender addon preferences", icon="ERROR")
+        box.label(text="Restart Blender", icon="ERROR")
 
 
 def register():

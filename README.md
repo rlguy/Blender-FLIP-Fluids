@@ -1,4 +1,4 @@
-Want to try FLIP Fluids addon before buying the full [Blender Market Product](https://blendermarket.com/products/flipfluids)? Try out the **[FLIP Fluids Demo](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/FLIP-Fluids-Demo-Addon)** addon! The FLIP Fluids Demo will let you create, run, and render your own fluid simulations with a few small limitations.
+Want to try the FLIP Fluids addon before buying the [full marketplace product](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Official-Marketplaces-of-the-FLIP-Fluids-Addon)? Try out the **FLIP Fluids Demo** addon! The FLIP Fluids demo can do everything that the full version can and will let you create, run, and render your own fluid simulations with a small limitation.
 
 ### Limitations
 
@@ -6,7 +6,7 @@ Want to try FLIP Fluids addon before buying the full [Blender Market Product](ht
 
 ### Getting Started
 
-Download the latest FLIP Fluids Demo installation file here: [FLIP_Fluids_addon_0.2.0_demo_(25_nov_2021.zip)](https://github.com/rlguy/Blender-FLIP-Fluids/releases/download/0.2.0/FLIP_Fluids_addon_0.2.0_demo_.25_nov_2021.zip)
+Download the latest FLIP Fluids Demo installation file here: [FLIP_Fluids_addon_0.3.0_demo_(11_mar_2022.zip)](https://github.com/rlguy/Blender-FLIP-Fluids/releases/download/0.2.0/FLIP_Fluids_addon_0.2.1_demo_.09_dec_2021.zip)
 
 After downloading the demo addon, follow our [Installation Instructions](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Addon-Installation-and-Uninstallation). The instructions are similar to installing any other Blender addon.
 
@@ -14,4 +14,4 @@ Get started creating your first simulation with our [beginners guide](https://gi
 
 ### Have any questions?
 
-Feel free to send us a message on the [Blender Market](https://blendermarket.com/products/flipfluids), or send us an email at support@flipfluids.com. We're always glad to help!
+Feel free to send us a message on any of the [official marketplaces](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Official-Marketplaces-of-the-FLIP-Fluids-Addon), or send us an email at support@flipfluids.com. We're always glad to help!

@@ -222,6 +222,13 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
                 column4.label(text=self.format_bytes(sprops.surfacespeed_mesh.bytes.get()))
                 total_bytes += sprops.surfacespeed_mesh.bytes.get()
 
+            if sprops.surfacevorticity_mesh.enabled:
+                column1.label(text="Vorticity")
+                column2.label(text=self.format_number(sprops.surfacevorticity_mesh.verts))
+                column3.label(text="")
+                column4.label(text=self.format_bytes(sprops.surfacevorticity_mesh.bytes.get()))
+                total_bytes += sprops.surfacevorticity_mesh.bytes.get()
+
             if sprops.surfaceage_mesh.enabled:
                 column1.label(text="Age")
                 column2.label(text=self.format_number(sprops.surfaceage_mesh.verts))
@@ -298,6 +305,90 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
                 column3.label(text="")
                 column4.label(text=self.format_bytes(sprops.dustblur_mesh.bytes.get()))
                 total_bytes += sprops.dustblur_mesh.bytes.get()
+
+            if sprops.foamvelocity_mesh.enabled:
+                column1.label(text="Foam Velocity")
+                column2.label(text=self.format_number(sprops.foamvelocity_mesh.verts))
+                column3.label(text="")
+                column4.label(text=self.format_bytes(sprops.foamvelocity_mesh.bytes.get()))
+                total_bytes += sprops.foamvelocity_mesh.bytes.get()
+
+            if sprops.bubblevelocity_mesh.enabled:
+                column1.label(text="Bubble Velocity")
+                column2.label(text=self.format_number(sprops.bubblevelocity_mesh.verts))
+                column3.label(text="")
+                column4.label(text=self.format_bytes(sprops.bubblevelocity_mesh.bytes.get()))
+                total_bytes += sprops.bubblevelocity_mesh.bytes.get()
+
+            if sprops.sprayvelocity_mesh.enabled:
+                column1.label(text="Spray Velocity")
+                column2.label(text=self.format_number(sprops.sprayvelocity_mesh.verts))
+                column3.label(text="")
+                column4.label(text=self.format_bytes(sprops.sprayvelocity_mesh.bytes.get()))
+                total_bytes += sprops.sprayvelocity_mesh.bytes.get()
+
+            if sprops.dustvelocity_mesh.enabled:
+                column1.label(text="Dust Velocity")
+                column2.label(text=self.format_number(sprops.dustvelocity_mesh.verts))
+                column3.label(text="")
+                column4.label(text=self.format_bytes(sprops.dustvelocity_mesh.bytes.get()))
+                total_bytes += sprops.dustvelocity_mesh.bytes.get()
+
+            if sprops.foamid_mesh.enabled:
+                column1.label(text="Foam ID")
+                column2.label(text=self.format_number(sprops.foamid_mesh.verts))
+                column3.label(text="")
+                column4.label(text=self.format_bytes(sprops.foamid_mesh.bytes.get()))
+                total_bytes += sprops.foamid_mesh.bytes.get()
+
+            if sprops.bubbleid_mesh.enabled:
+                column1.label(text="Bubble ID")
+                column2.label(text=self.format_number(sprops.bubbleid_mesh.verts))
+                column3.label(text="")
+                column4.label(text=self.format_bytes(sprops.bubbleid_mesh.bytes.get()))
+                total_bytes += sprops.bubbleid_mesh.bytes.get()
+
+            if sprops.sprayid_mesh.enabled:
+                column1.label(text="Spray ID")
+                column2.label(text=self.format_number(sprops.sprayid_mesh.verts))
+                column3.label(text="")
+                column4.label(text=self.format_bytes(sprops.sprayid_mesh.bytes.get()))
+                total_bytes += sprops.sprayid_mesh.bytes.get()
+
+            if sprops.dustid_mesh.enabled:
+                column1.label(text="Dust ID")
+                column2.label(text=self.format_number(sprops.dustid_mesh.verts))
+                column3.label(text="")
+                column4.label(text=self.format_bytes(sprops.dustid_mesh.bytes.get()))
+                total_bytes += sprops.dustid_mesh.bytes.get()
+
+            if sprops.foamlifetime_mesh.enabled:
+                column1.label(text="Foam Lifetime")
+                column2.label(text=self.format_number(sprops.foamlifetime_mesh.verts))
+                column3.label(text="")
+                column4.label(text=self.format_bytes(sprops.foamlifetime_mesh.bytes.get()))
+                total_bytes += sprops.foamlifetime_mesh.bytes.get()
+
+            if sprops.bubblelifetime_mesh.enabled:
+                column1.label(text="Bubble Lifetime")
+                column2.label(text=self.format_number(sprops.bubblelifetime_mesh.verts))
+                column3.label(text="")
+                column4.label(text=self.format_bytes(sprops.bubblelifetime_mesh.bytes.get()))
+                total_bytes += sprops.bubblelifetime_mesh.bytes.get()
+
+            if sprops.spraylifetime_mesh.enabled:
+                column1.label(text="Spray Lifetime")
+                column2.label(text=self.format_number(sprops.spraylifetime_mesh.verts))
+                column3.label(text="")
+                column4.label(text=self.format_bytes(sprops.spraylifetime_mesh.bytes.get()))
+                total_bytes += sprops.spraylifetime_mesh.bytes.get()
+
+            if sprops.dustlifetime_mesh.enabled:
+                column1.label(text="Dust Lifetime")
+                column2.label(text=self.format_number(sprops.dustlifetime_mesh.verts))
+                column3.label(text="")
+                column4.label(text=self.format_bytes(sprops.dustlifetime_mesh.bytes.get()))
+                total_bytes += sprops.dustlifetime_mesh.bytes.get()
 
             if sprops.particle_mesh.enabled:
                 column1.label(text="Particles")
@@ -461,6 +552,7 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
                            sprops.surfaceblur_mesh.enabled or 
                            sprops.surfacevelocity_mesh.enabled or 
                            sprops.surfacespeed_mesh.enabled or 
+                           sprops.surfacevorticity_mesh.enabled or 
                            sprops.surfaceage_mesh.enabled or 
                            sprops.surfacecolor_mesh.enabled or 
                            sprops.surfacesourceid_mesh.enabled or 
@@ -472,6 +564,18 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
                            sprops.bubbleblur_mesh.enabled or 
                            sprops.sprayblur_mesh.enabled or 
                            sprops.dustblur_mesh.enabled or 
+                           sprops.foamvelocity_mesh.enabled or 
+                           sprops.bubblevelocity_mesh.enabled or 
+                           sprops.sprayvelocity_mesh.enabled or 
+                           sprops.dustvelocity_mesh.enabled or 
+                           sprops.foamid_mesh.enabled or 
+                           sprops.bubbleid_mesh.enabled or 
+                           sprops.sprayid_mesh.enabled or 
+                           sprops.dustid_mesh.enabled or 
+                           sprops.foamlifetime_mesh.enabled or 
+                           sprops.bubblelifetime_mesh.enabled or 
+                           sprops.spraylifetime_mesh.enabled or 
+                           sprops.dustlifetime_mesh.enabled or 
                            sprops.particle_mesh.enabled or
                            sprops.obstacle_mesh.enabled)
 
@@ -510,6 +614,12 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
                 column2.label(text=self.format_bytes(sprops.surfacespeed_mesh.bytes.get()))
                 row_count += 1
                 total_size += sprops.surfacespeed_mesh.bytes.get()
+
+            if sprops.surfacevelocity_mesh.enabled:
+                column1.label(text="Vorticity")
+                column2.label(text=self.format_bytes(sprops.surfacevorticity_mesh.bytes.get()))
+                row_count += 1
+                total_size += sprops.surfacevorticity_mesh.bytes.get()
 
             if sprops.surfaceage_mesh.enabled:
                 column1.label(text="Age")
@@ -576,6 +686,78 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
                 column2.label(text=self.format_bytes(sprops.dustblur_mesh.bytes.get()))
                 row_count += 1
                 total_size += sprops.dustblur_mesh.bytes.get()
+
+            if sprops.foamvelocity_mesh.enabled:
+                column1.label(text="Foam Velocity")
+                column2.label(text=self.format_bytes(sprops.foamvelocity_mesh.bytes.get()))
+                row_count += 1
+                total_size += sprops.foamvelocity_mesh.bytes.get()
+
+            if sprops.bubblevelocity_mesh.enabled:
+                column1.label(text="Bubble Velocity")
+                column2.label(text=self.format_bytes(sprops.bubblevelocity_mesh.bytes.get()))
+                row_count += 1
+                total_size += sprops.bubblevelocity_mesh.bytes.get()
+
+            if sprops.sprayvelocity_mesh.enabled:
+                column1.label(text="Spray Velocity")
+                column2.label(text=self.format_bytes(sprops.sprayvelocity_mesh.bytes.get()))
+                row_count += 1
+                total_size += sprops.sprayvelocity_mesh.bytes.get()
+
+            if sprops.dustvelocity_mesh.enabled:
+                column1.label(text="Dust Velocity")
+                column2.label(text=self.format_bytes(sprops.dustvelocity_mesh.bytes.get()))
+                row_count += 1
+                total_size += sprops.dustvelocity_mesh.bytes.get()
+
+            if sprops.foamid_mesh.enabled:
+                column1.label(text="Foam ID")
+                column2.label(text=self.format_bytes(sprops.foamid_mesh.bytes.get()))
+                row_count += 1
+                total_size += sprops.foamid_mesh.bytes.get()
+
+            if sprops.bubbleid_mesh.enabled:
+                column1.label(text="Bubble ID")
+                column2.label(text=self.format_bytes(sprops.bubbleid_mesh.bytes.get()))
+                row_count += 1
+                total_size += sprops.bubbleid_mesh.bytes.get()
+
+            if sprops.sprayid_mesh.enabled:
+                column1.label(text="Spray ID")
+                column2.label(text=self.format_bytes(sprops.sprayid_mesh.bytes.get()))
+                row_count += 1
+                total_size += sprops.sprayid_mesh.bytes.get()
+
+            if sprops.dustid_mesh.enabled:
+                column1.label(text="Dust ID")
+                column2.label(text=self.format_bytes(sprops.dustid_mesh.bytes.get()))
+                row_count += 1
+                total_size += sprops.dustid_mesh.bytes.get()
+
+            if sprops.foamlifetime_mesh.enabled:
+                column1.label(text="Foam Lifetime")
+                column2.label(text=self.format_bytes(sprops.foamlifetime_mesh.bytes.get()))
+                row_count += 1
+                total_size += sprops.foamlifetime_mesh.bytes.get()
+
+            if sprops.bubblelifetime_mesh.enabled:
+                column1.label(text="Bubble Lifetime")
+                column2.label(text=self.format_bytes(sprops.bubblelifetime_mesh.bytes.get()))
+                row_count += 1
+                total_size += sprops.bubblelifetime_mesh.bytes.get()
+
+            if sprops.spraylifetime_mesh.enabled:
+                column1.label(text="Spray Lifetime")
+                column2.label(text=self.format_bytes(sprops.spraylifetime_mesh.bytes.get()))
+                row_count += 1
+                total_size += sprops.spraylifetime_mesh.bytes.get()
+
+            if sprops.dustlifetime_mesh.enabled:
+                column1.label(text="Dust Lifetime")
+                column2.label(text=self.format_bytes(sprops.dustlifetime_mesh.bytes.get()))
+                row_count += 1
+                total_size += sprops.dustlifetime_mesh.bytes.get()
 
             if sprops.particle_mesh.enabled:
                 column1.label(text="Particles")

@@ -566,6 +566,48 @@ extern "C" {
         );
     }
 
+    EXPORTDLL void FluidSimulation_enable_whitewater_id_attribute(FluidSimulation* obj,
+                                                                  int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableWhitewaterIDAttribute, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_whitewater_id_attribute(FluidSimulation* obj,
+                                                                   int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableWhitewaterIDAttribute, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_whitewater_id_attribute_enabled(FluidSimulation* obj,
+                                                                     int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isWhitewaterIDAttributeEnabled, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_enable_whitewater_lifetime_attribute(FluidSimulation* obj,
+                                                                        int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableWhitewaterLifetimeAttribute, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_whitewater_lifetime_attribute(FluidSimulation* obj,
+                                                                         int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableWhitewaterLifetimeAttribute, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_whitewater_lifetime_attribute_enabled(FluidSimulation* obj,
+                                                                           int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isWhitewaterLifetimeAttributeEnabled, err
+        );
+    }
+
     EXPORTDLL void FluidSimulation_enable_surface_velocity_attribute(FluidSimulation* obj,
                                                                      int *err) {
         CBindings::safe_execute_method_void_0param(
@@ -584,6 +626,48 @@ extern "C" {
                                                                        int *err) {
         return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::isSurfaceVelocityAttributeEnabled, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_enable_whitewater_velocity_attribute(FluidSimulation* obj,
+                                                                        int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableWhitewaterVelocityAttribute, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_whitewater_velocity_attribute(FluidSimulation* obj,
+                                                                         int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableWhitewaterVelocityAttribute, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_whitewater_velocity_attribute_enabled(FluidSimulation* obj,
+                                                                           int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isWhitewaterVelocityAttributeEnabled, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_enable_surface_vorticity_attribute(FluidSimulation* obj,
+                                                                      int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableSurfaceVorticityAttribute, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_surface_vorticity_attribute(FluidSimulation* obj,
+                                                                       int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableSurfaceVorticityAttribute, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_surface_vorticity_attribute_enabled(FluidSimulation* obj,
+                                                                         int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isSurfaceVorticityAttributeEnabled, err
         );
     }
 
@@ -2455,6 +2539,71 @@ extern "C" {
         return 0;
     }
 
+    EXPORTDLL int FluidSimulation_get_whitewater_foam_velocity_attribute_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getWhitewaterFoamVelocityAttributeData();
+            return (int)data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
+    EXPORTDLL int FluidSimulation_get_whitewater_bubble_velocity_attribute_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getWhitewaterBubbleVelocityAttributeData();
+            return (int)data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
+    EXPORTDLL int FluidSimulation_get_whitewater_spray_velocity_attribute_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getWhitewaterSprayVelocityAttributeData();
+            return (int)data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
+    EXPORTDLL int FluidSimulation_get_whitewater_dust_velocity_attribute_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getWhitewaterDustVelocityAttributeData();
+            return (int)data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
+    EXPORTDLL int FluidSimulation_get_surface_vorticity_attribute_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getSurfaceVorticityAttributeData();
+            return (int)data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
     EXPORTDLL int FluidSimulation_get_surface_speed_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
@@ -2624,6 +2773,110 @@ extern "C" {
         return 0;
     }
 
+    EXPORTDLL int FluidSimulation_get_whitewater_foam_id_attribute_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getWhitewaterFoamIDAttributeData();
+            return (int)data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
+    EXPORTDLL int FluidSimulation_get_whitewater_bubble_id_attribute_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getWhitewaterBubbleIDAttributeData();
+            return (int)data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
+    EXPORTDLL int FluidSimulation_get_whitewater_spray_id_attribute_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getWhitewaterSprayIDAttributeData();
+            return (int)data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
+    EXPORTDLL int FluidSimulation_get_whitewater_dust_id_attribute_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getWhitewaterDustIDAttributeData();
+            return (int)data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
+    EXPORTDLL int FluidSimulation_get_whitewater_foam_lifetime_attribute_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getWhitewaterFoamLifetimeAttributeData();
+            return (int)data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
+    EXPORTDLL int FluidSimulation_get_whitewater_bubble_lifetime_attribute_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getWhitewaterBubbleLifetimeAttributeData();
+            return (int)data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
+    EXPORTDLL int FluidSimulation_get_whitewater_spray_lifetime_attribute_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getWhitewaterSprayLifetimeAttributeData();
+            return (int)data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
+    EXPORTDLL int FluidSimulation_get_whitewater_dust_lifetime_attribute_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getWhitewaterDustLifetimeAttributeData();
+            return (int)data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
     EXPORTDLL int FluidSimulation_get_fluid_particle_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
@@ -2761,6 +3014,66 @@ extern "C" {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getSurfaceVelocityAttributeData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_whitewater_foam_velocity_attribute_data(FluidSimulation* obj, 
+                                                                              char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getWhitewaterFoamVelocityAttributeData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_whitewater_bubble_velocity_attribute_data(FluidSimulation* obj, 
+                                                                              char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getWhitewaterBubbleVelocityAttributeData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_whitewater_spray_velocity_attribute_data(FluidSimulation* obj, 
+                                                                              char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getWhitewaterSprayVelocityAttributeData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_whitewater_dust_velocity_attribute_data(FluidSimulation* obj, 
+                                                                              char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getWhitewaterDustVelocityAttributeData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_surface_vorticity_attribute_data(FluidSimulation* obj, 
+                                                                        char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getSurfaceVorticityAttributeData();
             std::memcpy(c_data, data->data(), data->size());
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
@@ -2917,6 +3230,102 @@ extern "C" {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getDiffuseDustBlurData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_whitewater_foam_id_attribute_data(FluidSimulation* obj, 
+                                                                              char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getWhitewaterFoamIDAttributeData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_whitewater_bubble_id_attribute_data(FluidSimulation* obj, 
+                                                                              char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getWhitewaterBubbleIDAttributeData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_whitewater_spray_id_attribute_data(FluidSimulation* obj, 
+                                                                              char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getWhitewaterSprayIDAttributeData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_whitewater_dust_id_attribute_data(FluidSimulation* obj, 
+                                                                              char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getWhitewaterDustIDAttributeData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_whitewater_foam_lifetime_attribute_data(FluidSimulation* obj, 
+                                                                               char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getWhitewaterFoamLifetimeAttributeData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_whitewater_bubble_lifetime_attribute_data(FluidSimulation* obj, 
+                                                                                 char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getWhitewaterBubbleLifetimeAttributeData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_whitewater_spray_lifetime_attribute_data(FluidSimulation* obj, 
+                                                                                char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getWhitewaterSprayLifetimeAttributeData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_whitewater_dust_lifetime_attribute_data(FluidSimulation* obj, 
+                                                                               char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getWhitewaterDustLifetimeAttributeData();
             std::memcpy(c_data, data->data(), data->size());
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);

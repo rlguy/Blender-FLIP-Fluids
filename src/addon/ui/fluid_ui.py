@@ -127,7 +127,7 @@ class FLIPFLUID_PT_FluidTypePanel(bpy.types.Panel):
             column.prop(fluid_props, "append_object_velocity_influence")
 
 
-        if vcu.get_addon_preferences().enable_developer_tools:
+        if vcu.get_addon_preferences().is_developer_tools_enabled():
             box = self.layout.box()
             box.label(text="Geometry Attributes:")
             column = box.column(align=True)

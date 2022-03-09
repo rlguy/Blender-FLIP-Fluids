@@ -101,8 +101,8 @@ class DomainCacheProperties(bpy.types.PropertyGroup):
             path_prop = path_prop[len(relprefix):]
             blend_directory = os.path.dirname(bpy.data.filepath)
             path = os.path.join(blend_directory, path_prop)
-            return os.path.normpath(path)
-        return os.path.normpath(path_prop)
+            return os.path.abspath(os.path.normpath(path))
+        return os.path.abspath(os.path.normpath(path_prop))
 
 
     def get_cache_abspath(self):

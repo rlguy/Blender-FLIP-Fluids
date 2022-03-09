@@ -500,7 +500,13 @@ class FLIPFLUID_PT_DomainTypePanel(bpy.types.Panel):
         obj_props = vcu.get_active_object(context).flip_fluid
         show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
 
+        dprops = context.scene.flip_fluid.get_domain_properties()
+        if dprops is None:
+            return
+        is_simulation_running = dprops.bake.is_simulation_running
+
         column = self.layout.column()
+        column.enabled = not is_simulation_running
         column.prop(obj_props, "object_type")
 
         box = self.layout.box()

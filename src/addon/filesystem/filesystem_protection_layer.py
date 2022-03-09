@@ -33,6 +33,8 @@ __EXTENSION_WHITELIST = [
     ".sqlite3",
     ".state",
     ".txt",
+    ".wwi",
+    ".wwf",
     ".wwp"
     ]
 
@@ -117,11 +119,33 @@ def delete_files_in_directory(base_directory, extensions, remove_directory=False
         if pathlib.Path(f).suffix in extensions:
             valid_filepaths.append(os.path.join(base_directory, f))
 
+    remove_error_count = 0
+    first_error = None
     for f in valid_filepaths:
-        os.remove(f)
+        try:
+            os.remove(f)
+        except OSError as e:
+            remove_error_count += 1
+            if first_error is None:
+                first_error = str(e)
 
     if remove_directory and not os.listdir(base_directory):
-        os.rmdir(base_directory)
+        try:
+            os.rmdir(base_directory)
+        except OSError as e:
+            remove_error_count += 1
+            if first_error is None:
+                first_error = str(e)
+
+    if remove_error_count > 0:
+        errmsg = "Error encountered attempting to remove " + str(remove_error_count) + " file(s). Reason: <" + first_error + ">. "
+        errmsg += "Try closing all applications accessing the cache directory, restarting Blender/System, or deleting cache directory manually."
+        bpy.ops.flip_fluid_operators.display_error(
+                'INVOKE_DEFAULT',
+                error_message="Error Removing Files",
+                error_description=errmsg,
+                popup_width=700
+                )
 
 
 def delete_file(filepath, error_ok=False):
@@ -138,7 +162,13 @@ def delete_file(filepath, error_ok=False):
         if error_ok:
             pass
         else:
-            raise e
+            errmsg = "Error encountered attempting to remove file. Reason: <" + str(e) + ">."
+            bpy.ops.flip_fluid_operators.display_error(
+                    'INVOKE_DEFAULT',
+                    error_message="Error Removing Files",
+                    error_description=errmsg,
+                    popup_width=700
+                    )
 
 
 def clear_cache_directory(cache_directory, clear_export=False, clear_logs=False, remove_directory=False):
@@ -146,7 +176,7 @@ def clear_cache_directory(cache_directory, clear_export=False, clear_logs=False,
     delete_file(stats_filepath)
 
     bakefiles_dir = os.path.join(cache_directory, "bakefiles")
-    extensions = [".bbox", ".bobj", ".data", ".wwp", ".fpd", ".ffd"]
+    extensions = [".bbox", ".bobj", ".data", ".wwp", ".wwf", ".wwi", ".fpd", ".ffd"]
     delete_files_in_directory(bakefiles_dir, extensions, remove_directory=True)
 
     temp_dir = os.path.join(cache_directory, "temp")

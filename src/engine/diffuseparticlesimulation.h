@@ -240,6 +240,18 @@ public:
     void getBubbleParticleBlurFileDataWWP(std::vector<char> &data, double dt);
     void getSprayParticleBlurFileDataWWP(std::vector<char> &data, double dt);
     void getDustParticleBlurFileDataWWP(std::vector<char> &data, double dt);
+    void getFoamParticleVelocityAttributeFileDataWWP(std::vector<char> &data);
+    void getBubbleParticleVelocityAttributeFileDataWWP(std::vector<char> &data);
+    void getSprayParticleVelocityAttributeFileDataWWP(std::vector<char> &data);
+    void getDustParticleVelocityAttributeFileDataWWP(std::vector<char> &data);
+    void getFoamParticleIDAttributeFileDataWWI(std::vector<char> &data);
+    void getBubbleParticleIDAttributeFileDataWWI(std::vector<char> &data);
+    void getSprayParticleIDAttributeFileDataWWI(std::vector<char> &data);
+    void getDustParticleIDAttributeFileDataWWI(std::vector<char> &data);
+    void getFoamParticleLifetimeAttributeFileDataWWF(std::vector<char> &data);
+    void getBubbleParticleLifetimeAttributeFileDataWWF(std::vector<char> &data);
+    void getSprayParticleLifetimeAttributeFileDataWWF(std::vector<char> &data);
+    void getDustParticleLifetimeAttributeFileDataWWF(std::vector<char> &data);
 
     void loadDiffuseParticles(FragmentedVector<DiffuseParticle> &particles);
 
@@ -362,6 +374,12 @@ private:
     void _removeDiffuseParticles();
 
     void _getDiffuseParticleFileDataWWP(std::vector<vmath::vec3> &positions, 
+                                        std::vector<unsigned char> &ids,
+                                        std::vector<char> &data);
+    void _getDiffuseParticleFileDataWWI(std::vector<int> &intvalues, 
+                                        std::vector<unsigned char> &ids,
+                                        std::vector<char> &data);
+    void _getDiffuseParticleFileDataWWF(std::vector<float> &floatvalues, 
                                         std::vector<unsigned char> &ids,
                                         std::vector<char> &data);
 

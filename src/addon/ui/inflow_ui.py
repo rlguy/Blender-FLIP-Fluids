@@ -139,7 +139,7 @@ class FLIPFLUID_PT_InflowTypePanel(bpy.types.Panel):
             column = box.column(align=True)
             column.prop(inflow_props, "constrain_fluid_velocity")
 
-        if vcu.get_addon_preferences().enable_developer_tools:
+        if vcu.get_addon_preferences().is_developer_tools_enabled():
             box = self.layout.box()
             box.label(text="Geometry Attributes:")
             column = box.column(align=True)

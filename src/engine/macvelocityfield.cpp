@@ -675,3 +675,46 @@ void MACVelocityField::extrapolateVelocityField(ValidVelocityComponentGrid &vali
     GridUtils::extrapolateGrid(&_v, &(validGrid.validV), numLayers);
     GridUtils::extrapolateGrid(&_w, &(validGrid.validW), numLayers);
 }
+
+// Method adapted from Fluid Engine Development by Doyub Kim
+void MACVelocityField::generateCurlAtCellCenter(Array3d<vmath::vec3> &grid) {
+    FLUIDSIM_ASSERT(grid.width == _isize && grid.height == _jsize &&  grid.depth == _ksize);
+    grid.fill(vmath::vec3());
+
+    float invdx = 1.0 / _dx;
+    for(int k = 0; k < _ksize; k++) {
+        for(int j = 0; j < _jsize; j++) {
+            for(int i = 0; i < _isize; i++) {
+                vmath::vec3 left  = evaluateVelocityAtCellCenter((i > 0) ? i - 1 : i,          j,                            k);
+                vmath::vec3 right = evaluateVelocityAtCellCenter((i + 1 < _isize) ? i + 1 : i, j,                            k);
+                vmath::vec3 down  = evaluateVelocityAtCellCenter(i,                            (j > 0) ? j - 1 : j,          k);
+                vmath::vec3 up    = evaluateVelocityAtCellCenter(i,                            (j + 1 < _jsize) ? j + 1 : j, k);
+                vmath::vec3 back  = evaluateVelocityAtCellCenter(i,                            j,                            (k > 0) ? k - 1 : k);
+                vmath::vec3 front = evaluateVelocityAtCellCenter(i,                            j,                            (k + 1 < _ksize) ? k + 1 : k);
+
+                float fx_ym = down.x;
+                float fx_yp = up.x;
+                float fx_zm = back.x;
+                float fx_zp = front.x;
+
+                float fy_xm = left.y;
+                float fy_xp = right.y;
+                float fy_zm = back.y;
+                float fy_zp = front.y;
+
+                float fz_xm = left.z;
+                float fz_xp = right.z;
+                float fz_ym = down.z;
+                float fz_yp = up.z;
+
+                vmath::vec3 curl(
+                    0.5 * invdx * ((fz_yp - fz_ym) - (fy_zp - fy_zm)),
+                    0.5 * invdx * ((fx_zp - fx_zm) - (fz_xp - fz_xm)),
+                    0.5 * invdx * ((fy_xp - fy_xm) - (fx_yp - fx_ym))
+                    );
+
+                grid.set(i, j, k, curl);
+            }
+        }
+    }
+}

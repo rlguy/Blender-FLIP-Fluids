@@ -89,6 +89,7 @@ struct FluidSimulationFrameStats {
     FluidSimulationMeshStats preview;
     FluidSimulationMeshStats surfaceblur;
     FluidSimulationMeshStats surfacevelocity;
+    FluidSimulationMeshStats surfacevorticity;
     FluidSimulationMeshStats surfacespeed;
     FluidSimulationMeshStats surfaceage;
     FluidSimulationMeshStats surfacecolor;
@@ -101,6 +102,18 @@ struct FluidSimulationFrameStats {
     FluidSimulationMeshStats bubbleblur;
     FluidSimulationMeshStats sprayblur;
     FluidSimulationMeshStats dustblur;
+    FluidSimulationMeshStats foamvelocity;
+    FluidSimulationMeshStats bubblevelocity;
+    FluidSimulationMeshStats sprayvelocity;
+    FluidSimulationMeshStats dustvelocity;
+    FluidSimulationMeshStats foamid;
+    FluidSimulationMeshStats bubbleid;
+    FluidSimulationMeshStats sprayid;
+    FluidSimulationMeshStats dustid;
+    FluidSimulationMeshStats foamlifetime;
+    FluidSimulationMeshStats bubblelifetime;
+    FluidSimulationMeshStats spraylifetime;
+    FluidSimulationMeshStats dustlifetime;
     FluidSimulationMeshStats particles;
     FluidSimulationMeshStats obstacle;
     FluidSimulationMeshStats forcefield;
@@ -399,15 +412,26 @@ public:
     bool isWhitewaterMotionBlurEnabled();
 
     /*
-        Generate velocity vector or speed attributes at fluid surface mesh vertices
+        Generate velocity vector or speed attributes at fluid mesh vertices
     */
     void enableSurfaceVelocityAttribute();
     void disableSurfaceVelocityAttribute();
     bool isSurfaceVelocityAttributeEnabled();
 
+    void enableWhitewaterVelocityAttribute();
+    void disableWhitewaterVelocityAttribute();
+    bool isWhitewaterVelocityAttributeEnabled();
+
     void enableSurfaceSpeedAttribute();
     void disableSurfaceSpeedAttribute();
     bool isSurfaceSpeedAttributeEnabled();
+
+    /*
+        Generate vorticity (curl) vector attributes at fluid surface mesh vertices
+    */
+    void enableSurfaceVorticityAttribute();
+    void disableSurfaceVorticityAttribute();
+    bool isSurfaceVorticityAttributeEnabled();
 
     /*
         Generate age attributes (in seconds) at fluid surface mesh vertices
@@ -429,6 +453,20 @@ public:
     void enableSurfaceSourceIDAttribute();
     void disableSurfaceSourceIDAttribute();
     bool isSurfaceSourceIDAttributeEnabled();
+
+    /*
+        Generate stable ID attributes at whitewater particles
+    */
+    void enableWhitewaterIDAttribute();
+    void disableWhitewaterIDAttribute();
+    bool isWhitewaterIDAttributeEnabled();
+
+    /*
+        Generate remaining lifetime attributes at whitewater particles
+    */
+    void enableWhitewaterLifetimeAttribute();
+    void disableWhitewaterLifetimeAttribute();
+    bool isWhitewaterLifetimeAttributeEnabled();
 
     /*
         Remove parts of mesh that are near the domain boundary
@@ -1163,6 +1201,7 @@ public:
     std::vector<char>* getSurfacePreviewData();
     std::vector<char>* getSurfaceBlurData();
     std::vector<char>* getSurfaceVelocityAttributeData();
+    std::vector<char>* getSurfaceVorticityAttributeData();
     std::vector<char>* getSurfaceSpeedAttributeData();
     std::vector<char>* getSurfaceAgeAttributeData();
     std::vector<char>* getSurfaceColorAttributeData();
@@ -1176,6 +1215,18 @@ public:
     std::vector<char>* getDiffuseBubbleBlurData();
     std::vector<char>* getDiffuseSprayBlurData();
     std::vector<char>* getDiffuseDustBlurData();
+    std::vector<char>* getWhitewaterFoamVelocityAttributeData();
+    std::vector<char>* getWhitewaterBubbleVelocityAttributeData();
+    std::vector<char>* getWhitewaterSprayVelocityAttributeData();
+    std::vector<char>* getWhitewaterDustVelocityAttributeData();
+    std::vector<char>* getWhitewaterFoamIDAttributeData();
+    std::vector<char>* getWhitewaterBubbleIDAttributeData();
+    std::vector<char>* getWhitewaterSprayIDAttributeData();
+    std::vector<char>* getWhitewaterDustIDAttributeData();
+    std::vector<char>* getWhitewaterFoamLifetimeAttributeData();
+    std::vector<char>* getWhitewaterBubbleLifetimeAttributeData();
+    std::vector<char>* getWhitewaterSprayLifetimeAttributeData();
+    std::vector<char>* getWhitewaterDustLifetimeAttributeData();
     std::vector<char>* getFluidParticleData();
     std::vector<char>* getInternalObstacleMeshData();
     std::vector<char>* getForceFieldDebugData();
@@ -1242,6 +1293,7 @@ private:
         std::vector<char> surfacePreviewData;
         std::vector<char> surfaceBlurData;
         std::vector<char> surfaceVelocityAttributeData;
+        std::vector<char> surfaceVorticityAttributeData;
         std::vector<char> surfaceSpeedAttributeData;
         std::vector<char> surfaceAgeAttributeData;
         std::vector<char> surfaceColorAttributeData;
@@ -1255,6 +1307,18 @@ private:
         std::vector<char> diffuseBubbleBlurData;
         std::vector<char> diffuseSprayBlurData;
         std::vector<char> diffuseDustBlurData;
+        std::vector<char> whitewaterFoamVelocityAttributeData;
+        std::vector<char> whitewaterBubbleVelocityAttributeData;
+        std::vector<char> whitewaterSprayVelocityAttributeData;
+        std::vector<char> whitewaterDustVelocityAttributeData;
+        std::vector<char> whitewaterFoamIDAttributeData;
+        std::vector<char> whitewaterBubbleIDAttributeData;
+        std::vector<char> whitewaterSprayIDAttributeData;
+        std::vector<char> whitewaterDustIDAttributeData;
+        std::vector<char> whitewaterFoamLifetimeAttributeData;
+        std::vector<char> whitewaterBubbleLifetimeAttributeData;
+        std::vector<char> whitewaterSprayLifetimeAttributeData;
+        std::vector<char> whitewaterDustLifetimeAttributeData;
         std::vector<char> fluidParticleData;
         std::vector<char> internalObstacleMeshData;
         std::vector<char> forceFieldDebugData;
@@ -1505,6 +1569,8 @@ private:
         Update Marker Particle Attributes
     */
 
+    void _updateMarkerParticleVorticityAttributeGrid();
+    void _updateMarkerParticleVorticityAttribute();
     void _updateMarkerParticleAgeAttributeGrid(double dt);
     void _updateMarkerParticleAgeAttribute(double dt);
     void _updateMarkerParticleColorAttributeGrid();
@@ -1577,6 +1643,7 @@ private:
     void _outputSimulationData();
     void _generateSurfaceMotionBlurData(TriangleMesh &surface, MACVelocityField *vfield);
     void _generateSurfaceVelocityAttributeData(TriangleMesh &surface, MACVelocityField *vfield);
+    void _generateSurfaceVorticityAttributeData(TriangleMesh &surface);
     void _generateSurfaceAgeAttributeData(TriangleMesh &surface);
     void _generateSurfaceColorAttributeData(TriangleMesh &surface);
     void _generateSurfaceSourceIDAttributeData(TriangleMesh &surface, std::vector<vmath::vec3> &positions, std::vector<int> *sourceID);
@@ -1734,10 +1801,14 @@ private:
     bool _isSurfaceMotionBlurEnabled = false;
     bool _isWhitewaterMotionBlurEnabled = false;
     bool _isSurfaceVelocityAttributeEnabled = false;
+    bool _isWhitewaterVelocityAttributeEnabled = false;
+    bool _isSurfaceVorticityAttributeEnabled = false;
     bool _isSurfaceSpeedAttributeEnabled = false;
     bool _isSurfaceAgeAttributeEnabled = false;
     bool _isSurfaceSourceColorAttributeEnabled = false;
     bool _isSurfaceSourceIDAttributeEnabled = false;
+    bool _isWhitewaterIDAttributeEnabled = false;
+    bool _isWhitewaterLifetimeAttributeEnabled = false;
     double _contactThresholdDistance = 0.08;          // in # of grid cells
     bool _isObstacleMeshingOffsetEnabled = true;
     double _obstacleMeshingOffset = 0.0;                 // in # of grid cells
@@ -1834,6 +1905,8 @@ private:
     MACVelocityField _savedVelocityField;
 
     // Update Attributes
+    Array3d<vmath::vec3> _vorticityAttributeGrid;
+
     Array3d<float> _ageAttributeGrid;
     Array3d<int> _ageAttributeCountGrid;
     Array3d<bool> _ageAttributeValidGrid;

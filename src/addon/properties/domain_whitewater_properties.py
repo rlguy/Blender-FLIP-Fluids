@@ -92,6 +92,35 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
                 " rendering",
             default=False,
             ); exec(conv("generate_whitewater_motion_blur_data"))
+    enable_velocity_vector_attribute = BoolProperty(
+            name="Generate Velocity Attributes",
+            description="Generate fluid 3D velocity vector attributes for whitewater particles. After"
+                " baking, the velocity vectors (in m/s) can be accessed in a Cycles Attribute"
+                " Node with the name 'flip_velocity' from the Vector output. Not supported on"
+                " instanced particles, only supported on pointclouds",
+            default=False,
+            options={'HIDDEN'},
+            ); exec(conv("enable_velocity_vector_attribute"))
+    enable_id_attribute = BoolProperty(
+            name="Generate ID Attributes",
+            description="Generate stable ID attributes for whitewater particles. After"
+                " baking, the ID values can be accessed in a Geometry Node network"
+                " with the name 'flip_id'. Use where consistent particle attributes are"
+                " needed between frames, such as for varying particle size. Not supported on"
+                " instanced particles, only supported on pointclouds",
+            default=False,
+            options={'HIDDEN'},
+            ); exec(conv("enable_id_attribute"))
+    enable_lifetime_attribute = BoolProperty(
+            name="Generate Lifetime Attributes",
+            description="Generate remaining lifetime attributes for whitewater particles. After"
+                " baking, the lifetime values can be accessed in a Geometry Node network"
+                " or shader with the name 'flip_lifetime'. When the lifetime of a particle reaches 0, the"
+                " particle will despawn. Not supported on instanced particles, only supported on"
+                " pointclouds",
+            default=False,
+            options={'HIDDEN'},
+            ); exec(conv("enable_lifetime_attribute"))
     enable_whitewater_emission = bpy.props.BoolProperty(
             name="Enable Whitewater Emission",
             description="Allow whitewater emitters to generate new particles",
@@ -448,6 +477,9 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
         add(path + ".enable_spray",                             "Enable Spray",                   group_id=0)
         add(path + ".enable_dust",                              "Enable Dust",                    group_id=0)
         add(path + ".generate_whitewater_motion_blur_data",     "Generate Motion Blur Data",      group_id=0)
+        add(path + ".enable_velocity_vector_attribute",         "Generate Velocity Attributes",   group_id=0)
+        add(path + ".enable_id_attribute",                      "Generate ID Attributes",         group_id=0)
+        add(path + ".enable_lifetime_attribute",                "Generate Lifetime Attributes",   group_id=0)
         add(path + ".enable_whitewater_emission",               "Enable Emission",                group_id=0)
         add(path + ".whitewater_emitter_generation_rate",       "Emission Rate",                  group_id=0)
         add(path + ".wavecrest_emission_rate",                  "Wavecrest Emission Rate",        group_id=0)

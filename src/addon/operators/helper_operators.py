@@ -526,6 +526,12 @@ class FlipFluidHelperAddObjects(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
+        if len(context.selected_objects) == 1:
+            # Don't let user set domain object as another type while simulation is running
+            obj = context.selected_objects[0]
+            if obj.flip_fluid.is_domain():
+                if obj.flip_fluid.domain.bake.is_simulation_running:
+                    return False
         for obj in context.selected_objects:
             if obj.type == 'MESH' or obj.type == 'CURVE' or obj.type == 'EMPTY':
                 return True
@@ -542,6 +548,10 @@ class FlipFluidHelperAddObjects(bpy.types.Operator):
                 if not obj.type == 'MESH':
                     continue
 
+            if obj.flip_fluid.is_domain() and obj.flip_fluid.domain.bake.is_simulation_running:
+                # Ignore changing domain type if a simulation is running
+                continue
+
             vcu.set_active_object(obj, context)
             bpy.ops.flip_fluid_operators.flip_fluid_add()
             obj.flip_fluid.object_type = self.object_type
@@ -557,6 +567,12 @@ class FlipFluidHelperRemoveObjects(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
+        if len(context.selected_objects) == 1:
+            # Don't let user set domain object as another type while simulation is running
+            obj = context.selected_objects[0]
+            if obj.flip_fluid.is_domain():
+                if obj.flip_fluid.domain.bake.is_simulation_running:
+                    return False
         for obj in context.selected_objects:
             if obj.flip_fluid.is_active:
                 return True
@@ -566,7 +582,10 @@ class FlipFluidHelperRemoveObjects(bpy.types.Operator):
     def execute(self, context):
         original_active_object = vcu.get_active_object(context)
         for obj in context.selected_objects:
-            if not obj.type == 'MESH':
+            if not (obj.type == 'MESH' or obj.type == 'EMPTY' or obj.type == 'CURVE'):
+                continue
+            if obj.flip_fluid.is_domain() and obj.flip_fluid.domain.bake.is_simulation_running:
+                # Ignore removing domain type if a simulation is running
                 continue
             vcu.set_active_object(obj, context)
             bpy.ops.flip_fluid_operators.flip_fluid_remove()
@@ -1206,6 +1225,123 @@ class FlipFluidHelperCommandLineRenderToClipboard(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class FlipFluidHelperInitializeMotionBlur(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_initialize_motion_blur"
+    bl_label = "Initialize Motion Blur"
+    bl_description = ("Initialize all settings and Geometry Node groups required for motion blur rendering." + 
+                      " This will be applied to the fluid surface and whitewater particles (if enabled)." + 
+                      " Node groups can be customized in the geometry nodes editor and modifier")
+
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.flip_fluid.get_domain_object() is not None
+
+
+    def add_geometry_node_modifier(self, target_object, resource_filepath, resource_name):
+        for mod in target_object.modifiers:
+            if mod.type == 'NODES' and mod.name == resource_name:
+                # Already added
+                return mod
+            
+        node_group = bpy.data.node_groups.get(resource_name)
+        if node_group is None:
+            is_resource_found = False
+            with bpy.data.libraries.load(resource_filepath) as (data_from, data_to):
+                resource = [name for name in data_from.node_groups if name == resource_name]
+                if resource:
+                    is_resource_found = True
+                    data_to.node_groups = resource
+                    
+            if not is_resource_found:
+                return None
+            
+            imported_resource_name = data_to.node_groups[0].name
+        else:
+            # already imported
+            imported_resource_name = node_group.name
+            
+        gn_modifier = target_object.modifiers.new(resource_name, type="NODES")
+        gn_modifier.node_group = bpy.data.node_groups.get(imported_resource_name)
+        return gn_modifier
+
+
+    def apply_modifier_settings(self, target_object, gn_modifier):
+        gn_modifier["Input_5"] = target_object.active_material
+        gn_modifier["Input_2_use_attribute"] = 1
+        gn_modifier["Input_2_attribute_name"] = 'flip_velocity'
+        gn_modifier["Output_3_attribute_name"] = 'velocity'
+
+
+    def execute(self, context):
+        if not vcu.is_blender_31():
+            self.report({'INFO'}, "Blender 3.1 or later is required for this feature")
+            return {'CANCELLED'}
+
+        if context.scene.render.engine != 'CYCLES':
+            context.scene.render.engine = 'CYCLES'
+            self.report({'INFO'}, "Setting render engine to Cycles")
+        if not context.scene.render.use_motion_blur:
+            context.scene.render.use_motion_blur = True
+            self.report({'INFO'}, "Enabled Cycles motion blur rendering")
+
+        dprops = context.scene.flip_fluid.get_domain_properties()
+        if not dprops.surface.enable_velocity_vector_attribute:
+            dprops.surface.enable_velocity_vector_attribute = True
+            self.report({'INFO'}, "Enabled generation of fluid surface velocity vector attributes in FLIP Fluid Surface panel (baking required)")
+
+        if not dprops.whitewater.enable_velocity_vector_attribute:
+            dprops.whitewater.enable_velocity_vector_attribute = True
+            self.report({'INFO'}, "Enabled generation of whitewater velocity vector attributes in FLIP Fluid Whitewater (baking required)")
+
+        blend_filename = "geometry_nodes_library.blend"
+        surface_resource = "FF_MotionBlurSurface"
+        whitewater_resource = "FF_MotionBlurWhitewater"
+
+        parent_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        resource_filepath = os.path.join(parent_path, "resources", "geometry_nodes", blend_filename)
+
+        surface_mesh_caches = [dprops.mesh_cache.surface]
+        surface_cache_objects = []
+        for m in surface_mesh_caches:
+            bl_object = m.get_cache_object()
+            if bl_object is not None:
+                 surface_cache_objects.append(bl_object)
+
+        whitewater_mesh_caches = [
+                dprops.mesh_cache.foam, 
+                dprops.mesh_cache.bubble, 
+                dprops.mesh_cache.spray, 
+                dprops.mesh_cache.dust
+                ]
+        whitewater_cache_objects = []
+        for m in whitewater_mesh_caches:
+            bl_object = m.get_cache_object()
+            if bl_object is not None:
+                 whitewater_cache_objects.append(bl_object)
+
+        for target_object in surface_cache_objects:
+            gn_modifier = self.add_geometry_node_modifier(target_object, resource_filepath, surface_resource)
+            self.apply_modifier_settings(target_object, gn_modifier)
+            info_msg = "Initialized " + gn_modifier.name + " Geometry Node modifier on " + target_object.name + " object"
+            self.report({'INFO'}, info_msg)
+
+        for target_object in whitewater_cache_objects:
+            gn_modifier = self.add_geometry_node_modifier(target_object, resource_filepath, whitewater_resource)
+            self.apply_modifier_settings(target_object, gn_modifier)
+            info_msg = "Initialized " + gn_modifier.name + " Geometry Node modifier on " + target_object.name + " object"
+            self.report({'INFO'}, info_msg)
+
+        for target_object in surface_cache_objects + whitewater_cache_objects:
+            if not target_object.cycles.use_motion_blur:
+                target_object.cycles.use_motion_blur = True
+                info_msg = "Enabled motion blur rendering on " + target_object.name + " object"
+                self.report({'INFO'}, info_msg)
+
+
+        return {'FINISHED'}
+
+
 def get_render_output_info():
     full_path = bpy.path.abspath(bpy.context.scene.render.filepath)
     directory_path = full_path
@@ -1578,6 +1714,7 @@ def register():
     bpy.utils.register_class(FlipFluidHelperCommandLineRenderToScriptfile)
     bpy.utils.register_class(FlipFluidHelperRunScriptfile)
     bpy.utils.register_class(FlipFluidHelperOpenOutputFolder)
+    bpy.utils.register_class(FlipFluidHelperInitializeMotionBlur)
     bpy.utils.register_class(FlipFluidHelperStableRendering279)
     bpy.utils.register_class(FlipFluidHelperStableRendering28)
     bpy.utils.register_class(FlipFluidHelperSetLinearOverrideKeyframes)
@@ -1615,6 +1752,7 @@ def unregister():
     bpy.utils.unregister_class(FlipFluidHelperCommandLineRenderToScriptfile)
     bpy.utils.unregister_class(FlipFluidHelperRunScriptfile)
     bpy.utils.unregister_class(FlipFluidHelperOpenOutputFolder)
+    bpy.utils.unregister_class(FlipFluidHelperInitializeMotionBlur)
     bpy.utils.unregister_class(FlipFluidHelperStableRendering279)
     bpy.utils.unregister_class(FlipFluidHelperStableRendering28)
     bpy.utils.unregister_class(FlipFluidHelperSetLinearOverrideKeyframes)

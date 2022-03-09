@@ -23,7 +23,7 @@
 import os, shutil, subprocess, platform, argparse
 
 
-def cmake_make(cmakelists_dir, cmake_path, make_path, build_debug=True, make_build=True, darwin_arch=""):
+def cmake_make(cmakelists_dir, cmake_path, make_path, build_debug=True, make_build=True, darwin_arch="", library_suffix=""):
     if build_debug:
         build_debug_flag = "-DBUILD_DEBUG=ON"
     else:
@@ -38,6 +38,9 @@ def cmake_make(cmakelists_dir, cmake_path, make_path, build_debug=True, make_bui
             cmake_command.append("-DCMAKE_OSX_ARCHITECTURES=" + darwin_arch)
     elif system == "Linux":
         cmake_command = [cmake_path, cmakelists_dir, build_debug_flag]
+
+    if library_suffix:
+        cmake_command.append("-DLIBRARY_SUFFIX=" + library_suffix)
 
     subprocess.check_call(cmake_command)
 
@@ -76,6 +79,7 @@ def main():
     parser = argparse.ArgumentParser(description="FLIP Fluids Addon build and compile script")
     parser.add_argument("-build-directory", help="Path to destination build directory")
     parser.add_argument("-darwin-arch", help="Target architecture to set for CMAKE_OSX_ARCHITECTURES")
+    parser.add_argument("-library-suffix", help="Specify suffix to add to the generated library name")
     parser.add_argument("-cmake-path", help="Specify path to CMake binary (www.cmake.org)")
     parser.add_argument("-make-path", help="Specify path to GNU Make binary (www.gnu.org/software/make)")
     parser.add_argument('--clean', action="store_true", help="Clear generated files in the build directory before building")
@@ -90,6 +94,10 @@ def main():
     darwin_arch = ""
     if args.darwin_arch:
         darwin_arch = args.darwin_arch
+
+    library_suffix = ""
+    if args.library_suffix:
+        library_suffix = args.library_suffix
 
     cmake_path = "cmake"
     if args.cmake_path:
@@ -127,8 +135,8 @@ def main():
         if args.clean:
             clean_build_directory(build_dir)
 
-        cmake_make(root_dir, cmake_path, make_path, build_debug=True, make_build=not args.no_compile, darwin_arch=darwin_arch)
-        cmake_make(root_dir, cmake_path, make_path, build_debug=False, make_build=not args.no_compile, darwin_arch=darwin_arch)
+        cmake_make(root_dir, cmake_path, make_path, build_debug=True, make_build=not args.no_compile, darwin_arch=darwin_arch, library_suffix=library_suffix)
+        cmake_make(root_dir, cmake_path, make_path, build_debug=False, make_build=not args.no_compile, darwin_arch=darwin_arch, library_suffix=library_suffix)
 
         lib_dir = os.path.join(build_dir, "bl_flip_fluids", "flip_fluids_addon", "pyfluid", "lib")
         if os.path.isdir(lib_dir):

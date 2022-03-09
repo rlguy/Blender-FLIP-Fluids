@@ -105,28 +105,37 @@ def __update_surface_display_mode():
         surface_cache.enable_motion_blur = render_blur
         surface_cache.motion_blur_scale = dprops.render.surface_motion_blur_scale
         surface_cache.enable_velocity_attribute = dprops.surface.enable_velocity_vector_attribute
+        surface_cache.enable_vorticity_attribute = dprops.surface.enable_vorticity_vector_attribute
         surface_cache.enable_speed_attribute = dprops.surface.enable_speed_attribute
         surface_cache.enable_age_attribute = dprops.surface.enable_age_attribute
         surface_cache.enable_color_attribute = dprops.surface.enable_color_attribute
         surface_cache.enable_source_id_attribute = dprops.surface.enable_source_id_attribute
+        surface_cache.enable_id_attribute = False
+        surface_cache.enable_lifetime_attribute = False
     elif display_mode == 'DISPLAY_PREVIEW':
         surface_cache.mesh_prefix = "preview"
         surface_cache.mesh_display_name_prefix = "preview_"
         surface_cache.enable_motion_blur = False
         surface_cache.enable_velocity_attribute = False
+        surface_cache.enable_vorticity_attribute = False
         surface_cache.enable_speed_attribute = False
         surface_cache.enable_age_attribute = False
         surface_cache.enable_color_attribute = False
         surface_cache.enable_source_id_attribute = False
+        surface_cache.enable_id_attribute = False
+        surface_cache.enable_lifetime_attribute = False
     elif display_mode == 'DISPLAY_NONE':
         surface_cache.mesh_prefix = "none"
         surface_cache.mesh_display_name_prefix = "none_"
         surface_cache.enable_motion_blur = False
         surface_cache.enable_velocity_attribute = False
+        surface_cache.enable_vorticity_attribute = False
         surface_cache.enable_speed_attribute = False
         surface_cache.enable_age_attribute = False
         surface_cache.enable_color_attribute = False
         surface_cache.enable_source_id_attribute = False
+        surface_cache.enable_id_attribute = False
+        surface_cache.enable_lifetime_attribute = False
 
 
 def __load_surface_frame(frameno, force_reload=False, depsgraph=None):
@@ -207,10 +216,22 @@ def __update_whitewater_display_mode():
         cache.bubble.motion_blur_scale = dprops.render.whitewater_motion_blur_scale
         cache.spray.motion_blur_scale = dprops.render.whitewater_motion_blur_scale
         cache.dust.motion_blur_scale = dprops.render.whitewater_motion_blur_scale
-        cache.foam.enable_velocity_attribute = False
-        cache.bubble.enable_velocity_attribute = False
-        cache.spray.enable_velocity_attribute = False
-        cache.dust.enable_velocity_attribute = False
+        cache.foam.enable_velocity_attribute = dprops.whitewater.enable_velocity_vector_attribute
+        cache.bubble.enable_velocity_attribute = dprops.whitewater.enable_velocity_vector_attribute
+        cache.spray.enable_velocity_attribute = dprops.whitewater.enable_velocity_vector_attribute
+        cache.dust.enable_velocity_attribute = dprops.whitewater.enable_velocity_vector_attribute
+        cache.foam.enable_id_attribute = dprops.whitewater.enable_id_attribute
+        cache.bubble.enable_id_attribute = dprops.whitewater.enable_id_attribute
+        cache.spray.enable_id_attribute = dprops.whitewater.enable_id_attribute
+        cache.dust.enable_id_attribute = dprops.whitewater.enable_id_attribute
+        cache.foam.enable_lifetime_attribute = dprops.whitewater.enable_lifetime_attribute
+        cache.bubble.enable_lifetime_attribute = dprops.whitewater.enable_lifetime_attribute
+        cache.spray.enable_lifetime_attribute = dprops.whitewater.enable_lifetime_attribute
+        cache.dust.enable_lifetime_attribute = dprops.whitewater.enable_lifetime_attribute
+        cache.foam.enable_vorticity_attribute = False
+        cache.bubble.enable_vorticity_attribute = False
+        cache.spray.enable_vorticity_attribute = False
+        cache.dust.enable_vorticityy_attribute = False
         cache.foam.enable_speed_attribute = False
         cache.bubble.enable_speed_attribute = False
         cache.spray.enable_speed_attribute = False
@@ -240,10 +261,22 @@ def __update_whitewater_display_mode():
         cache.bubble.enable_motion_blur = False
         cache.spray.enable_motion_blur = False
         cache.dust.enable_motion_blur = False
-        cache.foam.enable_velocity_attribute = False
-        cache.bubble.enable_velocity_attribute = False
-        cache.spray.enable_velocity_attribute = False
-        cache.dust.enable_velocity_attribute = False
+        cache.foam.enable_velocity_attribute = dprops.whitewater.enable_velocity_vector_attribute
+        cache.bubble.enable_velocity_attribute = dprops.whitewater.enable_velocity_vector_attribute
+        cache.spray.enable_velocity_attribute = dprops.whitewater.enable_velocity_vector_attribute
+        cache.dust.enable_velocity_attribute = dprops.whitewater.enable_velocity_vector_attribute
+        cache.foam.enable_id_attribute = dprops.whitewater.enable_id_attribute
+        cache.bubble.enable_id_attribute = dprops.whitewater.enable_id_attribute
+        cache.spray.enable_id_attribute = dprops.whitewater.enable_id_attribute
+        cache.dust.enable_id_attribute = dprops.whitewater.enable_id_attribute
+        cache.foam.enable_lifetime_attribute = dprops.whitewater.enable_lifetime_attribute
+        cache.bubble.enable_lifetime_attribute = dprops.whitewater.enable_lifetime_attribute
+        cache.spray.enable_lifetime_attribute = dprops.whitewater.enable_lifetime_attribute
+        cache.dust.enable_lifetime_attribute = dprops.whitewater.enable_lifetime_attribute
+        cache.foam.enable_vorticity_attribute = False
+        cache.bubble.enable_vorticity_attribute = False
+        cache.spray.enable_vorticity_attribute = False
+        cache.dust.enable_vorticity_attribute = False
         cache.foam.enable_speed_attribute = False
         cache.bubble.enable_speed_attribute = False
         cache.spray.enable_speed_attribute = False
@@ -277,6 +310,18 @@ def __update_whitewater_display_mode():
         cache.bubble.enable_velocity_attribute = False
         cache.spray.enable_velocity_attribute = False
         cache.dust.enable_velocity_attribute = False
+        cache.foam.enable_id_attribute = False
+        cache.bubble.enable_id_attribute = False
+        cache.spray.enable_id_attribute = False
+        cache.dust.enable_id_attribute = False
+        cache.foam.enable_lifetime_attribute = False
+        cache.bubble.enable_lifetime_attribute = False
+        cache.spray.enable_lifetime_attribute = False
+        cache.dust.enable_lifetime_attribute = False
+        cache.foam.enable_vorticity_attribute = False
+        cache.bubble.enable_vorticity_attribute = False
+        cache.spray.enable_vorticity_attribute = False
+        cache.dust.enable_vorticity_attribute = False
         cache.foam.enable_speed_attribute = False
         cache.bubble.enable_speed_attribute = False
         cache.spray.enable_speed_attribute = False
@@ -391,10 +436,13 @@ def __get_whitewater_particle_object_geometry(whitewater_type):
             return __generate_cube_geometry()
     else:
         if merge_settings:
-            object_name = rprops.whitewater_particle_object.name
-        else:
-            object_name = particle_object.name
-        bl_object = bpy.data.objects.get(object_name)
+            particle_object = rprops.whitewater_particle_object
+
+        if particle_object is None:
+            # No custom particle object has been set
+            return [], []
+            
+        bl_object = bpy.data.objects.get(particle_object.name)
 
         if bl_object is not None:
             return __get_object_geometry(bl_object)
