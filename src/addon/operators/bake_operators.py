@@ -165,7 +165,8 @@ class BakeFluidSimulation(bpy.types.Operator):
         self.data.progress = 0.0
         self.thread = threading.Thread(
                 target=bake.bake, 
-                args=(dprops.bake.export_filepath, cache_directory, self.data, savestate_id,)
+                args=(dprops.bake.export_filepath, cache_directory, self.data, savestate_id,),
+                daemon=True
                 )
         self.thread.start()
 
@@ -280,7 +281,8 @@ class BakeFluidSimulation(bpy.types.Operator):
             try:
                 os.makedirs(cache_directory)
             except:
-                msg = "Unable to create cache directory: <" + cache_directory + ">"
+                msg = "Unable to create cache directory: <" + cache_directory + "> "
+                msg += "Set the FLIP Fluid Cache directory to a location with write permissions."
                 self.report({"ERROR_INVALID_INPUT"}, msg)
                 return {'CANCELLED'}
 

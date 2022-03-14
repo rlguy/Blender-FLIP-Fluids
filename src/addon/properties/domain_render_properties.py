@@ -342,6 +342,8 @@ class DomainRenderProperties(bpy.types.PropertyGroup):
 
 
     whitewater_display_settings_expanded = BoolProperty(default=False); exec(conv("whitewater_display_settings_expanded"))
+    surface_display_settings_expanded = BoolProperty(default=True); exec(conv("surface_display_settings_expanded"))
+    simulation_display_settings_expanded = BoolProperty(default=False); exec(conv("simulation_display_settings_expanded"))
     current_frame = IntProperty(default=-1); exec(conv("current_frame"))
     is_hold_frame_number_set = BoolProperty(default=False); exec(conv("is_hold_frame_number_set"))
 

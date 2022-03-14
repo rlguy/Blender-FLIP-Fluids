@@ -503,6 +503,36 @@ class FluidSimulation(object):
         pb.execute_lib_func(libfunc, [self()])
 
     @property
+    def enable_whitewater_id_attribute(self):
+        libfunc = lib.FluidSimulation_is_whitewater_id_attribute_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_whitewater_id_attribute.setter
+    def enable_whitewater_id_attribute(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_whitewater_id_attribute
+        else:
+            libfunc = lib.FluidSimulation_disable_whitewater_id_attribute
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_whitewater_lifetime_attribute(self):
+        libfunc = lib.FluidSimulation_is_whitewater_lifetime_attribute_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_whitewater_lifetime_attribute.setter
+    def enable_whitewater_lifetime_attribute(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_whitewater_lifetime_attribute
+        else:
+            libfunc = lib.FluidSimulation_disable_whitewater_lifetime_attribute
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
     def enable_surface_velocity_attribute(self):
         libfunc = lib.FluidSimulation_is_surface_velocity_attribute_enabled
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
@@ -514,6 +544,36 @@ class FluidSimulation(object):
             libfunc = lib.FluidSimulation_enable_surface_velocity_attribute
         else:
             libfunc = lib.FluidSimulation_disable_surface_velocity_attribute
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_whitewater_velocity_attribute(self):
+        libfunc = lib.FluidSimulation_is_whitewater_velocity_attribute_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_whitewater_velocity_attribute.setter
+    def enable_whitewater_velocity_attribute(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_whitewater_velocity_attribute
+        else:
+            libfunc = lib.FluidSimulation_disable_whitewater_velocity_attribute
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_surface_vorticity_attribute(self):
+        libfunc = lib.FluidSimulation_is_surface_vorticity_attribute_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_surface_vorticity_attribute.setter
+    def enable_surface_vorticity_attribute(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_surface_vorticity_attribute
+        else:
+            libfunc = lib.FluidSimulation_disable_surface_vorticity_attribute
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self()])
 
@@ -1989,6 +2049,26 @@ class FluidSimulation(object):
         return self._get_output_data(lib.FluidSimulation_get_surface_velocity_attribute_data_size,
                                      lib.FluidSimulation_get_surface_velocity_attribute_data)
 
+    def get_whitewater_foam_velocity_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_whitewater_foam_velocity_attribute_data_size,
+                                     lib.FluidSimulation_get_whitewater_foam_velocity_attribute_data)
+
+    def get_whitewater_bubble_velocity_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_whitewater_bubble_velocity_attribute_data_size,
+                                     lib.FluidSimulation_get_whitewater_bubble_velocity_attribute_data)
+
+    def get_whitewater_spray_velocity_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_whitewater_spray_velocity_attribute_data_size,
+                                     lib.FluidSimulation_get_whitewater_spray_velocity_attribute_data)
+
+    def get_whitewater_dust_velocity_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_whitewater_dust_velocity_attribute_data_size,
+                                     lib.FluidSimulation_get_whitewater_dust_velocity_attribute_data)
+
+    def get_surface_vorticity_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_surface_vorticity_attribute_data_size,
+                                     lib.FluidSimulation_get_surface_vorticity_attribute_data)
+
     def get_surface_speed_attribute_data(self):
         return self._get_output_data(lib.FluidSimulation_get_surface_speed_attribute_data_size,
                                      lib.FluidSimulation_get_surface_speed_attribute_data)
@@ -2004,6 +2084,38 @@ class FluidSimulation(object):
     def get_surface_source_id_attribute_data(self):
         return self._get_output_data(lib.FluidSimulation_get_surface_source_id_attribute_data_size,
                                      lib.FluidSimulation_get_surface_source_id_attribute_data)
+
+    def get_whitewater_foam_id_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_whitewater_foam_id_attribute_data_size,
+                                     lib.FluidSimulation_get_whitewater_foam_id_attribute_data)
+
+    def get_whitewater_bubble_id_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_whitewater_bubble_id_attribute_data_size,
+                                     lib.FluidSimulation_get_whitewater_bubble_id_attribute_data)
+
+    def get_whitewater_spray_id_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_whitewater_spray_id_attribute_data_size,
+                                     lib.FluidSimulation_get_whitewater_spray_id_attribute_data)
+
+    def get_whitewater_dust_id_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_whitewater_dust_id_attribute_data_size,
+                                     lib.FluidSimulation_get_whitewater_dust_id_attribute_data)
+
+    def get_whitewater_foam_lifetime_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_whitewater_foam_lifetime_attribute_data_size,
+                                     lib.FluidSimulation_get_whitewater_foam_lifetime_attribute_data)
+
+    def get_whitewater_bubble_lifetime_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_whitewater_bubble_lifetime_attribute_data_size,
+                                     lib.FluidSimulation_get_whitewater_bubble_lifetime_attribute_data)
+
+    def get_whitewater_spray_lifetime_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_whitewater_spray_lifetime_attribute_data_size,
+                                     lib.FluidSimulation_get_whitewater_spray_lifetime_attribute_data)
+
+    def get_whitewater_dust_lifetime_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_whitewater_dust_lifetime_attribute_data_size,
+                                     lib.FluidSimulation_get_whitewater_dust_lifetime_attribute_data)
 
     def get_diffuse_data(self):
         return self._get_output_data(lib.FluidSimulation_get_diffuse_data_size,
@@ -2316,6 +2428,7 @@ class FluidSimulationFrameStats_t(ctypes.Structure):
                 ("preview", FluidSimulationMeshStats_t),
                 ("surfaceblur", FluidSimulationMeshStats_t),
                 ("surfacevelocity", FluidSimulationMeshStats_t),
+                ("surfacevorticity", FluidSimulationMeshStats_t),
                 ("surfacespeed", FluidSimulationMeshStats_t),
                 ("surfaceage", FluidSimulationMeshStats_t),
                 ("surfacecolor", FluidSimulationMeshStats_t),
@@ -2328,6 +2441,18 @@ class FluidSimulationFrameStats_t(ctypes.Structure):
                 ("bubbleblur", FluidSimulationMeshStats_t),
                 ("sprayblur", FluidSimulationMeshStats_t),
                 ("dustblur", FluidSimulationMeshStats_t),
+                ("foamvelocity", FluidSimulationMeshStats_t),
+                ("bubblevelocity", FluidSimulationMeshStats_t),
+                ("sprayvelocity", FluidSimulationMeshStats_t),
+                ("dustvelocity", FluidSimulationMeshStats_t),
+                ("foamid", FluidSimulationMeshStats_t),
+                ("bubbleid", FluidSimulationMeshStats_t),
+                ("sprayid", FluidSimulationMeshStats_t),
+                ("dustid", FluidSimulationMeshStats_t),
+                ("foamlifetime", FluidSimulationMeshStats_t),
+                ("bubblelifetime", FluidSimulationMeshStats_t),
+                ("spraylifetime", FluidSimulationMeshStats_t),
+                ("dustlifetime", FluidSimulationMeshStats_t),
                 ("particles", FluidSimulationMeshStats_t),
                 ("obstacle", FluidSimulationMeshStats_t),
                 ("forcefield", FluidSimulationMeshStats_t),

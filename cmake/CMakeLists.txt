@@ -40,6 +40,7 @@ option(DISTRIBUTE_SOURCE "Include source code in addon" ON)
 option(WITH_OPENCL "Compile project with OpenCL features" OFF)
 option(WITH_ENGINE_TEST "Compile engine test executable" OFF)
 option(WITH_PYFLUID_MODULE "Compile pyfluid Python module" OFF)
+SET(LIBRARY_SUFFIX "" CACHE STRING "Optional suffix to add to the end of the library name")
 
 if(APPLE)
     set(MACOSX_DEPLOYMENT_TARGET 10.10)
@@ -48,11 +49,21 @@ endif()
 project(bl_flip_fluids)
 set(CMAKE_BUILD_TYPE Release)
 
+set(FLUIDENGINE_VERSION_TYPE_IS_STABLE_BUILD TRUE)
 set(FLUIDENGINE_VERSION_MAJOR 1)
-set(FLUIDENGINE_VERSION_MINOR 2)
+set(FLUIDENGINE_VERSION_MINOR 3)
 set(FLUIDENGINE_VERSION_REVISION 0)
-set(FLUIDENGINE_VERSION_LABEL "1.2.0 GitHub Release 26-NOV-2021")
+set(FLUIDENGINE_VERSION_DATE "12-MAR-2022")
 
+if(FLUIDENGINE_VERSION_TYPE_IS_STABLE_BUILD)
+    set(FLUIDENGINE_VERSION_TYPE_LABEL "GitHub Release")
+    set(FLUIDENGINE_VERSION_TYPE_IS_STABLE_BUILD_PYTHON "True")
+else()
+    set(FLUIDENGINE_VERSION_TYPE_LABEL "Experimental GitHub Release")
+    set(FLUIDENGINE_VERSION_TYPE_IS_STABLE_BUILD_PYTHON "False")
+endif()
+
+set(FLUIDENGINE_VERSION_LABEL "${FLUIDENGINE_VERSION_MAJOR}.${FLUIDENGINE_VERSION_MINOR}.${FLUIDENGINE_VERSION_REVISION} ${FLUIDENGINE_VERSION_TYPE_LABEL} ${FLUIDENGINE_VERSION_DATE}")
 if(BUILD_DEBUG)
     set(FLUIDENGINE_VERSION_LABEL "${FLUIDENGINE_VERSION_LABEL} (DEBUG BUILD)") 
 endif()
@@ -120,6 +131,10 @@ configure_file(
   "${PROJECT_SOURCE_DIR}/src/addon/__init__.py.in"
   "${PROJECT_SOURCE_DIR}/src/addon/__init__.py"
 )
+configure_file(
+  "${PROJECT_SOURCE_DIR}/src/addon/utils/installation_utils.py.in"
+  "${PROJECT_SOURCE_DIR}/src/addon/utils/installation_utils.py"
+)
 
 # Generate kernels.cpp
 file(READ "src/engine/kernels/trilinearinterpolate.cl" TRILINEAR_INTERPOLATE_KERNEL_STRING)
@@ -160,16 +175,16 @@ endif()
 set(BLENDER_ADDON_DIR "${CMAKE_BINARY_DIR}/bl_flip_fluids/flip_fluids_addon")
 set_output_directories("${BLENDER_ADDON_DIR}/pyfluid/lib")
 if(BUILD_DEBUG)
-    add_library(blpyfluiddebug SHARED $<TARGET_OBJECTS:objects>)
+    add_library("blpyfluiddebug${LIBRARY_SUFFIX}" SHARED $<TARGET_OBJECTS:objects>)
 else()
-    add_library(blpyfluidrelease SHARED $<TARGET_OBJECTS:objects>)
+    add_library("blpyfluidrelease${LIBRARY_SUFFIX}" SHARED $<TARGET_OBJECTS:objects>)
 endif()
 
 if(WITH_OPENCL) 
     if(BUILD_DEBUG)
-        target_link_libraries(blpyfluiddebug "${OpenCL_LIBRARY}")
+        target_link_libraries("blpyfluiddebug${LIBRARY_SUFFIX}" "${OpenCL_LIBRARY}")
     else()
-        target_link_libraries(blpyfluidrelease "${OpenCL_LIBRARY}")
+        target_link_libraries("blpyfluidrelease${LIBRARY_SUFFIX}" "${OpenCL_LIBRARY}")
     endif()
 endif()
 

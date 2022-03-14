@@ -35,7 +35,6 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
 
 
     def draw_render_settings(self, context):
-        self.layout.separator()
         box = self.layout.box()
         box.label(text="Render Tools:")
         column = box.column(align=True)
@@ -60,6 +59,46 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
             column.label(text="Current status: " + status, icon=icon)
 
 
+    def draw_simulation_display_settings(self, context):
+        domain_object = vcu.get_active_object(context)
+        rprops = domain_object.flip_fluid.domain.render
+        scene_props = context.scene.flip_fluid
+
+        box = self.layout.box()
+        column = box.column()
+
+        row = column.row(align=True)
+        row.prop(rprops, "simulation_display_settings_expanded",
+            icon="TRIA_DOWN" if rprops.simulation_display_settings_expanded else "TRIA_RIGHT",
+            icon_only=True, 
+            emboss=False
+        )
+
+        row.label(text="Simulation Visibility:")
+        if not scene_props.show_viewport or not scene_props.show_render:
+            visibility_text = ""
+            if not scene_props.show_viewport and not scene_props.show_render:
+                visibility_text += "Disabled in Viewport + Render"
+            elif not scene_props.show_viewport:
+                visibility_text += "Disabled in Viewport"
+            elif not scene_props.show_render:
+                visibility_text += "Disabled in Render"
+                
+            row = row.row(align=True)
+            row.alert = True
+            row.label(text=visibility_text, icon="CANCEL")
+
+        if not rprops.simulation_display_settings_expanded:
+            return
+
+        split = vcu.ui_split(column)
+        column_left = split.column()
+        column_left.prop(scene_props, "show_viewport", text="Show In Viewport", icon="RESTRICT_VIEW_OFF")
+
+        column_right = split.column()
+        column_right.prop(scene_props, "show_render", text="Show In Render", icon="RESTRICT_RENDER_OFF")
+
+
     def draw_surface_display_settings(self, context):
         domain_object = vcu.get_active_object(context)
         rprops = domain_object.flip_fluid.domain.render
@@ -68,8 +107,17 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
 
         box = self.layout.box()
         column = box.column()
-        column.label(text="Surface Display Settings:")
-        column.separator()
+
+        row = column.row(align=True)
+        row.prop(rprops, "surface_display_settings_expanded",
+            icon="TRIA_DOWN" if rprops.surface_display_settings_expanded else "TRIA_RIGHT",
+            icon_only=True, 
+            emboss=False
+        )
+        row.label(text="Surface Display Settings:")
+
+        if not rprops.surface_display_settings_expanded:
+            return
 
         split = vcu.ui_split(column, factor=0.5)
         column_left = split.column()
@@ -106,8 +154,6 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
         rprops = dprops.render
         is_whitewater_enabled = dprops.whitewater.enable_whitewater_simulation
         show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
-
-        self.layout.separator()
 
         master_box = self.layout.box()
         column = master_box.column()
@@ -343,6 +389,7 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
                 icon="WORLD"
             ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Scene-Troubleshooting#simulation-meshes-are-not-appearing-in-the-viewport-andor-render"
 
+        self.draw_simulation_display_settings(context)
         self.draw_surface_display_settings(context)
         self.draw_whitewater_display_settings(context)
         self.draw_render_settings(context)

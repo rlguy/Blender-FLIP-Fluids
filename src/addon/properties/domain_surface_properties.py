@@ -169,6 +169,14 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
             default=False,
             options={'HIDDEN'},
             ); exec(conv("enable_speed_attribute"))
+    enable_vorticity_vector_attribute = BoolProperty(
+            name="Generate Vorticity Attributes",
+            description="Generate fluid 3D vorticity vector attributes for the fluid surface. After"
+                " baking, the vorticity vectors can be accessed in a Cycles Attribute"
+                " Node with the name 'flip_vorticity' from the Vector output",
+            default=False,
+            options={'HIDDEN'},
+            ); exec(conv("enable_vorticity_vector_attribute"))
     enable_age_attribute = BoolProperty(
             name="Generate Age Attributes",
             description="Generate fluid age attributes for the fluid surface. After"
@@ -182,7 +190,7 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
             description="Generate fluid color attributes for the fluid surface. Each"
                 " Inflow/Fluid object can set to assign color to the generated fluid. After"
                 " baking, the ID values can be accessed in a Cycles Attribute Node with the name"
-                " 'flip_color_id' from the Color output. This can be used to create varying color"
+                " 'flip_color' from the Color output. This can be used to create varying color"
                 " liquid effects",
             default=False,
             options={'HIDDEN'},
@@ -220,6 +228,7 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
         add(path + ".generate_motion_blur_data",             "Generate Motion Blur Data",         group_id=0)
         add(path + ".enable_velocity_vector_attribute",      "Generate Velocity Attributes",      group_id=0)
         add(path + ".enable_speed_attribute",                "Generate Speed Attributes",         group_id=0)
+        add(path + ".enable_vorticity_vector_attribute",     "Generate Vorticity Attributes",     group_id=0)
         add(path + ".enable_age_attribute",                  "Generate Age Attributes",           group_id=0)
         add(path + ".enable_color_attribute",                "Generate Color Attributes",         group_id=0)
         add(path + ".enable_source_id_attribute",            "Generate Source ID Attributes",     group_id=0)

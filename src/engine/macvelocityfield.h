@@ -140,6 +140,7 @@ public:
     vmath::vec3 velocityIndexToPositionW(int i, int j, int k);
 
     void extrapolateVelocityField(ValidVelocityComponentGrid &validGrid, int numLayers);
+    void generateCurlAtCellCenter(Array3d<vmath::vec3> &grid);
 
 private:
     void _initializeVelocityGrids();

@@ -64,7 +64,10 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                     column.label(text="Cache Directory:")
                     subcolumn = column.column(align=True)
                     subcolumn.enabled = not dprops.bake.is_simulation_running
-                    subcolumn.prop(dprops.cache, "cache_directory")
+                    row = subcolumn.row(align=True)
+                    row.prop(dprops.cache, "cache_directory")
+                    row.operator("flip_fluid_operators.increment_decrease_cache_directory", text="", icon="REMOVE").increment_mode = "DECREASE"
+                    row.operator("flip_fluid_operators.increment_decrease_cache_directory", text="", icon="ADD").increment_mode = "INCREASE"
                     row = column.row(align=True)
                     row.operator("flip_fluid_operators.relative_cache_directory")
                     row.operator("flip_fluid_operators.absolute_cache_directory")
@@ -261,6 +264,29 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                 column.separator()
 
         #
+        # Geometry Node Tools
+        #
+
+        box = self.layout.box()
+        row = box.row(align=True)
+        row.prop(hprops, "geometry_node_tools_expanded",
+            icon="TRIA_DOWN" if hprops.geometry_node_tools_expanded else "TRIA_RIGHT",
+            icon_only=True, 
+            emboss=False
+        )
+        row.label(text="Geometry Node Tools:")
+
+        if hprops.geometry_node_tools_expanded:
+            column = box.column(align=True)
+
+            if not vcu.is_blender_31():
+                column.label(text="Blender 3.1 or later required")
+
+            column.enabled = vcu.is_blender_31()
+            column.operator("flip_fluid_operators.helper_initialize_motion_blur")
+            
+
+        #
         # Beginner Tools
         #
 
@@ -352,7 +378,17 @@ class FLIPFLUID_PT_HelperPanelDisplay(bpy.types.Panel):
         row.label(text="Quick Viewport Display:")
 
         if hprops.quick_viewport_display_expanded:
+            scene_props = context.scene.flip_fluid
+
             column = box.column(align=True)
+            row = column.row(align=True)
+            row.label(text="Simulation Visibility:")
+            if not scene_props.show_viewport:
+                row = row.row(align=True)
+                row.alert = True
+                row.label(text="Disabled in Viewport", icon="CANCEL")
+
+            column.prop(scene_props, "show_viewport", text="Show In Viewport", icon="RESTRICT_VIEW_OFF")
 
             column.label(text="Surface Display:")
             row = column.row(align=True)

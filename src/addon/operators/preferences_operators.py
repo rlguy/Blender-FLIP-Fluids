@@ -27,6 +27,7 @@ from bpy.props import (
 from ..presets import preset_library
 from ..pyfluid import gpu_utils
 from ..utils import version_compatibility_utils as vcu
+from ..utils import installation_utils
 
 
 def _get_addon_directory():
@@ -309,7 +310,7 @@ class FlipFluidCheckForUpdates(bpy.types.Operator):
     def initialize_ui_text(self, text):
         self.version_text.clear()
         
-        module = sys.modules["flip_fluids_addon"]
+        module = sys.modules[installation_utils.get_module_name()]
         current_version = module.bl_info.get('version', (-1, -1, -1))
 
         version_data_json = json.loads(text)
@@ -394,7 +395,7 @@ def get_system_info_dict():
             r = r[1:-1]
         return r
 
-    bl_info = sys.modules["flip_fluids_addon"].bl_info
+    bl_info = sys.modules[installation_utils.get_module_name()].bl_info
 
     blender_version = ("%s, %s, %s %s, %s" % (
             bpy.app.version_string,

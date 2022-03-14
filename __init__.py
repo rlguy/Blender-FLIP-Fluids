@@ -59,6 +59,14 @@ class FLIPFluidInfoAddonPreferences(bpy.types.AddonPreferences):
                 "wm.url_open", 
                 text="Purchase the FLIP Fluids addon on the Blender Market", 
             ).url = "https://blendermarket.com/products/flipfluids"
+        column.operator(
+                "wm.url_open", 
+                text="Purchase the FLIP Fluids addon on Gumroad", 
+            ).url = "https://flipfluids.gumroad.com/l/flipfluids"
+        column.operator(
+                "wm.url_open", 
+                text="Purchase the FLIP Fluids addon on FlippedNormals", 
+            ).url = "https://flippednormals.com/downloads/the-flip-fluids-addon-for-blender/ref/FLIPFluids/"
 
 
 def register():

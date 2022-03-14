@@ -77,10 +77,13 @@ class FlipFluidLoadedMeshData(bpy.types.PropertyGroup):
     enable_motion_blur =         BoolProperty(default=False);           exec(conv("enable_motion_blur"))
     motion_blur_scale =          FloatProperty(default=-1.0);           exec(conv("motion_blur_scale"))
     enable_velocity_attribute =  BoolProperty(default=False);           exec(conv("enable_velocity_attribute"))
+    enable_vorticity_attribute = BoolProperty(default=False);           exec(conv("enable_vorticity_attribute"))
     enable_speed_attribute =     BoolProperty(default=False);           exec(conv("enable_speed_attribute"))
     enable_age_attribute =       BoolProperty(default=False);           exec(conv("enable_age_attribute"))
     enable_color_attribute =     BoolProperty(default=False);           exec(conv("enable_color_attribute"))
     enable_source_id_attribute = BoolProperty(default=False);           exec(conv("enable_source_id_attribute"))
+    enable_id_attribute =        BoolProperty(default=False);           exec(conv("enable_id_attribute"))
+    enable_lifetime_attribute =  BoolProperty(default=False);           exec(conv("enable_lifetime_attribute"))
     wwp_import_percentage =      IntProperty(default=0);                exec(conv("wwp_import_percentage"))
     duplivert_scale =            FloatProperty(default=1.0);            exec(conv("duplivert_scale"))
     duplivert_vertices =         IntProperty(default=-1);               exec(conv("duplivert_vertices"))
@@ -94,10 +97,13 @@ class FlipFluidLoadedMeshData(bpy.types.PropertyGroup):
         self.property_unset("enable_motion_blur")
         self.property_unset("motion_blur_scale")
         self.property_unset("enable_velocity_attribute")
+        self.property_unset("enable_vorticity_attribute")
         self.property_unset("enable_speed_attribute")
         self.property_unset("enable_age_attribute")
         self.property_unset("enable_color_attribute")
         self.property_unset("enable_source_id_attribute")
+        self.property_unset("enable_id_attribute")
+        self.property_unset("enable_lifetime_attribute")
         self.property_unset("wwp_import_percentage")
         self.property_unset("duplivert_scale")
         self.property_unset("is_rendering")
@@ -114,10 +120,13 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
     enable_motion_blur =         BoolProperty(default=False);                      exec(conv("enable_motion_blur"))
     motion_blur_scale =          FloatProperty(default=1.0);                       exec(conv("motion_blur_scale"))
     enable_velocity_attribute =  BoolProperty(default=False);                      exec(conv("enable_velocity_attribute"))
+    enable_vorticity_attribute = BoolProperty(default=False);                      exec(conv("enable_vorticity_attribute"))
     enable_speed_attribute =     BoolProperty(default=False);                      exec(conv("enable_speed_attribute"))
     enable_age_attribute =       BoolProperty(default=False);                      exec(conv("enable_age_attribute"))
     enable_color_attribute =     BoolProperty(default=False);                      exec(conv("enable_color_attribute"))
     enable_source_id_attribute = BoolProperty(default=False);                      exec(conv("enable_source_id_attribute"))
+    enable_id_attribute =        BoolProperty(default=False);                      exec(conv("enable_id_attribute"))
+    enable_lifetime_attribute =  BoolProperty(default=False);                      exec(conv("enable_lifetime_attribute"))
     cache_object_default_name =  StringProperty(default="");                       exec(conv("cache_object_default_name"))
     cache_object =               PointerProperty(type=bpy.types.Object);           exec(conv("cache_object"))
     is_mesh_shading_smooth =     BoolProperty(default=True);                       exec(conv("is_mesh_shading_smooth"))
@@ -254,10 +263,13 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
                     self.enable_motion_blur         != d.enable_motion_blur or
                     self.motion_blur_scale          != d.motion_blur_scale or
                     self.enable_velocity_attribute  != d.enable_velocity_attribute or
+                    self.enable_vorticity_attribute != d.enable_vorticity_attribute or
                     self.enable_speed_attribute     != d.enable_speed_attribute or
                     self.enable_age_attribute       != d.enable_age_attribute or
                     self.enable_color_attribute     != d.enable_color_attribute or
                     self.enable_source_id_attribute != d.enable_source_id_attribute or
+                    self.enable_id_attribute        != d.enable_id_attribute or
+                    self.enable_lifetime_attribute  != d.enable_lifetime_attribute or
                     self.wwp_import_percentage      != d.wwp_import_percentage or
                     render.is_rendering()           != d.is_rendering or
                     self.current_loaded_frame       != frameno)
@@ -269,10 +281,13 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         d.enable_motion_blur         = self.enable_motion_blur
         d.motion_blur_scale          = self.motion_blur_scale
         d.enable_velocity_attribute  = self.enable_velocity_attribute
+        d.enable_vorticity_attribute = self.enable_vorticity_attribute
         d.enable_speed_attribute     = self.enable_speed_attribute
         d.enable_age_attribute       = self.enable_age_attribute
         d.enable_color_attribute     = self.enable_color_attribute
         d.enable_source_id_attribute = self.enable_source_id_attribute
+        d.enable_id_attribute        = self.enable_id_attribute
+        d.enable_lifetime_attribute  = self.enable_lifetime_attribute
         d.wwp_import_percentage      = self.wwp_import_percentage
         d.is_rendering               = render.is_rendering()
         d.frame  = frameno
@@ -379,6 +394,29 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
             value.value = speed_data[i]
 
 
+    def _update_vorticity_attribute(self, frameno):
+        if not vcu.is_blender_293() or not self.enable_vorticity_attribute:
+            return
+
+        cache_object = self.get_cache_object()
+        frame_string = self._frame_number_to_string(frameno)
+        vorticity_data = self._import_vorticity_attribute_data(frameno)
+
+        if not vorticity_data:
+            return
+
+        attribute_name = "flip_vorticity"
+        mesh = cache_object.data
+        try:
+            mesh.attributes.remove(mesh.attributes.get(attribute_name))
+        except:
+            pass
+
+        attribute = mesh.attributes.new(attribute_name, "FLOAT_VECTOR", "POINT")
+        for i,value in enumerate(attribute.data):
+            value.vector = vorticity_data[i]
+
+
     def _update_age_attribute(self, frameno):
         if not vcu.is_blender_293() or not self.enable_age_attribute:
             return
@@ -448,6 +486,52 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
             value.value = source_id_data[i]
 
 
+    def _update_id_attribute(self, frameno):
+        if not vcu.is_blender_293() or not self.enable_id_attribute:
+            return
+
+        cache_object = self.get_cache_object()
+        frame_string = self._frame_number_to_string(frameno)
+        id_data = self._import_id_attribute_data(frameno)
+
+        if not id_data:
+            return
+
+        attribute_name = "flip_id"
+        mesh = cache_object.data
+        try:
+            mesh.attributes.remove(mesh.attributes.get(attribute_name))
+        except:
+            pass
+
+        attribute = mesh.attributes.new(attribute_name, "INT", "POINT")
+        for i,value in enumerate(attribute.data):
+            value.value = id_data[i]
+
+
+    def _update_lifetime_attribute(self, frameno):
+        if not vcu.is_blender_293() or not self.enable_lifetime_attribute:
+            return
+
+        cache_object = self.get_cache_object()
+        frame_string = self._frame_number_to_string(frameno)
+        lifetime_data = self._import_lifetime_attribute_data(frameno)
+
+        if not lifetime_data:
+            return
+
+        attribute_name = "flip_lifetime"
+        mesh = cache_object.data
+        try:
+            mesh.attributes.remove(mesh.attributes.get(attribute_name))
+        except:
+            pass
+
+        attribute = mesh.attributes.new(attribute_name, "FLOAT", "POINT")
+        for i,value in enumerate(attribute.data):
+            value.value = lifetime_data[i]
+
+
     def load_frame(self, frameno, force_load=False, depsgraph=None):
         if not self._is_load_frame_valid(frameno, force_load):
             return
@@ -479,9 +563,12 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         self._update_motion_blur(frameno)
         self._update_velocity_attribute(frameno)
         self._update_speed_attribute(frameno)
+        self._update_vorticity_attribute(frameno)
         self._update_age_attribute(frameno)
         self._update_color_attribute(frameno)
         self._update_source_id_attribute(frameno)
+        self._update_id_attribute(frameno)
+        self._update_lifetime_attribute(frameno)
 
         self.current_loaded_frame = render.get_current_render_frame()
         self._commit_loaded_frame_data(frameno)
@@ -546,10 +633,13 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
                     self.enable_motion_blur         != d.enable_motion_blur or
                     self.motion_blur_scale          != d.motion_blur_scale or
                     self.enable_velocity_attribute  != d.enable_velocity_attribute or
+                    self.enable_vorticity_attribute != d.enable_vorticity_attribute or
                     self.enable_speed_attribute     != d.enable_speed_attribute or
                     self.enable_age_attribute       != d.enable_age_attribute or
                     self.enable_color_attribute     != d.enable_color_attribute or
                     self.enable_source_id_attribute != d.enable_source_id_attribute or
+                    self.enable_id_attribute        != d.enable_id_attribute or
+                    self.enable_lifetime_attribute  != d.enable_lifetime_attribute or
                     self.wwp_import_percentage      != d.wwp_import_percentage or
                     self.duplivert_scale            != d.duplivert_scale or
                     self.duplivert_vertices         != d.duplivert_vertices or
@@ -564,10 +654,13 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         d.enable_motion_blur         = self.enable_motion_blur
         d.motion_blur_scale          = self.motion_blur_scale
         d.enable_velocity_attribute  = self.enable_velocity_attribute
+        d.enable_vorticity_attribute = self.enable_vorticity_attribute
         d.enable_speed_attribute     = self.enable_speed_attribute
         d.enable_age_attribute       = self.enable_age_attribute
         d.enable_color_attribute     = self.enable_color_attribute
         d.enable_source_id_attribute = self.enable_source_id_attribute
+        d.enable_id_attribute        = self.enable_id_attribute
+        d.enable_lifetime_attribute  = self.enable_lifetime_attribute
         d.wwp_import_percentage      = self.wwp_import_percentage
         d.duplivert_scale            = self.duplivert_scale
         d.duplivert_vertices         = self.duplivert_vertices
@@ -782,6 +875,52 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         return vertices, triangles
 
 
+    def import_wwi(self, filename, pct):
+        if pct == 0:
+            return [], []
+
+        with open(filename, "rb") as f:
+            wwi_data = f.read()
+
+        if len(wwi_data) == 0:
+            return [], []
+
+        dataidx = int(math.ceil((pct / 100) * 255))
+        num_vertices = struct.unpack_from('i', wwi_data, dataidx * 4)[0] + 1
+        if num_vertices <= 0:
+            return [], []
+
+        num_ints = num_vertices
+        data_offset = 256 * 4
+        int_values = list(struct.unpack_from('{0}i'.format(num_ints), wwi_data, data_offset))
+        triangles = []
+
+        return int_values, triangles
+
+
+    def import_wwf(self, filename, pct):
+        if pct == 0:
+            return [], []
+
+        with open(filename, "rb") as f:
+            wwi_data = f.read()
+
+        if len(wwi_data) == 0:
+            return [], []
+
+        dataidx = int(math.ceil((pct / 100) * 255))
+        num_vertices = struct.unpack_from('i', wwi_data, dataidx * 4)[0] + 1
+        if num_vertices <= 0:
+            return [], []
+
+        num_ints = num_vertices
+        data_offset = 256 * 4
+        float_values = list(struct.unpack_from('{0}f'.format(num_ints), wwi_data, data_offset))
+        triangles = []
+
+        return float_values, triangles
+
+
     def import_floats(self, filename):
         with open(filename, "rb") as f:
             float_data = f.read()
@@ -874,6 +1013,14 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         return os.path.join(bakefiles_directory, filename)
 
 
+    def _get_vorticity_attribute_filepath(self, frameno):
+        filename = ("vorticity" + self.mesh_prefix + 
+                    self._frame_number_to_string(frameno) + 
+                    "." + self.mesh_file_extension)
+        bakefiles_directory = self._get_bakefiles_directory()
+        return os.path.join(bakefiles_directory, filename)
+
+
     def _get_age_attribute_filepath(self, frameno):
         filename = ("age" + self.mesh_prefix + 
                     self._frame_number_to_string(frameno) + 
@@ -894,6 +1041,22 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         filename = ("sourceid" + self.mesh_prefix + 
                     self._frame_number_to_string(frameno) + 
                     ".data")
+        bakefiles_directory = self._get_bakefiles_directory()
+        return os.path.join(bakefiles_directory, filename)
+
+
+    def _get_id_attribute_filepath(self, frameno):
+        filename = ("id" + self.mesh_prefix + 
+                    self._frame_number_to_string(frameno) + 
+                    ".wwi")
+        bakefiles_directory = self._get_bakefiles_directory()
+        return os.path.join(bakefiles_directory, filename)
+
+
+    def _get_lifetime_attribute_filepath(self, frameno):
+        filename = ("lifetime" + self.mesh_prefix + 
+                    self._frame_number_to_string(frameno) + 
+                    ".wwf")
         bakefiles_directory = self._get_bakefiles_directory()
         return os.path.join(bakefiles_directory, filename)
 
@@ -1052,6 +1215,22 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         return speed_data
 
 
+    def _import_vorticity_attribute_data(self, frameno):
+        if not self._is_domain_set() or not self._is_frame_cached(frameno):
+            return []
+
+        filepath = self._get_vorticity_attribute_filepath(frameno)
+        if not os.path.exists(filepath):
+            return []
+
+        import_function = getattr(self, self.import_function_name)
+        if import_function == self.import_wwp:
+            vorticity_data, _ = import_function(filepath, self.wwp_import_percentage)
+        else:
+            vorticity_data, _ = import_function(filepath)
+        return vorticity_data
+
+
     def _import_age_attribute_data(self, frameno):
         if not self._is_domain_set() or not self._is_frame_cached(frameno):
             return []
@@ -1088,6 +1267,30 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
             return []
         source_id_data = self.import_ints(filepath)
         return source_id_data
+
+
+    def _import_id_attribute_data(self, frameno):
+        if not self._is_domain_set() or not self._is_frame_cached(frameno):
+            return []
+
+        filepath = self._get_id_attribute_filepath(frameno)
+        if not os.path.exists(filepath):
+            return []
+
+        id_data, _ = self.import_wwi(filepath, self.wwp_import_percentage)
+        return id_data
+
+
+    def _import_lifetime_attribute_data(self, frameno):
+        if not self._is_domain_set() or not self._is_frame_cached(frameno):
+            return []
+
+        filepath = self._get_lifetime_attribute_filepath(frameno)
+        if not os.path.exists(filepath):
+            return []
+
+        lifetime_data, _ = self.import_wwf(filepath, self.wwp_import_percentage)
+        return lifetime_data
 
 
     def _get_bounds_filepath(self, frameno):

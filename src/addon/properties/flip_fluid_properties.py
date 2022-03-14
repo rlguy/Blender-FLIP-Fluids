@@ -29,12 +29,13 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
     
     show_render = BoolProperty(
             name="Show Render",
-            description="Show fluid in render",
+            description="Display simulation in render. If disabled, simulation data will not be loaded in the render",
             default=True,
             ); exec(conv("show_render"))
     show_viewport = BoolProperty(
             name="Show Viewport",
-            description="Display fluid in viewport",
+            description="Display simulation in viewport. If disabled, simulation data will not be loaded in the viewport."
+                " Disable to speed up playback while working on other areas of your scene",
             default=True,
             ); exec(conv("show_viewport"))
 

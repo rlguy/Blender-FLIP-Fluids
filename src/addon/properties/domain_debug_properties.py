@@ -40,6 +40,7 @@ from ..operators import draw_grid_operators
 from ..operators import draw_particles_operators
 from ..operators import draw_force_field_operators
 from ..utils import version_compatibility_utils as vcu
+from ..utils import installation_utils
 
 
 class VersionHistoryItem(bpy.types.PropertyGroup):
@@ -371,7 +372,7 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
 
 
     def save_pre(self):
-        bl_info = sys.modules["flip_fluids_addon"].bl_info
+        bl_info = sys.modules[installation_utils.get_module_name()].bl_info
         vdata = self.version_history.add()
         vdata.blender_version = bpy.app.version_string
         vdata.flip_fluids_version = str(bl_info.get('version', (-1, -1, -1)))

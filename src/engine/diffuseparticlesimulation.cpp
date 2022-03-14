@@ -910,6 +910,490 @@ void DiffuseParticleSimulation::getDustParticleBlurFileDataWWP(std::vector<char>
     _getDiffuseParticleFileDataWWP(translations, ids, data);
 }
 
+void DiffuseParticleSimulation::getFoamParticleVelocityAttributeFileDataWWP(std::vector<char> &data) {
+    std::vector<vmath::vec3> velocities;
+    std::vector<unsigned char> ids;
+    velocities.reserve(_diffuseParticles.size());
+    ids.reserve(_diffuseParticles.size());
+
+    std::vector<vmath::vec3> *particlePositions;
+    std::vector<vmath::vec3> *particleVelocities;
+    std::vector<unsigned char> *particleIds;
+    std::vector<char> *particleTypes;
+    _diffuseParticles.getAttributeValues("POSITION", particlePositions);
+    _diffuseParticles.getAttributeValues("VELOCITY", particleVelocities);
+    _diffuseParticles.getAttributeValues("ID", particleIds);
+    _diffuseParticles.getAttributeValues("TYPE", particleTypes);
+
+    if (_isMeshingVolumeSet) {
+        std::vector<bool> isSolid;
+        _meshingVolumeSDF->trilinearInterpolateSolidPoints(*particlePositions, isSolid);
+        for (size_t i = 0; i < _diffuseParticles.size(); i++) {
+            if (isSolid[i]) {
+                continue;
+            }
+            if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::foam) {
+                vmath::vec3 v = particleVelocities->at(i);
+                velocities.push_back(v);
+                ids.push_back(particleIds->at(i));
+            }
+        }
+    } else {
+        for (size_t i = 0; i < _diffuseParticles.size(); i++) {
+            if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::foam) {
+                vmath::vec3 v = particleVelocities->at(i);
+                velocities.push_back(v);
+                ids.push_back(particleIds->at(i));
+            }
+        }
+    }
+
+    _getDiffuseParticleFileDataWWP(velocities, ids, data);
+}
+
+void DiffuseParticleSimulation::getBubbleParticleVelocityAttributeFileDataWWP(std::vector<char> &data) {
+    std::vector<vmath::vec3> velocities;
+    std::vector<unsigned char> ids;
+    velocities.reserve(_diffuseParticles.size());
+    ids.reserve(_diffuseParticles.size());
+
+    std::vector<vmath::vec3> *particlePositions;
+    std::vector<vmath::vec3> *particleVelocities;
+    std::vector<unsigned char> *particleIds;
+    std::vector<char> *particleTypes;
+    _diffuseParticles.getAttributeValues("POSITION", particlePositions);
+    _diffuseParticles.getAttributeValues("VELOCITY", particleVelocities);
+    _diffuseParticles.getAttributeValues("ID", particleIds);
+    _diffuseParticles.getAttributeValues("TYPE", particleTypes);
+
+    if (_isMeshingVolumeSet) {
+        std::vector<bool> isSolid;
+        _meshingVolumeSDF->trilinearInterpolateSolidPoints(*particlePositions, isSolid);
+        for (size_t i = 0; i < _diffuseParticles.size(); i++) {
+            if (isSolid[i]) {
+                continue;
+            }
+            if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::bubble) {
+                vmath::vec3 v = particleVelocities->at(i);
+                velocities.push_back(v);
+                ids.push_back(particleIds->at(i));
+            }
+        }
+    } else {
+        for (size_t i = 0; i < _diffuseParticles.size(); i++) {
+            if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::bubble) {
+                vmath::vec3 v = particleVelocities->at(i);
+                velocities.push_back(v);
+                ids.push_back(particleIds->at(i));
+            }
+        }
+    }
+
+    _getDiffuseParticleFileDataWWP(velocities, ids, data);
+}
+
+void DiffuseParticleSimulation::getSprayParticleVelocityAttributeFileDataWWP(std::vector<char> &data) {
+    std::vector<vmath::vec3> velocities;
+    std::vector<unsigned char> ids;
+    velocities.reserve(_diffuseParticles.size());
+    ids.reserve(_diffuseParticles.size());
+
+    std::vector<vmath::vec3> *particlePositions;
+    std::vector<vmath::vec3> *particleVelocities;
+    std::vector<unsigned char> *particleIds;
+    std::vector<char> *particleTypes;
+    _diffuseParticles.getAttributeValues("POSITION", particlePositions);
+    _diffuseParticles.getAttributeValues("VELOCITY", particleVelocities);
+    _diffuseParticles.getAttributeValues("ID", particleIds);
+    _diffuseParticles.getAttributeValues("TYPE", particleTypes);
+
+    if (_isMeshingVolumeSet) {
+        std::vector<bool> isSolid;
+        _meshingVolumeSDF->trilinearInterpolateSolidPoints(*particlePositions, isSolid);
+        for (size_t i = 0; i < _diffuseParticles.size(); i++) {
+            if (isSolid[i]) {
+                continue;
+            }
+            if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::spray) {
+                vmath::vec3 v = particleVelocities->at(i);
+                velocities.push_back(v);
+                ids.push_back(particleIds->at(i));
+            }
+        }
+    } else {
+        for (size_t i = 0; i < _diffuseParticles.size(); i++) {
+            if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::spray) {
+                vmath::vec3 v = particleVelocities->at(i);
+                velocities.push_back(v);
+                ids.push_back(particleIds->at(i));
+            }
+        }
+    }
+
+    _getDiffuseParticleFileDataWWP(velocities, ids, data);
+}
+
+void DiffuseParticleSimulation::getDustParticleVelocityAttributeFileDataWWP(std::vector<char> &data) {
+    std::vector<vmath::vec3> velocities;
+    std::vector<unsigned char> ids;
+    velocities.reserve(_diffuseParticles.size());
+    ids.reserve(_diffuseParticles.size());
+
+    std::vector<vmath::vec3> *particlePositions;
+    std::vector<vmath::vec3> *particleVelocities;
+    std::vector<unsigned char> *particleIds;
+    std::vector<char> *particleTypes;
+    _diffuseParticles.getAttributeValues("POSITION", particlePositions);
+    _diffuseParticles.getAttributeValues("VELOCITY", particleVelocities);
+    _diffuseParticles.getAttributeValues("ID", particleIds);
+    _diffuseParticles.getAttributeValues("TYPE", particleTypes);
+
+    if (_isMeshingVolumeSet) {
+        std::vector<bool> isSolid;
+        _meshingVolumeSDF->trilinearInterpolateSolidPoints(*particlePositions, isSolid);
+        for (size_t i = 0; i < _diffuseParticles.size(); i++) {
+            if (isSolid[i]) {
+                continue;
+            }
+            if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::dust) {
+                vmath::vec3 v = particleVelocities->at(i);
+                velocities.push_back(v);
+                ids.push_back(particleIds->at(i));
+            }
+        }
+    } else {
+        for (size_t i = 0; i < _diffuseParticles.size(); i++) {
+            if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::dust) {
+                vmath::vec3 v = particleVelocities->at(i);
+                velocities.push_back(v);
+                ids.push_back(particleIds->at(i));
+            }
+        }
+    }
+
+    _getDiffuseParticleFileDataWWP(velocities, ids, data);
+}
+
+void DiffuseParticleSimulation::getFoamParticleIDAttributeFileDataWWI(std::vector<char> &data) {
+    std::vector<int> outputids;
+    std::vector<unsigned char> ids;
+    outputids.reserve(_diffuseParticles.size());
+    ids.reserve(_diffuseParticles.size());
+
+    std::vector<vmath::vec3> *particlePositions;
+    std::vector<unsigned char> *particleIds;
+    std::vector<char> *particleTypes;
+    _diffuseParticles.getAttributeValues("POSITION", particlePositions);
+    _diffuseParticles.getAttributeValues("ID", particleIds);
+    _diffuseParticles.getAttributeValues("TYPE", particleTypes);
+
+    if (_isMeshingVolumeSet) {
+        std::vector<bool> isSolid;
+        _meshingVolumeSDF->trilinearInterpolateSolidPoints(*particlePositions, isSolid);
+        for (size_t i = 0; i < _diffuseParticles.size(); i++) {
+            if (isSolid[i]) {
+                continue;
+            }
+            if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::foam) {
+                int idx = (int)(particleIds->at(i));
+                outputids.push_back(idx);
+                ids.push_back(particleIds->at(i));
+            }
+        }
+    } else {
+        for (size_t i = 0; i < _diffuseParticles.size(); i++) {
+            if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::foam) {
+                int idx = (int)(particleIds->at(i));
+                outputids.push_back(idx);
+                ids.push_back(particleIds->at(i));
+            }
+        }
+    }
+
+    _getDiffuseParticleFileDataWWI(outputids, ids, data);
+}
+
+void DiffuseParticleSimulation::getBubbleParticleIDAttributeFileDataWWI(std::vector<char> &data) {
+    std::vector<int> outputids;
+    std::vector<unsigned char> ids;
+    outputids.reserve(_diffuseParticles.size());
+    ids.reserve(_diffuseParticles.size());
+
+    std::vector<vmath::vec3> *particlePositions;
+    std::vector<unsigned char> *particleIds;
+    std::vector<char> *particleTypes;
+    _diffuseParticles.getAttributeValues("POSITION", particlePositions);
+    _diffuseParticles.getAttributeValues("ID", particleIds);
+    _diffuseParticles.getAttributeValues("TYPE", particleTypes);
+
+    if (_isMeshingVolumeSet) {
+        std::vector<bool> isSolid;
+        _meshingVolumeSDF->trilinearInterpolateSolidPoints(*particlePositions, isSolid);
+        for (size_t i = 0; i < _diffuseParticles.size(); i++) {
+            if (isSolid[i]) {
+                continue;
+            }
+            if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::bubble) {
+                int idx = (int)(particleIds->at(i));
+                outputids.push_back(idx);
+                ids.push_back(particleIds->at(i));
+            }
+        }
+    } else {
+        for (size_t i = 0; i < _diffuseParticles.size(); i++) {
+            if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::bubble) {
+                int idx = (int)(particleIds->at(i));
+                outputids.push_back(idx);
+                ids.push_back(particleIds->at(i));
+            }
+        }
+    }
+
+    _getDiffuseParticleFileDataWWI(outputids, ids, data);
+}
+
+void DiffuseParticleSimulation::getSprayParticleIDAttributeFileDataWWI(std::vector<char> &data) {
+    std::vector<int> outputids;
+    std::vector<unsigned char> ids;
+    outputids.reserve(_diffuseParticles.size());
+    ids.reserve(_diffuseParticles.size());
+
+    std::vector<vmath::vec3> *particlePositions;
+    std::vector<unsigned char> *particleIds;
+    std::vector<char> *particleTypes;
+    _diffuseParticles.getAttributeValues("POSITION", particlePositions);
+    _diffuseParticles.getAttributeValues("ID", particleIds);
+    _diffuseParticles.getAttributeValues("TYPE", particleTypes);
+
+    if (_isMeshingVolumeSet) {
+        std::vector<bool> isSolid;
+        _meshingVolumeSDF->trilinearInterpolateSolidPoints(*particlePositions, isSolid);
+        for (size_t i = 0; i < _diffuseParticles.size(); i++) {
+            if (isSolid[i]) {
+                continue;
+            }
+            if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::spray) {
+                int idx = (int)(particleIds->at(i));
+                outputids.push_back(idx);
+                ids.push_back(particleIds->at(i));
+            }
+        }
+    } else {
+        for (size_t i = 0; i < _diffuseParticles.size(); i++) {
+            if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::spray) {
+                int idx = (int)(particleIds->at(i));
+                outputids.push_back(idx);
+                ids.push_back(particleIds->at(i));
+            }
+        }
+    }
+
+    _getDiffuseParticleFileDataWWI(outputids, ids, data);
+}
+
+void DiffuseParticleSimulation::getDustParticleIDAttributeFileDataWWI(std::vector<char> &data) {
+    std::vector<int> outputids;
+    std::vector<unsigned char> ids;
+    outputids.reserve(_diffuseParticles.size());
+    ids.reserve(_diffuseParticles.size());
+
+    std::vector<vmath::vec3> *particlePositions;
+    std::vector<unsigned char> *particleIds;
+    std::vector<char> *particleTypes;
+    _diffuseParticles.getAttributeValues("POSITION", particlePositions);
+    _diffuseParticles.getAttributeValues("ID", particleIds);
+    _diffuseParticles.getAttributeValues("TYPE", particleTypes);
+
+    if (_isMeshingVolumeSet) {
+        std::vector<bool> isSolid;
+        _meshingVolumeSDF->trilinearInterpolateSolidPoints(*particlePositions, isSolid);
+        for (size_t i = 0; i < _diffuseParticles.size(); i++) {
+            if (isSolid[i]) {
+                continue;
+            }
+            if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::dust) {
+                int idx = (int)(particleIds->at(i));
+                outputids.push_back(idx);
+                ids.push_back(particleIds->at(i));
+            }
+        }
+    } else {
+        for (size_t i = 0; i < _diffuseParticles.size(); i++) {
+            if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::dust) {
+                int idx = (int)(particleIds->at(i));
+                outputids.push_back(idx);
+                ids.push_back(particleIds->at(i));
+            }
+        }
+    }
+
+    _getDiffuseParticleFileDataWWI(outputids, ids, data);
+}
+
+void DiffuseParticleSimulation::getFoamParticleLifetimeAttributeFileDataWWF(std::vector<char> &data) {
+    std::vector<float> outputLifetimes;
+    std::vector<unsigned char> ids;
+    outputLifetimes.reserve(_diffuseParticles.size());
+    ids.reserve(_diffuseParticles.size());
+
+    std::vector<vmath::vec3> *particlePositions;
+    std::vector<float> *particleLifetimes;
+    std::vector<unsigned char> *particleIds;
+    std::vector<char> *particleTypes;
+    _diffuseParticles.getAttributeValues("POSITION", particlePositions);
+    _diffuseParticles.getAttributeValues("LIFETIME", particleLifetimes);
+    _diffuseParticles.getAttributeValues("ID", particleIds);
+    _diffuseParticles.getAttributeValues("TYPE", particleTypes);
+
+    if (_isMeshingVolumeSet) {
+        std::vector<bool> isSolid;
+        _meshingVolumeSDF->trilinearInterpolateSolidPoints(*particlePositions, isSolid);
+        for (size_t i = 0; i < _diffuseParticles.size(); i++) {
+            if (isSolid[i]) {
+                continue;
+            }
+            if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::foam) {
+                float lifetime = particleLifetimes->at(i);
+                outputLifetimes.push_back(lifetime);
+                ids.push_back(particleIds->at(i));
+            }
+        }
+    } else {
+        for (size_t i = 0; i < _diffuseParticles.size(); i++) {
+            if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::foam) {
+                float lifetime = particleLifetimes->at(i);
+                outputLifetimes.push_back(lifetime);
+                ids.push_back(particleIds->at(i));
+            }
+        }
+    }
+
+    _getDiffuseParticleFileDataWWF(outputLifetimes, ids, data);
+}
+
+void DiffuseParticleSimulation::getBubbleParticleLifetimeAttributeFileDataWWF(std::vector<char> &data) {
+    std::vector<float> outputLifetimes;
+    std::vector<unsigned char> ids;
+    outputLifetimes.reserve(_diffuseParticles.size());
+    ids.reserve(_diffuseParticles.size());
+
+    std::vector<vmath::vec3> *particlePositions;
+    std::vector<float> *particleLifetimes;
+    std::vector<unsigned char> *particleIds;
+    std::vector<char> *particleTypes;
+    _diffuseParticles.getAttributeValues("POSITION", particlePositions);
+    _diffuseParticles.getAttributeValues("LIFETIME", particleLifetimes);
+    _diffuseParticles.getAttributeValues("ID", particleIds);
+    _diffuseParticles.getAttributeValues("TYPE", particleTypes);
+
+    if (_isMeshingVolumeSet) {
+        std::vector<bool> isSolid;
+        _meshingVolumeSDF->trilinearInterpolateSolidPoints(*particlePositions, isSolid);
+        for (size_t i = 0; i < _diffuseParticles.size(); i++) {
+            if (isSolid[i]) {
+                continue;
+            }
+            if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::bubble) {
+                float lifetime = particleLifetimes->at(i);
+                outputLifetimes.push_back(lifetime);
+                ids.push_back(particleIds->at(i));
+            }
+        }
+    } else {
+        for (size_t i = 0; i < _diffuseParticles.size(); i++) {
+            if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::bubble) {
+                float lifetime = particleLifetimes->at(i);
+                outputLifetimes.push_back(lifetime);
+                ids.push_back(particleIds->at(i));
+            }
+        }
+    }
+
+    _getDiffuseParticleFileDataWWF(outputLifetimes, ids, data);
+}
+
+void DiffuseParticleSimulation::getSprayParticleLifetimeAttributeFileDataWWF(std::vector<char> &data) {
+    std::vector<float> outputLifetimes;
+    std::vector<unsigned char> ids;
+    outputLifetimes.reserve(_diffuseParticles.size());
+    ids.reserve(_diffuseParticles.size());
+
+    std::vector<vmath::vec3> *particlePositions;
+    std::vector<float> *particleLifetimes;
+    std::vector<unsigned char> *particleIds;
+    std::vector<char> *particleTypes;
+    _diffuseParticles.getAttributeValues("POSITION", particlePositions);
+    _diffuseParticles.getAttributeValues("LIFETIME", particleLifetimes);
+    _diffuseParticles.getAttributeValues("ID", particleIds);
+    _diffuseParticles.getAttributeValues("TYPE", particleTypes);
+
+    if (_isMeshingVolumeSet) {
+        std::vector<bool> isSolid;
+        _meshingVolumeSDF->trilinearInterpolateSolidPoints(*particlePositions, isSolid);
+        for (size_t i = 0; i < _diffuseParticles.size(); i++) {
+            if (isSolid[i]) {
+                continue;
+            }
+            if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::spray) {
+                float lifetime = particleLifetimes->at(i);
+                outputLifetimes.push_back(lifetime);
+                ids.push_back(particleIds->at(i));
+            }
+        }
+    } else {
+        for (size_t i = 0; i < _diffuseParticles.size(); i++) {
+            if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::spray) {
+                float lifetime = particleLifetimes->at(i);
+                outputLifetimes.push_back(lifetime);
+                ids.push_back(particleIds->at(i));
+            }
+        }
+    }
+
+    _getDiffuseParticleFileDataWWF(outputLifetimes, ids, data);
+}
+
+void DiffuseParticleSimulation::getDustParticleLifetimeAttributeFileDataWWF(std::vector<char> &data) {
+    std::vector<float> outputLifetimes;
+    std::vector<unsigned char> ids;
+    outputLifetimes.reserve(_diffuseParticles.size());
+    ids.reserve(_diffuseParticles.size());
+
+    std::vector<vmath::vec3> *particlePositions;
+    std::vector<float> *particleLifetimes;
+    std::vector<unsigned char> *particleIds;
+    std::vector<char> *particleTypes;
+    _diffuseParticles.getAttributeValues("POSITION", particlePositions);
+    _diffuseParticles.getAttributeValues("LIFETIME", particleLifetimes);
+    _diffuseParticles.getAttributeValues("ID", particleIds);
+    _diffuseParticles.getAttributeValues("TYPE", particleTypes);
+
+    if (_isMeshingVolumeSet) {
+        std::vector<bool> isSolid;
+        _meshingVolumeSDF->trilinearInterpolateSolidPoints(*particlePositions, isSolid);
+        for (size_t i = 0; i < _diffuseParticles.size(); i++) {
+            if (isSolid[i]) {
+                continue;
+            }
+            if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::dust) {
+                float lifetime = particleLifetimes->at(i);
+                outputLifetimes.push_back(lifetime);
+                ids.push_back(particleIds->at(i));
+            }
+        }
+    } else {
+        for (size_t i = 0; i < _diffuseParticles.size(); i++) {
+            if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::dust) {
+                float lifetime = particleLifetimes->at(i);
+                outputLifetimes.push_back(lifetime);
+                ids.push_back(particleIds->at(i));
+            }
+        }
+    }
+
+    _getDiffuseParticleFileDataWWF(outputLifetimes, ids, data);
+}
+
 void DiffuseParticleSimulation::loadDiffuseParticles(FragmentedVector<DiffuseParticle> &particles) {
     _diffuseParticles.reserve(_diffuseParticles.size() + particles.size());
 
@@ -2171,4 +2655,88 @@ void DiffuseParticleSimulation::_getDiffuseParticleFileDataWWP(std::vector<vmath
 
     std::memcpy(data.data() + byteOffset, (char *)positionData.data(), vertexDataSize);
     byteOffset += vertexDataSize;
+}
+
+void DiffuseParticleSimulation::_getDiffuseParticleFileDataWWI(std::vector<int> &intvalues, 
+                                                               std::vector<unsigned char> &ids,
+                                                               std::vector<char> &data) {
+    FLUIDSIM_ASSERT(intvalues.size() == ids.size())
+
+    std::vector<int> idcounts(_diffuseParticleIDLimit, 0);
+    for (size_t i = 0; i < ids.size(); i++) {
+        idcounts[(int)ids[i]]++;
+    }
+
+    std::vector<int> idBinIndices(_diffuseParticleIDLimit, 0);
+    std::vector<int> idData(_diffuseParticleIDLimit, 0);
+    int currentBinIndex = 0;
+    for (size_t i = 0; i < idcounts.size(); i++) {
+        idBinIndices[i] = currentBinIndex;
+        currentBinIndex += idcounts[i];
+        idData[i] = currentBinIndex - 1;
+    }
+
+    std::vector<int> intData(intvalues.size());
+    for (size_t i = 0; i < intvalues.size(); i++) {
+        intData[idBinIndices[ids[i]]] = intvalues[i];
+        idBinIndices[ids[i]]++;
+    }
+
+    int idDataSize = (int)idData.size() * sizeof(int);
+    int numVertices = (int)intvalues.size();
+    int intDataSize = numVertices * sizeof(int);
+    int dataSize = idDataSize + intDataSize;
+
+    data.clear();
+    data.resize(dataSize);
+    data.shrink_to_fit();
+
+    int byteOffset = 0;
+    std::memcpy(data.data() + byteOffset, (char *)idData.data(), idDataSize);
+    byteOffset += idDataSize;
+
+    std::memcpy(data.data() + byteOffset, (char *)intData.data(), intDataSize);
+    byteOffset += intDataSize;
+}
+
+void DiffuseParticleSimulation::_getDiffuseParticleFileDataWWF(std::vector<float> &floatvalues, 
+                                                               std::vector<unsigned char> &ids,
+                                                               std::vector<char> &data) {
+    FLUIDSIM_ASSERT(floatvalues.size() == ids.size())
+
+    std::vector<int> idcounts(_diffuseParticleIDLimit, 0);
+    for (size_t i = 0; i < ids.size(); i++) {
+        idcounts[(int)ids[i]]++;
+    }
+
+    std::vector<int> idBinIndices(_diffuseParticleIDLimit, 0);
+    std::vector<int> idData(_diffuseParticleIDLimit, 0);
+    int currentBinIndex = 0;
+    for (size_t i = 0; i < idcounts.size(); i++) {
+        idBinIndices[i] = currentBinIndex;
+        currentBinIndex += idcounts[i];
+        idData[i] = currentBinIndex - 1;
+    }
+
+    std::vector<float> floatData(floatvalues.size());
+    for (size_t i = 0; i < floatvalues.size(); i++) {
+        floatData[idBinIndices[ids[i]]] = floatvalues[i];
+        idBinIndices[ids[i]]++;
+    }
+
+    int idDataSize = (int)idData.size() * sizeof(int);
+    int numVertices = (int)floatvalues.size();
+    int intDataSize = numVertices * sizeof(int);
+    int dataSize = idDataSize + intDataSize;
+
+    data.clear();
+    data.resize(dataSize);
+    data.shrink_to_fit();
+
+    int byteOffset = 0;
+    std::memcpy(data.data() + byteOffset, (char *)idData.data(), idDataSize);
+    byteOffset += idDataSize;
+
+    std::memcpy(data.data() + byteOffset, (char *)floatData.data(), intDataSize);
+    byteOffset += intDataSize;
 }

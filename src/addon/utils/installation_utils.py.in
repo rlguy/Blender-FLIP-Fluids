@@ -20,7 +20,7 @@ from . import version_compatibility_utils as vcu
 
 IS_INSTALLATION_UTILS_INITIALIZED = False
 IS_INSTALLATION_COMPLETE = False
-IS_STABLE_BUILD = False
+IS_STABLE_BUILD = @FLUIDENGINE_VERSION_TYPE_IS_STABLE_BUILD_PYTHON@
 
 def is_installation_complete():
     global IS_INSTALLATION_UTILS_INITIALIZED

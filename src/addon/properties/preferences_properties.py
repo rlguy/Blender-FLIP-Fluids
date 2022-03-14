@@ -143,6 +143,17 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
     exec(vcu.convert_attribute_to_28("engine_debug_mode"))
     FAKE_PREFERENCES.engine_debug_mode = False
 
+    enable_addon_directory_renaming = BoolProperty(
+            name="Allow Addon Directory Renaming", 
+            description="For advanced installation. Enable to allow renaming of the default flip_fluids_addon"
+                " folder in the Blender addons directory. Use to install multiple versions of the FLIP Fluids addon."
+                " Ensure that only one version of the FLIP Fluids addon is enabled at any time and restart Blender"
+                " after switching to another version. Do not use any special characters when renaming, including periods", 
+            default=False,
+            ); 
+    exec(vcu.convert_attribute_to_28("enable_addon_directory_renaming"))
+    FAKE_PREFERENCES.enable_addon_directory_renaming = False
+
     enable_experimental_build_warning = BoolProperty(
             name="Show Experimental Build Warning", 
             description="Disable to hide the experimental build warning/notification in the Physics menu", 
@@ -154,8 +165,9 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
     enable_developer_tools = BoolProperty(
             name="Enable Developer Tools", 
             description="Enable Developer Tools. Enable to unlock features that may be experimental, not yet completed,"
-                " or considered unstable. Not recommended for production use", 
-            default=True,
+                " or considered unstable. Not recommended for production use. Developer tools are always enabled in an"
+                " experimental build regardless of whether or not this option is enabled", 
+            default=False,
             ); 
     exec(vcu.convert_attribute_to_28("enable_developer_tools"))
     FAKE_PREFERENCES.enable_developer_tools = False
@@ -198,6 +210,10 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
     is_gpu_devices_initialized = BoolProperty(False)
     exec(vcu.convert_attribute_to_28("is_gpu_devices_initialized"))
     FAKE_PREFERENCES.is_gpu_devices_initialized = False
+
+
+    def is_developer_tools_enabled(self):
+        return self.enable_developer_tools or installation_utils.is_experimental_build()
 
 
     def _update_enable_helper(self, context):
@@ -289,9 +305,13 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         box.enabled = is_installation_complete
         helper_column = box.column(align=True)
         helper_column.label(text="Experimental & Debug Tools:")
-        #helper_column.prop(self, "enable_experimental_build_warning")
+
+        if installation_utils.is_experimental_build():
+            helper_column.prop(self, "enable_experimental_build_warning")
+
         helper_column.prop(self, "enable_developer_tools")
         helper_column.prop(self, "engine_debug_mode")
+        helper_column.prop(self, "enable_addon_directory_renaming")
 
         """
         helper_column.separator()
@@ -344,7 +364,7 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         column_left.operator("flip_fluid_operators.copy_system_info", icon="COPYDOWN")
 
         column = box.column(align=True)
-        column.label(text="Reports can also be sent through the Blender Market or to support@flipfluids.com")
+        column.label(text="Reports can also be sent through official marketplaces or to support@flipfluids.com")
 
         box = self.layout.box()
         box.enabled = is_installation_complete
@@ -364,11 +384,6 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
                 text="Recommended Documentation Topics", 
                 icon="URL"
             ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki#the-most-important-documentation-topics"
-        column_left.operator(
-                "wm.url_open", 
-                text="Blender Market Page", 
-                icon="URL"
-            ).url = "https://blendermarket.com/products/flipfluids"
         column_left.operator(
                 "wm.url_open", 
                 text="FLIP Fluids Homepage", 

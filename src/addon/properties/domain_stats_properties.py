@@ -166,6 +166,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
     surfaceblur_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surfaceblur_mesh"))
     surfacevelocity_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surfacevelocity_mesh"))
     surfacespeed_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surfacespeed_mesh"))
+    surfacevorticity_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surfacevorticity_mesh"))
     surfaceage_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surfaceage_mesh"))
     surfacecolor_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surfacecolor_mesh"))
     surfacesourceid_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surfacesourceid_mesh"))
@@ -177,6 +178,18 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
     bubbleblur_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("bubbleblur_mesh"))
     sprayblur_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("sprayblur_mesh"))
     dustblur_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("dustblur_mesh"))
+    foamvelocity_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("foamvelocity_mesh"))
+    bubblevelocity_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("bubblevelocity_mesh"))
+    sprayvelocity_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("sprayvelocity_mesh"))
+    dustvelocity_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("dustvelocity_mesh"))
+    foamid_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("foamid_mesh"))
+    bubbleid_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("bubbleid_mesh"))
+    sprayid_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("sprayid_mesh"))
+    dustid_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("dustid_mesh"))
+    foamlifetime_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("foamlifetime_mesh"))
+    bubblelifetime_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("bubblelifetime_mesh"))
+    spraylifetime_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("spraylifetime_mesh"))
+    dustlifetime_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("dustlifetime_mesh"))
     particle_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("particle_mesh"))
     obstacle_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("obstacle_mesh"))
 
@@ -226,6 +239,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             "surfaceblur_mesh",
             "surfacevelocity_mesh",
             "surfacespeed_mesh",
+            "surfacevorticity_mesh",
             "surfaceage_mesh",
             "surfacecolor_mesh",
             "surfacesourceid_mesh",
@@ -237,6 +251,18 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             "bubbleblur_mesh",
             "sprayblur_mesh",
             "dustblur_mesh",
+            "foamvelocity_mesh",
+            "bubblevelocity_mesh",
+            "sprayvelocity_mesh",
+            "dustvelocity_mesh",
+            "foamid_mesh",
+            "bubbleid_mesh",
+            "sprayid_mesh",
+            "dustid_mesh",
+            "foamlifetime_mesh",
+            "bubblelifetime_mesh",
+            "spraylifetime_mesh",
+            "dustlifetime_mesh",
             "particle_mesh",
             "obstacle_mesh",
             "time_mesh",
@@ -366,6 +392,10 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             # If statement to support older caches that do not have a surfacespeed entry
             self._set_mesh_stats_data(self.surfacespeed_mesh, data['surfacespeed'])
 
+        if 'surfacevorticity' in data:
+            # If statement to support older caches that do not have a surfacevorticity entry
+            self._set_mesh_stats_data(self.surfacevorticity_mesh, data['surfacevorticity'])
+
         if 'surfaceage' in data:
             # If statement to support older caches that do not have a surfaceage entry
             self._set_mesh_stats_data(self.surfaceage_mesh, data['surfaceage'])
@@ -393,6 +423,33 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         if 'dustblur' in data:
             # If statement to support older caches that do not have a dustblur entry
             self._set_mesh_stats_data(self.dustblur_mesh,   data['dustblur'])
+
+        if 'foamvelocity' in data:
+            self._set_mesh_stats_data(self.foamvelocity_mesh,   data['foamvelocity'])
+        if 'bubblevelocity' in data:
+            self._set_mesh_stats_data(self.bubblevelocity_mesh, data['bubblevelocity'])
+        if 'sprayvelocity' in data:
+            self._set_mesh_stats_data(self.sprayvelocity_mesh,  data['sprayvelocity'])
+        if 'dustvelocity' in data:
+            self._set_mesh_stats_data(self.dustvelocity_mesh,   data['dustvelocity'])
+
+        if 'foamid' in data:
+            self._set_mesh_stats_data(self.foamid_mesh,   data['foamid'])
+        if 'bubbleid' in data:
+            self._set_mesh_stats_data(self.bubbleid_mesh, data['bubbleid'])
+        if 'sprayid' in data:
+            self._set_mesh_stats_data(self.sprayid_mesh,  data['sprayid'])
+        if 'dustid' in data:
+            self._set_mesh_stats_data(self.dustid_mesh,   data['dustid'])
+
+        if 'foamlifetime' in data:
+            self._set_mesh_stats_data(self.foamlifetime_mesh,   data['foamlifetime'])
+        if 'bubblelifetime' in data:
+            self._set_mesh_stats_data(self.bubblelifetime_mesh, data['bubblelifetime'])
+        if 'spraylifetime' in data:
+            self._set_mesh_stats_data(self.spraylifetime_mesh,  data['spraylifetime'])
+        if 'dustlifetime' in data:
+            self._set_mesh_stats_data(self.dustlifetime_mesh,   data['dustlifetime'])
 
         self._set_mesh_stats_data(self.particle_mesh,   data['particles'])
         self._set_mesh_stats_data(self.obstacle_mesh,   data['obstacle'])
@@ -471,6 +528,8 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
                 cache_size += fdata['surfacevelocity']['bytes']
             if 'surfacespeed' in fdata and fdata['surfacespeed']['enabled']: # If statement to support caches without a surfacespeed entry
                 cache_size += fdata['surfacespeed']['bytes']
+            if 'surfacevorticity' in fdata and fdata['surfacevorticity']['enabled']: # If statement to support caches without a surfacevorticity entry
+                cache_size += fdata['surfacevorticity']['bytes']
             if 'surfaceage' in fdata and fdata['surfaceage']['enabled']: # If statement to support caches without a surfaceage entry
                 cache_size += fdata['surfaceage']['bytes']
             if 'surfacecolor' in fdata and fdata['surfacecolor']['enabled']: # If statement to support caches without a surfacecolor entry
@@ -493,6 +552,30 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
                 cache_size += fdata['sprayblur']['bytes']
             if 'dustblur' in fdata and fdata['dustblur']['enabled']: # If statement to support caches without a dustblur entry
                 cache_size += fdata['dustblur']['bytes']
+            if 'foamvelocity' in fdata and fdata['foamvelocity']['enabled']:
+                cache_size += fdata['foamvelocity']['bytes']
+            if 'bubblevelocity' in fdata and fdata['bubblevelocity']['enabled']:
+                cache_size += fdata['bubblevelocity']['bytes']
+            if 'sprayvelocity' in fdata and fdata['sprayvelocity']['enabled']:
+                cache_size += fdata['sprayvelocity']['bytes']
+            if 'dustvelocity' in fdata and fdata['dustvelocity']['enabled']:
+                cache_size += fdata['dustvelocity']['bytes']
+            if 'foamid' in fdata and fdata['foamid']['enabled']:
+                cache_size += fdata['foamid']['bytes']
+            if 'bubbleid' in fdata and fdata['bubbleid']['enabled']:
+                cache_size += fdata['bubbleid']['bytes']
+            if 'sprayid' in fdata and fdata['sprayid']['enabled']:
+                cache_size += fdata['sprayid']['bytes']
+            if 'dustid' in fdata and fdata['dustid']['enabled']:
+                cache_size += fdata['dustid']['bytes']
+            if 'foamlifetime' in fdata and fdata['foamlifetime']['enabled']:
+                cache_size += fdata['foamlifetime']['bytes']
+            if 'bubblelifetime' in fdata and fdata['bubblelifetime']['enabled']:
+                cache_size += fdata['bubblelifetime']['bytes']
+            if 'spraylifetime' in fdata and fdata['spraylifetime']['enabled']:
+                cache_size += fdata['spraylifetime']['bytes']
+            if 'dustlifetime' in fdata and fdata['dustlifetime']['enabled']:
+                cache_size += fdata['dustlifetime']['bytes']
             if fdata['particles']['enabled']:
                 cache_size += fdata['particles']['bytes']
             if fdata['obstacle']['enabled']:
@@ -521,6 +604,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         is_surfaceblur_enabled = False
         is_surfacevelocity_enabled = False
         is_surfacespeed_enabled = False
+        is_surfacevorticity_enabled = False
         is_surfaceage_enabled = False
         is_surfacecolor_enabled = False
         is_surfacesourceid_enabled = False
@@ -532,6 +616,18 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         is_bubbleblur_enabled = False
         is_sprayblur_enabled = False
         is_dustblur_enabled = False
+        is_foamvelocity_enabled = False
+        is_bubblevelocity_enabled = False
+        is_sprayvelocity_enabled = False
+        is_dustvelocity_enabled = False
+        is_foamid_enabled = False
+        is_bubbleid_enabled = False
+        is_sprayid_enabled = False
+        is_dustid_enabled = False
+        is_foamlifetime_enabled = False
+        is_bubblelifetime_enabled = False
+        is_spraylifetime_enabled = False
+        is_dustlifetime_enabled = False
         is_particles_enabled = False
         is_obstacle_enabled = False
         surface_bytes = 0
@@ -539,6 +635,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         surfaceblur_bytes = 0
         surfacevelocity_bytes = 0
         surfacespeed_bytes = 0
+        surfacevorticity_bytes = 0
         surfaceage_bytes = 0
         surfacecolor_bytes = 0
         surfacesourceid_bytes = 0
@@ -550,6 +647,18 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         bubbleblur_bytes = 0
         sprayblur_bytes = 0
         dustblur_bytes = 0
+        foamvelocity_bytes = 0
+        bubblevelocity_bytes = 0
+        sprayvelocity_bytes = 0
+        dustvelocity_bytes = 0
+        foamid_bytes = 0
+        bubbleid_bytes = 0
+        sprayid_bytes = 0
+        dustid_bytes = 0
+        foamlifetime_bytes = 0
+        bubblelifetime_bytes = 0
+        spraylifetime_bytes = 0
+        dustlifetime_bytes = 0
         particles_bytes = 0
         obstacle_bytes = 0
 
@@ -587,6 +696,9 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             if 'surfacespeed' in fdata and fdata['surfacespeed']['enabled']: # If statement to support caches without a surfacespeed entry
                 is_surfacespeed_enabled = True
                 surfacespeed_bytes += fdata['surfacespeed']['bytes']
+            if 'surfacevorticity' in fdata and fdata['surfacevorticity']['enabled']: # If statement to support caches without a surfacevorticity entry
+                is_surfacevorticity_enabled = True
+                surfacevorticity_bytes += fdata['surfacevorticity']['bytes']
             if 'surfaceage' in fdata and fdata['surfaceage']['enabled']: # If statement to support caches without a surfaceage entry
                 is_surfaceage_enabled = True
                 surfaceage_bytes += fdata['surfaceage']['bytes']
@@ -620,6 +732,42 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             if 'dustblur' in fdata and fdata['sprayblur']['enabled']: # If statement to support caches without a dustblur entry
                 is_dustblur_enabled = True
                 dustblur_bytes += fdata['dustblur']['bytes']
+            if 'foamvelocity' in fdata and fdata['foamvelocity']['enabled']:
+                is_foamvelocity_enabled = True
+                foamvelocity_bytes += fdata['foamvelocity']['bytes']
+            if 'bubblevelocity' in fdata and fdata['bubblevelocity']['enabled']:
+                is_bubblevelocity_enabled = True
+                bubblevelocity_bytes += fdata['bubblevelocity']['bytes']
+            if 'sprayvelocity' in fdata and fdata['sprayvelocity']['enabled']:
+                is_sprayvelocity_enabled = True
+                sprayvelocity_bytes += fdata['sprayvelocity']['bytes']
+            if 'dustvelocity' in fdata and fdata['dustvelocity']['enabled']:
+                is_dustvelocity_enabled = True
+                dustvelocity_bytes += fdata['dustvelocity']['bytes']
+            if 'foamid' in fdata and fdata['foamid']['enabled']:
+                is_foamid_enabled = True
+                foamid_bytes += fdata['foamid']['bytes']
+            if 'bubbleid' in fdata and fdata['bubbleid']['enabled']:
+                is_bubbleid_enabled = True
+                bubbleid_bytes += fdata['bubbleid']['bytes']
+            if 'sprayid' in fdata and fdata['sprayid']['enabled']:
+                is_sprayid_enabled = True
+                sprayid_bytes += fdata['sprayid']['bytes']
+            if 'dustid' in fdata and fdata['dustid']['enabled']:
+                is_dustid_enabled = True
+                dustid_bytes += fdata['dustid']['bytes']
+            if 'foamlifetime' in fdata and fdata['foamlifetime']['enabled']:
+                is_foamlifetime_enabled = True
+                foamlifetime_bytes += fdata['foamlifetime']['bytes']
+            if 'bubblelifetime' in fdata and fdata['bubblelifetime']['enabled']:
+                is_bubblelifetime_enabled = True
+                bubblelifetime_bytes += fdata['bubblelifetime']['bytes']
+            if 'spraylifetime' in fdata and fdata['spraylifetime']['enabled']:
+                is_spraylifetime_enabled = True
+                spraylifetime_bytes += fdata['spraylifetime']['bytes']
+            if 'dustlifetime' in fdata and fdata['dustlifetime']['enabled']:
+                is_dustlifetime_enabled = True
+                dustlifetime_bytes += fdata['dustlifetime']['bytes']
             if fdata['particles']['enabled']:
                 is_particles_enabled = True
                 particles_bytes += fdata['particles']['bytes']
@@ -647,6 +795,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.surfaceblur_mesh.enabled = is_surfaceblur_enabled
         self.surfacevelocity_mesh.enabled = is_surfacevelocity_enabled
         self.surfacespeed_mesh.enabled = is_surfacespeed_enabled
+        self.surfacevorticity_mesh.enabled = is_surfacevorticity_enabled
         self.surfaceage_mesh.enabled = is_surfaceage_enabled
         self.surfacecolor_mesh.enabled = is_surfacecolor_enabled
         self.surfacesourceid_mesh.enabled = is_surfacesourceid_enabled
@@ -658,6 +807,18 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.bubbleblur_mesh.enabled = is_bubbleblur_enabled
         self.sprayblur_mesh.enabled = is_sprayblur_enabled
         self.dustblur_mesh.enabled = is_dustblur_enabled
+        self.foamvelocity_mesh.enabled = is_foamvelocity_enabled
+        self.bubblevelocity_mesh.enabled = is_bubblevelocity_enabled
+        self.sprayvelocity_mesh.enabled = is_sprayvelocity_enabled
+        self.dustvelocity_mesh.enabled = is_dustvelocity_enabled
+        self.foamid_mesh.enabled = is_foamid_enabled
+        self.bubbleid_mesh.enabled = is_bubbleid_enabled
+        self.sprayid_mesh.enabled = is_sprayid_enabled
+        self.dustid_mesh.enabled = is_dustid_enabled
+        self.foamlifetime_mesh.enabled = is_foamlifetime_enabled
+        self.bubblelifetime_mesh.enabled = is_bubblelifetime_enabled
+        self.spraylifetime_mesh.enabled = is_spraylifetime_enabled
+        self.dustlifetime_mesh.enabled = is_dustlifetime_enabled
         self.particle_mesh.enabled = is_particles_enabled
         self.obstacle_mesh.enabled = is_obstacle_enabled
 
@@ -666,6 +827,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.surfaceblur_mesh.bytes.set(surfaceblur_bytes)
         self.surfacevelocity_mesh.bytes.set(surfacevelocity_bytes)
         self.surfacespeed_mesh.bytes.set(surfacespeed_bytes)
+        self.surfacevorticity_mesh.bytes.set(surfacevorticity_bytes)
         self.surfaceage_mesh.bytes.set(surfaceage_bytes)
         self.surfacecolor_mesh.bytes.set(surfacecolor_bytes)
         self.surfacesourceid_mesh.bytes.set(surfacesourceid_bytes)
@@ -677,6 +839,18 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.bubbleblur_mesh.bytes.set(bubbleblur_bytes)
         self.sprayblur_mesh.bytes.set(sprayblur_bytes)
         self.dustblur_mesh.bytes.set(dustblur_bytes)
+        self.foamvelocity_mesh.bytes.set(foamvelocity_bytes)
+        self.bubblevelocity_mesh.bytes.set(bubblevelocity_bytes)
+        self.sprayvelocity_mesh.bytes.set(sprayvelocity_bytes)
+        self.dustvelocity_mesh.bytes.set(dustvelocity_bytes)
+        self.foamid_mesh.bytes.set(foamid_bytes)
+        self.bubbleid_mesh.bytes.set(bubbleid_bytes)
+        self.sprayid_mesh.bytes.set(sprayid_bytes)
+        self.dustid_mesh.bytes.set(dustid_bytes)
+        self.foamlifetime_mesh.bytes.set(foamlifetime_bytes)
+        self.bubblelifetime_mesh.bytes.set(bubblelifetime_bytes)
+        self.spraylifetime_mesh.bytes.set(spraylifetime_bytes)
+        self.dustlifetime_mesh.bytes.set(dustlifetime_bytes)
         self.particle_mesh.bytes.set(particles_bytes)
         self.obstacle_mesh.bytes.set(obstacle_bytes)
 

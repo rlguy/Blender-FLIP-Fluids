@@ -351,6 +351,19 @@ class FLIPFLUID_PT_DomainTypeWhitewaterPanel(bpy.types.Panel):
 
         self.draw_whitewater_display_settings(context)
 
+        if vcu.get_addon_preferences().is_developer_tools_enabled():
+            box = self.layout.box()
+            box.label(text="Geometry Attributes:")
+            column = box.column(align=True)
+            if vcu.is_blender_293():
+                column.prop(wprops, "enable_velocity_vector_attribute")
+                column.prop(wprops, "enable_id_attribute")
+                column.prop(wprops, "enable_lifetime_attribute")
+            else:
+                column.enabled = False
+                column.label(text="Geometry attribute features are only available in", icon='ERROR')
+                column.label(text="Blender 2.93 or later", icon='ERROR')
+
 
     def draw_whitewater_display_settings(self, context):
         obj = vcu.get_active_object(context)

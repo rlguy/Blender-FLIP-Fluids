@@ -30,7 +30,7 @@ See any of our [market place product pages](https://github.com/rlguy/Blender-FLI
 - CPU 64-bit Intel® or AMD® or Apple Silicon multi-core processor
 - 8 GB RAM minimum, 16 GB of RAM or more is highly recommended
 
-***Blender Support on MacOS:** Due to a MacOS specific [Blender bug](https://developer.blender.org/T68243) in versions 2.80, 2.81, and 2.82, these Blender versions cannot be supported. Blender 2.79 or 2.83+ or 2.9+ or 3.0+ are required for MacOS.
+**Blender Support on MacOS:** Due to a MacOS specific [Blender bug](https://developer.blender.org/T68243) in versions 2.80, 2.81, and 2.82, these Blender versions cannot be supported. Blender 2.79 or 2.83+ or 2.9+ or 3.0+ are required for MacOS.
 
 ## Release Notes
 
@@ -100,7 +100,9 @@ Once successfully built, the FLIP Fluids addon will be located in the ```build/b
 ## Links
 
 - [Blender Market Page](https://www.blendermarket.com/products/flipfluids)
+- [Gumroad Page](https://flipfluids.gumroad.com/l/flipfluids)
+- [FlippedNormals Page](https://flippednormals.com/downloads/the-flip-fluids-addon-for-blender/ref/FLIPFluids/)
 - [Documentation and Wiki](https://github.com/rlguy/Blender-FLIP-Fluids/wiki)
 - [Bug/Issue Tracker](https://github.com/rlguy/Blender-FLIP-Fluids/issues)
 - [FLIP Fluids Homepage](http://flipfluids.com)
-- [Twitter](https://twitter.com/flipfluids) | [Instagram](https://www.instagram.com/flip.fluids/) | [Facebook](https://www.facebook.com/FLIPFluids/) | [YouTube](https://www.youtube.com/flipfluids)
+- [Twitter](https://twitter.com/flipfluids) | [Instagram](https://www.instagram.com/flip.fluids/) | [Facebook](https://www.facebook.com/FLIPFluids/) | [FLIP Fluids YouTube](https://www.youtube.com/flipfluids) | [BlenderPhysics YouTube](https://www.youtube.com/blenderphysicsvideos)
