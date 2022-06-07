@@ -22,6 +22,9 @@ IS_INSTALLATION_UTILS_INITIALIZED = False
 IS_INSTALLATION_COMPLETE = False
 IS_STABLE_BUILD = @FLUIDENGINE_VERSION_TYPE_IS_STABLE_BUILD_PYTHON@
 
+IS_ADDON_ACTIVE = False
+
+
 def is_installation_complete():
     global IS_INSTALLATION_UTILS_INITIALIZED
     global IS_INSTALLATION_COMPLETE
@@ -107,3 +110,45 @@ def get_enabled_flip_fluids_addon_installations():
 def is_experimental_build():
     global IS_STABLE_BUILD
     return not IS_STABLE_BUILD
+
+
+def is_addon_active():
+    global IS_ADDON_ACTIVE
+    return IS_ADDON_ACTIVE
+
+
+def tag_addon_active():
+    global IS_ADDON_ACTIVE
+    IS_ADDON_ACTIVE = True
+
+
+def tag_addon_inactive():
+    global IS_ADDON_ACTIVE
+    IS_ADDON_ACTIVE = False
+
+
+def __load_post_update_is_addon_active():
+    tag_addon_inactive()
+    if bpy.context.scene.flip_fluid.is_domain_object_set():
+        tag_addon_active()
+        return
+    if bpy.context.scene.flip_fluid.get_simulation_objects():
+        tag_addon_active()
+        return
+
+
+def load_post():
+    complete_installation()
+    __load_post_update_is_addon_active()
+
+
+def scene_update_post(scene):
+    if is_addon_active():
+        return
+
+    # FLIP Fluid objects appended from another scene will not tag the addon as active
+    # This workaround is to quickly check whether the active object is a FLIP Fluid object
+    # and in this case, tag the addon as active
+    active_object = vcu.get_active_object()
+    if active_object is not None and active_object.flip_fluid.is_active:
+        tag_addon_active()

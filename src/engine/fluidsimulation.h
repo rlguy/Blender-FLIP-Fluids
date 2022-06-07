@@ -51,6 +51,7 @@ SOFTWARE.
 #include "particlesystem.h"
 #include "markerparticle.h"
 #include "viscositysolver.h"
+#include "spatialpointgrid.h"
 
 class AABB;
 class MeshFluidSource;
@@ -201,6 +202,8 @@ public:
     */
     int getCurrentFrame();
     void setCurrentFrame(int frameno);
+    void setTimelineFrameStart(int frameno);
+    void setTimelineFrameEnd(int frameno);
 
     /*
         Returns false only when the update() method is being executed. May be
@@ -439,6 +442,8 @@ public:
     void enableSurfaceAgeAttribute();
     void disableSurfaceAgeAttribute();
     bool isSurfaceAgeAttributeEnabled();
+    double getSurfaceAgeAttributeRadius();
+    void setSurfaceAgeAttributeRadius(double r);
 
     /*
         Generate color attributes (in rgb) at fluid surface mesh vertices
@@ -446,6 +451,17 @@ public:
     void enableSurfaceColorAttribute();
     void disableSurfaceColorAttribute();
     bool isSurfaceColorAttributeEnabled();
+    double getSurfaceColorAttributeRadius();
+    void setSurfaceColorAttributeRadius(double r);
+
+    void enableSurfaceColorAttributeMixing();
+    void disableSurfaceColorAttributeMixing();
+    bool isSurfaceColorAttributeMixingEnabled();
+    double getSurfaceColorAttributeMixingRate();
+    void setSurfaceColorAttributeMixingRate(double r);
+    double getSurfaceColorAttributeMixingRadius();
+    void setSurfaceColorAttributeMixingRadius(double r);
+
 
     /*
         Generate source ID attributes at fluid surface mesh vertices
@@ -1571,10 +1587,16 @@ private:
 
     void _updateMarkerParticleVorticityAttributeGrid();
     void _updateMarkerParticleVorticityAttribute();
-    void _updateMarkerParticleAgeAttributeGrid(double dt);
+    void _updateMarkerParticleAgeAttributeGrid();
     void _updateMarkerParticleAgeAttribute(double dt);
     void _updateMarkerParticleColorAttributeGrid();
-    void _updateMarkerParticleColorAttribute();
+    void _updateMarkerParticleColorAttributeMixing(double dt);
+    void _updateMarkerParticleColorAttributeMixingThread(int startidx, int endidx, double dt,
+                                                         SpatialPointGrid *pointGrid,
+                                                         std::vector<vmath::vec3> *colors,
+                                                         std::vector<vmath::vec3> *colorsNew,
+                                                         std::vector<bool> *colorsNewValid);
+    void _updateMarkerParticleColorAttribute(double dt);
     void _updateMarkerParticleAttributes(double dt);
 
     /*
@@ -1737,6 +1759,8 @@ private:
 
     // Update
     int _currentFrame = 0;
+    int _timelineFrameStart = 0;
+    int _timelineFrameEnd = 0;
     int _currentFrameTimeStepNumber = 0;
     double _currentFrameTimeStep = 0.0;
     double _currentFrameDeltaTime = 0.0;
@@ -1806,6 +1830,7 @@ private:
     bool _isSurfaceSpeedAttributeEnabled = false;
     bool _isSurfaceAgeAttributeEnabled = false;
     bool _isSurfaceSourceColorAttributeEnabled = false;
+    bool _isSurfaceSourceColorAttributeMixingEnabled = false;
     bool _isSurfaceSourceIDAttributeEnabled = false;
     bool _isWhitewaterIDAttributeEnabled = false;
     bool _isWhitewaterLifetimeAttributeEnabled = false;
@@ -1908,14 +1933,16 @@ private:
     Array3d<vmath::vec3> _vorticityAttributeGrid;
 
     Array3d<float> _ageAttributeGrid;
-    Array3d<int> _ageAttributeCountGrid;
     Array3d<bool> _ageAttributeValidGrid;
+    float _ageAttributeRadius = 1.0f;   // In # of voxels
 
     Array3d<float> _colorAttributeGridR;
     Array3d<float> _colorAttributeGridG;
     Array3d<float> _colorAttributeGridB;
-    Array3d<int> _colorAttributeCountGrid;
     Array3d<bool> _colorAttributeValidGrid;
+    float _colorAttributeRadius = 1.0f;   // In # of voxels
+    float _colorAttributeMixingRate = 1.0f;
+    float _colorAttributeMixingRadius = 1.0f;   // In # of voxels
 
     // Advance MarkerParticles
     int _maxParticlesPerParticleAdvection = 10e6;

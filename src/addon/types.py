@@ -218,3 +218,8 @@ material_types = (
     ('MATERIAL_TYPE_WHITEWATER', "Whitewater", "Material suitable for whitewater mesh"),
     ('MATERIAL_TYPE_ALL',        "All",        "Material suitable for any mesh"),
     )
+
+cmd_render_mode = (
+    ('CMD_RENDER_MODE_NORMAL', "Normal", "Launch normal command line render. This is equivalent to executing the 'Launch Render' operator."),
+    ('CMD_RENDER_MODE_BATCH',  "Batch",  "Launch batch file command line render. This is equivalent to executing the 'Generate Batch File' operator followed by the 'Launch Batch File Render' operator."),
+    )

@@ -606,7 +606,12 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
         cache_object.matrix_world = mathutils.Matrix.Identity(4)
         cache_object.matrix_parent_inverse = domain_object.matrix_world.inverted()
-        cache_object.scale = (scale, scale, scale)
+
+        if len(cache_object.data.vertices) > 0:
+            # Changing the scale of an object with no geometry (such as out of frame range)
+            # seems to cause incorrect motion blur render
+            cache_object.scale = (scale, scale, scale)
+
         cache_object.location = domain_pos
 
 

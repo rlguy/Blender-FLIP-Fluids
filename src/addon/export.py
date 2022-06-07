@@ -35,28 +35,54 @@ def __get_domain_properties():
 
 
 def __export_simulation_data_to_file(context, simobjects, filename):
-    data = __get_simulation_data_dict(context, simobjects)
+    success, data = __get_simulation_data_dict(context, simobjects)
+    if not success:
+        return False
+
     jsonstr = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
 
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, 'w', encoding='utf-8') as f:
         f.write(jsonstr)
 
+    return True
+
 
 def __get_simulation_data_dict(context, simobjects):
     data = {}
-    data['domain_data'] = __get_domain_data_dict(context, simobjects.domain)
+    success, data['domain_data'] = __get_domain_data_dict(context, simobjects.domain)
+    if not success:
+        return False, None
+
     data['fluid_data'] = __get_fluid_data(context, simobjects.fluid_objects)
     data['obstacle_data'] = __get_obstacle_data(context, simobjects.obstacle_objects)
     data['inflow_data'] = __get_inflow_data(context, simobjects.inflow_objects)
     data['outflow_data'] = __get_outflow_data(context, simobjects.outflow_objects)
     data['force_field_data'] = __get_force_field_data(context, simobjects.force_field_objects)
-    return data
+    return True, data
 
 
 def __get_domain_data_dict(context, dobj):
     dprops = dobj.flip_fluid.domain
     d = utils.flip_fluid_object_to_dict(dobj, dprops)
+
+    # A KeyError in this dict at this point may indicate that the FLIP Fluids addon installation
+    # was not completed by restarting Blender, or that the addon version may not be compatible
+    # with a newer version of Blender.
+    if not 'advanced' in d:
+        errmsg = "This error may indicate that either (1) A Blender restart is required "
+        errmsg += "to complete installation of the FLIP Fluids addon. Save, restart Blender, and "
+        errmsg += "try again. Or (2) This version of the FLIP Fluids addon is not compatible "
+        errmsg += "with the Blender version. Update to the latest version of the FLIP Fluids "
+        errmsg += "addon and try again. Contact the developers at support@flipfluids.com for "
+        errmsg += "assistance."
+        bpy.ops.flip_fluid_operators.display_error(
+                'INVOKE_DEFAULT',
+                error_message="Installation or Compatibility Error",
+                error_description=errmsg,
+                popup_width=600
+                )
+        return False, None
 
     initialize_properties = {}
     initialize_properties['name'] = dobj.name
@@ -120,7 +146,7 @@ def __get_domain_data_dict(context, dobj):
         volume_object_name = dprops.surface.meshing_volume_object.name
     d['surface']['meshing_volume_object'] = volume_object_name
 
-    return d
+    return True, d
 
 
 def __get_fluid_data(context, objects):
@@ -428,6 +454,6 @@ def export_simulation_data(context, data_filepath):
     simulation_objects.outflow_objects = simprops.get_outflow_objects()
     simulation_objects.force_field_objects = simprops.get_force_field_objects()
 
-    __export_simulation_data_to_file(context, simulation_objects, data_filepath)
+    success = __export_simulation_data_to_file(context, simulation_objects, data_filepath)
 
-    return True
+    return success

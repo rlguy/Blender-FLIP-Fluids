@@ -61,7 +61,8 @@ void ForceFieldSurface::update(double dt, double frameInterpolation) {
     _updateGridDimensions(mesh);
 
     mesh.translate(-_offsetSDF);
-    ForceFieldUtils::generateSurfaceVectorField(_sdf, mesh, _vectorField);
+    ForceFieldUtils::generateSurfaceVectorField(_sdf, mesh, _vectorField, 
+                                                _isFrontfacingEnabled, _isBackfacingEnabled, _isEdgefacingEnabled);
 
     _lastMaxDistance = _isMaxDistanceEnabled ? _maxDistance : -1.0f;
     _isLevelsetUpToDate = true;

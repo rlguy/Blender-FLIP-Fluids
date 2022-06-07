@@ -185,6 +185,16 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
             default=False,
             options={'HIDDEN'},
             ); exec(conv("enable_age_attribute"))
+    age_attribute_radius = FloatProperty(
+            name="Smoothing Radius", 
+            description = "Amount of smoothing when transferring the age attribute to the surface mesh."
+                " Higher values result in smoother attribute transitions at the cost of simulation"
+                " performance. Value is the search radius in number of voxels for nearby particles", 
+            soft_min=1.0, soft_max=4.0,
+            min=0.0,
+            default=3.0,
+            precision=1,
+            ); exec(conv("age_attribute_radius"))
     enable_color_attribute = BoolProperty(
             name="Generate Color Attributes",
             description="Generate fluid color attributes for the fluid surface. Each"
@@ -195,6 +205,42 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
             default=False,
             options={'HIDDEN'},
             ); exec(conv("enable_color_attribute"))
+    color_attribute_radius = FloatProperty(
+            name="Smoothing Radius", 
+            description = "Amount of smoothing when transferring the color attribute to the surface mesh."
+                " Higher values result in smoother attribute transitions at the cost of simulation"
+                " performance. Value is the search radius in number of voxels for nearby particles", 
+            soft_min=1.0, soft_max=4.0,
+            min=0.0,
+            default=3.0,
+            precision=1,
+            ); exec(conv("color_attribute_radius"))
+    enable_color_attribute_mixing = BoolProperty(
+            name="Enable Mixing",
+            description="Simulate basic color mixing. If enabled, particles will absorb color attributes"
+                " from nearby particles. If disabled, particles will hold a static color value",
+            default=False,
+            ); exec(conv("enable_color_attribute_mixing"))
+    color_attribute_mixing_rate = FloatProperty(
+            name="Mixing Rate", 
+            description = "Controls how quickly particles will absorb color from nearby particles. Higher"
+                " values will cause colors to mix and spread more quickly. Lower values will cause colors to"
+                " mix and spread more slowly", 
+            soft_max=25.0,
+            min=0.0,
+            default=12,
+            precision=2,
+            ); exec(conv("color_attribute_mixing_rate"))
+    color_attribute_mixing_radius = FloatProperty(
+            name="Mixing Radius", 
+            description = "Radius in which a particle can absorb color from nearby particles. Increasing"
+                " this value can result in smoother mixing transitions at the cost of simulation performance."
+                " This value is the search radius in number of voxels", 
+            soft_max=3.0,
+            min=0.0,
+            default=1.0,
+            precision=2,
+            ); exec(conv("color_attribute_mixing_radius"))
     enable_source_id_attribute = BoolProperty(
             name="Generate Source ID Attributes",
             description="Generate fluid source identifiers for the fluid surface. Each"
@@ -230,7 +276,12 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
         add(path + ".enable_speed_attribute",                "Generate Speed Attributes",         group_id=0)
         add(path + ".enable_vorticity_vector_attribute",     "Generate Vorticity Attributes",     group_id=0)
         add(path + ".enable_age_attribute",                  "Generate Age Attributes",           group_id=0)
+        add(path + ".age_attribute_radius",                  "Age Attribute Smoothing",           group_id=0)
         add(path + ".enable_color_attribute",                "Generate Color Attributes",         group_id=0)
+        add(path + ".color_attribute_radius",                "Color Attribute Smoothing",         group_id=0)
+        add(path + ".enable_color_attribute_mixing",         "Enable Color Attribute Mixing",     group_id=0)
+        add(path + ".color_attribute_mixing_rate",           "Color Attribute Mixing Rate",       group_id=0)
+        add(path + ".color_attribute_mixing_radius",         "Color Attribute Mixing Radius",     group_id=0)
         add(path + ".enable_source_id_attribute",            "Generate Source ID Attributes",     group_id=0)
 
 

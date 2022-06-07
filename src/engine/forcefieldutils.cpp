@@ -29,6 +29,7 @@ SOFTWARE.
 */
 
 #include <chrono>
+#include <algorithm>
 
 #include "forcefieldutils.h"
 #include "collision.h"
@@ -38,7 +39,8 @@ namespace ForceFieldUtils {
 int _bandwidth = 3;
 float _sleepTimeFactor = 0.25;
 
-void generateSurfaceVectorField(MeshLevelSet &sdf, TriangleMesh &mesh, Array3d<vmath::vec3> &vectorField) {
+void generateSurfaceVectorField(MeshLevelSet &sdf, TriangleMesh &mesh, Array3d<vmath::vec3> &vectorField,
+                                bool generateFrontFacing, bool generateBackFacing, bool generateEdgeFacing) {
     Array3d<float> *phiptr = sdf.getPhiArray3d();
     int isize = phiptr->width;
     int jsize = phiptr->height;
@@ -50,6 +52,7 @@ void generateSurfaceVectorField(MeshLevelSet &sdf, TriangleMesh &mesh, Array3d<v
 
     VectorFieldGenerationData data;
     data.phi = Array3d<float>(isize, jsize, ksize, distUpperBound);
+    data.closestTriangle = Array3d<int>(isize, jsize, ksize);
     data.closestPoint = Array3d<vmath::vec3>(isize, jsize, ksize);
     data.isClosestPointSet = Array3d<bool>(isize, jsize, ksize, false);
     data.dx = dx;
@@ -66,12 +69,99 @@ void generateSurfaceVectorField(MeshLevelSet &sdf, TriangleMesh &mesh, Array3d<v
     _initializeNarrowBandClosestPoint(sdf, mesh, data);
     _fastSweepingMethod(data);
 
+    std::vector<bool> manifoldVertices;
+    if (!generateEdgeFacing) {
+        manifoldVertices = mesh.getManifoldVertexList();
+    }
+
+    float eps = 1e-9;
+    vmath::vec3 zerovect;
     for (int k = 0; k < ksize; k++) {
         for (int j = 0; j < jsize; j++) {
             for (int i = 0; i < isize; i++) {
                 vmath::vec3 gp = Grid3d::GridIndexToPosition(i, j, k, dx);
                 vmath::vec3 cp = data.closestPoint(i, j, k);
-                vectorField.set(i, j, k, cp - gp);
+
+                if (generateFrontFacing && generateBackFacing && generateEdgeFacing) {
+                    vectorField.set(i, j, k, cp - gp);
+                    continue;
+                }
+
+                if (!generateFrontFacing && !generateBackFacing && !generateEdgeFacing) {
+                    vectorField.set(i, j, k, zerovect);
+                    continue;
+                }
+
+                // Test whether vector is front facing
+                vmath::vec3 vn = cp - gp;
+                if (vn.length() > eps) {
+                    vn = vn.normalize();
+                } else {
+                    vn = zerovect;
+                }
+
+                vmath::vec3 tn;
+                int tidx = data.closestTriangle(i, j, k);
+                if (tidx != -1) {
+                    tn = mesh.getTriangleNormal(tidx);
+                }
+
+                vmath::vec3 result = cp - gp;
+                bool isFrontFacing = vmath::dot(vn, tn) < 0.0f;
+                if (!generateFrontFacing && !generateBackFacing) {
+                    result = zerovect;
+                } else if (generateFrontFacing && !generateBackFacing) {
+                    if (!isFrontFacing) {
+                        result = zerovect;
+                    }
+                } else if (!generateFrontFacing && generateBackFacing) {
+                    if (isFrontFacing) {
+                        result = zerovect;
+                    }
+                }
+
+                // Test whether vector is edge facing
+                if (!generateEdgeFacing) {
+                    Triangle t = mesh.triangles[tidx];
+                    int vidx1 = t.tri[0];
+                    int vidx2 = t.tri[1];
+                    int vidx3 = t.tri[2];
+                    vmath::vec3 v1 = mesh.vertices[t.tri[0]];
+                    vmath::vec3 v2 = mesh.vertices[t.tri[1]];
+                    vmath::vec3 v3 = mesh.vertices[t.tri[2]];
+
+                    bool isEdgeFacing = false;
+                    float eps = 1e-6;
+                    if (!manifoldVertices[vidx1] && !manifoldVertices[vidx2]) {
+                        vmath::vec3 pline = v1 + (vmath::dot(cp - v1, v2 - v1) / vmath::lengthsq(v2 - v1)) * (v2 - v1);
+                        float dist = vmath::length(pline - cp);
+                        if (dist < eps) {
+                            isEdgeFacing = true;
+                        }
+                    }
+
+                    if (!manifoldVertices[vidx2] && !manifoldVertices[vidx3] && !isEdgeFacing) {
+                        vmath::vec3 pline = v2 + (vmath::dot(cp - v2, v3 - v2) / vmath::lengthsq(v3 - v2)) * (v3 - v2);
+                        float dist = vmath::length(pline - cp);
+                        if (dist < eps) {
+                            isEdgeFacing = true;
+                        }
+                    }
+
+                    if (!manifoldVertices[vidx3] && !manifoldVertices[vidx1] && !isEdgeFacing) {
+                        vmath::vec3 pline = v3 + (vmath::dot(cp - v3, v1 - v3) / vmath::lengthsq(v1 - v3)) * (v1 - v3);
+                        float dist = vmath::length(pline - cp);
+                        if (dist < eps) {
+                            isEdgeFacing = true;
+                        }
+                    }
+
+                    if (isEdgeFacing) {
+                        result = zerovect;
+                    }
+                }
+
+                vectorField.set(i, j, k, result);
             }
         }
     }
@@ -125,6 +215,7 @@ void _initializeNarrowBandClosestPointThread(int startidx, int endidx,
         vmath::vec3 gp = Grid3d::GridIndexToPosition(g, dx);
         vmath::vec3 cp = Collision::findClosestPointOnTriangle(gp, v1, v2, v3);
 
+        data->closestTriangle.set(g, tidx);
         data->closestPoint.set(g, cp);
         data->isClosestPointSet.set(g, true);
     }
@@ -223,10 +314,12 @@ void _checkNeighbour(VectorFieldGenerationData *data, Array3d<bool> *isFrozen,
         return;
     }
 
+    int tidx = data->closestTriangle(di, dj, dk);
     vmath::vec3 p = data->closestPoint(di, dj, dk);
     float d = vmath::length(p - gx);
     if (d < data->phi(g)) {
         data->phi.set(g, d);
+        data->closestTriangle.set(g, tidx);
         data->closestPoint.set(g, p);
         data->isClosestPointSet.set(g, true);
     }

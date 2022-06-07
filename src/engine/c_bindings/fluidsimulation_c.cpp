@@ -123,6 +123,20 @@ extern "C" {
         );
     }
 
+    EXPORTDLL void FluidSimulation_set_timeline_frame_start(FluidSimulation* obj, 
+                                                            int frameno, int *err) {
+        return CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setTimelineFrameStart, frameno, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_set_timeline_frame_end(FluidSimulation* obj, 
+                                                          int frameno, int *err) {
+        return CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setTimelineFrameEnd, frameno, err
+        );
+    }
+
     EXPORTDLL int FluidSimulation_is_current_frame_finished(FluidSimulation* obj, 
                                                             int *err) {
         return CBindings::safe_execute_method_ret_0param(
@@ -713,6 +727,32 @@ extern "C" {
         );
     }
 
+    EXPORTDLL double FluidSimulation_get_surface_age_attribute_radius(FluidSimulation* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getSurfaceAgeAttributeRadius, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_set_surface_age_attribute_radius(FluidSimulation* obj, 
+                                                                    double radius, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setSurfaceAgeAttributeRadius, radius, err
+        );
+    }
+
+    EXPORTDLL double FluidSimulation_get_surface_color_attribute_radius(FluidSimulation* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getSurfaceColorAttributeRadius, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_set_surface_color_attribute_radius(FluidSimulation* obj, 
+                                                                    double radius, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setSurfaceColorAttributeRadius, radius, err
+        );
+    }
+
     EXPORTDLL void FluidSimulation_enable_surface_color_attribute(FluidSimulation* obj,
                                                                 int *err) {
         CBindings::safe_execute_method_void_0param(
@@ -731,6 +771,53 @@ extern "C" {
                                                                    int *err) {
         return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::isSurfaceColorAttributeEnabled, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_enable_surface_color_attribute_mixing(FluidSimulation* obj,
+                                                                int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableSurfaceColorAttributeMixing, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_surface_color_attribute_mixing(FluidSimulation* obj,
+                                                                 int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableSurfaceColorAttributeMixing, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_surface_color_attribute_mixing_enabled(FluidSimulation* obj,
+                                                                   int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isSurfaceColorAttributeMixingEnabled, err
+        );
+    }
+
+    EXPORTDLL double FluidSimulation_get_surface_color_attribute_mixing_rate(FluidSimulation* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getSurfaceColorAttributeMixingRate, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_set_surface_color_attribute_mixing_rate(FluidSimulation* obj, 
+                                                                    double rate, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setSurfaceColorAttributeMixingRate, rate, err
+        );
+    }
+
+    EXPORTDLL double FluidSimulation_get_surface_color_attribute_mixing_radius(FluidSimulation* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getSurfaceColorAttributeMixingRadius, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_set_surface_color_attribute_mixing_radius(FluidSimulation* obj, 
+                                                                    double rate, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setSurfaceColorAttributeMixingRadius, rate, err
         );
     }
 

@@ -271,7 +271,7 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
         if self.grid_info_expanded:
             # Workaround to get UI panel to redraw when grid info is displayed
             selected_object = vcu.get_active_object()
-            if selected_object.flip_fluid.is_domain():
+            if selected_object is not None and selected_object.flip_fluid.is_domain():
                 # Possible bug in Blender where this could crash if the domain is not
                 # selected
                 self.resolution = self.resolution

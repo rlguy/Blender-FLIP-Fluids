@@ -145,6 +145,60 @@ bool ForceField::isMinDistanceEnabled() {
     return _isMinDistanceEnabled;
 }
 
+void ForceField::enableFrontfacing() {
+    if (!_isFrontfacingEnabled) {
+        _isStateChanged = true;
+    }
+    _isFrontfacingEnabled = true;
+}
+
+void ForceField::disableFrontfacing() {
+    if (_isFrontfacingEnabled) {
+        _isStateChanged = true;
+    }
+    _isFrontfacingEnabled = false;
+}
+
+bool ForceField::isFrontfacingEnabled() {
+    return _isFrontfacingEnabled;
+}
+
+void ForceField::enableBackfacing() {
+    if (!_isBackfacingEnabled) {
+        _isStateChanged = true;
+    }
+    _isBackfacingEnabled = true;
+}
+
+void ForceField::disableBackfacing() {
+    if (_isBackfacingEnabled) {
+        _isStateChanged = true;
+    }
+    _isBackfacingEnabled = false;
+}
+
+bool ForceField::isBackfacingEnabled() {
+    return _isBackfacingEnabled;
+}
+
+void ForceField::enableEdgefacing() {
+    if (!_isEdgefacingEnabled) {
+        _isStateChanged = true;
+    }
+    _isEdgefacingEnabled = true;
+}
+
+void ForceField::disableEdgefacing() {
+    if (_isEdgefacingEnabled) {
+        _isStateChanged = true;
+    }
+    _isEdgefacingEnabled = false;
+}
+
+bool ForceField::isEdgefacingEnabled() {
+    return _isEdgefacingEnabled;
+}
+
 float ForceField::getMinDistance() {
     return _minDistance;
 }

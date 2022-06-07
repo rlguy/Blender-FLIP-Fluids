@@ -116,8 +116,10 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
             description="Accuracy of the viscosity solver. Decrease to speed up baking at the cost of accuracy,"
                 " increase to improve accuracy at the cost of baking speed. High viscosity thick or stiff fluids"
                 " benefit the most from increasing accuracy. Low viscosity thin fluids often work well at the lowest"
-                " accuracy. Setting above a value of 4 may have greatly diminishing returns on improvement", 
+                " accuracy. Setting above a value of 4 may have greatly diminishing returns on improvement and is not"
+                " recommended", 
             min=1, max=6,
+            soft_max=4,
             default=4,
             ); exec(conv("viscosity_solver_error_tolerance"))
     enable_surface_tension = BoolProperty(

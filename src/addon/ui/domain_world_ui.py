@@ -197,9 +197,14 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
                 ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-World-Settings#force-field-resolution"
                 column.operator(
                     "wm.url_open", 
-                    text="Force Field Example Scenes", 
+                    text="Force Fields Example Scenes", 
                     icon="WORLD"
                 ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Example-Scene-Descriptions#force-field-examples"
+                column.operator(
+                    "wm.url_open", 
+                    text="Force Fields Video Tutorial", 
+                    icon="WORLD"
+                ).url = "https://youtu.be/bXhMpzERHpk"
                 
         box = self.layout.box()
         row = box.row(align=True)

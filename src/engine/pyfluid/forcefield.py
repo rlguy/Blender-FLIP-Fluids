@@ -162,6 +162,51 @@ class ForceField():
         pb.execute_lib_func(libfunc, [self(), value])
 
     @property
+    def enable_frontfacing(self):
+        libfunc = lib.ForceField_is_frontfacing_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_frontfacing.setter
+    def enable_frontfacing(self, boolval):
+        if boolval:
+            libfunc = lib.ForceField_enable_frontfacing
+        else:
+            libfunc = lib.ForceField_disable_frontfacing
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_backfacing(self):
+        libfunc = lib.ForceField_is_backfacing_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_backfacing.setter
+    def enable_backfacing(self, boolval):
+        if boolval:
+            libfunc = lib.ForceField_enable_backfacing
+        else:
+            libfunc = lib.ForceField_disable_backfacing
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_edgefacing(self):
+        libfunc = lib.ForceField_is_edgefacing_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_edgefacing.setter
+    def enable_edgefacing(self, boolval):
+        if boolval:
+            libfunc = lib.ForceField_enable_edgefacing
+        else:
+            libfunc = lib.ForceField_disable_edgefacing
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
     def gravity_scale(self):
         libfunc = lib.ForceField_get_gravity_scale
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_float)

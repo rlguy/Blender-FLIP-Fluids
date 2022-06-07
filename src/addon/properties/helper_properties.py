@@ -19,10 +19,12 @@ from bpy.props import (
         IntProperty,
         StringProperty,
         BoolProperty,
-        PointerProperty
+        PointerProperty,
+        EnumProperty
         )
 
 from . import preset_properties
+from .. import types
 from ..utils import version_compatibility_utils as vcu
 
 
@@ -40,6 +42,29 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             default=0,
             options={'HIDDEN'},
             ); exec(conv("playback_frame_offset"))
+
+    cmd_launch_render_after_bake = BoolProperty(
+            name="Render After Bake",
+            description="After the command line bake process is finished, begin rendering animation",
+            default=False,
+            ); exec(conv("cmd_launch_render_after_bake"))
+    cmd_launch_render_mode = EnumProperty(
+            name="CMD Render Mode",
+            description="Frame range to use for baking the simulation",
+            items=types.cmd_render_mode,
+            default='CMD_RENDER_MODE_NORMAL',
+            options={'HIDDEN'},
+            ); exec(conv("cmd_launch_render_mode"))
+    cmd_open_image_after_render = BoolProperty(
+            name="Open Image After Render",
+            description="After the command line render process is finished, open the image in your default OS image program",
+            default=True,
+            ); exec(conv("cmd_open_image_after_render"))
+    cmd_close_window_after_render = BoolProperty(
+            name="Close CMD Window After Render",
+            description="After the command line render process is finished, open the image in your default OS image program",
+            default=False,
+            ); exec(conv("cmd_close_window_after_render"))
 
     unsaved_blend_file_tooltip = BoolProperty(
             name="Unsaved Blend File Tooltip", 

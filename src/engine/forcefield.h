@@ -74,6 +74,18 @@ public:
     float getMaxDistance();
     void setMaxDistance(float d);
 
+    void enableFrontfacing();
+    void disableFrontfacing();
+    bool isFrontfacingEnabled();
+
+    void enableBackfacing();
+    void disableBackfacing();
+    bool isBackfacingEnabled();
+
+    void enableEdgefacing();
+    void disableEdgefacing();
+    bool isEdgefacingEnabled();
+
     float getGravityScale();
     void setGravityScale(float s);
 
@@ -113,6 +125,10 @@ protected:
 
     bool _isMaxDistanceEnabled = false;
     float _maxDistance = 0.0f;
+
+    float _isFrontfacingEnabled = true;
+    float _isBackfacingEnabled = true;
+    float _isEdgefacingEnabled = true;
 
     float _gravityScale = 1.0f;
     float _gravityScaleWidth = 0.0f;

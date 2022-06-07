@@ -142,6 +142,16 @@ class FluidSimulation(object):
         pb.init_lib_func(libfunc, [c_void_p, c_int, c_void_p], None)
         return pb.execute_lib_func(libfunc, [self(), frameno])
 
+    def set_timeline_frame_start(self, frameno):
+        libfunc = lib.FluidSimulation_set_timeline_frame_start
+        pb.init_lib_func(libfunc, [c_void_p, c_int, c_void_p], None)
+        return pb.execute_lib_func(libfunc, [self(), frameno])
+
+    def set_timeline_frame_end(self, frameno):
+        libfunc = lib.FluidSimulation_set_timeline_frame_end
+        pb.init_lib_func(libfunc, [c_void_p, c_int, c_void_p], None)
+        return pb.execute_lib_func(libfunc, [self(), frameno])
+
     def is_current_frame_finished(self):
         libfunc = lib.FluidSimulation_is_current_frame_finished
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
@@ -608,6 +618,19 @@ class FluidSimulation(object):
         pb.execute_lib_func(libfunc, [self()])
 
     @property
+    def surface_age_attribute_radius(self):
+        libfunc = lib.FluidSimulation_get_surface_age_attribute_radius
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @surface_age_attribute_radius.setter
+    @decorators.check_ge_zero
+    def surface_age_attribute_radius(self, radius):
+        libfunc = lib.FluidSimulation_set_surface_age_attribute_radius
+        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), radius])
+
+    @property
     def enable_surface_color_attribute(self):
         libfunc = lib.FluidSimulation_is_surface_color_attribute_enabled
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
@@ -621,6 +644,60 @@ class FluidSimulation(object):
             libfunc = lib.FluidSimulation_disable_surface_color_attribute
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def surface_color_attribute_radius(self):
+        libfunc = lib.FluidSimulation_get_surface_color_attribute_radius
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @surface_color_attribute_radius.setter
+    @decorators.check_ge_zero
+    def surface_color_attribute_radius(self, radius):
+        libfunc = lib.FluidSimulation_set_surface_color_attribute_radius
+        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), radius])
+
+    @property
+    def enable_surface_color_attribute_mixing(self):
+        libfunc = lib.FluidSimulation_is_surface_color_attribute_mixing_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_surface_color_attribute_mixing.setter
+    def enable_surface_color_attribute_mixing(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_surface_color_attribute_mixing
+        else:
+            libfunc = lib.FluidSimulation_disable_surface_color_attribute_mixing
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def surface_color_attribute_mixing_rate(self):
+        libfunc = lib.FluidSimulation_get_surface_color_attribute_mixing_rate
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @surface_color_attribute_mixing_rate.setter
+    @decorators.check_ge_zero
+    def surface_color_attribute_mixing_rate(self, rate):
+        libfunc = lib.FluidSimulation_set_surface_color_attribute_mixing_rate
+        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), rate])
+
+    @property
+    def surface_color_attribute_mixing_radius(self):
+        libfunc = lib.FluidSimulation_get_surface_color_attribute_mixing_radius
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @surface_color_attribute_mixing_radius.setter
+    @decorators.check_ge_zero
+    def surface_color_attribute_mixing_radius(self, radius):
+        libfunc = lib.FluidSimulation_set_surface_color_attribute_mixing_radius
+        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), radius])
 
     @property
     def enable_surface_source_id_attribute(self):

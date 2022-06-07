@@ -776,6 +776,10 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
 
     # Domain Settings
 
+    init_data = data.domain_data.initialize
+    fluidsim.set_timeline_frame_start(init_data.frame_start)
+    fluidsim.set_timeline_frame_end(init_data.frame_end)
+
     fluidsim.enable_preview_mesh_output = dprops.initialize.preview_dx
     if dprops.initialize.upscale_simulation:
         save_isize = dprops.initialize.savestate_isize
@@ -1025,8 +1029,18 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
         __get_parameter_data(surface.enable_vorticity_vector_attribute, frameno)
     fluidsim.enable_surface_age_attribute = \
         __get_parameter_data(surface.enable_age_attribute, frameno)
+    fluidsim.surface_age_attribute_radius = \
+        __get_parameter_data(surface.age_attribute_radius, frameno)
     fluidsim.enable_surface_color_attribute = \
         __get_parameter_data(surface.enable_color_attribute, frameno)
+    fluidsim.surface_color_attribute_radius = \
+        __get_parameter_data(surface.color_attribute_radius, frameno)
+    fluidsim.enable_surface_color_attribute_mixing = \
+        __get_parameter_data(surface.enable_color_attribute_mixing, frameno)
+    fluidsim.surface_color_attribute_mixing_rate = \
+        __get_parameter_data(surface.color_attribute_mixing_rate, frameno)
+    fluidsim.surface_color_attribute_mixing_radius = \
+        __get_parameter_data(surface.color_attribute_mixing_radius, frameno)
     fluidsim.enable_surface_source_id_attribute = \
         __get_parameter_data(surface.enable_source_id_attribute, frameno)
 
@@ -1470,6 +1484,9 @@ def __update_animatable_force_field_properties(data, frameid):
             force_field.gravity_scale = __get_parameter_data(data.gravity_scale_point, frameid)
             force_field.gravity_scale_width = __get_parameter_data(data.gravity_scale_width_point, frameid)
         elif field_type == 'FORCE_FIELD_TYPE_SURFACE':
+            force_field.enable_frontfacing = __get_parameter_data(data.enable_frontfacing, frameid)
+            force_field.enable_backfacing = __get_parameter_data(data.enable_backfacing, frameid)
+            force_field.enable_edgefacing = __get_parameter_data(data.enable_edgefacing, frameid)
             force_field.gravity_scale = __get_parameter_data(data.gravity_scale_surface, frameid)
             force_field.gravity_scale_width = __get_parameter_data(data.gravity_scale_width_surface, frameid)
         elif field_type == 'FORCE_FIELD_TYPE_VOLUME':
@@ -1742,7 +1759,7 @@ def __update_animatable_domain_properties(fluidsim, data, frameno):
         threshold = __get_parameter_data(world.sheet_fill_threshold, frameno)
         __set_property(fluidsim, 'enable_sheet_seeding', is_sheet_seeding_enabled)
         __set_property(fluidsim, 'sheet_fill_rate', sheet_fill_rate, value_min=0, value_max=1.0)
-        __set_property(fluidsim, 'sheet_fill_threshold', threshold - 1, value_min=0, value_max=1.0)
+        __set_property(fluidsim, 'sheet_fill_threshold', threshold - 1, value_min=-1.0, value_max=0.0)
 
     friction = __get_parameter_data(world.boundary_friction, frameno)
     __set_property(fluidsim, 'boundary_friction', friction, value_min=0, value_max=1.0)
@@ -1786,6 +1803,21 @@ def __update_animatable_domain_properties(fluidsim, data, frameno):
 
     motion_blur = __get_parameter_data(surface.generate_motion_blur_data, frameno)
     __set_property(fluidsim, 'enable_surface_motion_blur', motion_blur)
+
+    age_radius = __get_parameter_data(surface.age_attribute_radius, frameno)
+    __set_property(fluidsim, 'surface_age_attribute_radius', age_radius)
+
+    color_radius = __get_parameter_data(surface.color_attribute_radius, frameno)
+    __set_property(fluidsim, 'surface_color_attribute_radius', color_radius)
+
+    enable_mixing = __get_parameter_data(surface.enable_color_attribute_mixing, frameno)
+    __set_property(fluidsim, 'enable_surface_color_attribute_mixing', enable_mixing)
+
+    mixing_rate = __get_parameter_data(surface.color_attribute_mixing_rate, frameno)
+    __set_property(fluidsim, 'surface_color_attribute_mixing_rate', mixing_rate)
+
+    mixing_radius = __get_parameter_data(surface.color_attribute_mixing_radius, frameno)
+    __set_property(fluidsim, 'surface_color_attribute_mixing_radius', mixing_radius)
 
     # Advanced Settings
 

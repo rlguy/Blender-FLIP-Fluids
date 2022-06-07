@@ -444,11 +444,16 @@ class BakeFluidSimulationCommandLine(bpy.types.Operator):
                     self.report({"ERROR"}, self.geometry_exporter.get_error_message())
                     dprops.bake.is_bake_cancelled = True
                     dprops.bake.is_export_operator_running = False
-                    return
+                    return False
 
                 self._export_simulation_data_file()
+                if not dprops.bake.export_success:
+                    dprops.bake.is_bake_cancelled = True
+                    self.cancel(context)
+                    return False
+
                 dprops.bake.is_export_operator_running = False
-                return
+                return True
 
 
     def _update_simulation_stats(self, context):
@@ -486,7 +491,10 @@ class BakeFluidSimulationCommandLine(bpy.types.Operator):
 
         self._reset_bake(context)
         self._initialize_domain(context)
-        self._export_simulation_data(context)
+        success = self._export_simulation_data(context)
+        if not success:
+            self.cancel(context)
+            return {'FINISHED'}
 
         dprops = self._get_domain_properties()
         if dprops.bake.is_bake_cancelled:

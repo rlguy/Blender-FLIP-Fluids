@@ -567,10 +567,7 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
 def scene_update_post(scene):
     domain_properties.scene_update_post(scene)
 
-    flip_objects = (scene.flip_fluid.get_inflow_objects() +
-                    scene.flip_fluid.get_outflow_objects() +
-                    scene.flip_fluid.get_fluid_objects() +
-                    scene.flip_fluid.get_force_field_objects())
+    flip_objects = scene.flip_fluid.get_simulation_objects()
     domain_object = scene.flip_fluid.get_domain_object()
     if domain_object is not None:
         flip_objects.append(domain_object)

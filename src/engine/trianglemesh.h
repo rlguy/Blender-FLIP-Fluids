@@ -65,8 +65,10 @@ public:
     void getFaceNeighbours(unsigned int tidx, std::vector<int> &n);
     void getFaceNeighbours(Triangle t, std::vector<int> &n);
     void getVertexNeighbours(unsigned int vidx, std::vector<int> &n);
+    std::vector<bool> getManifoldVertexList();
     void getTrianglePosition(unsigned int index, vmath::vec3 tri[3]);
     vmath::vec3 getTriangleCenter(unsigned int index);
+    vmath::vec3 getTriangleNormal(unsigned int index);
     vmath::vec3 getCentroid();
     void removeMinimumTriangleCountPolyhedra(int count);
     void removeTriangles(std::vector<int> &triangles);

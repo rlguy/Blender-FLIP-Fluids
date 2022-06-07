@@ -364,6 +364,19 @@ class FLIPFLUID_PT_DomainTypeWhitewaterPanel(bpy.types.Panel):
                 column.label(text="Geometry attribute features are only available in", icon='ERROR')
                 column.label(text="Blender 2.93 or later", icon='ERROR')
 
+            if show_documentation:
+                column = box.column(align=True)
+                column.operator(
+                    "wm.url_open", 
+                    text="Domain Attributes Documentation", 
+                    icon="WORLD"
+                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Attributes-and-Data-Settings"
+                column.operator(
+                    "wm.url_open", 
+                    text="Attributes and Motion Blur Example Scenes", 
+                    icon="WORLD"
+                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Example-Scene-Descriptions#attribute-and-motion-blur-examples"
+
 
     def draw_whitewater_display_settings(self, context):
         obj = vcu.get_active_object(context)

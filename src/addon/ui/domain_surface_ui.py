@@ -133,16 +133,52 @@ class FLIPFLUID_PT_DomainTypeFluidSurfacePanel(bpy.types.Panel):
             box.label(text="Geometry Attributes:")
             column = box.column(align=True)
             if vcu.is_blender_293():
-                column.prop(sprops, "enable_velocity_vector_attribute")
-                column.prop(sprops, "enable_speed_attribute")
-                column.prop(sprops, "enable_vorticity_vector_attribute")
-                column.prop(sprops, "enable_age_attribute")
-                column.prop(sprops, "enable_color_attribute")
-                column.prop(sprops, "enable_source_id_attribute")
+                column.prop(sprops, "enable_velocity_vector_attribute", text="Velocity Attributes")
+                column.prop(sprops, "enable_speed_attribute", text="Speed Attributes")
+                column.prop(sprops, "enable_vorticity_vector_attribute", text="Vorticity Attributes")
+                row = column.row(align=True)
+                row.prop(sprops, "enable_age_attribute", text="Age Attributes")
+                row.prop(sprops, "age_attribute_radius", text="Smoothing", slider=True)
+                column.prop(sprops, "enable_source_id_attribute", text="Source ID Attributes")
+
+                subbox = box.box()
+                column = subbox.column(align=True)
+                split = column.split(align=True)
+                column_left = split.column(align=True)
+                column_right = split.column(align=True)
+
+                column_left.prop(sprops, "enable_color_attribute", text="Color Attributes")
+
+                column_right.prop(sprops, "color_attribute_radius", text="Smoothing", slider=True)
+
+                column = subbox.column(align=True)
+                split = column.split(align=True)
+                column_left = split.column(align=True)
+                column_right = split.column(align=True)
+
+                column_left.enabled = sprops.enable_color_attribute
+                column_left.prop(sprops, "enable_color_attribute_mixing", text="Enable Mixing")
+
+                column_right.enabled = sprops.enable_color_attribute and sprops.enable_color_attribute_mixing
+                column_right.prop(sprops, "color_attribute_mixing_rate", text="Mix Rate", slider=True)
+                column_right.prop(sprops, "color_attribute_mixing_radius", text="Mix Radius", slider=True)
             else:
                 column.enabled = False
                 column.label(text="Geometry attribute features are only available in", icon='ERROR')
                 column.label(text="Blender 2.93 or later", icon='ERROR')
+
+            if show_documentation:
+                column = box.column(align=True)
+                column.operator(
+                    "wm.url_open", 
+                    text="Domain Attributes Documentation", 
+                    icon="WORLD"
+                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Attributes-and-Data-Settings"
+                column.operator(
+                    "wm.url_open", 
+                    text="Attributes and Motion Blur Example Scenes", 
+                    icon="WORLD"
+                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Example-Scene-Descriptions#attribute-and-motion-blur-examples"
 
 
 def register():

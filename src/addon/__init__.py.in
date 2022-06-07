@@ -17,7 +17,7 @@
 bl_info = {
     "name" : "FLIP Fluids Demo @FLUIDENGINE_VERSION_MAJOR@.@FLUIDENGINE_VERSION_MINOR@.@FLUIDENGINE_VERSION_REVISION@",
     "description": "A FLIP Fluid Simulation Tool for Blender (v@FLUIDENGINE_VERSION_LABEL@)",
-    "author" : "Ryan Guy <ryan.l.guy[at]gmail.com>, Dennis Fassbaender <info[at]df-videos.de>",
+    "author" : "Ryan Guy & Dennis Fassbaender <support[at]flipfluids.com>",
     "version" : (@FLUIDENGINE_VERSION_MAJOR@, @FLUIDENGINE_VERSION_MINOR@, @FLUIDENGINE_VERSION_REVISION@),
     "blender" : (2, 81, 0),
     "location" : "Properties > Physics > FLIP Fluid",
@@ -74,12 +74,14 @@ from .utils import version_compatibility_utils as vcu
 
 @bpy.app.handlers.persistent
 def scene_update_post(scene):
-    if not render.is_rendering():
-        # We don't want to update these while rendering to prevent
-        # odd behaviour in the depsgraph
-        properties.scene_update_post(scene)
-        materials.scene_update_post(scene)
-    render.scene_update_post(scene)
+    installation_utils.scene_update_post(scene)
+    if installation_utils.is_addon_active():
+        if not render.is_rendering():
+            # We don't want to update these while rendering to prevent
+            # odd behaviour in the depsgraph
+            properties.scene_update_post(scene)
+            materials.scene_update_post(scene)
+        render.scene_update_post(scene)
 
 
 @bpy.app.handlers.persistent
@@ -123,8 +125,7 @@ def load_post(nonedata):
     if vcu.is_blender_28() and not vcu.is_blender_281():
         print("FLIP FLUIDS WARNING: Blender 2.80 contains bugs that can cause frequent crashes during render, Alembic export, and rigid/cloth simulation baking. Blender version 2.81 or higher is recommended.")
 
-    installation_utils.complete_installation()
-
+    installation_utils.load_post()
     materials.load_post()
     properties.load_post()
     presets.load_post()

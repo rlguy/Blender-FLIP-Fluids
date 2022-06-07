@@ -41,6 +41,8 @@ SOFTWARE.
 #include "versionutils.h"
 #include "interpolation.h"
 #include "gridutils.h"
+#include "attributetogridtransfer.h"
+
 
 FluidSimulation::FluidSimulation() {
 }
@@ -99,6 +101,20 @@ void FluidSimulation::setCurrentFrame(int frameno) {
                  _logfile.getTime() << " setCurrentFrame: " << frameno << std::endl);
 
     _currentFrame = frameno;
+}
+
+void FluidSimulation::setTimelineFrameStart(int frameno) {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " setTimelineFrameStart: " << frameno << std::endl);
+
+    _timelineFrameStart = frameno;
+}
+
+void FluidSimulation::setTimelineFrameEnd(int frameno) {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " setTimelineFrameEnd: " << frameno << std::endl);
+
+    _timelineFrameEnd = frameno;
 }
 
 bool FluidSimulation::isCurrentFrameFinished() { 
@@ -594,6 +610,24 @@ bool FluidSimulation::isSurfaceAgeAttributeEnabled() {
     return _isSurfaceAgeAttributeEnabled;
 }
 
+double FluidSimulation::getSurfaceAgeAttributeRadius() {
+    return _ageAttributeRadius;
+}
+
+void FluidSimulation::setSurfaceAgeAttributeRadius(double r) {
+    if (r <= 0.0) {
+        std::string msg = "Error: Radius must be greater than or equal to 0.0.\n";
+        msg += "radius: " + _toString(r) + "\n";
+        throw std::domain_error(msg);
+    }
+
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << 
+                 " setSurfaceAgeAttributeRadius: " << r << std::endl);
+
+    _ageAttributeRadius = r;
+}
+
 void FluidSimulation::enableSurfaceColorAttribute() {
     _logfile.log(std::ostringstream().flush() << 
                  _logfile.getTime() << " enableSurfaceColorAttribute" << std::endl);
@@ -610,6 +644,78 @@ void FluidSimulation::disableSurfaceColorAttribute() {
 
 bool FluidSimulation::isSurfaceColorAttributeEnabled() {
     return _isSurfaceSourceColorAttributeEnabled;
+}
+
+double FluidSimulation::getSurfaceColorAttributeRadius() {
+    return _colorAttributeRadius;
+}
+
+void FluidSimulation::setSurfaceColorAttributeRadius(double r) {
+    if (r <= 0.0) {
+        std::string msg = "Error: Radius must be greater than or equal to 0.0.\n";
+        msg += "radius: " + _toString(r) + "\n";
+        throw std::domain_error(msg);
+    }
+
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << 
+                 " setSurfaceColorAttributeRadius: " << r << std::endl);
+
+    _colorAttributeRadius = r;
+}
+
+void FluidSimulation::enableSurfaceColorAttributeMixing() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " enableSurfaceColorAttributeMixing" << std::endl);
+
+    _isSurfaceSourceColorAttributeMixingEnabled = true;
+}
+
+void FluidSimulation::disableSurfaceColorAttributeMixing() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " disableSurfaceColorAttributeMixing" << std::endl);
+
+    _isSurfaceSourceColorAttributeMixingEnabled = false;
+}
+
+bool FluidSimulation::isSurfaceColorAttributeMixingEnabled() {
+    return _isSurfaceSourceColorAttributeMixingEnabled;
+}
+
+double FluidSimulation::getSurfaceColorAttributeMixingRadius() {
+    return _colorAttributeMixingRadius;
+}
+
+void FluidSimulation::setSurfaceColorAttributeMixingRadius(double r) {
+    if (r <= 0.0) {
+        std::string msg = "Error: Radius must be greater than or equal to 0.0.\n";
+        msg += "radius: " + _toString(r) + "\n";
+        throw std::domain_error(msg);
+    }
+
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << 
+                 " setSurfaceColorAttributeMixingRadius: " << r << std::endl);
+
+    _colorAttributeMixingRadius = r;
+}
+
+double FluidSimulation::getSurfaceColorAttributeMixingRate() {
+    return _colorAttributeMixingRate;
+}
+
+void FluidSimulation::setSurfaceColorAttributeMixingRate(double r) {
+    if (r <= 0.0) {
+        std::string msg = "Error: Rate must be greater than or equal to 0.0.\n";
+        msg += "rate: " + _toString(r) + "\n";
+        throw std::domain_error(msg);
+    }
+
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << 
+                 " setSurfaceColorAttributeMixingRate: " << r << std::endl);
+
+    _colorAttributeMixingRate = r;
 }
 
 void FluidSimulation::enableSurfaceSourceIDAttribute() {
@@ -1782,7 +1888,7 @@ bool FluidSimulation::isForceFieldsEnabled() {
 }
 
 int FluidSimulation::getForceFieldReductionLevel() {
-    return _currentFrame;
+    return _forceFieldReductionLevel;
 }
 
 void FluidSimulation::setForceFieldReductionLevel(int level) {
@@ -3002,7 +3108,7 @@ void FluidSimulation::loadMarkerParticleSourceIDData(FluidSimulationMarkerPartic
         return;
     }
 
-    float *sourceid = (float*)(data.sourceid);
+    int *sourceid = (int*)(data.sourceid);
 
     MarkerParticleSourceIDLoadData loadData;
     loadData.particles.reserve(data.size);
@@ -3169,7 +3275,6 @@ void FluidSimulation::_initializeAttributeGrids(int isize, int jsize, int ksize)
 
     if (_isSurfaceAgeAttributeEnabled) {
         _ageAttributeGrid = Array3d<float>(isize, jsize, ksize, 0.0f);
-        _ageAttributeCountGrid = Array3d<int>(isize, jsize, ksize, 0);
         _ageAttributeValidGrid = Array3d<bool>(isize, jsize, ksize, false);
     }
 
@@ -3177,7 +3282,6 @@ void FluidSimulation::_initializeAttributeGrids(int isize, int jsize, int ksize)
         _colorAttributeGridR = Array3d<float>(isize, jsize, ksize, 0.0f);
         _colorAttributeGridG = Array3d<float>(isize, jsize, ksize, 0.0f);
         _colorAttributeGridB = Array3d<float>(isize, jsize, ksize, 0.0f);
-        _colorAttributeCountGrid = Array3d<int>(isize, jsize, ksize, 0);
         _colorAttributeValidGrid = Array3d<bool>(isize, jsize, ksize, false);
     }
 }
@@ -4763,6 +4867,19 @@ void FluidSimulation::_updateSheetSeeding() {
     _markerParticles.getAttributeValues("POSITION", positions);
     _markerParticles.getAttributeValues("VELOCITY", velocities);
 
+    std::vector<float> *ages;
+    if (_isSurfaceAgeAttributeEnabled) {
+        _markerParticles.getAttributeValues("AGE", ages);
+        _updateMarkerParticleAgeAttributeGrid();
+    }
+
+    std::vector<vmath::vec3> *colors;
+    if (_isSurfaceSourceColorAttributeEnabled) {
+        _markerParticles.getAttributeValues("COLOR", colors);
+        _updateMarkerParticleColorAttributeGrid();
+    }
+
+    vmath::vec3 goffset(0.5f * _dx, 0.5f * _dx, 0.5f * _dx);
     float solidSheetingWidth = 2.0f * _dx;
     for (size_t i = 0; i < sheetParticles.size(); i++) {
         vmath::vec3 p = sheetParticles[i];
@@ -4784,6 +4901,19 @@ void FluidSimulation::_updateSheetSeeding() {
         vmath::vec3 v = _savedVelocityField.evaluateVelocityAtPositionLinear(p);
         positions->push_back(p);
         velocities->push_back(v);
+
+        if (_isSurfaceAgeAttributeEnabled) {
+            float age = Interpolation::trilinearInterpolate(p - goffset, _dx, _ageAttributeGrid);
+            ages->push_back(age);
+        }
+
+        if (_isSurfaceSourceColorAttributeEnabled) {
+            float r = Interpolation::trilinearInterpolate(p - goffset, _dx, _colorAttributeGridR);
+            float g = Interpolation::trilinearInterpolate(p - goffset, _dx, _colorAttributeGridG);
+            float b = Interpolation::trilinearInterpolate(p - goffset, _dx, _colorAttributeGridB);
+            vmath::vec3 color(r, g, b);
+            colors->push_back(color);
+        }
     }
 
     _markerParticles.update();
@@ -5044,34 +5174,26 @@ void FluidSimulation::_updateMarkerParticleVorticityAttributeGrid() {
     _MACVelocity.generateCurlAtCellCenter(_vorticityAttributeGrid);
 }
 
-void FluidSimulation::_updateMarkerParticleAgeAttributeGrid(double dt) {
+void FluidSimulation::_updateMarkerParticleAgeAttributeGrid() {
     _ageAttributeGrid.fill(0.0f);
-    _ageAttributeCountGrid.fill(0);
     _ageAttributeValidGrid.fill(false);
 
     std::vector<vmath::vec3> *positions;
     std::vector<float> *ages;
     _markerParticles.getAttributeValues("POSITION", positions);
     _markerParticles.getAttributeValues("AGE", ages);
-    for (size_t i = 0; i < positions->size(); i++) {
-        vmath::vec3 p = positions->at(i);
-        float age = ages->at(i);
-        GridIndex g = Grid3d::positionToGridIndex(p, _dx);
-        _ageAttributeGrid.add(g, age);
-        _ageAttributeCountGrid.add(g, 1);
-    }
+    float radius = _ageAttributeRadius * _dx;
 
-    for (int k = 0; k < _ksize; k++) {
-        for (int j = 0; j < _jsize; j++) {
-            for (int i = 0; i < _isize; i++) {
-                int count = _ageAttributeCountGrid(i, j, k);
-                if (count > 1) {
-                   _ageAttributeGrid.set(i, j, k, _ageAttributeGrid(i, j, k) / count);
-                   _ageAttributeValidGrid.set(i, j, k, true);
-                }
-            }
-        }
-    }
+    AttributeTransferParameters<float> params;
+    params.positions = positions;
+    params.attributes = ages;
+    params.attributeGrid = &_ageAttributeGrid;
+    params.validGrid = &_ageAttributeValidGrid;
+    params.particleRadius = radius;
+    params.dx = _dx;
+
+    AttributeToGridTransfer<float> attributeTransfer;
+    attributeTransfer.transfer(params);
 
     GridUtils::extrapolateGrid(&_ageAttributeGrid, &_ageAttributeValidGrid, _CFLConditionNumber);
 }
@@ -5080,44 +5202,115 @@ void FluidSimulation::_updateMarkerParticleColorAttributeGrid() {
     _colorAttributeGridR.fill(0.0f);
     _colorAttributeGridG.fill(0.0f);
     _colorAttributeGridB.fill(0.0f);
-    _colorAttributeCountGrid.fill(0);
     _colorAttributeValidGrid.fill(false);
+
+    Array3d<vmath::vec3> colorAttributeGrid(_isize, _jsize, _ksize, vmath::vec3());
 
     std::vector<vmath::vec3> *positions;
     std::vector<vmath::vec3> *colors;
     _markerParticles.getAttributeValues("POSITION", positions);
     _markerParticles.getAttributeValues("COLOR", colors);
-    for (size_t i = 0; i < positions->size(); i++) {
-        vmath::vec3 p = positions->at(i);
-        vmath::vec3 color = colors->at(i);
-        GridIndex g = Grid3d::positionToGridIndex(p, _dx);
-        _colorAttributeGridR.add(g, color.x);
-        _colorAttributeGridG.add(g, color.y);
-        _colorAttributeGridB.add(g, color.z);
-        _colorAttributeCountGrid.add(g, 1);
-    }
+    float radius = _colorAttributeRadius * _dx;
+
+    AttributeTransferParameters<vmath::vec3> params;
+    params.positions = positions;
+    params.attributes = colors;
+    params.attributeGrid = &colorAttributeGrid;
+    params.validGrid = &_colorAttributeValidGrid;
+    params.particleRadius = radius;
+    params.dx = _dx;
+
+    AttributeToGridTransfer<vmath::vec3> attributeTransfer;
+    attributeTransfer.transfer(params);
 
     for (int k = 0; k < _ksize; k++) {
         for (int j = 0; j < _jsize; j++) {
             for (int i = 0; i < _isize; i++) {
-                int count = _colorAttributeCountGrid(i, j, k);
-                if (count > 1) {
-                    float rval = _clamp(_colorAttributeGridR(i, j, k) / count, 0.0f, 1.0f);
-                    float gval = _clamp(_colorAttributeGridG(i, j, k) / count, 0.0f, 1.0f);
-                    float bval = _clamp(_colorAttributeGridB(i, j, k) / count, 0.0f, 1.0f);
-
-                   _colorAttributeGridR.set(i, j, k, rval);
-                   _colorAttributeGridG.set(i, j, k, gval);
-                   _colorAttributeGridB.set(i, j, k, bval);
-                   _colorAttributeValidGrid.set(i, j, k, true);
-                }
+                vmath::vec3 color = colorAttributeGrid(i, j, k);
+                float rval = _clamp(color.x, 0.0f, 1.0f);
+                float gval = _clamp(color.y, 0.0f, 1.0f);
+                float bval = _clamp(color.z, 0.0f, 1.0f);
+                _colorAttributeGridR.set(i, j, k, rval);
+                _colorAttributeGridG.set(i, j, k, gval);
+                _colorAttributeGridB.set(i, j, k, bval);
             }
         }
     }
 
-    GridUtils::extrapolateGrid(&_colorAttributeGridR, &_colorAttributeValidGrid, 1.5 * _CFLConditionNumber);
-    GridUtils::extrapolateGrid(&_colorAttributeGridG, &_colorAttributeValidGrid, 1.5 * _CFLConditionNumber);
-    GridUtils::extrapolateGrid(&_colorAttributeGridB, &_colorAttributeValidGrid, 1.5 * _CFLConditionNumber);
+    GridUtils::extrapolateGrid(&_colorAttributeGridR, &_colorAttributeValidGrid, _CFLConditionNumber);
+    GridUtils::extrapolateGrid(&_colorAttributeGridG, &_colorAttributeValidGrid, _CFLConditionNumber);
+    GridUtils::extrapolateGrid(&_colorAttributeGridB, &_colorAttributeValidGrid, _CFLConditionNumber);
+}
+
+void FluidSimulation::_updateMarkerParticleColorAttributeMixing(double dt) {
+    if (!_isSurfaceSourceColorAttributeMixingEnabled) {
+        return;
+    }
+
+    float eps = 1e-6;
+    if (_colorAttributeMixingRate < eps || _colorAttributeMixingRadius < eps) {
+        return;
+    }
+
+    std::vector<vmath::vec3> *positions;
+    std::vector<vmath::vec3> *colors;
+    _markerParticles.getAttributeValues("POSITION", positions);
+    _markerParticles.getAttributeValues("COLOR", colors);
+
+    SpatialPointGrid pointGrid(_isize, _jsize, _ksize, _dx);
+    pointGrid.insert(*(positions));
+
+    std::vector<vmath::vec3> colorsNew(colors->size(), vmath::vec3(0.0f, 0.0f, 0.0f));
+    std::vector<bool> colorsNewValid(colors->size(), false);
+
+    int numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)fmin(numCPU, positions->size());
+    std::vector<std::thread> threads(numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, positions->size(), numthreads);
+    for (int i = 0; i < numthreads; i++) {
+        threads[i] = std::thread(&FluidSimulation::_updateMarkerParticleColorAttributeMixingThread, this,
+                                 intervals[i], intervals[i + 1], dt, &pointGrid,
+                                 colors, &colorsNew, &colorsNewValid);
+    }
+
+    for (int i = 0; i < numthreads; i++) {
+        threads[i].join();
+    }
+
+    for (size_t i = 0; i < colors->size(); i++) {
+        if (colorsNewValid[i]) {
+            colors->at(i) = colorsNew[i];
+        }
+    }
+}
+
+void FluidSimulation::_updateMarkerParticleColorAttributeMixingThread(int startidx, int endidx, double dt,
+                                                                      SpatialPointGrid *pointGrid,
+                                                                      std::vector<vmath::vec3> *colors,
+                                                                      std::vector<vmath::vec3> *colorsNew,
+                                                                      std::vector<bool> *colorsNewValid) {
+    float mixRate = std::min(_colorAttributeMixingRate * dt, 1.0);
+    float searchRadius = _colorAttributeMixingRadius * _dx;
+
+    std::vector<GridPointReference> refs;
+    for (int i = startidx; i < endidx; i++) {
+        GridPointReference ref(i);
+        
+        refs.clear();
+        pointGrid->queryPointReferencesInsideSphere(ref, searchRadius, refs);
+
+        vmath::vec3 colorNew;
+        for (size_t ridx = 0; ridx < refs.size(); ridx++) {
+            colorNew += colors->at(refs[ridx].id);
+        }
+
+        if (refs.size() > 0) {
+            colorNew /= refs.size();
+            vmath::vec3 colorOld = colors->at(i);
+            colorsNew->at(i) = (1.0f - mixRate) * colorOld + mixRate * colorNew;
+            colorsNewValid->at(i) = true;
+        }
+    }
 }
 
 void FluidSimulation::_updateMarkerParticleVorticityAttribute() {
@@ -5136,7 +5329,7 @@ void FluidSimulation::_updateMarkerParticleAgeAttribute(double dt) {
     }
 
     if (_currentFrameTimeStepNumber == 0) {
-        _updateMarkerParticleAgeAttributeGrid(dt);
+        _updateMarkerParticleAgeAttributeGrid();
     }
 
     std::vector<float> *ages;
@@ -5146,7 +5339,7 @@ void FluidSimulation::_updateMarkerParticleAgeAttribute(double dt) {
     }
 }
 
-void FluidSimulation::_updateMarkerParticleColorAttribute() {
+void FluidSimulation::_updateMarkerParticleColorAttribute(double dt) {
     if (!_isSurfaceSourceColorAttributeEnabled) {
         return;
     }
@@ -5154,6 +5347,8 @@ void FluidSimulation::_updateMarkerParticleColorAttribute() {
     if (_currentFrameTimeStepNumber == 0) {
         _updateMarkerParticleColorAttributeGrid();
     }
+
+    _updateMarkerParticleColorAttributeMixing(dt);
 }
 
 void FluidSimulation::_updateMarkerParticleAttributes(double dt) {
@@ -5164,7 +5359,7 @@ void FluidSimulation::_updateMarkerParticleAttributes(double dt) {
 
     _updateMarkerParticleVorticityAttribute();
     _updateMarkerParticleAgeAttribute(dt);
-    _updateMarkerParticleColorAttribute();
+    _updateMarkerParticleColorAttribute(dt);
 
     t.stop();
     _timingData.updateMarkerParticleVelocities += t.getTime();
@@ -7232,10 +7427,10 @@ void FluidSimulation::_stepFluid(double dt) {
 
         _updateSheetSeeding();
         _updateMarkerParticleVelocities();
-        _updateMarkerParticleAttributes(dt);
         _deleteSavedVelocityField();
         _advanceMarkerParticles(dt);
         _updateFluidObjects();
+        _updateMarkerParticleAttributes(dt);
         _outputSimulationData();
     }
 }
@@ -7539,9 +7734,15 @@ void FluidSimulation::update(double dt) {
         _isLastFrameTimeStep = fabs(_currentFrameDeltaTimeRemaining) < eps;
 
         double frameProgress = 100 * (1.0 - _currentFrameDeltaTimeRemaining/dt);
+        int numFrames = _timelineFrameEnd - _timelineFrameStart + 1;
         std::ostringstream ss;
-        ss << "Frame: " << _currentFrame << " (Step " << _currentFrameTimeStepNumber + 1 << ")\n" <<
-              "Step time: " << _currentFrameTimeStep << " (" << frameProgress << "% of frame)\n";
+        // ss << "Frame: " << _currentFrame << " (Step " << _currentFrameTimeStepNumber + 1 << ")\n" <<
+        //      "Step time: " << _currentFrameTimeStep << " (" << frameProgress << "% of frame)\n";
+
+        ss << "Simulation Frame: " << _currentFrame + 1 << " / " << numFrames << "\n"
+              "  Timeline Frame: " << _currentFrame + _timelineFrameStart << " / " << _timelineFrameEnd << "\n"
+              "         Substep: " << _currentFrameTimeStepNumber + 1 << "\n"
+              "    Substep Time: " << _currentFrameTimeStep << "s (" << frameProgress << "% of frame)\n";
 
         _logfile.separator();
         _logfile.timestamp();

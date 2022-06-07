@@ -146,6 +146,11 @@ class ExportFluidSimulation(bpy.types.Operator):
                     return {'FINISHED'}
 
                 self._export_simulation_data_file()
+                if not dprops.bake.export_success:
+                    dprops.bake.is_bake_cancelled = True
+                    self.cancel(context)
+                    return {'FINISHED'}
+
                 self._update_flip_object_force_reexport_on_bake(context)
                 self.cancel(context)
                 return {'FINISHED'}

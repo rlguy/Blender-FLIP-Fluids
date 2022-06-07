@@ -35,8 +35,10 @@ class FlipFluidObstacleProperties(bpy.types.PropertyGroup):
             ); exec(conv("is_enabled"))
     is_inversed = BoolProperty(
             name="Inverse",
-            description="Turn the obstacle 'inside-out'. Inside of the object"
-                " becomes hollow, and outside of the object becomes solid",
+            description="Turn the obstacle 'inside-out'. Enabling this option will"
+                " make the inside of the object empty while everything outside of the"
+                " object will become solid. Useful for creating perfect containers to"
+                " hold liquid",
             default=False,
             options={'HIDDEN'},
             ); exec(conv("is_inversed"))

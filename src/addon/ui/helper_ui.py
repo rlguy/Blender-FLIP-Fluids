@@ -19,6 +19,7 @@ import bpy, platform
 from . import domain_simulation_ui
 from .. import render
 from ..utils import version_compatibility_utils as vcu
+from ..utils import installation_utils
 
 
 class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
@@ -37,6 +38,13 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
 
 
     def draw(self, context):
+        if not installation_utils.is_installation_complete():
+            box = self.layout.box()
+            box.label(text="IMPORTANT: Blender restart required", icon="ERROR")
+            box.label(text="Please restart Blender to complete")
+            box.label(text="installation of the FLIP Fluids add-on.")
+            return
+
         hprops = context.scene.flip_fluid_helper
         preferences = vcu.get_addon_preferences(context)
 
@@ -164,12 +172,15 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
 
         box = self.layout.box()
         row = box.row(align=True)
+        row.alignment = 'LEFT'
         row.prop(hprops, "quick_select_expanded",
             icon="TRIA_DOWN" if hprops.quick_select_expanded else "TRIA_RIGHT",
             icon_only=True, 
             emboss=False
         )
         row.label(text="Select Objects:")
+        if not hprops.quick_select_expanded:
+            row.operator("flip_fluid_operators.helper_select_domain", text="Domain")
 
         if hprops.quick_select_expanded:
             column = box.column(align=True)
@@ -246,11 +257,24 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
         row.label(text="Command Line Tools:")
 
         if hprops.command_line_tools_expanded:
-            column = box.column(align=True)
+            subbox = box.box()
+            subbox.label(text="Bake:")
+            column = subbox.column(align=True)
             row = column.row(align=True)
             row.operator("flip_fluid_operators.helper_command_line_bake")
             row.operator("flip_fluid_operators.helper_command_line_bake_to_clipboard", text="", icon='COPYDOWN')
-            column = box.column(align=True)
+            row = column.row(align=True)
+            row.prop(hprops, "cmd_launch_render_after_bake")
+
+            system = platform.system()
+            if system == "Windows":
+                row = row.row(align=True)
+                row.enabled = hprops.cmd_launch_render_after_bake
+                row.prop(hprops, "cmd_launch_render_mode", text="")
+
+            subbox = box.box()
+            subbox.label(text="Render Animation:")
+            column = subbox.column(align=True)
             row = column.row(align=True)
             row.operator("flip_fluid_operators.helper_command_line_render")
             row.operator("flip_fluid_operators.helper_command_line_render_to_clipboard", text="", icon='COPYDOWN')
@@ -262,6 +286,17 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                 row.operator("flip_fluid_operators.helper_run_scriptfile", text="", icon='PLAY')
                 row.operator("flip_fluid_operators.helper_open_outputfolder", text="", icon='FILE_FOLDER')
                 column.separator()
+
+            subbox = box.box()
+            subbox.label(text="Render Frame:")
+            column = subbox.column(align=True)
+            row = column.row(align=True)
+            row.operator("flip_fluid_operators.helper_command_line_render_frame")
+            row.operator("flip_fluid_operators.helper_cmd_render_frame_to_clipboard", text="", icon='COPYDOWN')
+            row = column.row(align=True)
+            row.prop(hprops, "cmd_open_image_after_render")
+            row = column.row(align=True)
+            row.prop(hprops, "cmd_close_window_after_render")
 
         #
         # Geometry Node Tools
@@ -356,6 +391,9 @@ class FLIPFLUID_PT_HelperPanelDisplay(bpy.types.Panel):
 
 
     def draw(self, context):
+        if not installation_utils.is_installation_complete():
+            return
+
         dprops = bpy.context.scene.flip_fluid.get_domain_properties()
         if dprops is None:
             self.layout.label(text="Please create a domain object")

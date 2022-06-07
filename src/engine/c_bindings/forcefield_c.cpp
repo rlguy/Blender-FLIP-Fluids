@@ -183,6 +183,60 @@ extern "C" {
         );
     }
 
+    EXPORTDLL void ForceField_enable_frontfacing(ForceField* obj, int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &ForceField::enableFrontfacing, err
+        );
+    }
+
+    EXPORTDLL void ForceField_disable_frontfacing(ForceField* obj, int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &ForceField::disableFrontfacing, err
+        );
+    }
+
+    EXPORTDLL int ForceField_is_frontfacing_enabled(ForceField* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &ForceField::isFrontfacingEnabled, err
+        );
+    }
+
+    EXPORTDLL void ForceField_enable_backfacing(ForceField* obj, int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &ForceField::enableBackfacing, err
+        );
+    }
+
+    EXPORTDLL void ForceField_disable_backfacing(ForceField* obj, int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &ForceField::disableBackfacing, err
+        );
+    }
+
+    EXPORTDLL int ForceField_is_backfacing_enabled(ForceField* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &ForceField::isBackfacingEnabled, err
+        );
+    }
+
+    EXPORTDLL void ForceField_enable_edgefacing(ForceField* obj, int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &ForceField::enableEdgefacing, err
+        );
+    }
+
+    EXPORTDLL void ForceField_disable_edgefacing(ForceField* obj, int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &ForceField::disableEdgefacing, err
+        );
+    }
+
+    EXPORTDLL int ForceField_is_edgefacing_enabled(ForceField* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &ForceField::isEdgefacingEnabled, err
+        );
+    }
+
     EXPORTDLL float ForceField_get_gravity_scale(ForceField* obj, int *err) {
         return CBindings::safe_execute_method_ret_0param(
             obj, &ForceField::getGravityScale, err

@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, os, subprocess, platform, mathutils, fnmatch
+import bpy, os, subprocess, platform, math, mathutils, fnmatch
 from bpy.props import (
         BoolProperty,
         StringProperty
@@ -473,6 +473,9 @@ class FlipFluidHelperCreateDomain(bpy.types.Operator):
         min_object_width = float('inf')
         eps = 0.01
         for obj in simulation_objects:
+            if obj.flip_fluid.is_force_field() and obj.flip_fluid.force_field.force_field_type != 'FORCE_FIELD_TYPE_VOLUME':
+                # Force field objects that are not volume force fields should not affect resolution
+                continue
             obj_bbox = flip_fluid_aabb.AABB.from_blender_object(obj)
             min_width = min(obj_bbox.xdim, obj_bbox.ydim, obj_bbox.zdim)
             min_width = max(min_width, eps)
@@ -481,8 +484,9 @@ class FlipFluidHelperCreateDomain(bpy.types.Operator):
         min_coverage_factor = 2.5
         min_coverage_width = min_coverage_factor * dx_estimate
         if min_object_width < min_coverage_width:
+            max_suggested_resolution = 400
             new_resolution = resolution * (min_coverage_width / min_object_width)
-            dprops.simulation.resolution = new_resolution
+            dprops.simulation.resolution = min(math.ceil(new_resolution), max_suggested_resolution)
 
 
     def execute(self, context):
@@ -1046,9 +1050,17 @@ class FlipFluidHelperCommandLineBake(bpy.types.Operator):
         if domain is None:
             return {'CANCELLED'}
 
+        hprops = context.scene.flip_fluid_helper
+        script_name = "run_simulation.py"
+        if hprops.cmd_launch_render_after_bake:
+            if hprops.cmd_launch_render_mode == 'CMD_RENDER_MODE_NORMAL':
+                script_name = "run_simulation_and_render.py"
+            elif hprops.cmd_launch_render_mode == 'CMD_RENDER_MODE_BATCH':
+                script_name = "run_simulation_and_batch_render.py"
+
         script_path = os.path.dirname(os.path.realpath(__file__))
         script_path = os.path.dirname(script_path)
-        script_path = os.path.join(script_path, "resources", "command_line_scripts", "run_simulation.py")
+        script_path = os.path.join(script_path, "resources", "command_line_scripts", script_name)
 
         system = platform.system()
         if system == "Windows":
@@ -1130,9 +1142,20 @@ class FlipFluidHelperCommandLineBakeToClipboard(bpy.types.Operator):
         if domain is None:
             return {'CANCELLED'}
 
+        hprops = context.scene.flip_fluid_helper
+        script_name = "run_simulation.py"
+        if hprops.cmd_launch_render_after_bake:
+            script_name = "run_simulation_and_render.py"
+            system = platform.system()
+            if system == "Windows":
+                if hprops.cmd_launch_render_mode == 'CMD_RENDER_MODE_NORMAL':
+                    script_name = "run_simulation_and_render.py"
+                elif hprops.cmd_launch_render_mode == 'CMD_RENDER_MODE_BATCH':
+                    script_name = "run_simulation_and_batch_render.py"
+
         script_path = os.path.dirname(os.path.realpath(__file__))
         script_path = os.path.dirname(script_path)
-        script_path = os.path.join(script_path, "resources", "command_line_scripts", "run_simulation.py")
+        script_path = os.path.join(script_path, "resources", "command_line_scripts", script_name)
 
         command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" --python \"" + script_path + "\""
         bpy.context.window_manager.clipboard = command_text
@@ -1207,8 +1230,7 @@ class FlipFluidHelperCommandLineRenderToClipboard(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        system = platform.system()
-        return bool(bpy.data.filepath) and system == "Windows"
+        return bool(bpy.data.filepath)
 
 
     def execute(self, context):
@@ -1223,6 +1245,126 @@ class FlipFluidHelperCommandLineRenderToClipboard(bpy.types.Operator):
         self.report({'INFO'}, info_msg)
 
         return {'FINISHED'}
+
+
+class FlipFluidHelperCommandLineRenderFrame(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_command_line_render_frame"
+    bl_label = "Launch Frame Render"
+    bl_description = ("Launch a new command line window and start rendering the current timeline frame." +
+                     " The .blend file will need to be saved before using this operator." +
+                     " Only available on Windows OS. For MacOS/Linux, use" +
+                     " the copy operator to copy the command")
+
+
+    @classmethod
+    def poll(cls, context):
+        system = platform.system()
+        return bool(bpy.data.filepath) and system == "Windows"
+
+
+    def execute(self, context):        
+        system = platform.system()
+        if system == "Windows":
+            if vcu.is_blender_28():
+                blender_exe_path = bpy.app.binary_path
+                if " " in blender_exe_path:
+                    # Some versions of Blender 2.8+ don't support spaces in the executable path
+                    blender_exe_path = "blender.exe"
+            else:
+                # subproccess.call() in Blender 2.79 Python does not seem to support spaces in the 
+                # executable path, so we'll just use blender.exe and hope that no other addon has
+                # changed Blender's working directory
+                blender_exe_path = "blender.exe"
+
+            script_path = os.path.dirname(os.path.realpath(__file__))
+            script_path = os.path.dirname(script_path)
+            script_path = os.path.join(script_path, "resources", "command_line_scripts", "render_single_frame.py")
+            frame_string = str(bpy.context.scene.frame_current)
+
+            hprops = context.scene.flip_fluid_helper
+            open_image_after = "0"
+            if hprops.cmd_open_image_after_render:
+                open_image_after = "1"
+
+            cmd_start_flag = "/k"
+            if hprops.cmd_close_window_after_render:
+                cmd_start_flag = "/c"
+
+
+            command = ["start", "cmd", cmd_start_flag, blender_exe_path, "--background", bpy.data.filepath, "--python", script_path, "--", frame_string, open_image_after]
+        elif system == "Darwin":
+            # Feature not available on MacOS
+            return {'CANCELLED'}
+        elif system == "Linux":
+            # Feature not available on Linux
+            return {'CANCELLED'}
+
+        subprocess.call(command, shell=True)
+
+        command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" --python \"" + script_path + "\"" + " -- " + frame_string + " " + open_image_after
+
+        info_msg = "Launched command line render window. If the render process did not begin,"
+        info_msg += " this may be caused by a conflict with another addon or a security feature of your OS that restricts"
+        info_msg += " automatic command execution. You may try copying the following command manually into a command line window:\n\n"
+        info_msg += command_text + "\n\n"
+        info_msg += "For more information on command line rendering, visit our documentation:\n"
+        info_msg += "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Rendering-from-the-Command-Line"
+        self.report({'INFO'}, info_msg)
+
+        return {'FINISHED'}
+
+
+class FlipFluidHelperCmdRenderFrameToClipboard(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_cmd_render_frame_to_clipboard"
+    bl_label = "Launch Frame Render"
+    bl_description = ("Copy command for frame rendering to your system clipboard." +
+                     " The .blend file will need to be saved before using this operator")
+
+
+    @classmethod
+    def poll(cls, context):
+        return bool(bpy.data.filepath)
+
+
+    def execute(self, context):
+        script_path = os.path.dirname(os.path.realpath(__file__))
+        script_path = os.path.dirname(script_path)
+        script_path = os.path.join(script_path, "resources", "command_line_scripts", "render_single_frame.py")
+        frame_string = str(bpy.context.scene.frame_current)
+        hprops = context.scene.flip_fluid_helper
+        open_image_after = "0"
+        if hprops.cmd_open_image_after_render:
+            open_image_after = "1"
+        
+        command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" --python \"" + script_path + "\"" + " -- " + frame_string + " " + open_image_after
+        bpy.context.window_manager.clipboard = command_text
+          
+        info_msg = "Copied the following render command to your clipboard:\n\n"
+        info_msg += command_text + "\n\n"
+        info_msg += "For more information on command line rendering, visit our documentation:\n"
+        info_msg += "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Rendering-from-the-Command-Line"
+        self.report({'INFO'}, info_msg)
+
+        return {'FINISHED'}
+
+
+def update_geometry_node_material(bl_object, resource_name):
+    if not vcu.is_blender_31() or bl_object is None:
+        return
+
+    gn_modifier = None
+    for mod in bl_object.modifiers:
+        if mod.type == 'NODES' and mod.name == resource_name:
+            gn_modifier = mod
+            break
+
+    if gn_modifier is not None:
+        try:
+            # Depending on FLIP Fluids version, the GN set up may not
+            # have an Input_5
+            gn_modifier["Input_5"] = bl_object.active_material
+        except:
+            pass
 
 
 class FlipFluidHelperInitializeMotionBlur(bpy.types.Operator):
@@ -1267,7 +1409,12 @@ class FlipFluidHelperInitializeMotionBlur(bpy.types.Operator):
 
 
     def apply_modifier_settings(self, target_object, gn_modifier):
-        gn_modifier["Input_5"] = target_object.active_material
+        try:
+            # Depending on FLIP Fluids version, the GN set up may not
+            # have an Input_5
+            gn_modifier["Input_5"] = target_object.active_material
+        except:
+            pass
         gn_modifier["Input_2_use_attribute"] = 1
         gn_modifier["Input_2_attribute_name"] = 'flip_velocity'
         gn_modifier["Output_3_attribute_name"] = 'velocity'
@@ -1296,7 +1443,10 @@ class FlipFluidHelperInitializeMotionBlur(bpy.types.Operator):
 
         blend_filename = "geometry_nodes_library.blend"
         surface_resource = "FF_MotionBlurSurface"
-        whitewater_resource = "FF_MotionBlurWhitewater"
+        whitewater_foam_resource = "FF_MotionBlurWhitewaterFoam"
+        whitewater_bubble_resource = "FF_MotionBlurWhitewaterBubble"
+        whitewater_spray_resource = "FF_MotionBlurWhitewaterSpray"
+        whitewater_dust_resource = "FF_MotionBlurWhitewaterDust"
 
         parent_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         resource_filepath = os.path.join(parent_path, "resources", "geometry_nodes", blend_filename)
@@ -1327,6 +1477,16 @@ class FlipFluidHelperInitializeMotionBlur(bpy.types.Operator):
             self.report({'INFO'}, info_msg)
 
         for target_object in whitewater_cache_objects:
+            whitewater_resource = ""
+            if target_object == dprops.mesh_cache.foam.get_cache_object():
+                whitewater_resource = whitewater_foam_resource
+            elif target_object == dprops.mesh_cache.bubble.get_cache_object():
+                whitewater_resource = whitewater_bubble_resource
+            elif target_object == dprops.mesh_cache.spray.get_cache_object():
+                whitewater_resource = whitewater_spray_resource
+            elif target_object == dprops.mesh_cache.dust.get_cache_object():
+                whitewater_resource = whitewater_dust_resource
+
             gn_modifier = self.add_geometry_node_modifier(target_object, resource_filepath, whitewater_resource)
             self.apply_modifier_settings(target_object, gn_modifier)
             info_msg = "Initialized " + gn_modifier.name + " Geometry Node modifier on " + target_object.name + " object"
@@ -1424,6 +1584,7 @@ class FlipFluidHelperCommandLineRenderToScriptfile(bpy.types.Operator):
         for n in missing_frames:
             command_text = blender_exe_path + " -b " + blend_path + " -f " + str(n)
             file_text += command_text + "\n"
+        file_text += "pause\n"
 
         return file_text
 
@@ -1446,7 +1607,7 @@ class FlipFluidHelperCommandLineRenderToScriptfile(bpy.types.Operator):
             info_msg += render_output_info_string + "\n"
             info_msg += more_info_string
             self.report({'INFO'}, info_msg)
-            return {'FINISHED'}
+            return {'CANCELLED'}
 
         file_text = self.generate_file_string(missing_frames)
         blend_directory = os.path.dirname(bpy.data.filepath)
@@ -1711,6 +1872,8 @@ def register():
     bpy.utils.register_class(FlipFluidHelperCommandLineBakeToClipboard)
     bpy.utils.register_class(FlipFluidHelperCommandLineRender)
     bpy.utils.register_class(FlipFluidHelperCommandLineRenderToClipboard)
+    bpy.utils.register_class(FlipFluidHelperCommandLineRenderFrame)
+    bpy.utils.register_class(FlipFluidHelperCmdRenderFrameToClipboard)
     bpy.utils.register_class(FlipFluidHelperCommandLineRenderToScriptfile)
     bpy.utils.register_class(FlipFluidHelperRunScriptfile)
     bpy.utils.register_class(FlipFluidHelperOpenOutputFolder)
@@ -1749,6 +1912,8 @@ def unregister():
     bpy.utils.unregister_class(FlipFluidHelperCommandLineBakeToClipboard)
     bpy.utils.unregister_class(FlipFluidHelperCommandLineRender)
     bpy.utils.unregister_class(FlipFluidHelperCommandLineRenderToClipboard)
+    bpy.utils.unregister_class(FlipFluidHelperCommandLineRenderFrame)
+    bpy.utils.unregister_class(FlipFluidHelperCmdRenderFrameToClipboard)
     bpy.utils.unregister_class(FlipFluidHelperCommandLineRenderToScriptfile)
     bpy.utils.unregister_class(FlipFluidHelperRunScriptfile)
     bpy.utils.unregister_class(FlipFluidHelperOpenOutputFolder)

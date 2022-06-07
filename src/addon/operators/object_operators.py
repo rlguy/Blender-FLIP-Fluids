@@ -33,6 +33,7 @@ class FlipFluidAdd(bpy.types.Operator):
 
 
     def execute(self, context):
+        installation_utils.tag_addon_active()
         obj = vcu.get_active_object(context)
         obj.flip_fluid.is_active = True
         vcu.add_to_flip_fluids_collection(obj, context)

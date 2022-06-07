@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, os, shutil
+import bpy, os, shutil, platform
 from bpy.props import (
         BoolProperty,
         EnumProperty,
@@ -97,12 +97,17 @@ class DomainCacheProperties(bpy.types.PropertyGroup):
 
     def get_abspath(self, path_prop):
         relprefix = "//"
+        path = path_prop
         if path_prop.startswith(relprefix):
             path_prop = path_prop[len(relprefix):]
             blend_directory = os.path.dirname(bpy.data.filepath)
             path = os.path.join(blend_directory, path_prop)
-            return os.path.abspath(os.path.normpath(path))
-        return os.path.abspath(os.path.normpath(path_prop))
+        path = os.path.abspath(os.path.normpath(path))
+        if platform.system() != "Windows":
+            # Blend file may have been saved on windows and opened on macOS/Linux. In this case,
+            # backslash should be converted to forward slash.
+            path = os.path.join(*path.split("\\"))
+        return path
 
 
     def get_cache_abspath(self):

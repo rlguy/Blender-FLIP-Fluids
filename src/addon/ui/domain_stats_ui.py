@@ -67,6 +67,7 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
 
     def draw_frame_info_simulation_stats(self, context, box):
         sprops = vcu.get_active_object(context).flip_fluid.domain.stats
+        simprops = vcu.get_active_object(context).flip_fluid.domain.simulation
 
         subbox = box.box()
         row = subbox.row()
@@ -82,6 +83,7 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
             split = column.split()
             column = split.column()
             column.label(text="Frame ID:")
+            column.label(text="Timeline Frame:")
             column.label(text="Timestep:")
             column.label(text="Substeps:")
             column.label(text="Fluid Particles:")
@@ -94,6 +96,7 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
 
             column = split.column()
             column.label(text=str(sprops.frame_info_id))
+            column.label(text=str(simprops.frame_start + sprops.frame_info_id))
             column.label(text=self.format_time(sprops.frame_delta_time))
             column.label(text=str(sprops.frame_substeps))
             column.label(text=self.format_number(sprops.frame_fluid_particles).lstrip())
@@ -163,6 +166,7 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
 
     def draw_frame_info_mesh_stats(self, context, box):
         sprops = vcu.get_active_object(context).flip_fluid.domain.stats
+        simprops = vcu.get_active_object(context).flip_fluid.domain.simulation
 
         subbox = box.box()
         row = subbox.row()
@@ -410,6 +414,7 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
 
     def draw_frame_info(self, context, box):
         sprops = vcu.get_active_object(context).flip_fluid.domain.stats
+        simprops = vcu.get_active_object(context).flip_fluid.domain.simulation
 
         column = box.column()
         split = column.split()
@@ -433,6 +438,7 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
     def draw_cache_info_simulation_stats(self, context, box):
         dprops = vcu.get_active_object(context).flip_fluid.domain
         sprops = dprops.stats
+        simprops = dprops.simulation
 
         subbox = box.box()
         row = subbox.row()
@@ -451,12 +457,17 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
             split = column.split()
             column = split.column()
             column.label(text="Completed Frames:")
+            column.label(text="Start Frame:")
+            column.label(text="End Frame:")
 
             column = split.column()
             if num_baked_frames > num_frames:
                 column.label(text=str(num_baked_frames))
             else:
                 column.label(text=str(num_baked_frames) + "  /  " + str(num_frames))
+
+            column.label(text=str(simprops.frame_start))
+            column.label(text=str(simprops.frame_end))
 
             if dprops.bake.is_simulation_running:
                 column = subbox.column()
