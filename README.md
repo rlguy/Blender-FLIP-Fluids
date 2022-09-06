@@ -30,7 +30,7 @@ See any of our [market place product pages](https://github.com/rlguy/Blender-FLI
 - CPU 64-bit Intel® or AMD® or Apple Silicon multi-core processor
 - 8 GB RAM minimum, 16 GB of RAM or more is highly recommended
 
-**Blender Support on MacOS:** Due to a MacOS specific [Blender bug](https://developer.blender.org/T68243) in versions 2.80, 2.81, and 2.82, these Blender versions cannot be supported. Blender 2.79 or 2.83+ or 2.9+ or 3.0+ are required for MacOS.
+**Blender Support on MacOS:** Due to a MacOS specific [Blender bug](https://developer.blender.org/T68243) in versions 2.80, 2.81, and 2.82, these Blender versions cannot be supported. Blender 2.83+ or 2.9+ or 3.0+ are required for MacOS.
 
 ## Release Notes
 
@@ -42,7 +42,7 @@ This program uses multiple licenses. See the files ```LICENSE_GPLv3.md```, ```LI
 
 - The Blender addon code is licensed under the GPL.
 - The FLIP Fluids simulation engine is licensed under the MIT license.
-- Some addon content will be using a Standard Royalty Free license. This license may cover content such as [example scene files](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Example-Scene-Descriptions), media, artwork, and data. This content will only be included within the paid addon and will not be available on the GitHub project page. The addon is still completely usable without this content.
+- Some addon content will be using a Standard Royalty Free license. This license may cover content such as [example scene files](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Example-Scene-Descriptions), media, artwork, data, and features that rely on this content ([ex: Mixbox color blending features](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Mixbox-Installation-and-Uninstallation)). This content will only be included within the paid addon and will not be available on the GitHub project page. The addon is still completely usable without this content.
 
 Source code files will state their license at the top of the file. Assets will include a license file and information in their containing directory.
 
