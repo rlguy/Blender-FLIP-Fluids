@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -67,6 +67,7 @@ class FLIPFLUID_PT_FluidTypePanel(bpy.types.Panel):
             elif fluid_props.frame_offset_type == 'OFFSET_TYPE_TIMELINE':
                 row.prop(fluid_props, "timeline_offset")
             self.layout.separator()
+            column.prop(fluid_props, "priority", text="Priority Level")
 
         box = self.layout.box()
         box.label(text="Fluid Velocity Mode:")
@@ -117,7 +118,6 @@ class FLIPFLUID_PT_FluidTypePanel(bpy.types.Panel):
             column_right.prop(fluid_props, "export_animated_target")
 
         if show_advanced:
-            box.separator()
             column = box.column(align=True)
             split = vcu.ui_split(column, factor=0.66)
             column = split.column()
@@ -126,21 +126,56 @@ class FLIPFLUID_PT_FluidTypePanel(bpy.types.Panel):
             column.enabled = fluid_props.append_object_velocity
             column.prop(fluid_props, "append_object_velocity_influence")
 
-
         if vcu.get_addon_preferences().is_developer_tools_enabled():
             box = self.layout.box()
             box.label(text="Geometry Attributes:")
             column = box.column(align=True)
             if vcu.is_blender_293():
                 show_color = dprops is not None and dprops.surface.enable_color_attribute
-                column.enabled = show_color
-                column.prop(fluid_props, "color")
-                column = box.column(align=True)
-
+                split = column.split(align=True)
+                column_left = split.column(align=True)
+                column_left.enabled = show_color
+                column_left.prop(fluid_props, "color")
+                column_right = split.column(align=True)
+                column_right.label(text="")
+                row = column_right.row(align=True)
+                row.alignment = 'LEFT'
+                if dprops is not None and not show_color:
+                    row.operator("flip_fluid_operators.enable_color_attribute_tooltip", 
+                                 text="Enable Color Attribute", icon="PLUS", emboss=False)
+                if dprops is None:
+                    row.label(text="Domain required for this option")
                 column.separator()
+
+                show_viscosity = dprops is not None and dprops.surface.enable_viscosity_attribute
+                split = column.split(align=True)
+                column_left = split.column(align=True)
+                column_left.enabled = show_viscosity
+                column_left.prop(fluid_props, "viscosity")
+                column_right = split.column(align=True)
+                row = column_right.row(align=True)
+                row.alignment = 'LEFT'
+                if dprops is not None and not show_viscosity:
+                    row.operator("flip_fluid_operators.enable_viscosity_attribute_tooltip", 
+                                 text="Enable Viscosity Attribute", icon="PLUS", emboss=False)
+                if dprops is None:
+                    row.label(text="Domain required for this option")
+                column.separator()
+
                 show_source_id = dprops is not None and dprops.surface.enable_source_id_attribute
-                column.enabled = show_source_id
-                column.prop(fluid_props, "source_id")
+                split = column.split(align=True)
+                column_left = split.column(align=True)
+                column_left.enabled = show_source_id
+                column_left.prop(fluid_props, "source_id")
+                column_right = split.column(align=True)
+                row = column_right.row(align=True)
+                row.alignment = 'LEFT'
+                if dprops is not None and not show_source_id:
+                    row.operator("flip_fluid_operators.enable_source_id_attribute_tooltip", 
+                                 text="Enable Source ID Attribute", icon="PLUS", emboss=False)
+                if dprops is None:
+                    row.label(text="Domain required for this option")
+                column.separator()
             else:
                 column.enabled = False
                 column.label(text="Geometry attribute features are only available in", icon='ERROR')

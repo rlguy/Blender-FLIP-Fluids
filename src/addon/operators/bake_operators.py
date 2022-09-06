@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,10 +20,12 @@ from .. import bake
 from ..objects import flip_fluid_geometry_exporter
 from .. import export
 from ..utils import installation_utils
+from ..utils import audio_utils
 from ..filesystem import filesystem_protection_layer as fpl
 from ..utils import version_compatibility_utils as vcu
 
 _IS_BAKE_OPERATOR_RUNNING = False
+_IS_CMD_BAKE_OPERATOR_RUNNING = False
 
 
 def _notify_bake_operator_running():
@@ -39,6 +41,21 @@ def _notify_bake_operator_cancelled():
 def is_bake_operator_running():
     global _IS_BAKE_OPERATOR_RUNNING
     return _IS_BAKE_OPERATOR_RUNNING
+
+
+def _notify_cmd_bake_operator_running():
+    global _IS_CMD_BAKE_OPERATOR_RUNNING
+    _IS_CMD_BAKE_OPERATOR_RUNNING = True
+
+
+def _notify_cmd_bake_operator_cancelled():
+    global _IS_CMD_BAKE_OPERATOR_RUNNING
+    _IS_CMD_BAKE_OPERATOR_RUNNING = False
+
+
+def is_bake_cmd_operator_running():
+    global _IS_CMD_BAKE_OPERATOR_RUNNING
+    return _IS_CMD_BAKE_OPERATOR_RUNNING
 
 
 def update_stats(context=None):
@@ -180,6 +197,10 @@ class BakeFluidSimulation(bpy.types.Operator):
             self.is_thread_finished = True
             self.thread = None
 
+            if not self.data.is_cancelled:
+                is_error = bool(self.data.error_message)
+                self.simulation_ended_handler(context, is_error)
+
             if self.data.error_message:
                 bpy.ops.flip_fluid_operators.display_error(
                     'INVOKE_DEFAULT',
@@ -250,6 +271,13 @@ class BakeFluidSimulation(bpy.types.Operator):
             return {'FINISHED'}
 
         return {'PASS_THROUGH'}
+
+
+    # Called when simulation ends either successfully or through an error
+    def simulation_ended_handler(self, context, is_error):
+        if vcu.get_addon_preferences().enable_bake_alarm:
+            json_filepath = os.path.join(audio_utils.get_sounds_directory(), "alarm", "sound_data.json")
+            audio_utils.play_sound(json_filepath)
 
 
     def execute(self, context):
@@ -444,11 +472,16 @@ class BakeFluidSimulationCommandLine(bpy.types.Operator):
                     self.report({"ERROR"}, self.geometry_exporter.get_error_message())
                     dprops.bake.is_bake_cancelled = True
                     dprops.bake.is_export_operator_running = False
-                    return
+                    return False
 
                 self._export_simulation_data_file()
+                if not dprops.bake.export_success:
+                    dprops.bake.is_bake_cancelled = True
+                    self.cancel(context)
+                    return False
+
                 dprops.bake.is_export_operator_running = False
-                return
+                return True
 
 
     def _update_simulation_stats(self, context):
@@ -486,7 +519,10 @@ class BakeFluidSimulationCommandLine(bpy.types.Operator):
 
         self._reset_bake(context)
         self._initialize_domain(context)
-        self._export_simulation_data(context)
+        success = self._export_simulation_data(context)
+        if not success:
+            self.cancel(context)
+            return {'FINISHED'}
 
         dprops = self._get_domain_properties()
         if dprops.bake.is_bake_cancelled:
@@ -494,6 +530,7 @@ class BakeFluidSimulationCommandLine(bpy.types.Operator):
             return {'FINISHED'}
 
         _notify_bake_operator_running()
+        _notify_cmd_bake_operator_running()
         self._run_fluid_simulation(context)
         self.cancel(context)
 
@@ -509,6 +546,7 @@ class BakeFluidSimulationCommandLine(bpy.types.Operator):
         dprops.bake.is_export_operator_running = False
         dprops.bake.check_autosave()
         _notify_bake_operator_cancelled()
+        _notify_cmd_bake_operator_cancelled()
 
 
 class CancelBakeFluidSimulation(bpy.types.Operator):
@@ -539,7 +577,7 @@ class FlipFluidResetBake(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.reset_bake"
     bl_label = "Reset Bake"
     bl_description = ("Reset simulation bake to initial state. WARNING: this" + 
-                      " operation will delete previously baked simulation data.")
+                      " operation will delete previously baked simulation data")
 
 
     def _clear_cache(self, context):

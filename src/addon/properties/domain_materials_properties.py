@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ from bpy.props import (
         )
 
 from ..materials import material_library
+from ..operators import helper_operators
 from ..utils import version_compatibility_utils as vcu
 
 
@@ -133,6 +134,8 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
             'surface_material', 'last_surface_material'
         )
 
+        #helper_operators.update_geometry_node_material(surface_object, "FF_MotionBlurSurface")
+
 
     def _update_whitewater_foam_material(self, context):
         if not self._is_domain_set():
@@ -144,6 +147,8 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
             'whitewater_foam_material', 'last_whitewater_foam_material'
         )
         dprops.mesh_cache.foam.apply_duplivert_object_material()
+
+        #helper_operators.update_geometry_node_material(foam_object, "FF_MotionBlurWhitewater")
 
 
     def _update_whitewater_bubble_material(self, context):
@@ -157,6 +162,8 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
         )
         dprops.mesh_cache.bubble.apply_duplivert_object_material()
 
+        #helper_operators.update_geometry_node_material(bubble_object, "FF_MotionBlurWhitewater")
+
 
     def _update_whitewater_spray_material(self, context):
         if not self._is_domain_set():
@@ -169,6 +176,8 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
         )
         dprops.mesh_cache.spray.apply_duplivert_object_material()
 
+        #helper_operators.update_geometry_node_material(spray_object, "FF_MotionBlurWhitewater")
+
 
     def _update_whitewater_dust_material(self, context):
         if not self._is_domain_set():
@@ -180,6 +189,8 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
             'whitewater_dust_material', 'last_whitewater_dust_material'
         )
         dprops.mesh_cache.dust.apply_duplivert_object_material()
+
+        helper_operators.update_geometry_node_material(dust_object, "FF_MotionBlurWhitewater")
 
 
     def _remove_cache_object_material(self, cache_object, enum_ident):

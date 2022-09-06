@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2021 Ryan L. Guy
+Copyright (C) 2022 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -40,6 +40,15 @@ public:
     MeshFluidSource();
     MeshFluidSource(int i, int j, int k, double dx);
     ~MeshFluidSource();
+
+    bool operator < (const MeshFluidSource& other) const {
+        return (_meshObject._priority < other._meshObject._priority);
+    }
+
+    bool operator > (const MeshFluidSource& other) const {
+        return (_meshObject._priority > other._meshObject._priority);
+    }
+
 
     void updateMeshStatic(TriangleMesh meshCurrent);
     void updateMeshAnimated(TriangleMesh meshPrevious, 
@@ -98,11 +107,23 @@ public:
     VelocityFieldData* getVelocityFieldData();
     int getID();
 
+    void setPriority(int n);
+    int getPriority();
+
     void setSourceID(int id);
     int getSourceID();
 
+    void setViscosity(float v);
+    float getViscosity();
+
     void setSourceColor(vmath::vec3 c);
     vmath::vec3 getSourceColor();
+
+    int _isize = 0;
+    int _jsize = 0;
+    int _ksize = 0;
+    double _dx = 0.0;
+    MeshObject _meshObject;
 
 private:
 
@@ -110,11 +131,6 @@ private:
     void _calculateVelocityFieldData();
     void _getGridBoundsFromTriangleMesh(TriangleMesh &m, double pad, 
                                         GridIndex &gmin, GridIndex &gmax);
-
-    int _isize = 0;
-    int _jsize = 0;
-    int _ksize = 0;
-    double _dx = 0.0;
 
     int _currentFrame = 0;
     float _currentFrameInterpolation = 0.0f;
@@ -131,8 +147,6 @@ private:
     vmath::vec3 _sourceVelocity;
     VelocityFieldData _vfieldData;
 
-    MeshObject _meshObject;
-
     MeshLevelSet _sourceSDF;
     GridIndex _sourceSDFGridOffset;
     vmath::vec3 _sourceSDFOffset;
@@ -142,5 +156,8 @@ private:
     static int _IDCounter;
 
 };
+
+bool compareMeshFluidSourcePointer(MeshFluidSource *a, MeshFluidSource *b);
+bool compareMeshFluidSourcePointerDescending(MeshFluidSource *a, MeshFluidSource *b);
 
 #endif

@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -96,7 +96,7 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
             name="Generate Velocity Attributes",
             description="Generate fluid 3D velocity vector attributes for whitewater particles. After"
                 " baking, the velocity vectors (in m/s) can be accessed in a Cycles Attribute"
-                " Node with the name 'flip_velocity' from the Vector output. Not supported on"
+                " Node or in Geometry Nodes with the name 'flip_velocity' from the Vector output. Not supported on"
                 " instanced particles, only supported on pointclouds",
             default=False,
             options={'HIDDEN'},
@@ -104,20 +104,20 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
     enable_id_attribute = BoolProperty(
             name="Generate ID Attributes",
             description="Generate stable ID attributes for whitewater particles. After"
-                " baking, the ID values can be accessed in a Geometry Node network"
-                " with the name 'flip_id'. Use where consistent particle attributes are"
-                " needed between frames, such as for varying particle size. Not supported on"
-                " instanced particles, only supported on pointclouds",
+                " baking, the ID values can be accessed in a Cycles Attribute"
+                " Node or in Geometry Nodes with the name 'flip_id'. Use where consistent"
+                " particle attributes are needed between frames, such as for varying particle"
+                " size or color. Not supported on instanced particles, only supported on pointclouds",
             default=False,
             options={'HIDDEN'},
             ); exec(conv("enable_id_attribute"))
     enable_lifetime_attribute = BoolProperty(
             name="Generate Lifetime Attributes",
             description="Generate remaining lifetime attributes for whitewater particles. After"
-                " baking, the lifetime values can be accessed in a Geometry Node network"
-                " or shader with the name 'flip_lifetime'. When the lifetime of a particle reaches 0, the"
-                " particle will despawn. Not supported on instanced particles, only supported on"
-                " pointclouds",
+                " baking, the lifetime values can be accessed in a Cycles Attribute Node or in"
+                " Geometry Nodes with the name 'flip_lifetime'. When the lifetime of a particle"
+                " reaches 0, the particle will despawn. Not supported on instanced particles,"
+                " only supported on pointclouds",
             default=False,
             options={'HIDDEN'},
             ); exec(conv("enable_lifetime_attribute"))

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2021 Ryan L. Guy
+Copyright (C) 2022 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -61,7 +61,8 @@ void ForceFieldSurface::update(double dt, double frameInterpolation) {
     _updateGridDimensions(mesh);
 
     mesh.translate(-_offsetSDF);
-    ForceFieldUtils::generateSurfaceVectorField(_sdf, mesh, _vectorField);
+    ForceFieldUtils::generateSurfaceVectorField(_sdf, mesh, _vectorField, 
+                                                _isFrontfacingEnabled, _isBackfacingEnabled, _isEdgefacingEnabled);
 
     _lastMaxDistance = _isMaxDistanceEnabled ? _maxDistance : -1.0f;
     _isLevelsetUpToDate = true;

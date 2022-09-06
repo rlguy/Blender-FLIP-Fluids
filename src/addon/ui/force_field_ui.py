@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -94,6 +94,11 @@ class FLIPFLUID_PT_ForceFieldTypePanel(bpy.types.Panel):
                 icon="WORLD"
             ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Force-Field-Object-Settings"
             column.operator(
+                    "wm.url_open", 
+                    text="Force Fields Video Tutorial", 
+                    icon="WORLD"
+                ).url = "https://youtu.be/bXhMpzERHpk"
+            column.operator(
                 "wm.url_open", 
                 text="Force Field Example Scenes", 
                 icon="WORLD"
@@ -175,6 +180,14 @@ class FLIPFLUID_PT_ForceFieldTypePanel(bpy.types.Panel):
         column = split.column()
         row = column.row()
         row.label(text=max_strength_str)
+
+        if force_field_props.force_field_type == 'FORCE_FIELD_TYPE_SURFACE':
+            box = self.layout.box()
+            row = box.row(align=True)
+            row.label(text="Enabled Sides:")
+            row.prop(force_field_props, "enable_frontfacing")
+            row.prop(force_field_props, "enable_backfacing")
+            row.prop(force_field_props, "enable_edgefacing")
 
         self.layout.separator()
         box = self.layout.box()

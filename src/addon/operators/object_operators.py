@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@ class FlipFluidAdd(bpy.types.Operator):
 
 
     def execute(self, context):
+        installation_utils.tag_addon_active()
         obj = vcu.get_active_object(context)
         obj.flip_fluid.is_active = True
         vcu.add_to_flip_fluids_collection(obj, context)

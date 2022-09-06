@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -268,13 +268,18 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
 
 
     def scene_update_post(self, scene):
+        # This section does not seem to be required any longer. Not sure why.
+        # This section also seems to cause errors in Octane Render
+        # for Blender 3.1 when the renderer is set to Octane.
+        """
         if self.grid_info_expanded:
             # Workaround to get UI panel to redraw when grid info is displayed
             selected_object = vcu.get_active_object()
-            if selected_object.flip_fluid.is_domain():
+            if selected_object is not None and selected_object.flip_fluid.is_domain():
                 # Possible bug in Blender where this could crash if the domain is not
                 # selected
                 self.resolution = self.resolution
+        """
 
         self._update_locked_cell_size_resolution()
         self._set_recommended_preview_resolution()

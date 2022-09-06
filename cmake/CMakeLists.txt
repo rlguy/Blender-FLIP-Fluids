@@ -1,5 +1,5 @@
 #[[
-Copyright (C) 2020 Ryan L. Guy
+Copyright (C) 2022 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -40,6 +40,7 @@ option(DISTRIBUTE_SOURCE "Include source code in addon" ON)
 option(WITH_OPENCL "Compile project with OpenCL features" OFF)
 option(WITH_ENGINE_TEST "Compile engine test executable" OFF)
 option(WITH_PYFLUID_MODULE "Compile pyfluid Python module" OFF)
+option(WITH_MIXBOX "Compile with Mixbox pigment mixing feature" OFF)
 SET(LIBRARY_SUFFIX "" CACHE STRING "Optional suffix to add to the end of the library name")
 
 if(APPLE)
@@ -51,9 +52,9 @@ set(CMAKE_BUILD_TYPE Release)
 
 set(FLUIDENGINE_VERSION_TYPE_IS_STABLE_BUILD TRUE)
 set(FLUIDENGINE_VERSION_MAJOR 1)
-set(FLUIDENGINE_VERSION_MINOR 3)
+set(FLUIDENGINE_VERSION_MINOR 5)
 set(FLUIDENGINE_VERSION_REVISION 0)
-set(FLUIDENGINE_VERSION_DATE "12-MAR-2022")
+set(FLUIDENGINE_VERSION_DATE "08-SEP-2022")
 
 if(FLUIDENGINE_VERSION_TYPE_IS_STABLE_BUILD)
     set(FLUIDENGINE_VERSION_TYPE_LABEL "GitHub Release")
@@ -73,6 +74,17 @@ if(BUILD_DEBUG)
     message(STATUS "Building in debug mode")
 else()
     message(STATUS "Building in release mode")
+endif()
+
+# Configure Mixbox
+if(WITH_MIXBOX)
+    set(FLUIDENGINE_IS_MIXBOX_SUPPORTED "True")
+    add_definitions(-DWITH_MIXBOX=1)
+    set(MIXBOX_SOURCE_CPP "src/engine/mixbox/mixbox.cpp")
+else()
+    set(FLUIDENGINE_IS_MIXBOX_SUPPORTED "False")
+    add_definitions(-DWITH_MIXBOX=0)
+    set(MIXBOX_SOURCE_CPP "src/engine/mixbox/mixbox_stub.cpp")
 endif()
 
 # Configure OpenCL
@@ -145,7 +157,7 @@ configure_file(
 )
 
 # Object library
-file(GLOB SOURCES "src/engine/*.cpp" "src/engine/c_bindings/*.cpp" "src/engine/kernels/*.cpp" "src/engine/opencl_bindings/*.cpp")
+file(GLOB SOURCES "src/engine/*.cpp" "src/engine/c_bindings/*.cpp" "src/engine/kernels/*.cpp" "src/engine/opencl_bindings/*.cpp" ${MIXBOX_SOURCE_CPP})
 add_library(objects OBJECT ${SOURCES})
 
 if(WITH_ENGINE_TEST)

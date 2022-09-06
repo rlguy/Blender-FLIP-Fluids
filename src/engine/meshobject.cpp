@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2021 Ryan L. Guy
+Copyright (C) 2022 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -480,12 +480,28 @@ float MeshObject::getObjectVelocityInfluence() {
     return _objectVelocityInfluence;
 }
 
+void MeshObject::setPriority(int n) {
+    _priority = n;
+}
+
+int MeshObject::getPriority() {
+    return _priority;
+}
+
 void MeshObject::setSourceID(int id) {
     _sourceID = id;
 }
 
 int MeshObject::getSourceID() {
     return _sourceID;
+}
+
+void MeshObject::setViscosity(float v) {
+    _viscosity = v;
+}
+
+float MeshObject::getViscosity() {
+    return _viscosity;
 }
 
 void MeshObject::setSourceColor(vmath::vec3 c) {

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2021 Ryan L. Guy
+Copyright (C) 2022 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -56,6 +56,9 @@ bool ViscositySolver::applyViscosityToVelocityField(ViscositySolverParameters pa
     int matsize = _matrixIndex.matrixSize;
     if (matsize == 0) {
         // Nothing to solve
+        _solverIterations = 0;
+        _solverError = 0.0f;
+        _solverStatus = "Viscosity Solver Iterations: 0\nEstimated Error: 0.0";
         return true;
     }
 
@@ -93,6 +96,7 @@ void ViscositySolver::_initialize(ViscositySolverParameters params) {
     _solidSDF = params.solidSDF;
     _viscosity = params.viscosity;
     _solverTolerance = params.errorTolerance;
+    _maxSolverIterations = params.maxIterations;
 }
 
 void ViscositySolver::_computeFaceStateGrid() {
@@ -834,6 +838,8 @@ bool ViscositySolver::_solveLinearSystem(SparseMatrixf &matrix, std::vector<floa
     float estimatedError;
     int numIterations;
     bool success = solver.solve(matrix, rhs, soln, estimatedError, numIterations);
+    _solverIterations = numIterations;
+    _solverError = (float)estimatedError;
 
     bool retval;
     std::ostringstream ss;
@@ -846,7 +852,6 @@ bool ViscositySolver::_solveLinearSystem(SparseMatrixf &matrix, std::vector<floa
               "\nEstimated Error: " << estimatedError;
         retval = true;
     } else {
-        std::ostringstream ss;
         ss << "***Viscosity Solver FAILED" <<
               "\nViscosity Solver Iterations: " << numIterations <<
               "\nEstimated Error: " << estimatedError;

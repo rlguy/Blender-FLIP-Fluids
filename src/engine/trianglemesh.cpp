@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2021 Ryan L. Guy
+Copyright (C) 2022 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -317,6 +317,73 @@ void TriangleMesh::getVertexNeighbours(unsigned int vidx, std::vector<int> &n) {
     n.insert(n.end(), vn.begin(), vn.end());
 }
 
+std::vector<bool> TriangleMesh::getManifoldVertexList() {
+    updateVertexTriangles();
+
+    std::vector<bool> manifoldVertices(vertices.size(), true);
+    std::vector<int> neighbours;
+    for (size_t tidx = 0; tidx < triangles.size(); tidx++) {
+        neighbours.clear();
+        Triangle t = triangles[tidx];
+        getFaceNeighbours(t, neighbours);
+
+        // Remove duplicate neighbours
+        std::sort(neighbours.begin(), neighbours.end());
+        neighbours.erase(std::unique(neighbours.begin(), neighbours.end()), neighbours.end());
+        
+        int v1 = t.tri[0];
+        int v2 = t.tri[1];
+        int v3 = t.tri[2];
+
+        int e1count = 0;
+        int e2count = 0;
+        int e3count = 0;
+        for (size_t nidx = 0; nidx < neighbours.size(); nidx++) {
+            if (neighbours[nidx] == (int)tidx) {
+                continue;
+            }
+
+            Triangle n = triangles[neighbours[nidx]];
+            int n1 = n.tri[0];
+            int n2 = n.tri[1];
+            int n3 = n.tri[2];
+            bool v1shared = v1 == n1 || v1 == n2 || v1 == n3;
+            bool v2shared = v2 == n1 || v2 == n2 || v2 == n3;
+            bool v3shared = v3 == n1 || v3 == n2 || v3 == n3;
+            bool e1adjacent = v1shared && v2shared;
+            bool e2adjacent = v2shared && v3shared;
+            bool e3adjacent = v3shared && v1shared;
+
+            if (e1adjacent) {
+                e1count++;
+            }
+            if (e2adjacent) {
+                e2count++;
+            }
+            if (e3adjacent) {
+                e3count++;
+            }
+        }
+
+        if (e1count < 1) {
+            manifoldVertices[v1] = false;
+            manifoldVertices[v2] = false;
+        }
+        if (e2count < 1) {
+            manifoldVertices[v2] = false;
+            manifoldVertices[v3] = false;
+        }
+        if (e3count < 1) {
+            manifoldVertices[v3] = false;
+            manifoldVertices[v1] = false;
+        }
+    }
+
+    clearVertexTriangles();
+
+    return manifoldVertices;
+}
+
 bool TriangleMesh::_trianglesEqual(Triangle &t1, Triangle &t2) {
     return t1.tri[0] == t2.tri[0] &&
            t1.tri[1] == t2.tri[1] &&
@@ -518,6 +585,25 @@ vmath::vec3 TriangleMesh::getTriangleCenter(unsigned int index) {
     FLUIDSIM_ASSERT(t.tri[0] < size && t.tri[1] < size && t.tri[2] < size);
 
     return (vertices[t.tri[0]] + vertices[t.tri[1]] + vertices[t.tri[2]]) / 3.0f;
+}
+
+vmath::vec3 TriangleMesh::getTriangleNormal(unsigned int index) {
+    FLUIDSIM_ASSERT(index < triangles.size());
+
+    Triangle t = triangles[index];
+    int size = (int)vertices.size();
+    FLUIDSIM_ASSERT(t.tri[0] < size && t.tri[1] < size && t.tri[2] < size);
+
+    vmath::vec3 tn;
+    vmath::vec3 c1 = vertices[t.tri[1]] - vertices[t.tri[0]];
+    vmath::vec3 c2 = vertices[t.tri[2]] - vertices[t.tri[0]];
+    vmath::vec3 cross = vmath::cross(c1, c2);
+    float eps = 1e-9;
+    if (cross.length() > eps) {
+        tn = cross.normalize();
+    }
+
+    return tn;
 }
 
 vmath::vec3 TriangleMesh::getCentroid() {

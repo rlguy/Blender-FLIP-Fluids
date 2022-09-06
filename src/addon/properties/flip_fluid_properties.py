@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -64,9 +64,7 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
 
 
     def is_domain_object_set(self):
-        for obj in vcu.get_all_scene_objects():
-            if obj.flip_fluid.is_domain():
-                return True
+        return self.get_domain_object() is not None
 
 
     def get_num_domain_objects(self):
@@ -183,11 +181,14 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
 
 
     def get_simulation_objects(self):
-        objects = (self.get_fluid_objects() +
-                   self.get_obstacle_objects() +
-                   self.get_inflow_objects() + 
-                   self.get_outflow_objects() + 
-                   self.get_force_field_objects())
+        objects = []
+        for obj in vcu.get_all_scene_objects():
+            if obj.flip_fluid.is_active:
+                if obj.flip_fluid.is_domain():
+                    # get all FLIP Fluid objects that are not a domain
+                    continue
+                objects.append(obj)
+
         return objects
 
 

@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
 
 import bpy
 
+from ..operators import helper_operators
 from ..utils import version_compatibility_utils as vcu
 
 
@@ -249,13 +250,23 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
             column.prop(rprops, "viewport_dust_pct", slider=True)
         master_box.separator()
 
+        point_cloud_detected = False
+        if is_whitewater_enabled:
+            point_cloud_detected = helper_operators.is_geometry_node_point_cloud_detected()
+
         if not show_advanced:
             box = master_box.box()
             box.enabled = is_whitewater_enabled
             box.label(text="Particle Object Settings:")
-            row = box.row(align=True)
-            row.prop(rprops, "whitewater_particle_scale", text="Particle Scale")
-            row.prop(rprops, "only_display_whitewater_in_render")
+            if point_cloud_detected:
+                column = box.column(align=True)
+                column.label(text="Point cloud geometry nodes setup detected", icon="INFO")
+                column.label(text="Particle scale can be set in the whitewater mesh object", icon="INFO")
+                column.label(text="geometry nodes modifier", icon="INFO")
+            else:
+                row = box.row(align=True)
+                row.prop(rprops, "whitewater_particle_scale", text="Particle Scale")
+                row.prop(rprops, "only_display_whitewater_in_render")
             return
 
         box = master_box.box()
@@ -263,85 +274,91 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
 
         column = box.column(align=True)
         column.label(text="Particle Object Settings Mode:")
-        row = column.row()
-        row.prop(rprops, "whitewater_particle_object_settings_mode", expand=True)
-        column = box.column()
 
-        box_column = box.column()
-        if rprops.whitewater_particle_object_settings_mode == 'WHITEWATER_OBJECT_SETTINGS_WHITEWATER':
-            column = box_column.column()
-            column.label(text="Particle Object:")
-            split = vcu.ui_split(column, factor=0.75, align=True)
-            column1 = split.column(align=True)
-            column2 = split.column(align=True)
-            row = column1.row(align=True)
-            row.prop(rprops, "whitewater_particle_object_mode", expand=True)
-            row = column2.row(align=True)
-            row.enabled = rprops.whitewater_particle_object_mode == 'WHITEWATER_PARTICLE_CUSTOM'
-            row.prop(rprops, "whitewater_particle_object", text="")
-            row = column.row()
-            row.prop(rprops, "whitewater_particle_scale", text="Particle Scale")
-            row.prop(rprops, "only_display_whitewater_in_render", text="Hide particles in viewport")
+        if point_cloud_detected:
+            column.label(text="Point cloud geometry nodes setup detected", icon="INFO")
+            column.label(text="Particle scale can be set in the whitewater mesh object", icon="INFO")
+            column.label(text="geometry nodes modifier", icon="INFO")
         else:
-            particle_box = box_column.box()
-            column = particle_box.column()
-            column.label(text="Foam Particle Object:")
-            split = vcu.ui_split(column, factor=0.75, align=True)
-            column1 = split.column(align=True)
-            column2 = split.column(align=True)
-            row = column1.row(align=True)
-            row.prop(rprops, "foam_particle_object_mode", expand=True)
-            row = column2.row(align=True)
-            row.enabled = rprops.foam_particle_object_mode == 'WHITEWATER_PARTICLE_CUSTOM'
-            row.prop(rprops, "foam_particle_object", text="")
             row = column.row()
-            row.prop(rprops, "foam_particle_scale", text="Particle Scale")
-            row.prop(rprops, "only_display_foam_in_render", text="Hide particles in viewport")
+            row.prop(rprops, "whitewater_particle_object_settings_mode", expand=True)
+            column = box.column()
 
-            particle_box = box_column.box()
-            column = particle_box.column()
-            column.label(text="Bubble Particle Object:")
-            split = vcu.ui_split(column, factor=0.75, align=True)
-            column1 = split.column(align=True)
-            column2 = split.column(align=True)
-            row = column1.row(align=True)
-            row.prop(rprops, "bubble_particle_object_mode", expand=True)
-            row = column2.row(align=True)
-            row.enabled = rprops.bubble_particle_object_mode == 'WHITEWATER_PARTICLE_CUSTOM'
-            row.prop(rprops, "bubble_particle_object", text="")
-            row = column.row()
-            row.prop(rprops, "bubble_particle_scale", text="Particle Scale")
-            row.prop(rprops, "only_display_bubble_in_render", text="Hide particles in viewport")
+            box_column = box.column()
+            if rprops.whitewater_particle_object_settings_mode == 'WHITEWATER_OBJECT_SETTINGS_WHITEWATER':
+                column = box_column.column()
+                column.label(text="Particle Object:")
+                split = vcu.ui_split(column, factor=0.75, align=True)
+                column1 = split.column(align=True)
+                column2 = split.column(align=True)
+                row = column1.row(align=True)
+                row.prop(rprops, "whitewater_particle_object_mode", expand=True)
+                row = column2.row(align=True)
+                row.enabled = rprops.whitewater_particle_object_mode == 'WHITEWATER_PARTICLE_CUSTOM'
+                row.prop(rprops, "whitewater_particle_object", text="")
+                row = column.row()
+                row.prop(rprops, "whitewater_particle_scale", text="Particle Scale")
+                row.prop(rprops, "only_display_whitewater_in_render", text="Hide particles in viewport")
+            else:
+                particle_box = box_column.box()
+                column = particle_box.column()
+                column.label(text="Foam Particle Object:")
+                split = vcu.ui_split(column, factor=0.75, align=True)
+                column1 = split.column(align=True)
+                column2 = split.column(align=True)
+                row = column1.row(align=True)
+                row.prop(rprops, "foam_particle_object_mode", expand=True)
+                row = column2.row(align=True)
+                row.enabled = rprops.foam_particle_object_mode == 'WHITEWATER_PARTICLE_CUSTOM'
+                row.prop(rprops, "foam_particle_object", text="")
+                row = column.row()
+                row.prop(rprops, "foam_particle_scale", text="Particle Scale")
+                row.prop(rprops, "only_display_foam_in_render", text="Hide particles in viewport")
 
-            particle_box = box_column.box()
-            column = particle_box.column()
-            column.label(text="Spray Particle Object:")
-            split = vcu.ui_split(column, factor=0.75, align=True)
-            column1 = split.column(align=True)
-            column2 = split.column(align=True)
-            row = column1.row(align=True)
-            row.prop(rprops, "spray_particle_object_mode", expand=True)
-            row = column2.row(align=True)
-            row.enabled = rprops.spray_particle_object_mode == 'WHITEWATER_PARTICLE_CUSTOM'
-            row.prop(rprops, "spray_particle_object", text="")
-            row = column.row()
-            row.prop(rprops, "spray_particle_scale", text="Particle Scale")
-            row.prop(rprops, "only_display_spray_in_render", text="Hide particles in viewport")
+                particle_box = box_column.box()
+                column = particle_box.column()
+                column.label(text="Bubble Particle Object:")
+                split = vcu.ui_split(column, factor=0.75, align=True)
+                column1 = split.column(align=True)
+                column2 = split.column(align=True)
+                row = column1.row(align=True)
+                row.prop(rprops, "bubble_particle_object_mode", expand=True)
+                row = column2.row(align=True)
+                row.enabled = rprops.bubble_particle_object_mode == 'WHITEWATER_PARTICLE_CUSTOM'
+                row.prop(rprops, "bubble_particle_object", text="")
+                row = column.row()
+                row.prop(rprops, "bubble_particle_scale", text="Particle Scale")
+                row.prop(rprops, "only_display_bubble_in_render", text="Hide particles in viewport")
 
-            particle_box = box_column.box()
-            column = particle_box.column()
-            column.label(text="Dust Particle Object:")
-            split = vcu.ui_split(column, factor=0.75, align=True)
-            column1 = split.column(align=True)
-            column2 = split.column(align=True)
-            row = column1.row(align=True)
-            row.prop(rprops, "dust_particle_object_mode", expand=True)
-            row = column2.row(align=True)
-            row.enabled = rprops.dust_particle_object_mode == 'WHITEWATER_PARTICLE_CUSTOM'
-            row.prop(rprops, "dust_particle_object", text="")
-            row = column.row()
-            row.prop(rprops, "dust_particle_scale", text="Particle Scale")
-            row.prop(rprops, "only_display_dust_in_render", text="Hide particles in viewport")
+                particle_box = box_column.box()
+                column = particle_box.column()
+                column.label(text="Spray Particle Object:")
+                split = vcu.ui_split(column, factor=0.75, align=True)
+                column1 = split.column(align=True)
+                column2 = split.column(align=True)
+                row = column1.row(align=True)
+                row.prop(rprops, "spray_particle_object_mode", expand=True)
+                row = column2.row(align=True)
+                row.enabled = rprops.spray_particle_object_mode == 'WHITEWATER_PARTICLE_CUSTOM'
+                row.prop(rprops, "spray_particle_object", text="")
+                row = column.row()
+                row.prop(rprops, "spray_particle_scale", text="Particle Scale")
+                row.prop(rprops, "only_display_spray_in_render", text="Hide particles in viewport")
+
+                particle_box = box_column.box()
+                column = particle_box.column()
+                column.label(text="Dust Particle Object:")
+                split = vcu.ui_split(column, factor=0.75, align=True)
+                column1 = split.column(align=True)
+                column2 = split.column(align=True)
+                row = column1.row(align=True)
+                row.prop(rprops, "dust_particle_object_mode", expand=True)
+                row = column2.row(align=True)
+                row.enabled = rprops.dust_particle_object_mode == 'WHITEWATER_PARTICLE_CUSTOM'
+                row.prop(rprops, "dust_particle_object", text="")
+                row = column.row()
+                row.prop(rprops, "dust_particle_scale", text="Particle Scale")
+                row.prop(rprops, "only_display_dust_in_render", text="Hide particles in viewport")
 
         master_box.separator()
         box = master_box.box()

@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 bl_info = {
     "name" : "FLIP Fluids GitHub Release @FLUIDENGINE_VERSION_MAJOR@.@FLUIDENGINE_VERSION_MINOR@.@FLUIDENGINE_VERSION_REVISION@",
     "description": "A FLIP Fluid Simulation Tool for Blender (v@FLUIDENGINE_VERSION_LABEL@)",
-    "author" : "Ryan Guy, Dennis Fassbaender",
+    "author" : "Ryan Guy & Dennis Fassbaender",
     "version" : (@FLUIDENGINE_VERSION_MAJOR@, @FLUIDENGINE_VERSION_MINOR@, @FLUIDENGINE_VERSION_REVISION@),
     "blender" : (2, 81, 0),
     "location" : "Properties > Physics > FLIP Fluid",
@@ -74,12 +74,14 @@ from .utils import version_compatibility_utils as vcu
 
 @bpy.app.handlers.persistent
 def scene_update_post(scene):
-    if not render.is_rendering():
-        # We don't want to update these while rendering to prevent
-        # odd behaviour in the depsgraph
-        properties.scene_update_post(scene)
-        materials.scene_update_post(scene)
-    render.scene_update_post(scene)
+    installation_utils.scene_update_post(scene)
+    if installation_utils.is_addon_active():
+        if not render.is_rendering():
+            # We don't want to update these while rendering to prevent
+            # odd behaviour in the depsgraph
+            properties.scene_update_post(scene)
+            materials.scene_update_post(scene)
+        render.scene_update_post(scene)
 
 
 @bpy.app.handlers.persistent
@@ -123,8 +125,7 @@ def load_post(nonedata):
     if vcu.is_blender_28() and not vcu.is_blender_281():
         print("FLIP FLUIDS WARNING: Blender 2.80 contains bugs that can cause frequent crashes during render, Alembic export, and rigid/cloth simulation baking. Blender version 2.81 or higher is recommended.")
 
-    installation_utils.complete_installation()
-
+    installation_utils.load_post()
     materials.load_post()
     properties.load_post()
     presets.load_post()
@@ -144,6 +145,22 @@ def save_post(nonedata):
 
 def on_exit():
     exit_handler.on_exit()
+
+
+class FlipFluidCompleteInstallation(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.complete_installation"
+    bl_label = "Complete Installation"
+    bl_description = ("Click to complete the installation of the FLIP Fluids addon. Alternatively, restarting Blender or re-loading the Blend file will also complete the installation process")
+
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+
+    def execute(self, context):
+        load_post(None)
+        return {'FINISHED'}
 
 
 def register():
@@ -171,6 +188,8 @@ def register():
     bpy.app.handlers.save_post.append(save_post)
     atexit.register(on_exit)
 
+    bpy.utils.register_class(FlipFluidCompleteInstallation)
+
 
 def unregister():
     objects.unregister()
@@ -197,3 +216,4 @@ def unregister():
     bpy.app.handlers.save_post.remove(save_post)
     atexit.unregister(on_exit)
 
+    bpy.utils.unregister_class(FlipFluidCompleteInstallation)

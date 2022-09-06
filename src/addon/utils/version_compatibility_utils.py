@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, array
+import bpy, array, os
 
 from ..pyfluid import TriangleMesh
 
@@ -43,6 +43,10 @@ def is_blender_30():
 
 def is_blender_31():
     return bpy.app.version >= (3, 1, 0)
+
+
+def is_blender_32():
+    return bpy.app.version >= (3, 2, 0)
     
 
 def register_dict_property(dict_object, name_str, prop):
@@ -379,28 +383,54 @@ def swap_object_mesh_data_geometry(bl_object, vertices=[], triangles=[],
                                    smooth_mesh=False,
                                    octane_mesh_type='Global'):
     if is_blender_281():
+        # UV Maps
         uv_layer_names = [uv.name for uv in bl_object.data.uv_layers]
         is_uv_layer_active = [uv.active for uv in bl_object.data.uv_layers]
         is_uv_layer_active_render = [uv.active_render for uv in bl_object.data.uv_layers]
 
-        vc_layer_names = [uv.name for uv in bl_object.data.vertex_colors]
-        is_vc_layer_active = [uv.active for uv in bl_object.data.vertex_colors]
-        is_vc_layer_active_render = [uv.active_render for uv in bl_object.data.vertex_colors]
+        # Color Attributes (Blender >= 3.2)
+        if is_blender_32():
+            ca_layer_names = [ca.name for ca in bl_object.data.color_attributes]
+            ca_layer_data_types = [ca.data_type for ca in bl_object.data.color_attributes]
+            ca_layer_domain_types = [ca.domain for ca in bl_object.data.color_attributes]
+            active_color_layer_index = bl_object.data.color_attributes.active_color_index
+            active_color_render_index = bl_object.data.color_attributes.render_color_index
+        else:
+            # Vertex Colors (Blender <= 3.1)
+            vc_layer_names = [vc.name for vc in bl_object.data.vertex_colors]
+            is_vc_layer_active = [vc.active for vc in bl_object.data.vertex_colors]
+            is_vc_layer_active_render = [vc.active_render for vc in bl_object.data.vertex_colors]
 
         bl_object.data.clear_geometry()
         bl_object.data.from_pydata(vertices, [], triangles)
         _set_mesh_smoothness(bl_object.data, smooth_mesh)
         _set_octane_mesh_type(bl_object, octane_mesh_type)
 
+        # UV Maps
         for i, name in enumerate(uv_layer_names):
             uv_layer = bl_object.data.uv_layers.new(name=name)
             uv_layer.active = is_uv_layer_active[i]
             uv_layer.active_render = is_uv_layer_active_render[i]
 
-        for i, name in enumerate(vc_layer_names):
-            vc_layer = bl_object.data.vertex_colors.new(name=name)
-            vc_layer.active = is_vc_layer_active[i]
-            vc_layer.active_render = is_vc_layer_active_render[i]
+        # Color Attributes (Blender >= 3.2)
+        if is_blender_32():
+            for i, name in enumerate(ca_layer_names):
+                ca_layer = bl_object.data.color_attributes.new(
+                        name=name, 
+                        type=ca_layer_data_types[i], 
+                        domain=ca_layer_domain_types[i]
+                        )
+                if active_color_layer_index >= 0:
+                    bl_object.data.color_attributes.active_color_index = active_color_layer_index
+                if active_color_render_index >= 0:
+                    bl_object.data.color_attributes.render_color_index = active_color_render_index
+        else:
+            # Vertex Colors (Blender <= 3.1)
+            for i, name in enumerate(vc_layer_names):
+                vc_layer = bl_object.data.vertex_colors.new(name=name)
+                vc_layer.active = is_vc_layer_active[i]
+                vc_layer.active_render = is_vc_layer_active_render[i]
+
     else:
         old_mesh_data = bl_object.data
         new_mesh_data = bpy.data.meshes.new(mesh_name)
@@ -413,6 +443,12 @@ def swap_object_mesh_data_geometry(bl_object, vertices=[], triangles=[],
 
         old_mesh_data.user_clear()
         bpy.data.meshes.remove(old_mesh_data)
+
+
+def get_addon_directory():
+    this_filepath = os.path.dirname(os.path.realpath(__file__))
+    addon_directory = os.path.dirname(this_filepath)
+    return addon_directory
 
 
 def get_blender_preferences(context=None):

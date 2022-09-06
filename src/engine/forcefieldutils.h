@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2021 Ryan L. Guy
+Copyright (C) 2022 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,7 @@ namespace ForceFieldUtils {
 
 struct VectorFieldGenerationData {
   Array3d<float> phi;
+  Array3d<int> closestTriangle;
   Array3d<vmath::vec3> closestPoint;
   Array3d<bool> isClosestPointSet;
   double dx;
@@ -40,7 +41,8 @@ struct VectorFieldGenerationData {
 extern int _bandwidth;
 extern float _sleepTimeFactor;
 
-extern void generateSurfaceVectorField(MeshLevelSet &sdf, TriangleMesh &mesh, Array3d<vmath::vec3> &vectorField);
+extern void generateSurfaceVectorField(MeshLevelSet &sdf, TriangleMesh &mesh, Array3d<vmath::vec3> &vectorField, 
+                                       bool generateFrontFacing = true, bool generateBackFacing = true, bool generateEdgeFacing = true);
 extern void _initializeNarrowBandClosestPoint(MeshLevelSet &sdf, TriangleMesh &mesh, 
                                               VectorFieldGenerationData &data);
 extern void _initializeNarrowBandClosestPointThread(int startidx, int endidx, 

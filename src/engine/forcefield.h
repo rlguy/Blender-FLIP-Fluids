@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2021 Ryan L. Guy
+Copyright (C) 2022 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -74,6 +74,18 @@ public:
     float getMaxDistance();
     void setMaxDistance(float d);
 
+    void enableFrontfacing();
+    void disableFrontfacing();
+    bool isFrontfacingEnabled();
+
+    void enableBackfacing();
+    void disableBackfacing();
+    bool isBackfacingEnabled();
+
+    void enableEdgefacing();
+    void disableEdgefacing();
+    bool isEdgefacingEnabled();
+
     float getGravityScale();
     void setGravityScale(float s);
 
@@ -113,6 +125,10 @@ protected:
 
     bool _isMaxDistanceEnabled = false;
     float _maxDistance = 0.0f;
+
+    float _isFrontfacingEnabled = true;
+    float _isBackfacingEnabled = true;
+    float _isEdgefacingEnabled = true;
 
     float _gravityScale = 1.0f;
     float _gravityScaleWidth = 0.0f;

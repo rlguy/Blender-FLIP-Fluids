@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -116,8 +116,10 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
             description="Accuracy of the viscosity solver. Decrease to speed up baking at the cost of accuracy,"
                 " increase to improve accuracy at the cost of baking speed. High viscosity thick or stiff fluids"
                 " benefit the most from increasing accuracy. Low viscosity thin fluids often work well at the lowest"
-                " accuracy. Setting above a value of 4 may have greatly diminishing returns on improvement", 
+                " accuracy. Setting above a value of 4 may have greatly diminishing returns on improvement and is not"
+                " recommended", 
             min=1, max=6,
+            soft_max=4,
             default=4,
             ); exec(conv("viscosity_solver_error_tolerance"))
     enable_surface_tension = BoolProperty(
@@ -150,7 +152,7 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
                 " results and reduce rippling artifacts but will require more substeps"
                 " and increase baking time", 
             min=0, max=100,
-            default=90,
+            default=95,
             subtype='PERCENTAGE',
             ); exec(conv("surface_tension_accuracy"))
     surface_tension_solver_method = EnumProperty(

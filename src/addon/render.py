@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
 
 import bpy, math
 
+from .utils import api_workaround_utils as api_utils
 from .utils import version_compatibility_utils as vcu
 
 IS_RENDERING = False
@@ -110,6 +111,7 @@ def __update_surface_display_mode():
         surface_cache.enable_age_attribute = dprops.surface.enable_age_attribute
         surface_cache.enable_color_attribute = dprops.surface.enable_color_attribute
         surface_cache.enable_source_id_attribute = dprops.surface.enable_source_id_attribute
+        surface_cache.enable_viscosity_attribute = dprops.surface.enable_viscosity_attribute
         surface_cache.enable_id_attribute = False
         surface_cache.enable_lifetime_attribute = False
     elif display_mode == 'DISPLAY_PREVIEW':
@@ -122,6 +124,7 @@ def __update_surface_display_mode():
         surface_cache.enable_age_attribute = False
         surface_cache.enable_color_attribute = False
         surface_cache.enable_source_id_attribute = False
+        surface_cache.enable_viscosity_attribute = False
         surface_cache.enable_id_attribute = False
         surface_cache.enable_lifetime_attribute = False
     elif display_mode == 'DISPLAY_NONE':
@@ -134,6 +137,7 @@ def __update_surface_display_mode():
         surface_cache.enable_age_attribute = False
         surface_cache.enable_color_attribute = False
         surface_cache.enable_source_id_attribute = False
+        surface_cache.enable_viscosity_attribute = False
         surface_cache.enable_id_attribute = False
         surface_cache.enable_lifetime_attribute = False
 
@@ -248,6 +252,10 @@ def __update_whitewater_display_mode():
         cache.bubble.enable_source_id_attribute = False
         cache.spray.enable_source_id_attribute = False
         cache.dust.enable_source_id_attribute = False
+        cache.foam.enable_viscosity_attribute = False
+        cache.bubble.enable_viscosity_attribute = False
+        cache.spray.enable_viscosity_attribute = False
+        cache.dust.enable_viscosity_attribute = False
     elif display_mode == 'DISPLAY_PREVIEW':
         cache.foam.mesh_prefix = "foam"
         cache.bubble.mesh_prefix = "bubble"
@@ -293,6 +301,10 @@ def __update_whitewater_display_mode():
         cache.bubble.enable_source_id_attribute = False
         cache.spray.enable_source_id_attribute = False
         cache.dust.enable_source_id_attribute = False
+        cache.foam.enable_viscosity_attribute = False
+        cache.bubble.enable_viscosity_attribute = False
+        cache.spray.enable_viscosity_attribute = False
+        cache.dust.enable_viscosity_attribute = False
     elif display_mode == 'DISPLAY_NONE':
         cache.foam.mesh_prefix = "foam_none"
         cache.bubble.mesh_prefix = "bubble_none"
@@ -338,6 +350,10 @@ def __update_whitewater_display_mode():
         cache.bubble.enable_source_id_attribute = False
         cache.spray.enable_source_id_attribute = False
         cache.dust.enable_source_id_attribute = False
+        cache.foam.enable_viscosity_attribute = False
+        cache.bubble.enable_viscosity_attribute = False
+        cache.spray.enable_viscosity_attribute = False
+        cache.dust.enable_viscosity_attribute = False
 
     foam_pct, bubble_pct, spray_pct, dust_pct = __get_whitewater_display_percentages()
     cache.foam.wwp_import_percentage = foam_pct
@@ -698,6 +714,18 @@ def render_cancel(scene):
 def render_pre(scene):
     global RENDER_PRE_FRAME_NUMBER
     RENDER_PRE_FRAME_NUMBER = __get_render_pre_current_frame()
+
+    is_running_cmd = bpy.app.background
+    if not is_running_cmd:
+        features_dict = api_utils.get_enabled_features_affected_by_T88811()
+        if features_dict is not None:
+            warning_string = api_utils.get_T88811_cmd_warning_string(features_dict)
+            print(warning_string)
+
+        is_persistent_data_enabled = api_utils.is_persistent_data_issue_relevant()
+        if is_persistent_data_enabled:
+            warning_string = api_utils.get_persistent_data_warning_string()
+            print(warning_string)
 
 
 def frame_change_post(scene, depsgraph=None):

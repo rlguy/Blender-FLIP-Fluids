@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,6 +58,7 @@ def load_post():
     flip_fluid_properties.load_post()
     preferences_properties.load_post()
     object_properties.load_post()
+    helper_properties.load_post()
 
 
 def save_pre():

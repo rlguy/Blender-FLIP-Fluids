@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2021 Ryan L. Guy
+Copyright (C) 2022 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -57,6 +57,8 @@ bool PressureSolver::solve(PressureSolverParameters params) {
     }
 
     if (maxAbsCoeff < _pressureSolveTolerance) {
+        _solverIterations = 0;
+        _solverError = 0.0f;
         _solverStatus = "Pressure Solver Iterations: 0\nEstimated Error: 0.0";
         return true;
     }
@@ -809,12 +811,17 @@ void PressureSolver::_calculateMatrixCoefficientsThread(int startidx, int endidx
 
 bool PressureSolver::_solveLinearSystem(SparseMatrixd &matrix, std::vector<double> &rhs, 
                                         std::vector<double> &soln) {
+    _solverIterations = 0;
+    _solverError = 0.0f;
+
     PCGSolver<double> solver;
     solver.setSolverParameters(_pressureSolveTolerance, _maxCGIterations);
 
     double estimatedError;
     int numIterations;
     bool success = solver.solve(matrix, rhs, soln, estimatedError, numIterations);
+    _solverIterations = numIterations;
+    _solverError = (float)estimatedError;
 
     bool retval;
     std::ostringstream ss;

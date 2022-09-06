@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -62,7 +62,8 @@ def draw_bake_operator_UI_element(context, ui_box):
         num_frames = simprops.frame_end - simprops.frame_start + 1
         frame_progress_string = str(bakeprops.num_baked_frames) + " / " + str(num_frames)
         pct_string = str(round((bakeprops.num_baked_frames / num_frames) * 100, 1)) + "%"
-        frames_string = pct_string + "   ( " + frame_progress_string + " )"
+        frames_string = pct_string + "  (" + frame_progress_string + ")"
+        frames_string += "  (" + str(simprops.frame_start + bakeprops.num_baked_frames) + ")"
         operator_text = "Baking in progress...   " + frames_string
 
     column = ui_box.column(align=True)

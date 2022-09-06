@@ -1,6 +1,6 @@
 # MIT License
 # 
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -35,3 +35,4 @@ from .trianglemesh import TriangleMesh, TriangleMesh_t
 from .gridindex import GridIndex, GridIndex_t
 from .vector3 import Vector3, Vector3_t
 from . import gpu_utils
+from . import mixbox

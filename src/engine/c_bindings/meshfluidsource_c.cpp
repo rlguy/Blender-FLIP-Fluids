@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2021 Ryan L. Guy
+Copyright (C) 2022 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -225,6 +225,18 @@ extern "C" {
         );
     }
 
+    EXPORTDLL int MeshFluidSource_get_priority(MeshFluidSource* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &MeshFluidSource::getPriority, err
+        );
+    }
+
+    EXPORTDLL void MeshFluidSource_set_priority(MeshFluidSource* obj, int n, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &MeshFluidSource::setPriority, n, err
+        );
+    }
+
     EXPORTDLL void MeshFluidSource_enable_constrained_fluid_velocity(MeshFluidSource* obj, int *err) {
         CBindings::safe_execute_method_void_0param(
             obj, &MeshFluidSource::enableConstrainedFluidVelocity, err
@@ -264,6 +276,18 @@ extern "C" {
     EXPORTDLL void MeshFluidSource_set_source_id(MeshFluidSource* obj, int id, int *err) {
         CBindings::safe_execute_method_void_1param(
             obj, &MeshFluidSource::setSourceID, id, err
+        );
+    }
+
+    EXPORTDLL int MeshFluidSource_get_viscosity(MeshFluidSource* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &MeshFluidSource::getViscosity, err
+        );
+    }
+
+    EXPORTDLL void MeshFluidSource_set_viscosity(MeshFluidSource* obj, float v, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &MeshFluidSource::setViscosity, v, err
         );
     }
 

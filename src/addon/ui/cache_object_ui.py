@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
 
 import bpy
 
+from ..operators import helper_operators
 from ..utils import version_compatibility_utils as vcu
 
 
@@ -103,34 +104,47 @@ class FLIPFLUID_PT_CacheObjectTypePanel(bpy.types.Panel):
         dprops = self.get_domain_properties()
         rprops = dprops.render
         show_advanced = not vcu.get_addon_preferences(bpy.context).beginner_friendly_mode
+        point_cloud_detected = helper_operators.is_geometry_node_point_cloud_detected()
 
         if not show_advanced:
             box = self.layout.box()
             box.label(text="Particle Object Settings:")
-            row = box.row(align=True)
-            row.prop(rprops, scale_prop)
-            row.prop(rprops, render_display_prop)
+            if point_cloud_detected:
+                column = box.column(align=True)
+                column.label(text="Point cloud geometry nodes setup detected", icon="INFO")
+                column.label(text="Particle scale can be set in the whitewater mesh object", icon="INFO")
+                column.label(text="geometry nodes modifier", icon="INFO")
+            else:
+                row = box.row(align=True)
+                row.prop(rprops, scale_prop)
+                row.prop(rprops, render_display_prop)
             return
 
         box = self.layout.box()
         box.label(text="Particle Object Settings Mode:")
-        row = box.row()
-        row.prop(rprops, "whitewater_particle_object_settings_mode", expand=True)
+        if point_cloud_detected:
+            column = box.column(align=True)
+            column.label(text="Point cloud geometry nodes setup detected", icon="INFO")
+            column.label(text="Particle scale can be set in the whitewater mesh object", icon="INFO")
+            column.label(text="geometry nodes modifier", icon="INFO")
+        else:
+            row = box.row()
+            row.prop(rprops, "whitewater_particle_object_settings_mode", expand=True)
 
-        box = box.box()
-        column = box.column()
-        column.label(text=label_str)
-        split = vcu.ui_split(column, factor=0.75, align=True)
-        column1 = split.column(align=True)
-        column2 = split.column(align=True)
-        row = column1.row(align=True)
-        row.prop(rprops, particle_object_mode_prop, expand=True)
-        row = column2.row(align=True)
-        row.enabled = getattr(rprops, particle_object_mode_prop) == 'WHITEWATER_PARTICLE_CUSTOM'
-        row.prop(rprops, object_prop, text="")
-        row = column.row()
-        row.prop(rprops, scale_prop, text="Particle Scale")
-        row.prop(rprops, render_display_prop, text="Hide particles in viewport")
+            box = box.box()
+            column = box.column()
+            column.label(text=label_str)
+            split = vcu.ui_split(column, factor=0.75, align=True)
+            column1 = split.column(align=True)
+            column2 = split.column(align=True)
+            row = column1.row(align=True)
+            row.prop(rprops, particle_object_mode_prop, expand=True)
+            row = column2.row(align=True)
+            row.enabled = getattr(rprops, particle_object_mode_prop) == 'WHITEWATER_PARTICLE_CUSTOM'
+            row.prop(rprops, object_prop, text="")
+            row = column.row()
+            row.prop(rprops, scale_prop, text="Particle Scale")
+            row.prop(rprops, render_display_prop, text="Hide particles in viewport")
 
 
     def draw_whitewater_material_settings(self, domain_props, prop_str, material_prop):

@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -168,6 +168,25 @@ class FlipFluidForceFieldProperties(bpy.types.PropertyGroup):
             ); exec(conv("gravity_scale_width_point"))
 
     # Surface Force Field
+    enable_frontfacing = BoolProperty(
+            name="Front",
+            description="Enable force field on the front-facing side of the surface."
+            " This is the side where face normals point outwards",
+            default=True,
+            ); exec(conv("enable_frontfacing"))
+    enable_backfacing = BoolProperty(
+            name="Back",
+            description="Enable force field on back-facing polygons."
+                " This is the side opposite of the face normal",
+            default=True,
+            ); exec(conv("enable_backfacing"))
+    enable_edgefacing = BoolProperty(
+            name="Edge",
+            description="Enable force field on planar edges."
+                " These are edges of the object that are not connected to any other polygons."
+                " Must have at lease one of Front or Back sides enabled",
+            default=True,
+            ); exec(conv("enable_edgefacing"))
     gravity_scale_surface = FloatProperty(
             name="Gravity Scale",
             description="Scale the force of gravity near the surface by this value. A scale"
@@ -270,6 +289,9 @@ class FlipFluidForceFieldProperties(bpy.types.PropertyGroup):
         add("force_field.maximum_force_limit_factor", "")
         add("force_field.gravity_scale_point", "")
         add("force_field.gravity_scale_surface", "")
+        add("force_field.enable_frontfacing", "")
+        add("force_field.enable_backfacing", "")
+        add("force_field.enable_edgefacing", "")
         add("force_field.gravity_scale_volume", "")
         add("force_field.gravity_scale_curve", "")
         add("force_field.gravity_scale_width_point", "")
