@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -82,6 +82,7 @@ class FlipFluidLoadedMeshData(bpy.types.PropertyGroup):
     enable_age_attribute =       BoolProperty(default=False);           exec(conv("enable_age_attribute"))
     enable_color_attribute =     BoolProperty(default=False);           exec(conv("enable_color_attribute"))
     enable_source_id_attribute = BoolProperty(default=False);           exec(conv("enable_source_id_attribute"))
+    enable_viscosity_attribute = BoolProperty(default=False);           exec(conv("enable_viscosity_attribute"))
     enable_id_attribute =        BoolProperty(default=False);           exec(conv("enable_id_attribute"))
     enable_lifetime_attribute =  BoolProperty(default=False);           exec(conv("enable_lifetime_attribute"))
     wwp_import_percentage =      IntProperty(default=0);                exec(conv("wwp_import_percentage"))
@@ -102,6 +103,7 @@ class FlipFluidLoadedMeshData(bpy.types.PropertyGroup):
         self.property_unset("enable_age_attribute")
         self.property_unset("enable_color_attribute")
         self.property_unset("enable_source_id_attribute")
+        self.property_unset("enable_viscosity_attribute")
         self.property_unset("enable_id_attribute")
         self.property_unset("enable_lifetime_attribute")
         self.property_unset("wwp_import_percentage")
@@ -125,6 +127,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
     enable_age_attribute =       BoolProperty(default=False);                      exec(conv("enable_age_attribute"))
     enable_color_attribute =     BoolProperty(default=False);                      exec(conv("enable_color_attribute"))
     enable_source_id_attribute = BoolProperty(default=False);                      exec(conv("enable_source_id_attribute"))
+    enable_viscosity_attribute = BoolProperty(default=False);                      exec(conv("enable_viscosity_attribute"))
     enable_id_attribute =        BoolProperty(default=False);                      exec(conv("enable_id_attribute"))
     enable_lifetime_attribute =  BoolProperty(default=False);                      exec(conv("enable_lifetime_attribute"))
     cache_object_default_name =  StringProperty(default="");                       exec(conv("cache_object_default_name"))
@@ -228,6 +231,12 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
             return
 
         cache_object = self.get_cache_object()
+        if cache_object.mode == 'EDIT':
+            # Blender will error/crash if object is changed in edit mode
+            warning = "FLIP Fluids Warning: Mesh object <" + cache_object.name + "> is in viewport 'Edit Mode'."
+            warning += " Switch to viewport 'Object Mode' for full functionality and best experience."
+            print(warning)
+            return
 
         if vcu.is_blender_281():
             mesh_data = cache_object.data
@@ -268,6 +277,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
                     self.enable_age_attribute       != d.enable_age_attribute or
                     self.enable_color_attribute     != d.enable_color_attribute or
                     self.enable_source_id_attribute != d.enable_source_id_attribute or
+                    self.enable_viscosity_attribute != d.enable_viscosity_attribute or
                     self.enable_id_attribute        != d.enable_id_attribute or
                     self.enable_lifetime_attribute  != d.enable_lifetime_attribute or
                     self.wwp_import_percentage      != d.wwp_import_percentage or
@@ -286,6 +296,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         d.enable_age_attribute       = self.enable_age_attribute
         d.enable_color_attribute     = self.enable_color_attribute
         d.enable_source_id_attribute = self.enable_source_id_attribute
+        d.enable_viscosity_attribute = self.enable_viscosity_attribute
         d.enable_id_attribute        = self.enable_id_attribute
         d.enable_lifetime_attribute  = self.enable_lifetime_attribute
         d.wwp_import_percentage      = self.wwp_import_percentage
@@ -486,6 +497,29 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
             value.value = source_id_data[i]
 
 
+    def _update_viscosity_attribute(self, frameno):
+        if not vcu.is_blender_293() or not self.enable_viscosity_attribute:
+            return
+
+        cache_object = self.get_cache_object()
+        frame_string = self._frame_number_to_string(frameno)
+        viscosity_data = self._import_viscosity_attribute_data(frameno)
+
+        if not viscosity_data:
+            return
+
+        attribute_name = "flip_viscosity"
+        mesh = cache_object.data
+        try:
+            mesh.attributes.remove(mesh.attributes.get(attribute_name))
+        except:
+            pass
+
+        attribute = mesh.attributes.new(attribute_name, "FLOAT", "POINT")
+        for i,value in enumerate(attribute.data):
+            value.value = viscosity_data[i]
+
+
     def _update_id_attribute(self, frameno):
         if not vcu.is_blender_293() or not self.enable_id_attribute:
             return
@@ -542,6 +576,9 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         cache_object = self.get_cache_object()
         if cache_object.mode == 'EDIT':
             # Blender will crash if object is reloaded in edit mode
+            warning = "FLIP Fluids Warning: Mesh object <" + cache_object.name + "> is in viewport 'Edit Mode'."
+            warning += " Switch to viewport 'Object Mode' for full functionality and best experience."
+            print(warning)
             return
 
         self._initialize_bounds_data(frameno)
@@ -567,6 +604,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         self._update_age_attribute(frameno)
         self._update_color_attribute(frameno)
         self._update_source_id_attribute(frameno)
+        self._update_viscosity_attribute(frameno)
         self._update_id_attribute(frameno)
         self._update_lifetime_attribute(frameno)
 
@@ -643,6 +681,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
                     self.enable_age_attribute       != d.enable_age_attribute or
                     self.enable_color_attribute     != d.enable_color_attribute or
                     self.enable_source_id_attribute != d.enable_source_id_attribute or
+                    self.enable_viscosity_attribute != d.enable_viscosity_attribute or
                     self.enable_id_attribute        != d.enable_id_attribute or
                     self.enable_lifetime_attribute  != d.enable_lifetime_attribute or
                     self.wwp_import_percentage      != d.wwp_import_percentage or
@@ -664,6 +703,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         d.enable_age_attribute       = self.enable_age_attribute
         d.enable_color_attribute     = self.enable_color_attribute
         d.enable_source_id_attribute = self.enable_source_id_attribute
+        d.enable_viscosity_attribute = self.enable_viscosity_attribute
         d.enable_id_attribute        = self.enable_id_attribute
         d.enable_lifetime_attribute  = self.enable_lifetime_attribute
         d.wwp_import_percentage      = self.wwp_import_percentage
@@ -1050,6 +1090,14 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         return os.path.join(bakefiles_directory, filename)
 
 
+    def _get_viscosity_attribute_filepath(self, frameno):
+        filename = ("viscosity" + self.mesh_prefix + 
+                    self._frame_number_to_string(frameno) + 
+                    ".data")
+        bakefiles_directory = self._get_bakefiles_directory()
+        return os.path.join(bakefiles_directory, filename)
+
+
     def _get_id_attribute_filepath(self, frameno):
         filename = ("id" + self.mesh_prefix + 
                     self._frame_number_to_string(frameno) + 
@@ -1272,6 +1320,17 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
             return []
         source_id_data = self.import_ints(filepath)
         return source_id_data
+
+
+    def _import_viscosity_attribute_data(self, frameno):
+        if not self._is_domain_set() or not self._is_frame_cached(frameno):
+            return []
+
+        filepath = self._get_viscosity_attribute_filepath(frameno)
+        if not os.path.exists(filepath):
+            return []
+        viscosity_data = self.import_floats(filepath)
+        return viscosity_data
 
 
     def _import_id_attribute_data(self, frameno):

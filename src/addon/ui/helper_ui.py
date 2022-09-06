@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2020 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@ import bpy, platform
 
 from . import domain_simulation_ui
 from .. import render
+from ..utils import api_workaround_utils as api_utils
 from ..utils import version_compatibility_utils as vcu
 from ..utils import installation_utils
 
@@ -40,13 +41,23 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
     def draw(self, context):
         if not installation_utils.is_installation_complete():
             box = self.layout.box()
-            box.label(text="IMPORTANT: Blender restart required", icon="ERROR")
-            box.label(text="Please restart Blender to complete")
-            box.label(text="installation of the FLIP Fluids add-on.")
+            box.label(text="IMPORTANT: Please Complete Installation", icon="ERROR")
+            box.label(text="Click here to complete installation of the FLIP Fluids Addon:")
+            box.operator("flip_fluid_operators.complete_installation", icon='MOD_FLUIDSIM')
             return
 
         hprops = context.scene.flip_fluid_helper
         preferences = vcu.get_addon_preferences(context)
+
+        feature_dict = api_utils.get_enabled_features_affected_by_T88811()
+        if feature_dict is not None and not preferences.dismiss_T88811_crash_warning:
+            box = self.layout.box()
+            api_utils.draw_T88811_ui_warning(box, preferences, feature_dict)
+
+        is_persistent_data_enabled = api_utils.is_persistent_data_issue_relevant()
+        if is_persistent_data_enabled and not preferences.dismiss_persistent_data_render_warning:
+            box = self.layout.box()
+            api_utils.draw_persistent_data_warning(box, preferences)
 
         #
         # Bake Simulation
@@ -69,9 +80,12 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                 if is_saved:
                     dprops = context.scene.flip_fluid.get_domain_properties()
                     column = box.column(align=True)
+                    column.enabled = not dprops.bake.is_simulation_running
+                    column.prop(dprops.simulation, "resolution")
+                    column.separator()
+
                     column.label(text="Cache Directory:")
                     subcolumn = column.column(align=True)
-                    subcolumn.enabled = not dprops.bake.is_simulation_running
                     row = subcolumn.row(align=True)
                     row.prop(dprops.cache, "cache_directory")
                     row.operator("flip_fluid_operators.increment_decrease_cache_directory", text="", icon="REMOVE").increment_mode = "DECREASE"
@@ -81,6 +95,13 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                     row.operator("flip_fluid_operators.absolute_cache_directory")
                     row.operator("flip_fluid_operators.match_filename_cache_directory")
                     column.separator()
+
+                    column = box.column(align=True)
+                    column.label(text="Render Output:")
+                    column.prop(context.scene.render, "filepath", text="")
+                    row = column.row(align=True)
+                    row.operator("flip_fluid_operators.relative_to_blend_render_output")
+                    row.operator("flip_fluid_operators.prefix_to_filename_render_output")
                 else:
                     row = box.row(align=True)
                     row.alignment = 'LEFT'
@@ -257,6 +278,11 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
         row.label(text="Command Line Tools:")
 
         if hprops.command_line_tools_expanded:
+            row = box.row(align=True)
+            row.alignment = 'LEFT'
+            row.label(text="Save before running CMD operators:")
+            row.operator("flip_fluid_operators.helper_save_blend_file", icon='FILE_TICK', text="Save").save_as_blend_file = False
+
             subbox = box.box()
             subbox.label(text="Bake:")
             column = subbox.column(align=True)
@@ -295,8 +321,10 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
             row.operator("flip_fluid_operators.helper_cmd_render_frame_to_clipboard", text="", icon='COPYDOWN')
             row = column.row(align=True)
             row.prop(hprops, "cmd_open_image_after_render")
-            row = column.row(align=True)
-            row.prop(hprops, "cmd_close_window_after_render")
+
+            if system == "Windows":
+                row = column.row(align=True)
+                row.prop(hprops, "cmd_close_window_after_render")
 
         #
         # Geometry Node Tools
@@ -317,7 +345,25 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
             if not vcu.is_blender_31():
                 column.label(text="Blender 3.1 or later required")
 
-            column.enabled = vcu.is_blender_31()
+            prefs = vcu.get_addon_preferences()
+            is_developer_mode = prefs.is_developer_tools_enabled()
+            if not is_developer_mode:
+                warn_box = box.box()
+                warn_column = warn_box.column(align=True)
+                warn_column.enabled = True
+                warn_column.label(text="     Experimental Developer Tools must be")
+                warn_column.label(text="     enabled in preferences to use this feature")
+                warn_column.separator()
+                warn_column.prop(prefs, "enable_developer_tools", text="Enable Developer Tools in Preferences")
+                warn_column.separator()
+                warn_column.operator(
+                    "wm.url_open", 
+                    text="Important Info and Limitations", 
+                    icon="WORLD"
+                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Preferences-Menu-Settings#developer-tools"
+
+            column = box.column(align=True)
+            column.enabled = vcu.is_blender_31() and is_developer_mode
             column.operator("flip_fluid_operators.helper_initialize_motion_blur")
             
 
@@ -376,7 +422,7 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
 
 
 class FLIPFLUID_PT_HelperPanelDisplay(bpy.types.Panel):
-    bl_label = "Display and Render"
+    bl_label = "Display and Playback"
     bl_category = "FLIP Fluids"
     bl_space_type = 'VIEW_3D'
     if vcu.is_blender_28():
@@ -442,7 +488,11 @@ class FLIPFLUID_PT_HelperPanelDisplay(bpy.types.Panel):
             column.operator("flip_fluid_operators.reload_frame", text="Reload Frame")
 
             column.operator("flip_fluid_operators.helper_load_last_frame")
-            column.prop(hprops, "enable_auto_frame_load")
+            row = column.row(align=True)
+            row.prop(hprops, "enable_auto_frame_load")
+            row = row.row(align=True)
+            row.enabled = hprops.enable_auto_frame_load
+            row.prop(hprops, "enable_auto_frame_load_cmd")
 
             column.separator()
             column.separator()
@@ -495,57 +545,6 @@ class FLIPFLUID_PT_HelperPanelDisplay(bpy.types.Panel):
             column.separator()
             column.operator("flip_fluid_operators.reload_frame", text="Reload Frame")
 
-        #
-        # Render Tools
-        #
-
-        box = self.layout.box()
-        row = box.row(align=True)
-        row.prop(hprops, "render_tools_expanded",
-            icon="TRIA_DOWN" if hprops.render_tools_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
-        row.label(text="Render Tools:")
-
-        if hprops.render_tools_expanded:
-            column = box.column(align=True)
-            row = column.row(align=True)
-            row.operator("flip_fluid_operators.helper_command_line_render", text="Launch Command Line Render")
-            row.operator("flip_fluid_operators.helper_command_line_render_to_clipboard", text="", icon='COPYDOWN')
-
-            system = platform.system()
-            if system == "Windows":
-                row = column.row(align=True)
-                row.operator("flip_fluid_operators.helper_cmd_render_to_scriptfile")
-                row.operator("flip_fluid_operators.helper_run_scriptfile", text="", icon='PLAY')
-                row.operator("flip_fluid_operators.helper_open_outputfolder", text="", icon='FILE_FOLDER')
-                
-                column.separator()
-                column.separator()
-
-
-            if vcu.is_blender_28():
-                lock_interface = context.scene.render.use_lock_interface
-                status = "Enabled" if lock_interface else 'Disabled'
-                icon = 'FUND' if lock_interface else 'ERROR'
-
-                if lock_interface:
-                    column.operator("flip_fluid_operators.helper_stable_rendering_28", text="Disable Stable Rendering").enable_state = False
-                else:
-                    column.operator("flip_fluid_operators.helper_stable_rendering_28", text="Enable Stable Rendering").enable_state = True
-
-                row = column.row(align=True)
-                if not lock_interface:
-                    row.alert = True
-                row.label(text="Current status: " + status, icon=icon)
-            else:
-                status = "Enabled" if context.scene.render.display_mode == 'SCREEN' else 'Disabled'
-                icon = 'FILE_TICK' if context.scene.render.display_mode == 'SCREEN' else 'ERROR'
-                column.operator("flip_fluid_operators.helper_stable_rendering_279")
-                column.label(text="Current status: " + status, icon=icon)
-
-    
 
 def register():
     # These panels will be registered in properties.preferences_properties.py

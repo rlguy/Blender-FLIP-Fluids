@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2021 Ryan L. Guy
+Copyright (C) 2022 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -117,12 +117,18 @@ public:
     bool isGeometryAABB();
     void setObjectVelocityInfluence(float value);
     float getObjectVelocityInfluence();
+    void setPriority(int n);
+    int getPriority();
     void setSourceID(int id);
     int getSourceID();
+    void setViscosity(float v);
+    float getViscosity();
     void setSourceColor(vmath::vec3 c);
     vmath::vec3 getSourceColor();
 
     MeshObjectStatus getStatus();
+
+    int _priority = 0;
 
 private:
 
@@ -191,6 +197,7 @@ private:
     bool _isObjectStateChanged = false;
     bool _isDomainObject = false;
     int _sourceID = 0;
+    float _viscosity = 0.0f;
     vmath::vec3 _sourceColor;
 
 

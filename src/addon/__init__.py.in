@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -147,6 +147,22 @@ def on_exit():
     exit_handler.on_exit()
 
 
+class FlipFluidCompleteInstallation(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.complete_installation"
+    bl_label = "Complete Installation"
+    bl_description = ("Click to complete the installation of the FLIP Fluids addon. Alternatively, restarting Blender or re-loading the Blend file will also complete the installation process")
+
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+
+    def execute(self, context):
+        load_post(None)
+        return {'FINISHED'}
+
+
 def register():
     objects.register()
     materials.register()
@@ -171,6 +187,8 @@ def register():
     bpy.app.handlers.save_pre.append(save_pre)
     bpy.app.handlers.save_post.append(save_post)
     atexit.register(on_exit)
+
+    bpy.utils.register_class(FlipFluidCompleteInstallation)
 
 
 def unregister():
@@ -198,3 +216,4 @@ def unregister():
     bpy.app.handlers.save_post.remove(save_post)
     atexit.unregister(on_exit)
 
+    bpy.utils.unregister_class(FlipFluidCompleteInstallation)

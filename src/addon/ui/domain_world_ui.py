@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
     def draw(self, context):
         obj = vcu.get_active_object(context)
         sprops = obj.flip_fluid.domain.simulation
+        attrprops = obj.flip_fluid.domain.surface
         wprops = obj.flip_fluid.domain.world
         aprops = obj.flip_fluid.domain.advanced
         show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
@@ -218,26 +219,35 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
         row.label(text="Viscosity:")
 
         if wprops.viscosity_settings_expanded:
+            is_variable_viscosity_enabled = attrprops.enable_viscosity_attribute
+
             column = box.column(align=True)
-            split = column.split(align=True)
-            column_left = split.column(align=True)
-            column_left.prop(wprops, "enable_viscosity")
-            column_left.label(text="")
-            column_left.label(text="")
-            row = column_left.row(align=True)
-            row.alignment='RIGHT'
-            row.enabled = wprops.enable_viscosity
-            row.label(text="Total viscosity =")
+            row = column.row(align=True)
+            row.prop(wprops, "enable_viscosity")
 
-            total_viscosity = wprops.viscosity * (10**(-wprops.viscosity_exponent))
-            viscosity_str = self.format_number_precision(total_viscosity, 6)
+            if vcu.get_addon_preferences().is_developer_tools_enabled():
+                row = row.row(align=True)
+                row.enabled = wprops.enable_viscosity
+                row.prop(attrprops, "enable_viscosity_attribute", text="Variable Viscosity")
 
-            column_right = split.column(align=True)
-            column_right.enabled = wprops.enable_viscosity
-            column_right.prop(wprops, "viscosity", text="Base")
-            column_right.prop(wprops, "viscosity_exponent", text="Exponent")
-            column_right.prop(wprops, "viscosity_solver_error_tolerance", text="Accuracy", slider=True)
-            column_right.label(text=viscosity_str)
+            column = box.column(align=True)
+            column.enabled = wprops.enable_viscosity
+
+            if is_variable_viscosity_enabled:
+                column.label(text="Variable viscosity values can be set in the", icon='INFO')
+                column.label(text="Fluid or Inflow physics properties menu", icon='INFO')
+            else:
+                column.prop(wprops, "viscosity", text="Base")
+                column.prop(wprops, "viscosity_exponent", text="Exponent")
+
+            column.prop(wprops, "viscosity_solver_error_tolerance", text="Solver Accuracy", slider=True)
+
+            if is_variable_viscosity_enabled:
+                column.label(text="")
+            else:
+                total_viscosity = wprops.viscosity * (10**(-wprops.viscosity_exponent))
+                total_viscosity_str = "Total viscosity   =   " + self.format_number_precision(total_viscosity, 6)
+                column.label(text=total_viscosity_str)
 
         if show_documentation:
             column = box.column(align=True)
@@ -287,7 +297,7 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
             column_right.enabled = wprops.enable_surface_tension
             column_right.prop(wprops, "surface_tension", text="Base")
             column_right.prop(wprops, "surface_tension_exponent", text="Exponent")
-            column_right.prop(wprops, "surface_tension_accuracy", text="Accuracy")
+            column_right.prop(wprops, "surface_tension_accuracy", text="Solver Accuracy")
             row = column_right.row()
             row.prop(wprops, "surface_tension_solver_method", expand=True)
             column_right.label(text=surface_tension_str)

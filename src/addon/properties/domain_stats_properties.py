@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -95,6 +95,36 @@ class TimeStatsProperties(bpy.types.PropertyGroup):
             return 0.0
 
 
+class SolverStressProperties(bpy.types.PropertyGroup):
+    conv = vcu.convert_attribute_to_28
+    stress_level = FloatProperty(
+            name="Stress Level",
+            description="Amount of stress experienced by the solver. If the stress level exceeds"
+                " 80% for multiple consecutive frames, this may indicate that the simulator requires"
+                " more substeps to reduce stress and keep the simulation stable. Substeps can be adjusted"
+                " in the Advanced panel. If a max stress level is reached, the solver may fail. It is okay"
+                " and normal for the solver to fail infrequently, but if it is failing on multiple consecutive"
+                " frames, this may result in an unstable simulation",
+            min=0, max=100,
+            default=0.0, 
+            precision = 1,
+            subtype='PERCENTAGE',
+            get=lambda self: self._get_stress_level_pct(),
+            set=lambda self, value: None,
+            ); exec(conv("stress_level"))
+
+
+    def set_stress_level_pct(self, value):
+        self["stress_level"] = value
+
+
+    def _get_stress_level_pct(self):
+        try: 
+            return self["stress_level"] 
+        except: 
+            return 0.0
+
+
 class DomainStatsProperties(bpy.types.PropertyGroup):
     conv = vcu.convert_attribute_to_28
     
@@ -138,6 +168,9 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
     cache_info_simulation_stats_expanded = BoolProperty(default=True); exec(conv("cache_info_simulation_stats_expanded"))
     cache_info_timing_stats_expanded = BoolProperty(default=True); exec(conv("cache_info_timing_stats_expanded"))
     cache_info_mesh_stats_expanded = BoolProperty(default=True); exec(conv("cache_info_mesh_stats_expanded"))
+    cache_info_solver_stats_expanded = BoolProperty(default=True); exec(conv("cache_info_solver_stats_expanded"))
+    cache_info_pressure_solver_stats_expanded = BoolProperty(default=True); exec(conv("cache_info_pressure_solver_stats_expanded"))
+    cache_info_viscosity_solver_stats_expanded = BoolProperty(default=True); exec(conv("cache_info_viscosity_solver_stats_expanded"))
     is_cache_info_available = BoolProperty(default=False); exec(conv("is_cache_info_available"))
     num_cache_frames = IntProperty(default=-1); exec(conv("num_cache_frames"))
     estimated_frame_speed = FloatProperty(default=-1); exec(conv("estimated_frame_speed"))
@@ -146,8 +179,31 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
     is_estimated_time_remaining_available = BoolProperty(default=False); exec(conv("is_estimated_time_remaining_available"))
     cache_bytes = PointerProperty(type=ByteProperty); exec(conv("cache_bytes"))
 
+    pressure_solver_enabled = BoolProperty(default=False); exec(conv("pressure_solver_enabled"))
+    pressure_solver_failures = IntProperty(default=-1); exec(conv("pressure_solver_failures"))
+    pressure_solver_steps = IntProperty(default=-1); exec(conv("pressure_solver_steps"))
+    pressure_solver_max_iterations = IntProperty(default=-1); exec(conv("pressure_solver_max_iterations"))
+    pressure_solver_max_iterations_frame = IntProperty(default=-1); exec(conv("pressure_solver_max_iterations_frame"))
+    pressure_solver_max_error = FloatProperty(default=-1); exec(conv("pressure_solver_max_error"))
+    pressure_solver_max_error_frame = IntProperty(default=-1); exec(conv("pressure_solver_max_error_frame"))
+    pressure_solver_max_stress = FloatProperty(default=-1); exec(conv("pressure_solver_max_stress"))
+    pressure_solver_max_stress_frame = IntProperty(default=-1); exec(conv("pressure_solver_max_stress_frame"))
+
+    viscosity_solver_enabled = BoolProperty(default=False); exec(conv("viscosity_solver_enabled"))
+    viscosity_solver_failures = IntProperty(default=-1); exec(conv("viscosity_solver_failures"))
+    viscosity_solver_steps = IntProperty(default=-1); exec(conv("viscosity_solver_steps"))
+    viscosity_solver_max_iterations = IntProperty(default=-1); exec(conv("viscosity_solver_max_iterations"))
+    viscosity_solver_max_iterations_frame = IntProperty(default=-1); exec(conv("viscosity_solver_max_iterations_frame"))
+    viscosity_solver_max_error = FloatProperty(default=-1); exec(conv("viscosity_solver_max_error"))
+    viscosity_solver_max_error_frame = IntProperty(default=-1); exec(conv("viscosity_solver_max_error_frame"))
+    viscosity_solver_max_stress = FloatProperty(default=-1); exec(conv("viscosity_solver_max_stress"))
+    viscosity_solver_max_stress_frame = IntProperty(default=-1); exec(conv("viscosity_solver_max_stress_frame"))
+
     # Frame Info
     frame_info_simulation_stats_expanded = BoolProperty(default=True); exec(conv("frame_info_simulation_stats_expanded"))
+    frame_info_solver_stats_expanded = BoolProperty(default=True); exec(conv("frame_info_solver_stats_expanded"))
+    frame_info_pressure_solver_stats_expanded = BoolProperty(default=True); exec(conv("frame_info_pressure_solver_stats_expanded"))
+    frame_info_viscosity_solver_stats_expanded = BoolProperty(default=True); exec(conv("frame_info_viscosity_solver_stats_expanded"))
     frame_info_timing_stats_expanded = BoolProperty(default=True); exec(conv("frame_info_timing_stats_expanded"))
     frame_info_mesh_stats_expanded = BoolProperty(default=True); exec(conv("frame_info_mesh_stats_expanded"))
     display_frame_viscosity_timing_stats = BoolProperty(default=False); exec(conv("display_frame_viscosity_timing_stats"))
@@ -160,6 +216,20 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
     frame_fluid_particles = IntProperty(default=-1); exec(conv("frame_fluid_particles"))
     frame_diffuse_particles = IntProperty(default=-1); exec(conv("frame_diffuse_particles"))
 
+    frame_pressure_solver_enabled = BoolProperty(default=False); exec(conv("frame_pressure_solver_enabled"))
+    frame_pressure_solver_success = BoolProperty(default=True); exec(conv("frame_pressure_solver_success"))
+    frame_pressure_solver_error = FloatProperty(default=0.0); exec(conv("frame_pressure_solver_error"))
+    frame_pressure_solver_iterations = IntProperty(default=-1); exec(conv("frame_pressure_solver_iterations"))
+    frame_pressure_solver_max_iterations = IntProperty(default=-1); exec(conv("frame_pressure_solver_max_iterations"))
+    frame_pressure_solver_stress = PointerProperty(type=SolverStressProperties); exec(conv("frame_pressure_solver_stress"))
+
+    frame_viscosity_solver_enabled = BoolProperty(default=False); exec(conv("frame_viscosity_solver_enabled"))
+    frame_viscosity_solver_success = BoolProperty(default=True); exec(conv("frame_viscosity_solver_success"))
+    frame_viscosity_solver_error = FloatProperty(default=0.0); exec(conv("frame_viscosity_solver_error"))
+    frame_viscosity_solver_iterations = IntProperty(default=-1); exec(conv("frame_viscosity_solver_iterations"))
+    frame_viscosity_solver_max_iterations = IntProperty(default=-1); exec(conv("frame_viscosity_solver_max_iterations"))
+    frame_viscosity_solver_stress = PointerProperty(type=SolverStressProperties); exec(conv("frame_viscosity_solver_stress"))
+
     # Mesh Info
     surface_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surface_mesh"))
     preview_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("preview_mesh"))
@@ -170,6 +240,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
     surfaceage_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surfaceage_mesh"))
     surfacecolor_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surfacecolor_mesh"))
     surfacesourceid_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surfacesourceid_mesh"))
+    surfaceviscosity_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surfaceviscosity_mesh"))
     foam_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("foam_mesh"))
     bubble_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("bubble_mesh"))
     spray_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("spray_mesh"))
@@ -234,6 +305,16 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             "frame_delta_time",
             "frame_fluid_particles",
             "frame_diffuse_particles",
+            "frame_pressure_solver_enabled",
+            "frame_pressure_solver_success",
+            "frame_pressure_solver_error",
+            "frame_pressure_solver_iterations",
+            "frame_pressure_solver_max_iterations",
+            "frame_viscosity_solver_enabled",
+            "frame_viscosity_solver_success",
+            "frame_viscosity_solver_error",
+            "frame_viscosity_solver_iterations",
+            "frame_viscosity_solver_max_iterations",
             "surface_mesh",
             "preview_mesh",
             "surfaceblur_mesh",
@@ -243,6 +324,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             "surfaceage_mesh",
             "surfacecolor_mesh",
             "surfacesourceid_mesh",
+            "surfaceviscosity_mesh",
             "foam_mesh",
             "bubble_mesh",
             "spray_mesh",
@@ -380,6 +462,24 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.frame_fluid_particles = data['fluid_particles']
         self.frame_diffuse_particles = data['diffuse_particles']
 
+        if 'pressure_solver_enabled' in data:
+            self.frame_pressure_solver_enabled = bool(data['pressure_solver_enabled'])
+            self.frame_pressure_solver_success = bool(data['pressure_solver_success'])
+            self.frame_pressure_solver_error = data['pressure_solver_error']
+            self.frame_pressure_solver_iterations = data['pressure_solver_iterations']
+            self.frame_pressure_solver_max_iterations = data['pressure_solver_max_iterations']
+            stress_pct = 100 * (self.frame_pressure_solver_iterations / self.frame_pressure_solver_max_iterations)
+            self.frame_pressure_solver_stress.set_stress_level_pct(stress_pct)
+
+        if 'viscosity_solver_enabled' in data:
+            self.frame_viscosity_solver_enabled = bool(data['viscosity_solver_enabled'])
+            self.frame_viscosity_solver_success = bool(data['viscosity_solver_success'])
+            self.frame_viscosity_solver_error = data['viscosity_solver_error']
+            self.frame_viscosity_solver_iterations = data['viscosity_solver_iterations']
+            self.frame_viscosity_solver_max_iterations = data['viscosity_solver_max_iterations']
+            stress_pct = 100 * (self.frame_viscosity_solver_iterations / self.frame_viscosity_solver_max_iterations)
+            self.frame_viscosity_solver_stress.set_stress_level_pct(stress_pct)
+
         self._set_mesh_stats_data(self.surface_mesh,          data['surface'])
         self._set_mesh_stats_data(self.preview_mesh,          data['preview'])
         self._set_mesh_stats_data(self.surfaceblur_mesh,      data['surfaceblur'])
@@ -407,6 +507,10 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         if 'surfacesourceid' in data:
             # If statement to support older caches that do not have a surfacesourceid entry
             self._set_mesh_stats_data(self.surfacesourceid_mesh, data['surfacesourceid'])
+
+        if 'surfaceviscosity' in data:
+            # If statement to support older caches that do not have a surfaceviscosity entry
+            self._set_mesh_stats_data(self.surfaceviscosity_mesh, data['surfaceviscosity'])
 
         self._set_mesh_stats_data(self.foam_mesh,             data['foam'])
         self._set_mesh_stats_data(self.bubble_mesh,           data['bubble'])
@@ -536,6 +640,8 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
                 cache_size += fdata['surfacecolor']['bytes']
             if 'surfacesourceid' in fdata and fdata['surfacesourceid']['enabled']: # If statement to support caches without a surfacesourceid entry
                 cache_size += fdata['surfacesourceid']['bytes']
+            if 'surfaceviscosity' in fdata and fdata['surfaceviscosity']['enabled']: # If statement to support caches without a surfaceviscosity entry
+                cache_size += fdata['surfaceviscosity']['bytes']
             if fdata['foam']['enabled']:
                 cache_size += fdata['foam']['bytes']
             if fdata['bubble']['enabled']:
@@ -608,6 +714,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         is_surfaceage_enabled = False
         is_surfacecolor_enabled = False
         is_surfacesourceid_enabled = False
+        is_surfaceviscosity_enabled = False
         is_foam_enabled = False
         is_bubble_enabled = False
         is_spray_enabled = False
@@ -639,6 +746,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         surfaceage_bytes = 0
         surfacecolor_bytes = 0
         surfacesourceid_bytes = 0
+        surfaceviscosity_bytes = 0
         foam_bytes = 0
         bubble_bytes = 0
         spray_bytes = 0
@@ -708,6 +816,9 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             if 'surfacesourceid' in fdata and fdata['surfacesourceid']['enabled']: # If statement to support caches without a surfacesourceid entry
                 is_surfacesourceid_enabled = True
                 surfacesourceid_bytes += fdata['surfacesourceid']['bytes']
+            if 'surfaceviscosity' in fdata and fdata['surfaceviscosity']['enabled']: # If statement to support caches without a surfaceviscosity entry
+                is_surfaceviscosity_enabled = True
+                surfaceviscosity_bytes += fdata['surfaceviscosity']['bytes']
             if fdata['foam']['enabled']:
                 is_foam_enabled = True
                 foam_bytes += fdata['foam']['bytes']
@@ -799,6 +910,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.surfaceage_mesh.enabled = is_surfaceage_enabled
         self.surfacecolor_mesh.enabled = is_surfacecolor_enabled
         self.surfacesourceid_mesh.enabled = is_surfacesourceid_enabled
+        self.surfaceviscosity_mesh.enabled = is_surfaceviscosity_enabled
         self.foam_mesh.enabled = is_foam_enabled
         self.bubble_mesh.enabled = is_bubble_enabled
         self.spray_mesh.enabled = is_spray_enabled
@@ -831,6 +943,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.surfaceage_mesh.bytes.set(surfaceage_bytes)
         self.surfacecolor_mesh.bytes.set(surfacecolor_bytes)
         self.surfacesourceid_mesh.bytes.set(surfacesourceid_bytes)
+        self.surfaceviscosity_mesh.bytes.set(surfaceviscosity_bytes)
         self.foam_mesh.bytes.set(foam_bytes)
         self.bubble_mesh.bytes.set(bubble_bytes)
         self.spray_mesh.bytes.set(spray_bytes)
@@ -883,6 +996,83 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.time_other.set_time_pct(    100 * time_other     / total_time)
 
         self._update_cache_size(cachedata)
+
+        pressure_enabled = False
+        pressure_max_error = 0.0
+        pressure_max_error_frame = -1
+        pressure_max_iterations = 0
+        pressure_max_iterations_frame = -1
+        pressure_failures = 0
+        pressure_steps = 0
+        pressure_max_stress = 0.0
+        pressure_max_stress_frame = -1
+
+        viscosity_enabled = False
+        viscosity_max_error = 0.0
+        viscosity_max_error_frame = -1
+        viscosity_max_iterations = 0
+        viscosity_max_iterations_frame = -1
+        viscosity_failures = 0
+        viscosity_steps = 0
+        viscosity_max_stress = 0.0
+        viscosity_max_stress_frame = -1
+        for key in cachedata.keys():
+            if not key.isdigit():
+                continue
+
+            frameno = int(key)
+            fdata = cachedata[key]
+            if "pressure_solver_enabled" in fdata:
+                pressure_enabled = pressure_enabled or bool(fdata["pressure_solver_enabled"])
+                if fdata["pressure_solver_error"] > pressure_max_error:
+                    pressure_max_error = fdata["pressure_solver_error"]
+                    pressure_max_error_frame = frameno
+                if fdata["pressure_solver_iterations"] > pressure_max_iterations:
+                    pressure_max_iterations = fdata["pressure_solver_iterations"]
+                    pressure_max_iterations_frame = frameno
+                if not fdata["pressure_solver_success"]:
+                    pressure_failures += 1
+                pressure_steps += fdata["substeps"]
+                stress = 100.0 * (fdata["pressure_solver_iterations"] / fdata["pressure_solver_max_iterations"])
+                if stress > pressure_max_stress:
+                    pressure_max_stress = stress
+                    pressure_max_stress_frame = frameno
+
+            if "viscosity_solver_enabled" in fdata:
+                viscosity_enabled = viscosity_enabled or bool(fdata["viscosity_solver_enabled"])
+                if fdata["viscosity_solver_error"] > viscosity_max_error:
+                    viscosity_max_error = fdata["viscosity_solver_error"]
+                    viscosity_max_error_frame = frameno
+                if fdata["viscosity_solver_iterations"] > viscosity_max_iterations:
+                    viscosity_max_iterations = fdata["viscosity_solver_iterations"]
+                    viscosity_max_iterations_frame = frameno
+                if not fdata["viscosity_solver_success"]:
+                    viscosity_failures += 1
+                viscosity_steps += fdata["substeps"]
+                stress = 100.0 * (fdata["viscosity_solver_iterations"] / fdata["viscosity_solver_max_iterations"])
+                if stress > viscosity_max_stress:
+                    viscosity_max_stress = stress
+                    viscosity_max_stress_frame = frameno
+
+        self.pressure_solver_enabled = pressure_enabled
+        self.pressure_solver_failures = pressure_failures
+        self.pressure_solver_steps = pressure_steps
+        self.pressure_solver_max_iterations = pressure_max_iterations
+        self.pressure_solver_max_iterations_frame = pressure_max_iterations_frame
+        self.pressure_solver_max_error = pressure_max_error
+        self.pressure_solver_max_error_frame = pressure_max_error_frame
+        self.pressure_solver_max_stress = pressure_max_stress
+        self.pressure_solver_max_stress_frame = pressure_max_stress_frame
+
+        self.viscosity_solver_enabled = viscosity_enabled
+        self.viscosity_solver_failures = viscosity_failures
+        self.viscosity_solver_steps = viscosity_steps
+        self.viscosity_solver_max_iterations = viscosity_max_iterations
+        self.viscosity_solver_max_iterations_frame = viscosity_max_iterations_frame
+        self.viscosity_solver_max_error = viscosity_max_error
+        self.viscosity_solver_max_error_frame = viscosity_max_error_frame
+        self.viscosity_solver_max_stress = viscosity_max_stress
+        self.viscosity_solver_max_stress_frame = viscosity_max_stress_frame
 
 
     def _get_estimated_frame_speed(self, cachedata):
@@ -958,6 +1148,7 @@ def register():
     bpy.utils.register_class(ByteProperty)
     bpy.utils.register_class(MeshStatsProperties)
     bpy.utils.register_class(TimeStatsProperties)
+    bpy.utils.register_class(SolverStressProperties)
     bpy.utils.register_class(DomainStatsProperties)
 
 
@@ -965,4 +1156,5 @@ def unregister():
     bpy.utils.unregister_class(ByteProperty)
     bpy.utils.unregister_class(MeshStatsProperties)
     bpy.utils.unregister_class(TimeStatsProperties)
+    bpy.utils.unregister_class(SolverStressProperties)
     bpy.utils.unregister_class(DomainStatsProperties)

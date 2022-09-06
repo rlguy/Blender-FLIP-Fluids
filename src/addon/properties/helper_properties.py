@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,7 +35,17 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             name="Auto-Load Baked Frames",
             description="Automatically load frames as they finish baking",
             default=False,
+            update=lambda self, context: self._update_enable_auto_frame_load_cmd(context),
             ); exec(conv("enable_auto_frame_load"))
+    enable_auto_frame_load_cmd = BoolProperty(
+            name="Sync With CMD Bake",
+            description="Automatically load frames as they finish baking when running a command"
+                " line bake. Note: this feature may decrease Blender performance and responsiveness"
+                " when a CMD bake is not running. If this is an issue, it is recommended to disable"
+                " this option when a CMD bake is not running",
+            default=False,
+            update=lambda self, context: self._update_enable_auto_frame_load_cmd(context),
+            ); exec(conv("enable_auto_frame_load_cmd"))
     playback_frame_offset = IntProperty(
             name="Frame Offset",
             description="Frame offset for simulation playback",
@@ -73,11 +83,13 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             default=True,
             ); exec(conv("unsaved_blend_file_tooltip"))
 
+    is_auto_frame_load_cmd_operator_running = BoolProperty(default=False); exec(conv("is_auto_frame_load_cmd_operator_running"))
+
     bake_simulation_expanded = BoolProperty(default=True); exec(conv("bake_simulation_expanded"))
     add_remove_objects_expanded = BoolProperty(default=True); exec(conv("add_remove_objects_expanded"))
     outliner_organization_expanded = BoolProperty(default=False); exec(conv("outliner_organization_expanded"))
     quick_select_expanded = BoolProperty(default=False); exec(conv("quick_select_expanded"))
-    command_line_tools_expanded = BoolProperty(default=False); exec(conv("command_line_tools_expanded"))
+    command_line_tools_expanded = BoolProperty(default=True); exec(conv("command_line_tools_expanded"))
     geometry_node_tools_expanded = BoolProperty(default=False); exec(conv("geometry_node_tools_expanded"))
     beginner_tools_expanded = BoolProperty(default=False); exec(conv("beginner_tools_expanded"))
 
@@ -100,6 +112,12 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
         del bpy.types.Scene.flip_fluid_helper
 
 
+    def load_post(self):
+        self.is_auto_frame_load_cmd_operator_running = False
+        if self.is_auto_frame_load_cmd_enabled():
+            bpy.ops.flip_fluid_operators.auto_load_baked_frames_cmd('INVOKE_DEFAULT')
+
+
     def get_addon_preferences(self):
         return vcu.get_addon_preferences()
 
@@ -108,6 +126,24 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
         prefs = self.get_addon_preferences()
         if prefs.enable_helper and self.enable_auto_frame_load:
             bpy.ops.flip_fluid_operators.helper_load_last_frame()
+
+
+    def is_auto_frame_load_cmd_enabled(self):
+        return self.enable_auto_frame_load and self.enable_auto_frame_load_cmd
+
+
+    def _update_enable_auto_frame_load_cmd(self, context):
+        dprops = context.scene.flip_fluid.get_domain_properties()
+        if dprops is None:
+            return
+
+        is_auto_load_cmd_enabled = self.is_auto_frame_load_cmd_enabled()
+        if is_auto_load_cmd_enabled and not self.is_auto_frame_load_cmd_operator_running:
+            bpy.ops.flip_fluid_operators.auto_load_baked_frames_cmd('INVOKE_DEFAULT')
+
+
+def load_post():
+    bpy.context.scene.flip_fluid_helper.load_post()
 
 
 def register():

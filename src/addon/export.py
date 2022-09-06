@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ from .utils import export_utils as utils
 from .objects.flip_fluid_aabb import AABB
 from .pyfluid import TriangleMesh
 from .utils import version_compatibility_utils as vcu
-from .utils import cache_utils, export_utils
+from .utils import cache_utils, export_utils, installation_utils
 
 
 def __get_domain_object():
@@ -141,10 +141,19 @@ def __get_domain_data_dict(context, dobj):
     d['surface']['native_particle_scale'] = dprops.surface.native_particle_scale
     d['surface']['compute_chunks_auto'] = dprops.surface.compute_chunks_auto
 
-    volume_object_name = ""
-    if dprops.surface.meshing_volume_object:
-        volume_object_name = dprops.surface.meshing_volume_object.name
-    d['surface']['meshing_volume_object'] = volume_object_name
+    meshing_volume_object_name = ""
+    meshing_volume_object = dprops.surface.get_meshing_volume_object()
+    if meshing_volume_object is not None:
+        meshing_volume_object_name = meshing_volume_object.name
+    d['surface']['meshing_volume_object'] = meshing_volume_object_name
+
+    installation_utils.update_mixbox_installation_status()
+    is_mixbox_supported = installation_utils.is_mixbox_supported()
+    is_mixbox_installed = installation_utils.is_mixbox_installation_complete()
+    color_mixing_mode = dprops.surface.color_attribute_mixing_mode
+    if not is_mixbox_supported or not is_mixbox_installed:
+        color_mixing_mode = 'COLOR_MIXING_MODE_RGB'
+    d['surface']['color_attribute_mixing_mode'] = color_mixing_mode
 
     return True, d
 

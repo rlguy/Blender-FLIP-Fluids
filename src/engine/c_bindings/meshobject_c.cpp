@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2021 Ryan L. Guy
+Copyright (C) 2022 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -211,6 +211,18 @@ extern "C" {
         );
     }
 
+    EXPORTDLL int MeshObject_get_priority(MeshObject* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &MeshObject::getPriority, err
+        );
+    }
+
+    EXPORTDLL void MeshObject_set_priority(MeshObject* obj, int n, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &MeshObject::setPriority, n, err
+        );
+    }
+
     EXPORTDLL int MeshObject_get_source_id(MeshObject* obj, int *err) {
         return CBindings::safe_execute_method_ret_0param(
             obj, &MeshObject::getSourceID, err
@@ -220,6 +232,18 @@ extern "C" {
     EXPORTDLL void MeshObject_set_source_id(MeshObject* obj, int id, int *err) {
         CBindings::safe_execute_method_void_1param(
             obj, &MeshObject::setSourceID, id, err
+        );
+    }
+
+    EXPORTDLL int MeshObject_get_viscosity(MeshObject* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &MeshObject::getSourceID, err
+        );
+    }
+
+    EXPORTDLL void MeshObject_set_viscosity(MeshObject* obj, float v, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &MeshObject::setViscosity, v, err
         );
     }
 

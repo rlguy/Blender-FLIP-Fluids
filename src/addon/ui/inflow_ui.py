@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -78,6 +78,7 @@ class FLIPFLUID_PT_InflowTypePanel(bpy.types.Panel):
 
         if show_advanced:
             column.prop(inflow_props, "substep_emissions")
+            column.prop(inflow_props, "priority", text="Priority Level")
 
         column.separator()
         box = self.layout.box()
@@ -145,15 +146,50 @@ class FLIPFLUID_PT_InflowTypePanel(bpy.types.Panel):
             column = box.column(align=True)
             if vcu.is_blender_293():
                 show_color = dprops is not None and dprops.surface.enable_color_attribute
-                column.enabled = show_color
-                column.prop(inflow_props, "color")
-                column = box.column(align=True)
-
-
+                split = column.split(align=True)
+                column_left = split.column(align=True)
+                column_left.enabled = show_color
+                column_left.prop(inflow_props, "color")
+                column_right = split.column(align=True)
+                column_right.label(text="")
+                row = column_right.row(align=True)
+                row.alignment = 'LEFT'
+                if dprops is not None and not show_color:
+                    row.operator("flip_fluid_operators.enable_color_attribute_tooltip", 
+                                 text="Enable Color Attribute", icon="PLUS", emboss=False)
+                if dprops is None:
+                    row.label(text="Domain required for this option")
                 column.separator()
+
+                show_viscosity = dprops is not None and dprops.surface.enable_viscosity_attribute
+                split = column.split(align=True)
+                column_left = split.column(align=True)
+                column_left.enabled = show_viscosity
+                column_left.prop(inflow_props, "viscosity")
+                column_right = split.column(align=True)
+                row = column_right.row(align=True)
+                row.alignment = 'LEFT'
+                if dprops is not None and not show_viscosity:
+                    row.operator("flip_fluid_operators.enable_viscosity_attribute_tooltip", 
+                                 text="Enable Viscosity Attribute", icon="PLUS", emboss=False)
+                if dprops is None:
+                    row.label(text="Domain required for this option")
+                column.separator()
+
                 show_source_id = dprops is not None and dprops.surface.enable_source_id_attribute
-                column.enabled = show_source_id
-                column.prop(inflow_props, "source_id")
+                split = column.split(align=True)
+                column_left = split.column(align=True)
+                column_left.enabled = show_source_id
+                column_left.prop(inflow_props, "source_id")
+                column_right = split.column(align=True)
+                row = column_right.row(align=True)
+                row.alignment = 'LEFT'
+                if dprops is not None and not show_source_id:
+                    row.operator("flip_fluid_operators.enable_source_id_attribute_tooltip", 
+                                 text="Enable Source ID Attribute", icon="PLUS", emboss=False)
+                if dprops is None:
+                    row.label(text="Domain required for this option")
+                column.separator()
             else:
                 column.enabled = False
                 column.label(text="Geometry attribute features are only available in", icon='ERROR')

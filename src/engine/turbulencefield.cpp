@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2021 Ryan L. Guy
+Copyright (C) 2022 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -171,7 +171,7 @@ void TurbulenceField::_calculateTurbulenceFieldThread(int startidx, int endidx,
 }
 
 void TurbulenceField::destroyTurbulenceField() {
-    _field = Array3d<float>(0, 0, 0);
+    _field = Array3d<float>();
 }
 
 double TurbulenceField::evaluateTurbulenceAtPosition(vmath::vec3 p) {

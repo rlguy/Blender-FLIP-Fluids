@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -156,16 +156,30 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
             name="Generate Velocity Attributes",
             description="Generate fluid 3D velocity vector attributes for the fluid surface. After"
                 " baking, the velocity vectors (in m/s) can be accessed in a Cycles Attribute"
-                " Node with the name 'flip_velocity' from the Vector output. If the velocity"
+                " Node or in Geometry Nodes with the name 'flip_velocity' from the Vector output."
+                " This attribute is required for motion blur rendering. If the velocity"
                 " direction is not needed, use Generate Speed Attributes instead",
             default=False,
             options={'HIDDEN'},
             ); exec(conv("enable_velocity_vector_attribute"))
+    enable_velocity_vector_attribute_against_obstacles = BoolProperty(
+            name="Generate Against Obstacles",
+            description="Generate velocity-based attribute data against obstacles."
+                " Velocity-based attributes are the velocity/speed/vorticity attributes."
+                " If enabled, correct attributes will be generated where liquid and obstacles"
+                " meet, but at the cost of simulation performance. If disabled, attributes where"
+                " liquids and obstacles meet may be incorrect. This option is only needed if"
+                " rendering with velocity-based shaders and/or motion blur where the liquid-obstacle"
+                " interface will be visible such as when there are transparent/invisible obstacles"
+                " in the render",
+            default=False,
+            options={'HIDDEN'},
+            ); exec(conv("enable_velocity_vector_attribute_against_obstacles"))
     enable_speed_attribute = BoolProperty(
             name="Generate Speed Attributes",
             description="Generate fluid speed attributes for the fluid surface. After"
                 " baking, the speed values (in m/s) can be accessed in a Cycles Attribute"
-                " Node with the name 'flip_speed' from the Fac output",
+                " Node or in Geometry Nodes with the name 'flip_speed' from the Fac output",
             default=False,
             options={'HIDDEN'},
             ); exec(conv("enable_speed_attribute"))
@@ -173,7 +187,7 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
             name="Generate Vorticity Attributes",
             description="Generate fluid 3D vorticity vector attributes for the fluid surface. After"
                 " baking, the vorticity vectors can be accessed in a Cycles Attribute"
-                " Node with the name 'flip_vorticity' from the Vector output",
+                " Node or in Geometry Nodes with the name 'flip_vorticity' from the Vector output",
             default=False,
             options={'HIDDEN'},
             ); exec(conv("enable_vorticity_vector_attribute"))
@@ -181,7 +195,7 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
             name="Generate Age Attributes",
             description="Generate fluid age attributes for the fluid surface. After"
                 " baking, the age values (in seconds) can be accessed in a Cycles Attribute"
-                " Node with the name 'flip_age' from the Fac output",
+                " Node or in Geometry Nodes with the name 'flip_age' from the Fac output",
             default=False,
             options={'HIDDEN'},
             ); exec(conv("enable_age_attribute"))
@@ -199,8 +213,8 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
             name="Generate Color Attributes",
             description="Generate fluid color attributes for the fluid surface. Each"
                 " Inflow/Fluid object can set to assign color to the generated fluid. After"
-                " baking, the ID values can be accessed in a Cycles Attribute Node with the name"
-                " 'flip_color' from the Color output. This can be used to create varying color"
+                " baking, the ID values can be accessed in a Cycles Attribute Node or in Geometry Nodes"
+                " with the name 'flip_color' from the Color output. This can be used to create varying color"
                 " liquid effects",
             default=False,
             options={'HIDDEN'},
@@ -241,16 +255,35 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
             default=1.0,
             precision=2,
             ); exec(conv("color_attribute_mixing_radius"))
+    color_attribute_mixing_mode = EnumProperty(
+            name="Mixing Mode",
+            description="Method of simulating color attribute mixing",
+            items=types.color_mixing_modes,
+            default='COLOR_MIXING_MODE_MIXBOX',
+            options={'HIDDEN'},
+            ); exec(conv("color_attribute_mixing_mode"))
     enable_source_id_attribute = BoolProperty(
             name="Generate Source ID Attributes",
             description="Generate fluid source identifiers for the fluid surface. Each"
                 " Inflow/Fluid object can set to assign a source ID to the generated fluid. After"
                 " baking, the ID values can be accessed in a Cycles Attribute Node with the name"
                 " 'flip_source_id' from the Fac output. This can be used to create basic multiple"
-                " material liquid effects",
+                " material liquid effects. This attribute is deprecated and will be removed/replaced"
+                " in future versions",
             default=False,
             options={'HIDDEN'},
             ); exec(conv("enable_source_id_attribute"))
+    enable_viscosity_attribute = BoolProperty(
+            name="Enable Variable Viscosity",
+            description="Enable the variable viscosity solver for mixed viscosity simulations."
+                " After enabling, each Fluid/Inflow object can be set to assign a viscosity value"
+                " to the generated fluid. When enabled, viscosity value attributes will also"
+                " be generated for the fluid surface. After baking, the viscosity values can"
+                " be accessed in a Cycles Attribute Node with the name 'flip_viscosity' from"
+                " the Fac output",
+            default=False,
+            options={'HIDDEN'},
+            ); exec(conv("enable_viscosity_attribute"))
 
     native_particle_scale = FloatProperty(default=3.0); exec(conv("native_particle_scale"))
     default_cells_per_compute_chunk = FloatProperty(default=15.0); exec(conv("default_cells_per_compute_chunk"))   # in millions
@@ -258,31 +291,34 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
 
     def register_preset_properties(self, registry, path):
         add = registry.add_property
-        add(path + ".subdivisions",                          "Subdivisions",                      group_id=0)
-        add(path + ".particle_scale",                        "Particle Scale",                    group_id=0)
-        add(path + ".compute_chunk_mode",                    "Compute Chunk Mode",                group_id=0)
-        add(path + ".compute_chunks_fixed",                  "Num Compute Chunks (fixed)",        group_id=0)
-        add(path + ".meshing_volume_mode",                   "Meshing Volume Mode",               group_id=0)
-        add(path + ".export_animated_meshing_volume_object", "Export Animated Mesh",              group_id=0)
-        add(path + ".enable_meshing_offset",                 "Enable Obstacle Meshing",           group_id=0)
-        add(path + ".obstacle_meshing_mode",                 "Obstacle Meshing Mode",             group_id=0)
-        add(path + ".remove_mesh_near_domain",               "Remove Mesh Near Domain",           group_id=0)
-        add(path + ".remove_mesh_near_domain_distance",      "Distance",                          group_id=0)
-        add(path + ".smoothing_value",                       "Smoothing Value",                   group_id=0)
-        add(path + ".smoothing_iterations",                  "Smoothing Iterations",              group_id=0)
-        add(path + ".invert_contact_normals",                "Invert Contact Normals",            group_id=0)
-        add(path + ".generate_motion_blur_data",             "Generate Motion Blur Data",         group_id=0)
-        add(path + ".enable_velocity_vector_attribute",      "Generate Velocity Attributes",      group_id=0)
-        add(path + ".enable_speed_attribute",                "Generate Speed Attributes",         group_id=0)
-        add(path + ".enable_vorticity_vector_attribute",     "Generate Vorticity Attributes",     group_id=0)
-        add(path + ".enable_age_attribute",                  "Generate Age Attributes",           group_id=0)
-        add(path + ".age_attribute_radius",                  "Age Attribute Smoothing",           group_id=0)
-        add(path + ".enable_color_attribute",                "Generate Color Attributes",         group_id=0)
-        add(path + ".color_attribute_radius",                "Color Attribute Smoothing",         group_id=0)
-        add(path + ".enable_color_attribute_mixing",         "Enable Color Attribute Mixing",     group_id=0)
-        add(path + ".color_attribute_mixing_rate",           "Color Attribute Mixing Rate",       group_id=0)
-        add(path + ".color_attribute_mixing_radius",         "Color Attribute Mixing Radius",     group_id=0)
-        add(path + ".enable_source_id_attribute",            "Generate Source ID Attributes",     group_id=0)
+        add(path + ".subdivisions",                                       "Subdivisions",                                   group_id=0)
+        add(path + ".particle_scale",                                     "Particle Scale",                                 group_id=0)
+        add(path + ".compute_chunk_mode",                                 "Compute Chunk Mode",                             group_id=0)
+        add(path + ".compute_chunks_fixed",                               "Num Compute Chunks (fixed)",                     group_id=0)
+        add(path + ".meshing_volume_mode",                                "Meshing Volume Mode",                            group_id=0)
+        add(path + ".export_animated_meshing_volume_object",              "Export Animated Mesh",                           group_id=0)
+        add(path + ".enable_meshing_offset",                              "Enable Obstacle Meshing",                        group_id=0)
+        add(path + ".obstacle_meshing_mode",                              "Obstacle Meshing Mode",                          group_id=0)
+        add(path + ".remove_mesh_near_domain",                            "Remove Mesh Near Domain",                        group_id=0)
+        add(path + ".remove_mesh_near_domain_distance",                   "Distance",                                       group_id=0)
+        add(path + ".smoothing_value",                                    "Smoothing Value",                                group_id=0)
+        add(path + ".smoothing_iterations",                               "Smoothing Iterations",                           group_id=0)
+        add(path + ".invert_contact_normals",                             "Invert Contact Normals",                         group_id=0)
+        add(path + ".generate_motion_blur_data",                          "Generate Motion Blur Data",                      group_id=0)
+        add(path + ".enable_velocity_vector_attribute",                   "Generate Velocity Attributes",                   group_id=0)
+        add(path + ".enable_velocity_vector_attribute_against_obstacles", "Generate Velocity Attributes Against Obstacles", group_id=0)
+        add(path + ".enable_speed_attribute",                             "Generate Speed Attributes",                      group_id=0)
+        add(path + ".enable_vorticity_vector_attribute",                  "Generate Vorticity Attributes",                  group_id=0)
+        add(path + ".enable_age_attribute",                               "Generate Age Attributes",                        group_id=0)
+        add(path + ".age_attribute_radius",                               "Age Attribute Smoothing",                        group_id=0)
+        add(path + ".enable_color_attribute",                             "Generate Color Attributes",                      group_id=0)
+        add(path + ".color_attribute_radius",                             "Color Attribute Smoothing",                      group_id=0)
+        add(path + ".enable_color_attribute_mixing",                      "Enable Color Attribute Mixing",                  group_id=0)
+        add(path + ".color_attribute_mixing_rate",                        "Color Attribute Mixing Rate",                    group_id=0)
+        add(path + ".color_attribute_mixing_radius",                      "Color Attribute Mixing Radius",                  group_id=0)
+        add(path + ".color_attribute_mixing_mode",                        "Color Attribute Mixing Mode",                    group_id=0)
+        add(path + ".enable_source_id_attribute",                         "Generate Source ID Attributes",                  group_id=0)
+        add(path + ".enable_viscosity_attribute",                         "Generate Viscosity Attributes",                  group_id=0)
 
 
     def scene_update_post(self, scene):

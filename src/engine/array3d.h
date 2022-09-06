@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2021 Ryan L. Guy
+Copyright (C) 2022 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -125,6 +125,24 @@ public:
         for (int idx = 0; idx < _numElements; idx++) {
             _grid[idx] = value;
         }
+    }
+
+    bool isZero() {
+        for (int idx = 0; idx < _numElements; idx++) {
+            if (_grid[idx] != 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool isNonZero() {
+        for (int idx = 0; idx < _numElements; idx++) {
+            if (_grid[idx] != 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     T operator()(int i, int j, int k) {
@@ -395,9 +413,9 @@ public:
         return g.i >= 0 && g.j >= 0 && g.k >= 0 && g.i < width && g.j < height && g.k < depth;
     }
 
-    int width = 0;
-    int height = 0;
-    int depth = 0;
+    int width = 1;
+    int height = 1;
+    int depth = 1;
 
 private:
     void _initializeGrid() {

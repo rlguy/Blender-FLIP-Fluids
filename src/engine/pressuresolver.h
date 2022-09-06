@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2021 Ryan L. Guy
+Copyright (C) 2022 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -91,6 +91,12 @@ public:
     bool solve(PressureSolverParameters params);
     std::string getSolverStatus();
 
+    int getMaxIterations() { return _maxCGIterations; }
+    void setMaxIterations(int n) { _maxCGIterations = n; }
+
+    int getIterations() { return _solverIterations; }
+    float getError() { return _solverError; } 
+
 private:
 
     inline int _GridToVectorIndex(GridIndex g) {
@@ -178,7 +184,11 @@ private:
     int _matSize = 0;
     GridIndexKeyMap _keymap;
     Array3d<char> _surfaceTensionClusterStatus;
+
     std::string _solverStatus;
+    int _solverIterations = 0;
+    float _solverError = 0.0f;
+
 };
 
 #endif

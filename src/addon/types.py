@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -222,4 +222,9 @@ material_types = (
 cmd_render_mode = (
     ('CMD_RENDER_MODE_NORMAL', "Normal", "Launch normal command line render. This is equivalent to executing the 'Launch Render' operator."),
     ('CMD_RENDER_MODE_BATCH',  "Batch",  "Launch batch file command line render. This is equivalent to executing the 'Generate Batch File' operator followed by the 'Launch Batch File Render' operator."),
+    )
+
+color_mixing_modes = (
+    ('COLOR_MIXING_MODE_RGB',    "RGB",    "Simulate color mixing using basic additive RGB blending."),
+    ('COLOR_MIXING_MODE_MIXBOX', "Mixbox", "(recommended) Simulate color mixing using the physically accurate Mixbox pigment blending technology. Requires installation of the FLIP Fluids Mixbox plugin."),
     )

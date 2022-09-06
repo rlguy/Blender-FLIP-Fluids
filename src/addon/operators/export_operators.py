@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -57,6 +57,12 @@ class ExportFluidSimulation(bpy.types.Operator):
         basename = os.path.splitext(basename)[0]
         if not basename:
             basename = "untitled"
+
+        # Filesystem may have a limit on path length. Truncate name to some max length
+        # to avoid errors in cases where the path could become long
+        max_length = 16
+        if len(basename) > max_length:
+            basename = basename[:max_length]
 
         filename = basename
         filepath = os.path.join(logs_directory, filename + ".txt")

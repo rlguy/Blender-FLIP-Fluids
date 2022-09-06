@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2021 Ryan L. Guy
+Copyright (C) 2022 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,9 @@ SOFTWARE.
 #include "meshfluidsource.h"
 
 int MeshFluidSource::_IDCounter = 0;
+
+bool compareMeshFluidSourcePointer(MeshFluidSource *a, MeshFluidSource *b) { return *a < *b; }
+bool compareMeshFluidSourcePointerDescending(MeshFluidSource *a, MeshFluidSource *b) { return *a > *b; }
 
 MeshFluidSource::MeshFluidSource() {
 }
@@ -253,12 +256,28 @@ int MeshFluidSource::getID() {
     return _ID;
 }
 
+void MeshFluidSource::setPriority(int n) {
+    _meshObject.setPriority(n);
+}
+
+int MeshFluidSource::getPriority() {
+    return _meshObject.getPriority();
+}
+
 void MeshFluidSource::setSourceID(int id) {
     _meshObject.setSourceID(id);
 }
 
 int MeshFluidSource::getSourceID() {
     return _meshObject.getSourceID();
+}
+
+void MeshFluidSource::setViscosity(float v) {
+    _meshObject.setViscosity(v);
+}
+
+float MeshFluidSource::getViscosity() {
+    return _meshObject.getViscosity();
 }
 
 void MeshFluidSource::setSourceColor(vmath::vec3 c) {

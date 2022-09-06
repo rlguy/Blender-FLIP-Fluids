@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,6 +28,8 @@ from ..presets import preset_library
 from ..pyfluid import gpu_utils
 from ..utils import version_compatibility_utils as vcu
 from ..utils import installation_utils
+from ..utils import audio_utils
+from ..filesystem import filesystem_protection_layer as fpl
 
 
 def _get_addon_directory():
@@ -250,6 +252,121 @@ class FLIPFluidPreferencesImportUserData(bpy.types.Operator, ImportHelper):
         return {'FINISHED'}
 
 
+class FLIPFluidInstallMixboxPlugin(bpy.types.Operator, ImportHelper):
+    bl_idname = "flip_fluid_operators.install_mixbox_plugin"
+    bl_label = "Install Mixbox"
+    bl_description = ("Select and install the Mixbox plugin file. The Mixbox plugin adds physically" +
+                      " accurate pigment mixing technology for simulating mixed and blended" +
+                      " color simulations. The Mixbox plugin file can be found in the FLIP" +
+                      " Fluids addon downloads")
+
+    filename_ext = "*.plugin"
+    filter_glob = StringProperty(
+            default="*.plugin",
+            options={'HIDDEN'},
+            maxlen=255,
+            )
+    exec(vcu.convert_attribute_to_28("filter_glob"))
+
+
+    @classmethod
+    def poll(cls, context):
+        return not installation_utils.is_mixbox_installation_complete()
+
+
+    def tag_redraw(self, context):
+        try:
+            # Depending on window, area may be None
+            context.area.tag_redraw()
+        except:
+            pass
+
+
+    def clear_error_message(self, context):
+        preferences = vcu.get_addon_preferences()
+        preferences.is_mixbox_installation_error = False
+        preferences.mixbox_installation_error_message = ""
+        self.tag_redraw(context)
+
+
+    def report_error_message(self, context, error_message, error_type={'ERROR_INVALID_INPUT'}):
+        self.report(error_type, error_message)
+        print(error_message)
+        preferences = vcu.get_addon_preferences()
+        preferences.is_mixbox_installation_error = True
+        preferences.mixbox_installation_error_message = error_message
+        self.tag_redraw(context)
+
+
+    def execute(self, context):
+        installation_utils.update_mixbox_installation_status()
+        self.clear_error_message(context)
+
+        if not os.path.exists(self.filepath):
+            self.report_error_message(context, "Error: File does not exist. Select the Mixbox.plugin file.")
+            return {'CANCELLED'}
+
+        if not os.path.isfile(self.filepath):
+            self.report_error_message(context, "Error: No file selected. Select the Mixbox.plugin file.")
+            return {'CANCELLED'}
+
+        try:
+            expected_lut_filename = "mixbox_lut_data.bin"
+            expected_lut_filesize = 4070220
+            with zipfile.ZipFile(self.filepath, 'r') as zip:
+                if not expected_lut_filename in zip.namelist():
+                    self.report_error_message(context, "Error: Invalid plugin contents. File may be corrupted.")
+                    return {'CANCELLED'}
+
+                for f in zip.infolist():
+                    if f.filename == expected_lut_filename and f.file_size != expected_lut_filesize:
+                        self.report_error_message(context, "Error: Invalid plugin data. File may be corrupted.")
+                        return {'CANCELLED'}
+
+                dst_path = os.path.join(_get_addon_directory(), "third_party", "mixbox")
+                zip.extractall(path=dst_path)
+
+        except zipfile.BadZipFile as e:
+            self.report_error_message(context, "Error: Invalid plugin installation file.")
+            return {'CANCELLED'}
+        except Exception as e:
+            self.report_error_message(context, "Unknown Error Encountered: " + str(e))
+            return {'CANCELLED'}
+
+        installation_utils.update_mixbox_installation_status()
+        success_message = "The Mixbox plugin has been installed successfully."
+        self.report({'INFO'}, success_message)
+        print(success_message)
+        self.clear_error_message(context)
+        return {'FINISHED'}
+
+
+class FLIPFluidUninstallMixboxPlugin(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.uninstall_mixbox_plugin"
+    bl_label = "Uninstall Mixbox"
+    bl_description = ("Uninstall the Mixbox plugin")
+
+
+    def execute(self, context):
+        installation_utils.update_mixbox_installation_status()
+
+        mixbox_base_directory = os.path.join(_get_addon_directory(), "third_party", "mixbox")
+        mixbox_src_directory = os.path.join(mixbox_base_directory, "src")
+
+        fpl.delete_files_in_directory(mixbox_base_directory, [".bin", ".txt"], remove_directory=False)
+        fpl.delete_files_in_directory(mixbox_src_directory, [".h", ".cpp", ".png", ".md"], remove_directory=True)
+
+        installation_utils.update_mixbox_installation_status()
+        success_message = "The Mixbox plugin has been uninstalled successfully."
+        self.report({'INFO'}, success_message)
+        print(success_message)
+        return {'FINISHED'}
+
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_confirm(self, event)
+
+
 class FLIPFluidPreferencesFindGPUDevices(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.preferences_find_gpu_devices"
     bl_label = "Find GPU Devices"
@@ -289,7 +406,7 @@ class FlipFluidCheckForUpdates(bpy.types.Operator):
     bl_label = "Check for Updates"
     bl_description = ("Check for version updates. Note: this will not automatically" + 
         " install new versions of the addon. Version updates can be found in your" + 
-        " Blender Market account downloads.")
+        " Blender Market account downloads")
 
     version_data_url = StringProperty(default="http://rlguy.com/blender_flip_fluids/version_data/versions.json")
     exec(vcu.convert_attribute_to_28("version_data_url"))
@@ -508,6 +625,38 @@ class FlipFluidCopySystemInfo(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class FlipFluidOpenPreferences(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.open_preferences"
+    bl_label = "FLIP Fluids Preferences"
+    bl_description = ("Open the FLIP Fluids addon preferences menu")
+
+
+    def execute(self, context):
+        return {'FINISHED'}
+
+
+    def invoke(self, context, event):
+        bpy.ops.preferences.addon_show(module=installation_utils.get_module_name())
+        return {'FINISHED'}
+
+
+class FlipFluidTestBakeAlarm(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.test_bake_alarm"
+    bl_label = "Test Alarm"
+    bl_description = ("Test and play the alarm sound")
+
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+
+    def execute(self, context):
+        json_filepath = os.path.join(audio_utils.get_sounds_directory(), "alarm", "sound_data.json")
+        audio_utils.play_sound(json_filepath)
+        return {'FINISHED'}
+
+
 class FLIPFLUIDS_MT_help_menu(bpy.types.Menu):
     bl_label = "FLIP Fluids"
     bl_idname = "FLIPFLUIDS_MT_help_menu"
@@ -515,6 +664,9 @@ class FLIPFLUIDS_MT_help_menu(bpy.types.Menu):
     def draw(self, context):
         self.layout.operator("flip_fluid_operators.report_bug_prefill", icon="URL")
         self.layout.operator("flip_fluid_operators.copy_system_info", icon="COPYDOWN")
+
+        if vcu.is_blender_28():
+            self.layout.operator("flip_fluid_operators.open_preferences", icon="PREFERENCES")
 
 
 def draw_flip_fluids_help_menu(self, context):
@@ -527,11 +679,17 @@ def register():
     bpy.utils.register_class(FLIPFluidPreferencesImportUserData)
     bpy.utils.register_class(FLIPFluidPreferencesFindGPUDevices)
 
+    bpy.utils.register_class(FLIPFluidInstallMixboxPlugin)
+    bpy.utils.register_class(FLIPFluidUninstallMixboxPlugin)
+
     bpy.utils.register_class(VersionDataTextEntry)
     bpy.utils.register_class(FlipFluidCheckForUpdates)
 
     bpy.utils.register_class(FlipFluidReportBugPrefill)
     bpy.utils.register_class(FlipFluidCopySystemInfo)
+    bpy.utils.register_class(FlipFluidOpenPreferences)
+
+    bpy.utils.register_class(FlipFluidTestBakeAlarm)
 
     bpy.utils.register_class(FLIPFLUIDS_MT_help_menu)
 
@@ -553,11 +711,17 @@ def unregister():
     bpy.utils.unregister_class(FLIPFluidPreferencesImportUserData)
     bpy.utils.unregister_class(FLIPFluidPreferencesFindGPUDevices)
 
+    bpy.utils.unregister_class(FLIPFluidInstallMixboxPlugin)
+    bpy.utils.unregister_class(FLIPFluidUninstallMixboxPlugin)
+
     bpy.utils.unregister_class(VersionDataTextEntry)
     bpy.utils.unregister_class(FlipFluidCheckForUpdates)
 
     bpy.utils.unregister_class(FlipFluidReportBugPrefill)
     bpy.utils.unregister_class(FlipFluidCopySystemInfo)
+    bpy.utils.unregister_class(FlipFluidOpenPreferences)
+
+    bpy.utils.unregister_class(FlipFluidTestBakeAlarm)
 
     bpy.utils.unregister_class(FLIPFLUIDS_MT_help_menu)
     

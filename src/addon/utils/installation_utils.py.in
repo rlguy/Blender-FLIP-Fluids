@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,6 +21,10 @@ from . import version_compatibility_utils as vcu
 IS_INSTALLATION_UTILS_INITIALIZED = False
 IS_INSTALLATION_COMPLETE = False
 IS_STABLE_BUILD = @FLUIDENGINE_VERSION_TYPE_IS_STABLE_BUILD_PYTHON@
+
+IS_MIXBOX_SUPPORTED = @FLUIDENGINE_IS_MIXBOX_SUPPORTED@
+IS_MIXBOX_INSTALLATION_COMPLETE = False
+MIXBOX_BOOST_FACTOR = 1.2
 
 IS_ADDON_ACTIVE = False
 
@@ -127,6 +131,34 @@ def tag_addon_inactive():
     IS_ADDON_ACTIVE = False
 
 
+def update_mixbox_installation_status():
+    global IS_MIXBOX_INSTALLATION_COMPLETE
+    if not is_mixbox_supported():
+        IS_MIXBOX_INSTALLATION_COMPLETE = False
+        return
+
+    lut_filename = "mixbox_lut_data.bin"
+    addon_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    mixbox_lut_filepath = os.path.join(addon_directory, "third_party", "mixbox", lut_filename)
+    IS_MIXBOX_INSTALLATION_COMPLETE = os.path.isfile(mixbox_lut_filepath)
+    return IS_MIXBOX_INSTALLATION_COMPLETE
+
+
+def is_mixbox_supported():
+    global IS_MIXBOX_SUPPORTED
+    return IS_MIXBOX_SUPPORTED
+
+
+def is_mixbox_installation_complete():
+    global IS_MIXBOX_INSTALLATION_COMPLETE
+    return IS_MIXBOX_INSTALLATION_COMPLETE
+
+
+def get_mixbox_boost_factor():
+    global MIXBOX_BOOST_FACTOR
+    return MIXBOX_BOOST_FACTOR
+
+
 def __load_post_update_is_addon_active():
     tag_addon_inactive()
     if bpy.context.scene.flip_fluid.is_domain_object_set():
@@ -139,6 +171,7 @@ def __load_post_update_is_addon_active():
 
 def load_post():
     complete_installation()
+    update_mixbox_installation_status()
     __load_post_update_is_addon_active()
 
 
@@ -149,6 +182,12 @@ def scene_update_post(scene):
     # FLIP Fluid objects appended from another scene will not tag the addon as active
     # This workaround is to quickly check whether the active object is a FLIP Fluid object
     # and in this case, tag the addon as active
-    active_object = vcu.get_active_object()
+    try:
+        active_object = vcu.get_active_object()
+    except AttributeError as e:
+        # Context may not have an active object available, such as when exporting to Alembic.
+        # In this case, ignore and return.
+        return
+
     if active_object is not None and active_object.flip_fluid.is_active:
         tag_addon_active()

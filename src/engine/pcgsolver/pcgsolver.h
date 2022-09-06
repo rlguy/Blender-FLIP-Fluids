@@ -79,6 +79,7 @@ void factorModifiedIncompleteColesky0(const SparseMatrix<T> &matrix,
     factor.rowindex.resize(0);
     std::fill(factor.adiag.begin(), factor.adiag.end(), 0);
 
+    T eps = 1e-9;
     for (unsigned int i = 0; i < matrix.n; i++) {
         factor.colstart[i] = (unsigned int)factor.rowindex.size();
         for (size_t j = 0; j < matrix.index[i].size(); j++) {
@@ -86,11 +87,31 @@ void factorModifiedIncompleteColesky0(const SparseMatrix<T> &matrix,
                 factor.rowindex.push_back(matrix.index[i][j]);
                 factor.value.push_back(matrix.value[i][j]);
             } else if (matrix.index[i][j] == i) {
-                factor.invdiag[i] = factor.adiag[i] = matrix.value[i][j];
+                T value = matrix.value[i][j];
+
+                // WORKAROUND
+                //
+                // Due to precision error or bad input, invdiag or adiag may contain values
+                // that are close to 0 and/or negative. This is a workaround to correct these
+                // values so that the solver can still try to attempt to work with the data.
+                // Modifying invdiag or adiag this way may still result in a solve that is not possible,
+                // causing the max iterations to be reached.
+                //
+                // In the FLIP Fluids addon simulator, this only seems to be a problem if
+                // a variable viscosity grid is used as an input to the viscosity solver.
+                // In future development, finding the root cause of the issue would be ideal
+                // so that this workaround is not needed.
+                if (value < eps) {
+                    value = 0;
+                }
+                // END WORKAROUND
+
+                factor.invdiag[i] = factor.adiag[i] = value;
             }
         }
     }
     factor.colstart[matrix.n] = (unsigned int)factor.rowindex.size();
+
     // now do the incomplete factorization (figure out numerical values)
 
     // MATLAB code:

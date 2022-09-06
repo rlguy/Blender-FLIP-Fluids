@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
 import bpy
 
 from ..utils import version_compatibility_utils as vcu
+from ..utils import installation_utils
 
     
 class FLIPFLUID_PT_DomainTypeFluidSurfacePanel(bpy.types.Panel):
@@ -131,38 +132,74 @@ class FLIPFLUID_PT_DomainTypeFluidSurfacePanel(bpy.types.Panel):
         if vcu.get_addon_preferences().is_developer_tools_enabled():
             box = self.layout.box()
             box.label(text="Geometry Attributes:")
-            column = box.column(align=True)
             if vcu.is_blender_293():
-                column.prop(sprops, "enable_velocity_vector_attribute", text="Velocity Attributes")
-                column.prop(sprops, "enable_speed_attribute", text="Speed Attributes")
-                column.prop(sprops, "enable_vorticity_vector_attribute", text="Vorticity Attributes")
-                row = column.row(align=True)
-                row.prop(sprops, "enable_age_attribute", text="Age Attributes")
-                row.prop(sprops, "age_attribute_radius", text="Smoothing", slider=True)
-                column.prop(sprops, "enable_source_id_attribute", text="Source ID Attributes")
 
                 subbox = box.box()
+                subbox.label(text="Velocity Based Attributes:")
                 column = subbox.column(align=True)
                 split = column.split(align=True)
                 column_left = split.column(align=True)
                 column_right = split.column(align=True)
+                column_right.enabled = sprops.enable_velocity_vector_attribute or sprops.enable_speed_attribute or sprops.enable_vorticity_vector_attribute
+                column_left.prop(sprops, "enable_velocity_vector_attribute", text="Velocity Attributes")
+                column_right.prop(sprops, "enable_velocity_vector_attribute_against_obstacles", text="Generate Against Obstacles")
+                column.prop(sprops, "enable_speed_attribute", text="Speed Attributes")
+                column.prop(sprops, "enable_vorticity_vector_attribute", text="Vorticity Attributes")
+                
 
+                subbox = box.box()
+                subbox.label(text="Color and Mixing Attributes:")
+                column = subbox.column(align=True)
+                split = column.split(align=True)
+                column_left = split.column(align=True)
+                column_right = split.column(align=True)
                 column_left.prop(sprops, "enable_color_attribute", text="Color Attributes")
-
                 column_right.prop(sprops, "color_attribute_radius", text="Smoothing", slider=True)
 
                 column = subbox.column(align=True)
                 split = column.split(align=True)
                 column_left = split.column(align=True)
                 column_right = split.column(align=True)
-
                 column_left.enabled = sprops.enable_color_attribute
                 column_left.prop(sprops, "enable_color_attribute_mixing", text="Enable Mixing")
-
                 column_right.enabled = sprops.enable_color_attribute and sprops.enable_color_attribute_mixing
                 column_right.prop(sprops, "color_attribute_mixing_rate", text="Mix Rate", slider=True)
                 column_right.prop(sprops, "color_attribute_mixing_radius", text="Mix Radius", slider=True)
+
+                column = subbox.column(align=True)
+                column.enabled = sprops.enable_color_attribute and sprops.enable_color_attribute_mixing
+                column.label(text="Mixing Mode:")
+                row = column.row(align=True)
+                row.enabled = sprops.enable_color_attribute
+                row.prop(sprops, "color_attribute_mixing_mode", expand=True)
+
+                if sprops.color_attribute_mixing_mode == 'COLOR_MIXING_MODE_MIXBOX':
+                    if not installation_utils.is_mixbox_supported():
+                        column.label(text="Mixbox feature is not supported", icon="ERROR")
+                        column.label(text="in this version of the FLIP Fluids Addon", icon="ERROR")
+
+                    if installation_utils.is_mixbox_supported():
+                        if installation_utils.is_mixbox_installation_complete():
+                            column.label(text="Mixbox Plugin Status: Installed", icon="CHECKMARK")
+                        else:
+                            column.label(text="Install the Mixbox plugin in the", icon="INFO")
+                            column.label(text="FLIP Fluids Addon preferences", icon="INFO")
+                            column.operator("flip_fluid_operators.open_preferences", text="Open Preferences", icon="PREFERENCES")
+                else:
+                    pass
+
+                subbox = box.box()
+                subbox.label(text="Other Attributes:")
+                column = subbox.column(align=True)
+                row = column.row(align=True)
+                row.prop(sprops, "enable_age_attribute", text="Age Attributes")
+                row.prop(sprops, "age_attribute_radius", text="Smoothing", slider=True)
+                column.prop(sprops, "enable_source_id_attribute", text="Source ID Attributes")
+
+                # Viscosity attribute is enabled in the FLIP Fluid World panel as 'Variable Viscosity'
+                #column.prop(sprops, "enable_viscosity_attribute", text="Viscosity Attributes")
             else:
+                column = box.column(align=True)
                 column.enabled = False
                 column.label(text="Geometry attribute features are only available in", icon='ERROR')
                 column.label(text="Blender 2.93 or later", icon='ERROR')

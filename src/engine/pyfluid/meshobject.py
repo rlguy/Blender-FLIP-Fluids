@@ -1,6 +1,6 @@
 # MIT License
 # 
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -186,6 +186,18 @@ class MeshObject():
         pb.execute_lib_func(libfunc, [self(), value])
 
     @property
+    def priority(self):
+        libfunc = lib.MeshObject_get_priority
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @priority.setter
+    def priority(self, n):
+        libfunc = lib.MeshObject_set_priority
+        pb.init_lib_func(libfunc, [c_void_p, c_int, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), int(n)])
+
+    @property
     def source_id(self):
         libfunc = lib.MeshObject_get_source_id
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
@@ -196,6 +208,18 @@ class MeshObject():
         libfunc = lib.MeshObject_set_source_id
         pb.init_lib_func(libfunc, [c_void_p, c_int, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), int(n)])
+
+    @property
+    def viscosity(self):
+        libfunc = lib.MeshObject_get_viscosity
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @viscosity.setter
+    def viscosity(self, v):
+        libfunc = lib.MeshObject_set_viscosity
+        pb.init_lib_func(libfunc, [c_void_p, c_float, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), float(v)])
 
     def get_source_color(self):
         libfunc = lib.MeshObject_get_source_color

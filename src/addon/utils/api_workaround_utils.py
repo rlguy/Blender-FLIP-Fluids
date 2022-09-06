@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -136,3 +136,168 @@ def load_post_update_cycles_visibility_forward_compatibility_from_blender_3():
     for bl_object in invisible_objects:
         set_cycles_ray_visibility(bl_object, False)
         toggle_viewport_visibility_to_update_rendered_viewport_workaround(bl_object)
+
+
+def get_enabled_features_affected_by_T88811(domain_properties=None):
+    if domain_properties is None:
+        domain_properties = bpy.context.scene.flip_fluid.get_domain_properties()
+    if domain_properties is None:
+        return None
+    dprops = domain_properties
+
+    data_dict = {}
+    data_dict["attributes"] = {}
+    data_dict["attributes"]["surface"] = []
+    data_dict["attributes"]["whitewater"] = []
+    data_dict["viscosity"] = []
+
+    if dprops.surface.enable_velocity_vector_attribute:
+        data_dict["attributes"]["surface"].append("Velocity")
+    if dprops.surface.enable_speed_attribute:
+        data_dict["attributes"]["surface"].append("Speed")
+    if dprops.surface.enable_vorticity_vector_attribute:
+        data_dict["attributes"]["surface"].append("Vorticity")
+    if dprops.surface.enable_color_attribute:
+        data_dict["attributes"]["surface"].append("Color")
+    if dprops.surface.enable_age_attribute:
+        data_dict["attributes"]["surface"].append("Age")
+    if dprops.surface.enable_source_id_attribute:
+        data_dict["attributes"]["surface"].append("Source ID")
+
+    if dprops.whitewater.enable_velocity_vector_attribute:
+        data_dict["attributes"]["whitewater"].append("Velocity")
+    if dprops.whitewater.enable_id_attribute:
+        data_dict["attributes"]["whitewater"].append("ID")
+    if dprops.whitewater.enable_lifetime_attribute:
+        data_dict["attributes"]["whitewater"].append("Lifetime")
+
+    if dprops.world.enable_viscosity and dprops.surface.enable_viscosity_attribute:
+        data_dict["viscosity"].append("Variable Viscosity")
+
+    if not data_dict["attributes"]["surface"] and not data_dict["attributes"]["whitewater"] and not data_dict["viscosity"]:
+        return None
+
+    return data_dict
+
+
+def get_enabled_features_string_T88811(feature_list):
+    features_str = ""
+    for i, item in enumerate(feature_list):
+        features_str += item
+        if i != len(feature_list) - 1:
+            features_str += ", "
+    return features_str
+
+
+def draw_T88811_ui_warning(ui_box, preferences, feature_dict):
+    row = ui_box.row(align=True)
+    row.alert = True
+    row.label(text="FLIP Fluids: Possible Render Crash Warning:", icon="ERROR")
+    column = ui_box.column(align=True)
+    column.label(text="A current bug in Blender may cause frequent") 
+    column.label(text="render crashes or incorrect renders when") 
+    column.label(text="using the following enabled features:")
+    column.separator()
+
+    if feature_dict["attributes"]["surface"]:
+        column.label(text="Surface Attributes:", icon="ERROR")
+        column.label(text=get_enabled_features_string_T88811(feature_dict["attributes"]["surface"]), icon="DOT")
+    if feature_dict["attributes"]["whitewater"]:
+        column.label(text="Whitewater Attributes:", icon="ERROR")
+        column.label(text=get_enabled_features_string_T88811(feature_dict["attributes"]["whitewater"]), icon="DOT")
+    if feature_dict["viscosity"]:
+        column.label(text="Viscosity Features:", icon="ERROR")
+        column.label(text=get_enabled_features_string_T88811(feature_dict["viscosity"]), icon="DOT")
+    column.separator()
+
+    column.label(text="This bug can be prevented by rendering", icon="INFO")
+    column.label(text="from the command line. See the cmd")
+    column.label(text="rendering tools in the FLIP Fluids sidebar.")
+
+    column.operator(
+            "wm.url_open", 
+            text="Documentation: Command Line Tools", 
+            icon="URL"
+        ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Helper-Menu-Settings#command-line-tools"
+    column.operator(
+            "wm.url_open", 
+            text="Bug Report: T88811", 
+            icon="URL"
+        ).url = "https://developer.blender.org/T88811"
+
+    column.prop(preferences, "dismiss_T88811_crash_warning", text="Do not show this warning again")
+
+def get_T88811_cmd_warning_string(feature_dict):
+    warning = ""
+    warning += "************************************************\n"
+    warning += "FLIP Fluids: Possible Render Crash Warning\n\n"
+    warning += "A current bug in Blender may cause frequent render crashes or incorrect renders when using the following enabled features:\n\n"
+
+    if feature_dict["attributes"]["surface"]:
+        warning += "* Surface Attributes:\n"
+        warning += "    - " + get_enabled_features_string_T88811(feature_dict["attributes"]["surface"]) + "\n"
+    if feature_dict["attributes"]["whitewater"]:
+        warning += "* Whitewater Attributes:\n"
+        warning += "    - " + get_enabled_features_string_T88811(feature_dict["attributes"]["whitewater"]) + "\n"
+    if feature_dict["viscosity"]:
+        warning += "* Viscosity Features:\n"
+        warning += "    - " + get_enabled_features_string_T88811(feature_dict["viscosity"]) + "\n"
+
+    warning += "\n"
+    warning += "This bug can be prevented by rendering from the command line.\n"
+    warning += "See the command line rendering tools in the FLIP Fluids sidebar.\n\n"
+    warning += "Command Line Tools Documentation:\n    https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Helper-Menu-Settings#command-line-tools\n"
+    warning += "Bug Report T88811:\n    https://developer.blender.org/T88811\n"
+    warning += "************************************************\n"
+
+    return warning
+
+
+def is_persistent_data_issue_relevant():
+    if bpy.context.scene.render.engine != 'CYCLES':
+        return False
+    domain_properties = bpy.context.scene.flip_fluid.get_domain_properties()
+    if domain_properties is None:
+        return False
+    return bpy.context.scene.render.use_persistent_data
+
+
+def draw_persistent_data_warning(ui_box, preferences):
+    row = ui_box.row(align=True)
+    row.alert = True
+    row.label(text="FLIP Fluids: Incompatible Render Option Warning:", icon="ERROR")
+    column = ui_box.column(align=True)
+    column.label(text="The Cycles 'Persistent Data' render option is not")
+    column.label(text="compatible with the simulation meshes. This may")
+    column.label(text="cause static renders, incorrect renders, or")
+    column.label(text="render crashes.")
+    column.separator()
+    column.label(text="This issue can be prevented by disabling")
+    column.label(text="Render Properties > Performance > Persistent Data:")
+
+    row = column.row(align=True)
+    row.alignment = 'LEFT'
+    row.label(text="     ")
+    row.prop(bpy.context.scene.render, "use_persistent_data")
+
+    column.label(text="Or by rendering from the command line. See the")
+    column.label(text="cmd rendering tools in the FLIP Fluids sidebar.")
+
+    column.operator(
+            "wm.url_open", 
+            text="Documentation: Command Line Tools", 
+            icon="URL"
+        ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Helper-Menu-Settings#command-line-tools"
+
+    column.prop(preferences, "dismiss_persistent_data_render_warning", text="Do not show this warning again")
+
+def get_persistent_data_warning_string():
+    warning = ""
+    warning += "************************************************\n"
+    warning += "FLIP Fluids: Incompatible Render Option Warning\n\n"
+    warning += "The Cycles 'Persistent Data' render option is not compatible with the simulation meshes. This may cause static renders, incorrect renders, or render crashes.\n\n"
+    warning += "This issue can be prevented by disabling the 'Render Properties > Performance > Persistent Data' option or by rendering from the command line.\n"
+    warning += "See the command line rendering tools in the FLIP Fluids sidebar.\n\n"
+    warning += "Command Line Tools Documentation:\n    https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Helper-Menu-Settings#command-line-tools\n"
+    warning += "************************************************\n"
+    return warning

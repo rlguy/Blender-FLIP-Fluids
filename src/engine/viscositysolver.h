@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2021 Ryan L. Guy
+Copyright (C) 2022 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -43,6 +43,7 @@ struct ViscositySolverParameters {
     MeshLevelSet *solidSDF;
     Array3d<float> *viscosity;
     double errorTolerance = 1e-4;
+    int maxIterations = 900;
 };
 
 class ViscositySolver {
@@ -53,6 +54,12 @@ public:
 
     bool applyViscosityToVelocityField(ViscositySolverParameters params);
     std::string getSolverStatus();
+
+    int getMaxIterations() { return _maxSolverIterations; }
+    void setMaxIterations(int n) { _maxSolverIterations = n; }
+
+    int getIterations() { return _solverIterations; }
+    float getError() { return _solverError; } 
 
 private:
 
@@ -91,13 +98,13 @@ private:
             isize = 0;
             jsize = 0;
             ksize = 0;
-            center = Array3d<float>(0, 0, 0);
-            U = Array3d<float>(0, 0, 0);
-            V = Array3d<float>(0, 0, 0);
-            W = Array3d<float>(0, 0, 0);
-            edgeU = Array3d<float>(0, 0, 0);
-            edgeV = Array3d<float>(0, 0, 0);
-            edgeW = Array3d<float>(0, 0, 0);
+            center = Array3d<float>();
+            U = Array3d<float>();
+            V = Array3d<float>();
+            W = Array3d<float>();
+            edgeU = Array3d<float>();
+            edgeV = Array3d<float>();
+            edgeW = Array3d<float>();
         }
     };
 
@@ -243,8 +250,11 @@ private:
 
     double _solverTolerance = 1e-4;
     double _acceptableTolerace = 10.0;
-    int _maxSolverIterations = 1400;
+    int _maxSolverIterations = 900;
+
     std::string _solverStatus;
+    int _solverIterations = 0;
+    float _solverError = 0.0f;
 };
 
 

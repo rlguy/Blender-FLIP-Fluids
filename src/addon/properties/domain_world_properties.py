@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -152,7 +152,7 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
                 " results and reduce rippling artifacts but will require more substeps"
                 " and increase baking time", 
             min=0, max=100,
-            default=90,
+            default=95,
             subtype='PERCENTAGE',
             ); exec(conv("surface_tension_accuracy"))
     surface_tension_solver_method = EnumProperty(

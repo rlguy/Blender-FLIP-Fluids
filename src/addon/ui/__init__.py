@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2021 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,6 +47,7 @@ from . import(
 
 from ..utils import version_compatibility_utils as vcu
 from ..utils import installation_utils
+from ..utils import api_workaround_utils as api_utils
 
 
 def append_to_PHYSICS_PT_add_panel(self, context):
@@ -134,21 +135,32 @@ def append_to_PHYSICS_PT_add_panel(self, context):
 
     if not installation_utils.is_installation_complete():
         box = self.layout.box()
-        box.label(text="IMPORTANT: Blender restart required", icon="ERROR")
-        box.label(text="Please restart Blender to complete")
-        box.label(text="installation of the FLIP Fluids add-on.")
+        box.label(text="IMPORTANT: Please Complete Installation", icon="ERROR")
+        box.label(text="Click here to complete installation of the FLIP Fluids Addon:")
+        box.operator("flip_fluid_operators.complete_installation", icon='MOD_FLUIDSIM')
 
     addon_prefs = vcu.get_addon_preferences(context)
     flip_fluids_installations = installation_utils.get_enabled_flip_fluids_addon_installations()
     if len(flip_fluids_installations) > 1:
         box = self.layout.box()
         box.label(text="Installation Error Detected", icon="ERROR")
-        box.label(text="Multiple version of the FLIP Fluids add-on enabled:", icon="ERROR")
+        box.label(text="Multiple version of the FLIP Fluids addon enabled:", icon="ERROR")
         for install in flip_fluids_installations:
             box.label(text=" "*10 + install['addon_name'] + " (" + install['module_name'] + ")")
         box.label(text="Only 1 version of the add-on can be enabled", icon="ERROR")
         box.label(text="Disable all other versions in the Blender addon preferences", icon="ERROR")
         box.label(text="Restart Blender", icon="ERROR")
+
+    is_installation_complete = installation_utils.is_installation_complete()
+    feature_dict = api_utils.get_enabled_features_affected_by_T88811()
+    if feature_dict is not None and not addon_prefs.dismiss_T88811_crash_warning and is_installation_complete:
+        box = self.layout.box()
+        api_utils.draw_T88811_ui_warning(box, addon_prefs, feature_dict)
+
+    is_persistent_data_enabled = api_utils.is_persistent_data_issue_relevant()
+    if is_persistent_data_enabled and not addon_prefs.dismiss_persistent_data_render_warning and is_installation_complete:
+        box = self.layout.box()
+        api_utils.draw_persistent_data_warning(box, addon_prefs)
 
 
 def register():
