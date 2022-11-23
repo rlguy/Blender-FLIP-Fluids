@@ -207,6 +207,7 @@ class FlipFluidInflowProperties(bpy.types.PropertyGroup):
         add("inflow.source_id", "")
         add("inflow.viscosity", "")
         add("inflow.color", "")
+        add("inflow.target_object", "")
         add("inflow.export_animated_target", "")
         add("inflow.export_animated_mesh", "")
         add("inflow.skip_reexport", "")

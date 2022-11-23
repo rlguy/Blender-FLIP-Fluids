@@ -148,6 +148,8 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
                 mag_str = '{:.2f}'.format(round(magnitude, 2))
                 gforce_str = '{:.2f}'.format(round(gforce, 2))
 
+                if wprops.gravity_type == 'GRAVITY_TYPE_SCENE':
+                    column_left.label(text="")
                 row = column_left.row(align=True)
                 row.alignment = 'RIGHT'
                 row.label(text="magnitude = " + mag_str)
@@ -158,6 +160,7 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
                 column_right.enabled = not (wprops.gravity_type == 'GRAVITY_TYPE_SCENE')
 
                 if wprops.gravity_type == 'GRAVITY_TYPE_SCENE':
+                    column_right.prop(context.scene, "use_gravity", text="Gravity Enabled")
                     column_right.prop(context.scene, "gravity", text="")
                 elif wprops.gravity_type == 'GRAVITY_TYPE_CUSTOM':
                     column_right.prop(wprops, "gravity", text="")
@@ -278,9 +281,6 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
             column_left = column_left.column(align=True)
             column_left.enabled = wprops.enable_surface_tension
             row = column_left.row(align=True)
-            row.alignment = 'RIGHT'
-            row.label(text="Surface Tension Solver: ")
-            row = column_left.row(align=True)
             row.enabled = wprops.enable_surface_tension
             row.alignment='RIGHT'
             row.label(text="Total Surface Tension =")
@@ -298,8 +298,6 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
             column_right.prop(wprops, "surface_tension", text="Base")
             column_right.prop(wprops, "surface_tension_exponent", text="Exponent")
             column_right.prop(wprops, "surface_tension_accuracy", text="Solver Accuracy")
-            row = column_right.row()
-            row.prop(wprops, "surface_tension_solver_method", expand=True)
             column_right.label(text=surface_tension_str)
             column_right.label(text=str(wprops.minimum_surface_tension_substeps))
 

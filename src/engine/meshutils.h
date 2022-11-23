@@ -63,7 +63,9 @@ namespace MeshUtils {
 
     void getCellsInsideTriangleMesh(
         TriangleMesh &m, int isize, int jsize, int ksize, double dx,
-        std::vector<GridIndex> &cells);
+        std::vector<GridIndex> &cells,
+        bool computeSingleThreaded = false
+        );
 
     void _getCellsInsideTriangleMeshThread(
         int startidx, int endidx, 
@@ -85,10 +87,10 @@ namespace MeshUtils {
 
 
     void getGridNodesInsideTriangleMesh(TriangleMesh mesh, double dx, 
-                                        Array3d<bool> &nodes);
+                                        Array3d<bool> &nodes, bool computeSingleThreaded = false);
 
     void getGridNodesInsideTriangleMesh(TriangleMesh mesh, double dx, 
-                                        std::vector<GridIndex> &nodes);
+                                        std::vector<GridIndex> &nodes, bool computeSingleThreaded = false);
 
     void _splitInsideOutsideMesh(TriangleMesh &mesh, AABB bbox, 
                                  TriangleMesh &insideMesh, 

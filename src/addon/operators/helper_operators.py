@@ -593,10 +593,55 @@ class FlipFluidHelperRemoveObjects(bpy.types.Operator):
             if obj.flip_fluid.is_domain() and obj.flip_fluid.domain.bake.is_simulation_running:
                 # Ignore removing domain type if a simulation is running
                 continue
+            if obj.flip_fluid.is_domain() and not obj.flip_fluid.domain.bake.is_simulation_running:
+                obj.flip_fluid.domain.mesh_cache.delete_cache_objects()
             vcu.set_active_object(obj, context)
             bpy.ops.flip_fluid_operators.flip_fluid_remove()
         vcu.set_active_object(original_active_object, context)
         return {'FINISHED'}
+
+
+class FlipFluidHelperDeleteDomain(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_delete_domain"
+    bl_label = "Delete Domain"
+    bl_description = ("Delete selected domain objects and remove simulation meshes. This operator will" + 
+                      " not delete the cache directory. This operator is recommended for deleting domains as deleting" +
+                      " in the viewport may leave behind stray simulation mesh objects")
+
+    @classmethod
+    def poll(cls, context):
+        if len(context.selected_objects) == 1:
+            # Don't let user set domain object as another type while simulation is running
+            obj = context.selected_objects[0]
+            if obj.flip_fluid.is_domain():
+                if obj.flip_fluid.domain.bake.is_simulation_running:
+                    return False
+        for obj in context.selected_objects:
+            if obj.flip_fluid.is_active and obj.flip_fluid.is_domain():
+                return True
+        return False
+
+
+    def delete_domain(self, context, domain_name):
+        domain_object = bpy.data.objects.get(domain_name)
+        mesh_cache = domain_object.flip_fluid.domain.mesh_cache
+        mesh_cache.delete_cache_objects()
+        vcu.delete_object(domain_object)
+
+
+    def execute(self, context):
+        domain_object_names = []
+        for obj in context.selected_objects:
+            if obj.flip_fluid.is_active and obj.flip_fluid.is_domain() and not obj.flip_fluid.domain.bake.is_simulation_running:
+                domain_object_names.append(obj.name)
+
+        for domain_name in domain_object_names:
+            self.delete_domain(context, domain_name)
+        return {'FINISHED'}
+
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_confirm(self, event)
 
 
 class FlipFluidHelperOrganizeOutliner(bpy.types.Operator):
@@ -1048,12 +1093,30 @@ class FlipFluidEnableColorAttribute(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class FlipFluidEnableColorMixAttribute(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.enable_color_mix_attribute"
+    bl_label = "Enable Color Attribute + Mixing"
+    bl_description = "Enable color attribute and color mixing in the Domain FLIP Fluid Surface panel"
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.flip_fluid.get_domain_object() is not None
+
+
+    def execute(self, context):
+        dprops = context.scene.flip_fluid.get_domain_properties()
+        dprops.surface.enable_color_attribute = True
+        dprops.surface.enable_color_attribute_mixing = True
+        return {'FINISHED'}
+
+
 class FlipFluidEnableColorAttributeMenu(bpy.types.Menu):
     bl_label = ""
     bl_idname = "FLIP_FLUID_MENUS_MT_enable_color_attribute_menu"
 
     def draw(self, context):
         self.layout.operator("flip_fluid_operators.enable_color_attribute")
+        self.layout.operator("flip_fluid_operators.enable_color_mix_attribute")
 
 
 class FlipFluidEnableColorAttributeTooltip(bpy.types.Operator):
@@ -1153,6 +1216,21 @@ class FlipFluidEnableSourceIDAttributeTooltip(bpy.types.Operator):
         return {'FINISHED'}
 
 
+def get_render_output_directory():
+    frame_path = bpy.context.scene.render.frame_path()
+    render_path = os.path.dirname(frame_path)
+    return render_path
+
+
+def is_render_output_directory_createable():
+    render_path = get_render_output_directory()
+    try:
+        os.makedirs(render_path, exist_ok=True)
+    except:
+        return False
+    return True
+
+
 class FlipFluidHelperCommandLineBake(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.helper_command_line_bake"
     bl_label = "Launch Bake"
@@ -1173,6 +1251,11 @@ class FlipFluidHelperCommandLineBake(bpy.types.Operator):
             return {'CANCELLED'}
 
         hprops = context.scene.flip_fluid_helper
+        if hprops.cmd_launch_render_after_bake and not is_render_output_directory_createable():
+            errmsg = "Render output directory is not valid or writeable: <" + get_render_output_directory() + ">"
+            self.report({'ERROR'}, errmsg)
+            return {'CANCELLED'}
+
         script_name = "run_simulation.py"
         if hprops.cmd_launch_render_after_bake:
             system = platform.system()
@@ -1323,7 +1406,12 @@ class FlipFluidHelperCommandLineRender(bpy.types.Operator):
         return bool(bpy.data.filepath)
 
 
-    def execute(self, context):        
+    def execute(self, context):
+        if not is_render_output_directory_createable():
+            errmsg = "Render output directory is not valid or writeable: <" + get_render_output_directory() + ">"
+            self.report({'ERROR'}, errmsg)
+            return {'CANCELLED'}
+
         system = platform.system()
         if system == "Windows":
             if vcu.is_blender_28():
@@ -1412,7 +1500,12 @@ class FlipFluidHelperCommandLineRenderFrame(bpy.types.Operator):
         return bool(bpy.data.filepath)
 
 
-    def execute(self, context):       
+    def execute(self, context):
+        if not is_render_output_directory_createable():
+            errmsg = "Render output directory is not valid or writeable: <" + get_render_output_directory() + ">"
+            self.report({'ERROR'}, errmsg)
+            return {'CANCELLED'}
+
         script_path = os.path.dirname(os.path.realpath(__file__))
         script_path = os.path.dirname(script_path)
         script_path = os.path.join(script_path, "resources", "command_line_scripts", "render_single_frame.py")
@@ -1780,6 +1873,11 @@ class FlipFluidHelperCommandLineRenderToScriptfile(bpy.types.Operator):
 
 
     def execute(self, context):
+        if not is_render_output_directory_createable():
+            errmsg = "Render output directory is not valid or writeable: <" + get_render_output_directory() + ">"
+            self.report({'ERROR'}, errmsg)
+            return {'CANCELLED'}
+
         directory_path, file_prefix, file_suffix = get_render_output_info()
         if not directory_path:
             return {'CANCELLED'}
@@ -2063,7 +2161,10 @@ class FlipFluidMakeRelativeToBlendRenderOutput(bpy.types.Operator):
             self.report({"ERROR"}, "Cannot make path relative to unsaved Blend file")
             return {'CANCELLED'}
 
-        output_str = "//render/"
+        blend_name = os.path.basename(bpy.data.filepath)
+        blend_name = os.path.splitext(blend_name)[0]
+
+        output_str = "//render_" + blend_name + "/"
         context.scene.render.filepath = output_str
 
         return {'FINISHED'}
@@ -2233,6 +2334,120 @@ class FlipFluidAutoLoadBakedFramesCMD(bpy.types.Operator):
         context.scene.flip_fluid_helper.is_auto_frame_load_cmd_operator_running = False
 
 
+class FlipFluidCopySettingsToSelected(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.copy_setting_to_selected"
+    bl_label = "Copy Settings to Selected"
+    bl_description = ("todo")
+
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+
+    def copy_settings(self, context, src_obj_props, dst_obj_props):
+        property_registry = src_obj_props.property_registry
+        for p in property_registry.properties:
+            path = p.path
+            base, identifier = path.split('.', 1)
+
+            src_prop = getattr(src_obj_props, identifier)
+            if hasattr(src_prop, "is_min_max_property"):
+                dst_prop = getattr(dst_obj_props, identifier)
+                setattr(dst_prop, "value_min", src_prop.value_min)
+                setattr(dst_prop, "value_max", src_prop.value_max)
+            else:
+                src_value = getattr(src_obj_props, identifier)
+                setattr(dst_obj_props, identifier, src_value)
+
+
+    def toggle_cycles_ray_visibility(self, obj, is_enabled):
+        # Cycles may not be enabled in the user's preferences
+        try:
+            if vcu.is_blender_30():
+                obj.visible_camera = is_enabled
+                obj.visible_diffuse = is_enabled
+                obj.visible_glossy = is_enabled
+                obj.visible_transmission = is_enabled
+                obj.visible_volume_scatter = is_enabled
+                obj.visible_shadow = is_enabled
+            else:
+                obj.cycles_visibility.camera = is_enabled
+                obj.cycles_visibility.transmission = is_enabled
+                obj.cycles_visibility.diffuse = is_enabled
+                obj.cycles_visibility.scatter = is_enabled
+                obj.cycles_visibility.glossy = is_enabled
+                obj.cycles_visibility.shadow = is_enabled
+        except:
+            pass
+
+
+    def execute(self, context):
+        src_flip_object = vcu.get_active_object()
+        selected_objects = context.selected_objects
+
+        if not src_flip_object:
+            err_msg = "Error: No active object selected."
+            self.report({"ERROR_INVALID_INPUT"}, err_msg)
+            return {'CANCELLED'}
+
+        src_flip_type = src_flip_object.flip_fluid.object_type
+        if src_flip_type == 'TYPE_NONE':
+            err_msg = "Error: Domain type FLIP objects cannot have settings copied."
+            self.report({"ERROR_INVALID_INPUT"}, err_msg)
+            return {'CANCELLED'}
+        elif src_flip_type == 'TYPE_DOMAIN':
+            err_msg = "Error: None type FLIP objects cannot have settings copied."
+            self.report({"ERROR_INVALID_INPUT"}, err_msg)
+            return {'CANCELLED'}
+
+        flip_type_string = ""
+        if src_flip_type == 'TYPE_FLUID':
+            flip_type_string = "Fluid"
+        elif src_flip_type == 'TYPE_OBSTACLE':
+            flip_type_string = "Obstacle"
+        elif src_flip_type == 'TYPE_INFLOW':
+            flip_type_string = "Inflow"
+        elif src_flip_type == 'TYPE_OUTFLOW':
+            flip_type_string = "Outflow"
+        elif src_flip_type == 'TYPE_FORCE_FIELD':
+            flip_type_string = "Force Field"
+
+        dst_flip_objects = []
+        for obj in selected_objects:
+            if obj.flip_fluid.is_active and obj.flip_fluid.object_type == src_flip_type:
+                if obj.name != src_flip_object.name:
+                    dst_flip_objects.append(obj)
+
+        if not dst_flip_objects:
+            err_msg = "Error: No other FLIP " + flip_type_string + " objects in selection to copy to."
+            self.report({"ERROR_INVALID_INPUT"}, err_msg)
+            return {'CANCELLED'}
+
+        for dst_flip_object in dst_flip_objects:
+            if src_flip_type == 'TYPE_FLUID':
+                src_props = src_flip_object.flip_fluid.fluid
+                dst_props = dst_flip_object.flip_fluid.fluid
+            elif src_flip_type == 'TYPE_OBSTACLE':
+                src_props = src_flip_object.flip_fluid.obstacle
+                dst_props = dst_flip_object.flip_fluid.obstacle
+            elif src_flip_type == 'TYPE_INFLOW':
+                src_props = src_flip_object.flip_fluid.inflow
+                dst_props = dst_flip_object.flip_fluid.inflow
+            elif src_flip_type == 'TYPE_OUTFLOW':
+                src_props = src_flip_object.flip_fluid.outflow
+                dst_props = dst_flip_object.flip_fluid.outflow
+            elif src_flip_type == 'TYPE_FORCE_FIELD':
+                src_props = src_flip_object.flip_fluid.force_field
+                dst_props = dst_flip_object.flip_fluid.force_field
+
+            self.copy_settings(context, src_props, dst_props)
+
+        info_msg = "Copied active FLIP " + flip_type_string + " object settings to " + str(len(dst_flip_objects)) + " " + flip_type_string + " objects in selection"
+        self.report({'INFO'}, info_msg)
+        return {'FINISHED'}
+
+
 def register():
     bpy.utils.register_class(FlipFluidHelperSelectDomain)
     bpy.utils.register_class(FlipFluidHelperSelectSurface)
@@ -2244,6 +2459,7 @@ def register():
     bpy.utils.register_class(FlipFluidHelperCreateDomain)
     bpy.utils.register_class(FlipFluidHelperAddObjects)
     bpy.utils.register_class(FlipFluidHelperRemoveObjects)
+    bpy.utils.register_class(FlipFluidHelperDeleteDomain)
     bpy.utils.register_class(FlipFluidHelperOrganizeOutliner)
     bpy.utils.register_class(FlipFluidHelperSeparateFLIPMeshes)
     bpy.utils.register_class(FlipFluidHelperUndoOrganizeOutliner)
@@ -2271,6 +2487,7 @@ def register():
     bpy.utils.register_class(FlipFluidEnableWhitewaterMenu)
     bpy.utils.register_class(FlipFluidDisplayEnableWhitewaterTooltip)
     bpy.utils.register_class(FlipFluidEnableColorAttribute)
+    bpy.utils.register_class(FlipFluidEnableColorMixAttribute)
     bpy.utils.register_class(FlipFluidEnableColorAttributeMenu)
     bpy.utils.register_class(FlipFluidEnableColorAttributeTooltip)
     bpy.utils.register_class(FlipFluidEnableViscosityAttribute)
@@ -2282,6 +2499,7 @@ def register():
     bpy.utils.register_class(FlipFluidMakeRelativeToBlendRenderOutput)
     bpy.utils.register_class(FlipFluidMakePrefixFilenameRenderOutput)
     bpy.utils.register_class(FlipFluidAutoLoadBakedFramesCMD)
+    bpy.utils.register_class(FlipFluidCopySettingsToSelected)
 
 
 def unregister():
@@ -2295,6 +2513,7 @@ def unregister():
     bpy.utils.unregister_class(FlipFluidHelperCreateDomain)
     bpy.utils.unregister_class(FlipFluidHelperAddObjects)
     bpy.utils.unregister_class(FlipFluidHelperRemoveObjects)
+    bpy.utils.unregister_class(FlipFluidHelperDeleteDomain)
     bpy.utils.unregister_class(FlipFluidHelperOrganizeOutliner)
     bpy.utils.unregister_class(FlipFluidHelperSeparateFLIPMeshes)
     bpy.utils.unregister_class(FlipFluidHelperUndoOrganizeOutliner)
@@ -2322,6 +2541,7 @@ def unregister():
     bpy.utils.unregister_class(FlipFluidEnableWhitewaterMenu)
     bpy.utils.unregister_class(FlipFluidDisplayEnableWhitewaterTooltip)
     bpy.utils.unregister_class(FlipFluidEnableColorAttribute)
+    bpy.utils.unregister_class(FlipFluidEnableColorMixAttribute)
     bpy.utils.unregister_class(FlipFluidEnableColorAttributeMenu)
     bpy.utils.unregister_class(FlipFluidEnableColorAttributeTooltip)
     bpy.utils.unregister_class(FlipFluidEnableViscosityAttribute)
@@ -2333,3 +2553,4 @@ def unregister():
     bpy.utils.unregister_class(FlipFluidMakeRelativeToBlendRenderOutput)
     bpy.utils.unregister_class(FlipFluidMakePrefixFilenameRenderOutput)
     bpy.utils.unregister_class(FlipFluidAutoLoadBakedFramesCMD)
+    bpy.utils.unregister_class(FlipFluidCopySettingsToSelected)

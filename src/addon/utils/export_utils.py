@@ -50,14 +50,18 @@ def flip_fluid_object_to_dict(obj, object_properties):
     return d
 
 
-def is_property_animated(obj, prop_name, index = 0):
+def is_property_animated(obj, prop_name, index=0, use_exact_path=False):
     anim_data = obj.animation_data
     if not anim_data or not anim_data.action or not anim_data.action.fcurves:
         return False
 
     for fcurve in anim_data.action.fcurves:
         path = fcurve.data_path
-        if path.endswith(prop_name) and fcurve.array_index == index:
+
+        is_match = path.endswith(prop_name)
+        if use_exact_path:
+            is_match = path == prop_name
+        if is_match and fcurve.array_index == index:
             return True
     return False
 
@@ -80,11 +84,15 @@ def is_vector_animated(obj, prop_name, vector_size = 3):
     return is_animated
 
 
-def get_property_fcurve(obj, prop_name, index = 0):
+def get_property_fcurve(obj, prop_name, index=0, use_exact_path=False):
     anim_data = obj.animation_data
     for fcurve in anim_data.action.fcurves:
         path = fcurve.data_path
-        if path.endswith(prop_name) and fcurve.array_index == index:
+
+        is_match = path.endswith(prop_name)
+        if use_exact_path:
+            is_match = path == prop_name
+        if is_match and fcurve.array_index == index:
             return fcurve
 
 
@@ -95,16 +103,16 @@ def get_property_fcurve_from_path(obj, path_name, index = 0):
             return fcurve
 
 
-def get_property_data_dict(obj, prop_group, prop_name, index = None):
+def get_property_data_dict(obj, prop_group, prop_name, index=None, use_exact_path=False):
     dprops = bpy.context.scene.flip_fluid.get_domain_properties()
 
     is_index_set = index != None
     if not is_index_set:
         index = 0
 
-    if is_property_animated(obj, prop_name, index):
+    if is_property_animated(obj, prop_name, index, use_exact_path=use_exact_path):
         values = []
-        fcurve = get_property_fcurve(obj, prop_name, index)
+        fcurve = get_property_fcurve(obj, prop_name, index, use_exact_path=use_exact_path)
         frame_start, frame_end = dprops.simulation.get_frame_range()
         for i in range(frame_start, frame_end + 1):
             values.append(fcurve.evaluate(i))
@@ -159,12 +167,12 @@ def get_property_data_dict_from_path(obj, prop_group, path_name, index = None):
         return {'is_animated' : False, 'data' : value}
 
 
-def get_vector_property_data_dict(obj, prop_group, prop_name, vector_size = 3):
+def get_vector_property_data_dict(obj, prop_group, prop_name, vector_size=3, use_exact_path=False):
     component_dicts = []
     for i in range(vector_size):
         component_dicts.append(get_property_data_dict(obj, 
                                                       prop_group, 
-                                                      prop_name, i))
+                                                      prop_name, i, use_exact_path=use_exact_path))
     is_animated = False
     for i in range(vector_size):
         is_animated = is_animated or component_dicts[i]['is_animated']

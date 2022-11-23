@@ -1418,7 +1418,7 @@ class FluidSimulation(object):
         return pb.execute_lib_func(libfunc, [self()])
 
     @diffuse_spray_emission_speed.setter
-    @decorators.check_ge(1.0)
+    @decorators.check_ge(0.0)
     def diffuse_spray_emission_speed(self, d):
         libfunc = lib.FluidSimulation_set_diffuse_spray_emission_speed
         pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)

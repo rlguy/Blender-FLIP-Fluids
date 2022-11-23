@@ -74,8 +74,16 @@ def update_stats(context=None):
             return
 
     temp_dir = os.path.join(cache_dir, "temp")
-    match_str = "framestats" + "[0-9]"*6 + ".data"
-    stat_files = glob.glob(os.path.join(temp_dir, match_str))
+    if not os.path.isdir(temp_dir):
+        return
+
+    stat_prefix = "framestats"
+    stat_extension = ".data"
+    stat_files = [f for f in os.listdir(temp_dir) if os.path.isfile(os.path.join(temp_dir, f))]
+    stat_files = [f for f in stat_files if f.endswith(stat_extension)]
+    stat_files = [f for f in stat_files if (f[len(stat_prefix):-len(stat_extension)]).isdigit()]
+    stat_files = [os.path.join(temp_dir, f) for f in stat_files if f.endswith(stat_extension)]
+    
     if not stat_files:
         return
 
@@ -84,7 +92,7 @@ def update_stats(context=None):
 
     for statpath in stat_files:
         filename = os.path.basename(statpath)
-        frameno = int(filename[len("framestats"):-len(".data")])
+        frameno = int(filename[len(stat_prefix):-len(stat_extension)])
         with open(statpath, 'r', encoding='utf-8') as frame_stats:
             try:
                 frame_stats_dict = json.loads(frame_stats.read())
@@ -295,7 +303,7 @@ class BakeFluidSimulation(bpy.types.Operator):
 
         if context.scene.flip_fluid.get_num_domain_objects() > 1:
             self.report({"ERROR_INVALID_INPUT"}, 
-                        "There must be only one domain object")
+                        "There must be only one domain object in the Blend file")
             self.cancel(context)
             return {'CANCELLED'}
 

@@ -30,7 +30,8 @@ if "bpy" in locals():
         'draw_grid_operators',
         'draw_particles_operators',
         'draw_force_field_operators',
-        'helper_operators'
+        'helper_operators',
+        'support_operators'
     ]
     for module_name in reloadable_modules:
         if module_name in locals():
@@ -52,7 +53,8 @@ from . import (
         draw_grid_operators,
         draw_particles_operators,
         draw_force_field_operators,
-        helper_operators
+        helper_operators,
+        support_operators
         )
 
 
@@ -71,6 +73,7 @@ def register():
     draw_particles_operators.register()
     draw_force_field_operators.register()
     helper_operators.register()
+    support_operators.register()
 
 
 def unregister():
@@ -87,4 +90,4 @@ def unregister():
     draw_grid_operators.unregister()
     draw_particles_operators.unregister()
     draw_force_field_operators.unregister()
-    helper_operators.unregister()
+    support_operators.unregister()

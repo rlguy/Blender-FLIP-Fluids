@@ -1304,7 +1304,8 @@ void MeshLevelSet::_computeDistanceFieldSigns() {
     TriangleMesh tempMesh = _mesh;
     tempMesh.translate(-_positionOffset);
 
-    MeshUtils::getGridNodesInsideTriangleMesh(tempMesh, _dx, nodes);
+    bool computeSingleThreaded = !_isMultiThreadingEnabled;
+    MeshUtils::getGridNodesInsideTriangleMesh(tempMesh, _dx, nodes, computeSingleThreaded);
 
     int size = _phi.getNumElements();
     bool *nodesArray = nodes.getRawArray();

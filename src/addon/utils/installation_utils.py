@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, os, sys
+import bpy, os, sys, json
 
 from . import version_compatibility_utils as vcu
 
@@ -25,6 +25,9 @@ IS_STABLE_BUILD = False
 IS_MIXBOX_SUPPORTED = True
 IS_MIXBOX_INSTALLATION_COMPLETE = False
 MIXBOX_BOOST_FACTOR = 1.2
+
+IS_PRESET_LIBRARY_INSTALLATION_COMPLETE = False
+PRESET_LIBRARY_INSTALLATIONS = []
 
 IS_ADDON_ACTIVE = False
 
@@ -157,6 +160,48 @@ def is_mixbox_installation_complete():
 def get_mixbox_boost_factor():
     global MIXBOX_BOOST_FACTOR
     return MIXBOX_BOOST_FACTOR
+
+
+def update_preset_library_installation_status():
+    global IS_PRESET_LIBRARY_INSTALLATION_COMPLETE
+    global PRESET_LIBRARY_INSTALLATIONS
+
+    IS_PRESET_LIBRARY_INSTALLATION_COMPLETE = False
+    PRESET_LIBRARY_INSTALLATIONS = []
+
+    bl_preferences = bpy.context.preferences
+    bl_filepaths = bl_preferences.filepaths
+    for lib_entry in bl_filepaths.asset_libraries:
+        entry_name = lib_entry.name
+        entry_path = lib_entry.path
+        expected_metadata_filepath = os.path.join(entry_path, ".metadata", "version.json")
+        if not os.path.isfile(expected_metadata_filepath):
+            continue
+
+        try:
+            with open(expected_metadata_filepath, 'r') as version_file:
+                version_data = json.loads(version_file.read())
+                d = {}
+                d["name"] = entry_name
+                d["path"] = entry_path
+                d["install_path"] = os.path.dirname(entry_path)
+                d["metadata"] = version_data
+                PRESET_LIBRARY_INSTALLATIONS.append(d)
+                IS_PRESET_LIBRARY_INSTALLATION_COMPLETE = True
+        except Exception as e:
+            print("FLIP Fluids: Error verifying preset library install. <" + lib_entry.name + " : " + entry_path + ">" + "<" + str(e) + ">")
+
+    return IS_PRESET_LIBRARY_INSTALLATION_COMPLETE
+
+
+def is_preset_library_installation_complete():
+    global IS_PRESET_LIBRARY_INSTALLATION_COMPLETE
+    return IS_PRESET_LIBRARY_INSTALLATION_COMPLETE
+
+
+def get_preset_library_installations():
+    global PRESET_LIBRARY_INSTALLATIONS
+    return PRESET_LIBRARY_INSTALLATIONS
 
 
 def __load_post_update_is_addon_active():

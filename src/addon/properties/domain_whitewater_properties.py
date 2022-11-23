@@ -165,8 +165,9 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
             name="Spray Emission Speed", 
             description="Speed scaling factor for spray particle emission. Increasing"
                 " this value will generate more spread out and exaggerated spray effects", 
-            min=1.0, soft_max=3.0,
-            default=1.0,
+            min=0.0, soft_min=1.0,
+            soft_max=3.0,
+            default=1.2,
             ); exec(conv("spray_emission_speed"))
     min_max_whitewater_energy_speed = NewMinMaxFloatProperty(
             name_min="Min Energy Speed", 
@@ -231,7 +232,7 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
             name="Enable Emission Near Domain Boundary",
             description="Allow whitewater emitters to generate particles at"
                 " the domain boundary",
-            default=True,
+            default=False,
             ); exec(conv("enable_whitewater_emission_near_boundary"))
     enable_dust_emission_near_boundary = BoolProperty(
             name="Enable Dust Emission Near Domain Boundary",
@@ -304,7 +305,7 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
             description="Set the thickness of the whitewater foam layer", 
             min=0.0,
             max=1.0,
-            default=0.8,
+            default=0.4,
             precision=2,
             subtype='FACTOR',
             ); exec(conv("foam_layer_depth"))
@@ -316,7 +317,7 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
                 " the foam layer rest entirely below the fluid surface", 
             min=-1.0,
             max=1.0,
-            default=0.5,
+            default=0.25,
             precision=2,
             subtype='FACTOR',
             ); exec(conv("foam_layer_offset"))
@@ -363,7 +364,7 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
             subtype='FACTOR',
             ); exec(conv("bubble_drag_coefficient"))
     bubble_bouyancy_coefficient = FloatProperty(
-            name="Bubble Bouyancy Coefficient", 
+            name="Bubble Buoyancy Coefficient", 
             description="Controls how quickly bubble particles float towards"
                 " the fluid surface. If set to a negative value, bubbles will"
                 " sink away from the fluid surface", 
@@ -389,7 +390,7 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
             subtype='FACTOR',
             ); exec(conv("dust_drag_coefficient"))
     dust_bouyancy_coefficient = FloatProperty(
-            name="Dust Bouyancy Coefficient", 
+            name="Dust Buoyancy Coefficient", 
             description="Controls how quickly dust particles sink towards"
                 " the ground. Decreasing this value will cause particles to sink"
                 " more quickly. If set to a positive value, dust will float towards"
@@ -505,10 +506,10 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
         add(path + ".foam_preservation_rate",                   "Preservation Rate",              group_id=1)
         add(path + ".min_max_foam_density",                     "Min-Max Density",                group_id=1)
         add(path + ".bubble_drag_coefficient",                  "Bubble Drag",                    group_id=2)
-        add(path + ".bubble_bouyancy_coefficient",              "Bubble Bouyancy",                group_id=2)
+        add(path + ".bubble_bouyancy_coefficient",              "Bubble Buoyancy",                group_id=2)
         add(path + ".spray_drag_coefficient",                   "Spray Drag",                     group_id=2)
         add(path + ".dust_drag_coefficient",                    "Dust Drag",                      group_id=2)
-        add(path + ".dust_bouyancy_coefficient",                "Dust Bouyancy",                  group_id=2)
+        add(path + ".dust_bouyancy_coefficient",                "Dust Buoyancy",                  group_id=2)
         add(path + ".foam_boundary_behaviour",                  "Foam Boundary Behaviour",        group_id=2)
         add(path + ".bubble_boundary_behaviour",                "Bubble Boundary Behaviour",      group_id=2)
         add(path + ".spray_boundary_behaviour",                 "Spray Boundary Behaviour",       group_id=2)
