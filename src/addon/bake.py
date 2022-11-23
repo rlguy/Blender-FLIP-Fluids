@@ -1003,9 +1003,6 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
         surface_tension_number = mincfl + (1.0 - accuracy_pct) * (maxcfl - mincfl)
         fluidsim.surface_tension_condition_number = surface_tension_number
 
-        st_solver_mode = __get_parameter_data(world.surface_tension_solver_method, frameno)
-        fluidsim.enable_smooth_surface_tension_kernel = st_solver_mode == 'SURFACE_TENSION_SOLVER_METHOD_SMOOTH'
-
     is_sheet_seeding_enabled = __get_parameter_data(world.enable_sheet_seeding, frameno)
     if is_sheet_seeding_enabled:
         fluidsim.enable_sheet_seeding = is_sheet_seeding_enabled
@@ -1574,6 +1571,38 @@ def __update_animatable_obstacle_properties(data, frameid):
     obstacle_objects = data.obstacle_objects
     obstacle_data = data.obstacle_data
 
+    #### WORKAROUND ####
+
+    # Due to a current design issue in the simulator, if there is a mix of
+    # static and dynamic inverse obstacles in the simulation, then the combined
+    # inverse SDF will not be computed correctly. A workaround in previous
+    # versions of the addon was to enable "Export Animation Mesh" on all inverse
+    # obstacles so that there was not a mix and the SDF would be computed correctly.
+    #
+    # This section automatically applies this workaround by detecting if there
+    # are any dynamic inverse obstacles, and if so, treating all static inverse
+    # obstacles as dynamic ones. This is done by using the update_mesh_animated()
+    # method and supplying the static mesh for all frame_previous, frame_current, and
+    # frame_next.
+    #
+    # In future development, or in the next iteration of the simulator, this should
+    # be fixed properly inside of the simulation engine.
+
+    is_inverse_dynamic = False
+    for idx, mesh_object in enumerate(obstacle_objects):
+        data = obstacle_data[idx]
+        if mesh_object.inverse:
+            is_inverse_dynamic = is_inverse_dynamic or __is_object_dynamic(data.name)
+
+    if is_inverse_dynamic:
+        for idx, mesh_object in enumerate(obstacle_objects):
+            data = obstacle_data[idx]
+            if mesh_object.inverse and not __is_object_dynamic(data.name):
+                mesh = __extract_static_frame_mesh(data.name)
+                mesh_object.update_mesh_animated(mesh, mesh, mesh)
+                
+    #### END WORKAROUND ####
+
     for idx, mesh_object in enumerate(obstacle_objects):
         data = obstacle_data[idx]
 
@@ -1797,6 +1826,10 @@ def __update_animatable_domain_properties(fluidsim, data, frameno):
 
     world = dprops.world
     gravity = __get_parameter_data(world.gravity, frameno)
+    if __get_parameter_data(world.gravity_type, frameno) == 'GRAVITY_TYPE_SCENE':
+        use_gravity = bool(__get_parameter_data(world.scene_use_gravity, frameno))
+        if not use_gravity:
+            gravity = [0.0, 0.0, 0.0]
     __set_body_force_property(fluidsim, gravity)
 
     is_viscosity_enabled = __get_parameter_data(world.enable_viscosity, frameno)

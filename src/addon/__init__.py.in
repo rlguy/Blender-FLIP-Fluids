@@ -15,9 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 bl_info = {
-    "name" : "FLIP Fluids GitHub Release @FLUIDENGINE_VERSION_MAJOR@.@FLUIDENGINE_VERSION_MINOR@.@FLUIDENGINE_VERSION_REVISION@",
+    "name" : "FLIP Fluids @FLUIDENGINE_VERSION_MAJOR@.@FLUIDENGINE_VERSION_MINOR@.@FLUIDENGINE_VERSION_REVISION@",
     "description": "A FLIP Fluid Simulation Tool for Blender (v@FLUIDENGINE_VERSION_LABEL@)",
-    "author" : "Ryan Guy & Dennis Fassbaender",
+    "author" : "Ryan Guy & Dennis Fassbaender <support[at]flipfluids.com>",
     "version" : (@FLUIDENGINE_VERSION_MAJOR@, @FLUIDENGINE_VERSION_MINOR@, @FLUIDENGINE_VERSION_REVISION@),
     "blender" : (2, 81, 0),
     "location" : "Properties > Physics > FLIP Fluid",

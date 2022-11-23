@@ -70,7 +70,7 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
             default=(0.0, 0.0, -9.81),
             precision=3,
             size=3,
-            subtype='VELOCITY',
+            subtype='ACCELERATION',
             ); exec(conv("gravity"))
     force_field_resolution = EnumProperty(
             name="Force Field Resolution",
@@ -281,14 +281,22 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
         domain_object = bpy.context.scene.flip_fluid.get_domain_object()
         if self.gravity_type == 'GRAVITY_TYPE_SCENE':
             scene = bpy.context.scene
-            return export_utils.get_vector_property_data_dict(scene, scene, 'gravity')
+            return export_utils.get_vector_property_data_dict(scene, scene, 'gravity', use_exact_path=True)
         elif self.gravity_type == 'GRAVITY_TYPE_CUSTOM':
             return export_utils.get_vector_property_data_dict(domain_object, self, 'gravity')
 
 
+    def get_scene_use_gravity_data_dict(self):
+        scene = bpy.context.scene
+        return export_utils.get_property_data_dict(scene, scene, 'use_gravity', use_exact_path=True)
+
+
     def get_gravity_vector(self):
         if self.gravity_type == 'GRAVITY_TYPE_SCENE':
-            return bpy.context.scene.gravity
+            gravity = bpy.context.scene.gravity
+            if not bpy.context.scene.use_gravity:
+                gravity = (0.0, 0.0, 0.0)
+            return gravity
         elif self.gravity_type == 'GRAVITY_TYPE_CUSTOM':
             return self.gravity
 

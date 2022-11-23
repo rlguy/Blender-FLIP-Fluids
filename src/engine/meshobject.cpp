@@ -259,8 +259,7 @@ void MeshObject::getMeshLevelSet(double dt, float frameInterpolation, int exactB
         combinedIslandVertexVelocities.push_back(vertexVelocities);
         _addMeshIslandsToLevelSet(combinedIslands, combinedIslandVertexVelocities, exactBand, levelset);
     } else {
-        _addMeshIslandsToLevelSetFractureOptimization(
-                                  islands, islandVertexVelocities, exactBand, levelset);
+        _addMeshIslandsToLevelSetFractureOptimization(islands, islandVertexVelocities, exactBand, levelset);
     }
 }
 
@@ -696,7 +695,9 @@ void MeshObject::_addMeshIslandsToLevelSetFractureOptimization(
 
     BoundedBuffer<MeshLevelSet*> finishedWorkQueue(_finishedWorkQueueSize);
 
-    int numthreads = ThreadUtils::getMaxThreadCount();
+    int islandsPerThread = _numIslandsPerThreadForFractureOptimization;
+    int suggestedNumTheads = std::max((int)(islands.size()) / islandsPerThread, 1);
+    int numthreads = std::min(ThreadUtils::getMaxThreadCount(), suggestedNumTheads);
     std::vector<std::thread> threads(numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&MeshObject::_islandMeshLevelSetProducerThread, this,
@@ -730,34 +731,38 @@ void MeshObject::_islandMeshLevelSetProducerThread(BoundedBuffer<MeshIslandWorkI
     domainLevelSet->getGridDimensions(&isize, &jsize, &ksize);
     double dx = domainLevelSet->getCellSize();
 
+    int itemsPerLoop = 10;
     while (workQueue->size() > 0) {
         std::vector<MeshIslandWorkItem> items;
-        int numItems = workQueue->pop(1, items);
+        int numItems = workQueue->pop(itemsPerLoop, items);
         if (numItems == 0) {
             continue;
         }
-        MeshIslandWorkItem w = items[0];
 
-        AABB islandAABB(w.mesh.vertices);
-        GridIndex gmin = Grid3d::positionToGridIndex(islandAABB.getMinPoint(), dx);
-        GridIndex gmax = Grid3d::positionToGridIndex(islandAABB.getMaxPoint(), dx);
-        gmin.i = (int)fmax(gmin.i - exactBand, 0);
-        gmin.j = (int)fmax(gmin.j - exactBand, 0);
-        gmin.k = (int)fmax(gmin.k - exactBand, 0);
-        gmax.i = (int)fmin(gmax.i + exactBand + 1, isize - 1);
-        gmax.j = (int)fmin(gmax.j + exactBand + 1, jsize - 1);
-        gmax.k = (int)fmin(gmax.k + exactBand + 1, ksize - 1);
+        for (size_t widx = 0; widx < items.size(); widx++) {
+            MeshIslandWorkItem w = items[widx];
 
-        int gwidth = gmax.i - gmin.i;
-        int gheight = gmax.j - gmin.j;
-        int gdepth = gmax.k - gmin.k;
+            AABB islandAABB(w.mesh.vertices);
+            GridIndex gmin = Grid3d::positionToGridIndex(islandAABB.getMinPoint(), dx);
+            GridIndex gmax = Grid3d::positionToGridIndex(islandAABB.getMaxPoint(), dx);
+            gmin.i = (int)fmax(gmin.i - exactBand, 0);
+            gmin.j = (int)fmax(gmin.j - exactBand, 0);
+            gmin.k = (int)fmax(gmin.k - exactBand, 0);
+            gmax.i = (int)fmin(gmax.i + exactBand + 1, isize - 1);
+            gmax.j = (int)fmin(gmax.j + exactBand + 1, jsize - 1);
+            gmax.k = (int)fmin(gmax.k + exactBand + 1, ksize - 1);
 
-        MeshLevelSet *islandLevelSet = new MeshLevelSet(gwidth, gheight, gdepth, dx, this);
-        islandLevelSet->setGridOffset(gmin);
-        islandLevelSet->disableMultiThreading();
-        islandLevelSet->fastCalculateSignedDistanceField(w.mesh, w.vertexVelocities, exactBand);
+            int gwidth = gmax.i - gmin.i;
+            int gheight = gmax.j - gmin.j;
+            int gdepth = gmax.k - gmin.k;
 
-        finishedWorkQueue->push(islandLevelSet);
+            MeshLevelSet *islandLevelSet = new MeshLevelSet(gwidth, gheight, gdepth, dx, this);
+            islandLevelSet->setGridOffset(gmin);
+            islandLevelSet->disableMultiThreading();
+            islandLevelSet->fastCalculateSignedDistanceField(w.mesh, w.vertexVelocities, exactBand);
+
+            finishedWorkQueue->push(islandLevelSet);
+        }
     }
 }
 

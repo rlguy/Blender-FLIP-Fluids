@@ -202,7 +202,8 @@ private:
 
 
     int _numIslandsForFractureOptimizationTrigger = 25;
-    int _finishedWorkQueueSize = 10;
+    int _numIslandsPerThreadForFractureOptimization = 25;
+    int _finishedWorkQueueSize = 25;
 };
 
 #endif

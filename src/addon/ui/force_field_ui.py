@@ -218,6 +218,10 @@ class FLIPFLUID_PT_ForceFieldTypePanel(bpy.types.Panel):
             column.enabled = force_field_props.skip_reexport
             column.prop(force_field_props, "force_reexport_on_next_bake", toggle=True)
 
+        column = self.layout.column(align=True)
+        column.separator()
+        column.operator("flip_fluid_operators.copy_setting_to_selected", icon='COPYDOWN')
+
 
     def _format_strength_value(self, s):
         if s > 10:

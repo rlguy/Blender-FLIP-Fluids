@@ -160,6 +160,8 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                     ).object_type="TYPE_FORCE_FIELD"
             column = box.column(align=True)
             column.operator("flip_fluid_operators.helper_remove_objects", text="Remove")
+            column = box.column()
+            column.operator("flip_fluid_operators.helper_delete_domain", text="Delete Domain", icon='X')
 
             column = box.column()
             column.label(text="Object Display:")
@@ -546,6 +548,41 @@ class FLIPFLUID_PT_HelperPanelDisplay(bpy.types.Panel):
             column.operator("flip_fluid_operators.reload_frame", text="Reload Frame")
 
 
+class FLIPFLUID_PT_HelperTechnicalSupport(bpy.types.Panel):
+    bl_label = "Technical Support Tools"
+    bl_category = "FLIP Fluids"
+    bl_space_type = 'VIEW_3D'
+    bl_options = {'DEFAULT_CLOSED'}
+    if vcu.is_blender_28():
+        bl_region_type = 'UI'
+    else:
+        bl_region_type = 'TOOLS'
+
+
+    @classmethod
+    def poll(cls, context):
+        prefs = vcu.get_addon_preferences()
+        return prefs.enable_support_tools
+
+
+    def draw(self, context):
+        column = self.layout.column()
+        column.operator("flip_fluid_operators.print_system_info")
+        column.operator("flip_fluid_operators.standardize_blend_file")
+        column.operator("flip_fluid_operators.display_overlay_stats")
+        column.separator()
+        column.operator("flip_fluid_operators.select_simulation_objects")
+        column.operator("flip_fluid_operators.invert_selection")
+        column.separator()
+        column.operator("flip_fluid_operators.print_hidden_simulation_objects")
+        column.operator("flip_fluid_operators.select_hidden_simulation_objects")
+        column.separator()
+        column.operator("flip_fluid_operators.print_inverse_obstacles")
+        column.operator("flip_fluid_operators.select_inverse_obstacles")
+        column.separator()
+        column.operator("flip_fluid_operators.increment_and_save_file", icon='FILE_TICK')
+
+
 def register():
     # These panels will be registered in properties.preferences_properties.py
     pass
@@ -555,5 +592,6 @@ def unregister():
     try:
         bpy.utils.unregister_class(FLIPFLUID_PT_HelperPanelMain)
         bpy.utils.unregister_class(FLIPFLUID_PT_HelperPanelDisplay)
+        bpy.utils.unregister_class(FLIPFLUID_PT_HelperTechnicalSupport)
     except:
         pass

@@ -96,7 +96,9 @@ double _randomDouble(double min, double max) {
     return min + ((double)rand() / (double)RAND_MAX) * (max - min);
 }
 
-void _getCollisionGridZ(TriangleMesh &m, double dx, Array3d<std::vector<float> > &zcollisions) {
+void _getCollisionGridZ(TriangleMesh &m, double dx, Array3d<std::vector<float> > &zcollisions, 
+                        bool computeSingleThreaded) {
+
     Array3d<std::vector<int> > ztrigrid(zcollisions.width, zcollisions.height, 1);
     _getTriangleGridZ(m, dx, ztrigrid);
 
@@ -113,6 +115,9 @@ void _getCollisionGridZ(TriangleMesh &m, double dx, Array3d<std::vector<float> >
 
     int gridsize = ztrigrid.width * ztrigrid.height;
     int numCPU = ThreadUtils::getMaxThreadCount();
+    if (computeSingleThreaded) {
+        numCPU = 1;
+    }
     int numthreads = (int)fmin(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
     std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
@@ -155,14 +160,18 @@ void _getCollisionGridZThread(int startidx, int endidx,
 
 void getCellsInsideTriangleMesh(
         TriangleMesh &m, int isize, int jsize, int ksize, double dx,
-        std::vector<GridIndex> &cells) {
+        std::vector<GridIndex> &cells,
+        bool computeSingleThreaded) {
 
     Array3d<std::vector<float> > zcollisions(isize, jsize, 1);
-    _getCollisionGridZ(m, dx, zcollisions);
+    _getCollisionGridZ(m, dx, zcollisions, computeSingleThreaded);
 
     int gridsize = isize * jsize * ksize;
     int numCPU = ThreadUtils::getMaxThreadCount();
-    int numthreads = (int)fmin(numCPU, gridsize);
+    if (computeSingleThreaded) {
+        numCPU = 1;
+    }
+    int numthreads = std::min(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
     std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
     std::vector<std::vector<GridIndex> > threadResults(numthreads);
@@ -345,7 +354,7 @@ unsigned char getCellFillMask(GridIndex g, double dx,
 }
 
 void getGridNodesInsideTriangleMesh(TriangleMesh mesh, double dx, 
-                                    std::vector<GridIndex> &nodes) {
+                                    std::vector<GridIndex> &nodes, bool computeSingleThreaded) {
     mesh.translate(vmath::vec3(0.5 * dx, 0.5 * dx, 0.5 * dx));
     AABB bbox(mesh.vertices);
 
@@ -360,7 +369,7 @@ void getGridNodesInsideTriangleMesh(TriangleMesh mesh, double dx,
 
     nodes.clear();
     MeshUtils::getCellsInsideTriangleMesh(
-        mesh, gmax.i + 1, gmax.j + 1, gmax.k + 1, dx, nodes
+        mesh, gmax.i + 1, gmax.j + 1, gmax.k + 1, dx, nodes, computeSingleThreaded
     );
 
     GridIndex g;
@@ -371,7 +380,7 @@ void getGridNodesInsideTriangleMesh(TriangleMesh mesh, double dx,
 }
 
 void getGridNodesInsideTriangleMesh(TriangleMesh mesh, double dx, 
-                                    Array3d<bool> &nodes) {
+                                    Array3d<bool> &nodes, bool computeSingleThreaded) {
     nodes.fill(false);
 
     int isize = nodes.width - 1;
@@ -389,7 +398,7 @@ void getGridNodesInsideTriangleMesh(TriangleMesh mesh, double dx,
 
     std::vector<GridIndex> nodeVector;
     if (isMeshContainedInGrid) {
-        getGridNodesInsideTriangleMesh(mesh, dx, nodeVector);
+        getGridNodesInsideTriangleMesh(mesh, dx, nodeVector, computeSingleThreaded);
 
         GridIndex g;
         for (size_t i = 0; i < nodeVector.size(); i++) {
@@ -405,7 +414,7 @@ void getGridNodesInsideTriangleMesh(TriangleMesh mesh, double dx,
     std::vector<TriangleMesh> outsideMeshes;
     _splitInsideOutsideMesh(mesh, gridAABB, insideMesh, outsideMeshes);
 
-    getGridNodesInsideTriangleMesh(insideMesh, dx, nodeVector);
+    getGridNodesInsideTriangleMesh(insideMesh, dx, nodeVector, computeSingleThreaded);
 
     GridIndex g;
     for (size_t i = 0; i < nodeVector.size(); i++) {
@@ -416,7 +425,7 @@ void getGridNodesInsideTriangleMesh(TriangleMesh mesh, double dx,
 
     for (size_t i = 0; i < outsideMeshes.size(); i++) {
         nodeVector.clear();
-        getGridNodesInsideTriangleMesh(outsideMeshes[i], dx, nodeVector);
+        getGridNodesInsideTriangleMesh(outsideMeshes[i], dx, nodeVector, computeSingleThreaded);
 
         GridIndex g;
         for (size_t i = 0; i < nodeVector.size(); i++) {

@@ -1644,8 +1644,8 @@ double FluidSimulation::getDiffuseSprayEmissionSpeed() {
 }
 
 void FluidSimulation::setDiffuseSprayEmissionSpeed(double d) {
-    if (d < 1.0) {
-        std::string msg = "Error: spray emission speed must be greater than or equal to 1.0.\n";
+    if (d < 0.0) {
+        std::string msg = "Error: spray emission speed must be greater than or equal to 0.0.\n";
         msg += "speed: " + _toString(d) + "\n";
         throw std::domain_error(msg);
     }
@@ -3642,7 +3642,7 @@ void FluidSimulation::_upscaleParticleData() {
     params.particleRadius = particleRadius;
 
     velocityAdvector.advect(params);
-    int extrapolationLayers = (int)ceil(_CFLConditionNumber) + 2;
+    int extrapolationLayers = (int)std::ceil(std::sqrt(3) * _CFLConditionNumber) + 3;
     vfield.extrapolateVelocityField(validVelocities, extrapolationLayers);
 
     // Compute Age Grids
@@ -5005,7 +5005,7 @@ void FluidSimulation::_pressureSolve(double dt) {
 
 void FluidSimulation::_extrapolateFluidVelocities(MACVelocityField &MACGrid, 
                                                   ValidVelocityComponentGrid &validVelocities) {
-    int numLayers = (int)ceil(_CFLConditionNumber) + 2;
+    int numLayers = (int)std::ceil(std::sqrt(3) * _CFLConditionNumber) + 3;
     MACGrid.extrapolateVelocityField(validVelocities, numLayers);
 }
 

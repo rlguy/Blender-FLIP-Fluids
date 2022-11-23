@@ -228,3 +228,8 @@ color_mixing_modes = (
     ('COLOR_MIXING_MODE_RGB',    "RGB",    "Simulate color mixing using basic additive RGB blending."),
     ('COLOR_MIXING_MODE_MIXBOX', "Mixbox", "(recommended) Simulate color mixing using the physically accurate Mixbox pigment blending technology. Requires installation of the FLIP Fluids Mixbox plugin."),
     )
+
+preset_library_install_modes = (
+    ('PRESET_LIBRARY_INSTALL_ZIP',    "Install Preset Library Zip File",        "Install the Preset Library zip file to a location of your choice. Choose this option for installing or updating to new preset library versions."),
+    ('PRESET_LIBRARY_INSTALL_FOLDER', "Install Existing Preset Library Folder", "Install an existing Preset Library folder. Choose this option to select a preset library that was already installed in another version of Blender."),
+    )

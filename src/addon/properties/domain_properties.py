@@ -278,7 +278,7 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
         self.cache.load_post()
         self.stats.load_post()
         self.debug.load_post()
-        #self.presets.load_post()
+        self.presets.load_post()
         self.advanced.load_post()
         self.materials.load_post()
         self.mesh_cache.load_post()

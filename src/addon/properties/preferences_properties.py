@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, colorsys
+import bpy, colorsys, os, json
 
 from bpy.props import (
         BoolProperty,
@@ -31,6 +31,9 @@ from ..ui import helper_ui
 from ..utils import installation_utils
 from ..utils import color_utils
 from ..utils import version_compatibility_utils as vcu
+from ..operators import preferences_operators
+from ..filesystem import filesystem_protection_layer as fpl
+from .. import types
 
 
 # Due to a bug in Blender 2.93 (https://developer.blender.org/T87629), preferences
@@ -69,7 +72,7 @@ class FLIPFluidColorRGB(bpy.types.PropertyGroup):
 
 
 def update_helper_category_name(self, context):
-    panel_ids = ['FLIPFLUID_PT_HelperPanelMain', 'FLIPFLUID_PT_HelperPanelDisplay']
+    panel_ids = ['FLIPFLUID_PT_HelperPanelMain', 'FLIPFLUID_PT_HelperPanelDisplay', 'FLIPFLUID_PT_HelperTechnicalSupport']
     for pid in panel_ids:
         is_panel_registered = hasattr(bpy.types, pid)
         if is_panel_registered:
@@ -166,6 +169,19 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
     exec(vcu.convert_attribute_to_28("enable_addon_directory_renaming"))
     FAKE_PREFERENCES.enable_addon_directory_renaming = False
 
+    enable_blend_file_logging = BoolProperty(
+            name="Save Blender Installation and Simulation Info to Blend File", 
+            description="If enabled, save info about your Blender installation and simulation set up into the"
+                " Blend file. Saving this info into the Blend file helps improve turnaround time when requesting"
+                " technical support and improves accuracy when diagnosing issues. To view the type of info that is"
+                " saved, use the [Help > FLIP Fluids > Copy System & Blend Info] operator. If disabled, this info"
+                " will be cleared upon the next save of your Blend file, but it may be required to provide"
+                " additional items and info when requesting support", 
+            default=True,
+            ); 
+    exec(vcu.convert_attribute_to_28("enable_blend_file_logging"))
+    FAKE_PREFERENCES.enable_blend_file_logging = True
+
     enable_experimental_build_warning = BoolProperty(
             name="Show Experimental Build Warning", 
             description="Disable to hide the experimental build warning/notification in the Physics menu", 
@@ -184,6 +200,14 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
             ); 
     exec(vcu.convert_attribute_to_28("enable_developer_tools"))
     FAKE_PREFERENCES.enable_developer_tools = False
+
+    enable_support_tools = BoolProperty(
+            name="Enable Technical Support Tools", 
+            description="Used by the developers to assist in technical support requests", 
+            default=False,
+            ); 
+    exec(vcu.convert_attribute_to_28("enable_support_tools"))
+    FAKE_PREFERENCES.enable_support_tools = False
 
     cmd_bake_max_attempts = IntProperty(
             name="Max Attempts",
@@ -282,6 +306,35 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
                 ); 
     exec(vcu.convert_attribute_to_28("test_mixbox_expanded"))
 
+    preset_library_install_mode = EnumProperty(
+            name="Preset Library Install Method",
+            description="Installation Method",
+            items=types.preset_library_install_modes,
+            default='PRESET_LIBRARY_INSTALL_ZIP',
+            options={'HIDDEN'},
+            ); exec(vcu.convert_attribute_to_28("preset_library_install_mode"))
+
+    preset_library_install_location = StringProperty(
+            name="",
+            description="Select a location to install the Preset Scenes Library."
+                " This should be a location on your system where you have read and write file permissions",
+            default="", 
+            subtype='DIR_PATH',
+            ); 
+    exec(vcu.convert_attribute_to_28("preset_library_install_location"))
+    FAKE_PREFERENCES.preset_library_install_location = ""
+
+    is_preset_library_installation_error = BoolProperty(default=False)
+    exec(vcu.convert_attribute_to_28("is_preset_library_installation_error"))
+    FAKE_PREFERENCES.is_preset_library_installation_error = False
+
+    preset_library_installation_error_message = StringProperty(default="")
+    exec(vcu.convert_attribute_to_28("preset_library_installation_error_message"))
+    FAKE_PREFERENCES.preset_library_installation_error_message = ""
+
+    preset_library_installations_expanded = BoolProperty(default=True); 
+    exec(vcu.convert_attribute_to_28("preset_library_installations_expanded"))
+
     dismiss_T88811_crash_warning = BoolProperty(
             name="Dismiss render crash bug warnings", 
             description="Dismiss warnings in UI when features are enabled that can trigger a"
@@ -306,6 +359,18 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
             ); 
     exec(vcu.convert_attribute_to_28("dismiss_persistent_data_render_warning"))
     FAKE_PREFERENCES.dismiss_persistent_data_render_warning = False
+
+    dismiss_rtx_driver_warning = BoolProperty(
+            name="Dismiss NVIDIA GeForce RTX Driver Warning", 
+            description="Dismiss warning in the FLIP Fluids preferences menu related to a recent NVIDIA"
+                " GeForce RTX 'Game Ready Driver' update that may cause Blender to crash frequently when baking"
+                " a simulation. If you are experiencing this issue, the current solution is to update to"
+                " the NVIDIA 'Studio Driver' version. Studio drivers are typically more stable for content"
+                " creation software",
+            default=False,
+            ); 
+    exec(vcu.convert_attribute_to_28("dismiss_rtx_driver_warning"))
+    FAKE_PREFERENCES.dismiss_rtx_driver_warning = False
 
 
     def is_developer_tools_enabled(self):
@@ -362,7 +427,7 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
 
         box = self.layout.box()
         column = box.column(align=True)
-        column.label(text="Mixbox Color Blending Plugin:")
+        column.label(text="Install Mixbox Color Blending Plugin:")
 
         if not self.is_developer_tools_enabled():
             if installation_utils.is_mixbox_supported():
@@ -517,6 +582,183 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
                     ).url = "https://scrtwpns.com/mixbox/"
 
 
+    def get_date_string(self, dd, mm, yyyy):
+        month_to_str = {}
+        month_to_str[1] = "jan"
+        month_to_str[2] = "feb"
+        month_to_str[3] = "mar"
+        month_to_str[4] = "apr"
+        month_to_str[5] = "may"
+        month_to_str[6] = "jun"
+        month_to_str[7] = "jul"
+        month_to_str[8] = "aug"
+        month_to_str[9] = "sep"
+        month_to_str[10] = "oct"
+        month_to_str[11] = "nov"
+        month_to_str[12] = "dec"
+
+        date_str = "(" + str(dd).zfill(2) + "-" + month_to_str[int(mm)] + "-" + str(yyyy) + ")"
+        return date_str
+
+
+    def draw_preset_library_menu(self, context):
+        box = self.layout.box()
+        box.label(text="Install Preset Scenes Library:")
+
+        if not vcu.is_blender_33():
+            box.label(text="Blender 3.3 or later is required for this feature", icon="ERROR")
+
+        is_preset_library_supported = False
+        if not is_preset_library_supported:
+            column = box.column(align=True)
+            column.label(text="Preset Library features are not supported in this version of the FLIP Fluids addon.", icon="ERROR")
+            column.label(text="These features are only available in the full version.", icon="ERROR")
+            row = column.row(align=True)
+            row.alignment = 'LEFT'
+            row.label(text="Learn more about the Preset Scenes Library here: ", icon='INFO')
+            row = row.row(align=True)
+            row.operator(
+                "wm.url_open", 
+                text="", 
+                icon="URL"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Preset-Library-Installation-and-Uninstallation"
+            return
+
+        subbox = box.box()
+        column = subbox.column(align=True)
+        column.label(text="This is an initial test phase for the new Preset Library integration into the", icon="INFO")
+        column.label(text="Blender Asset Browser. Read more about this feature and known limitations here:", icon="INFO")
+        column.operator(
+                "wm.url_open", 
+                text="Preset Library Installation and Notes", 
+                icon="URL"
+                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Preset-Library-Installation-and-Uninstallation"
+
+        column = box.column(align=True)
+        column.enabled = vcu.is_blender_33()
+
+        row = column.row()
+        row.prop(self, "preset_library_install_mode", expand=True)
+
+        subbox = box.box()
+        column = subbox.column(align=True)
+
+        if self.preset_library_install_mode == 'PRESET_LIBRARY_INSTALL_ZIP':
+            column.label(text="1. Select an install location")
+            column.prop(self, "preset_library_install_location")
+
+            location_text1 = ""
+            location_text2 = ""
+            if not self.preset_library_install_location:
+                location_text1 = "No install location selected"
+            else:
+                install_path = os.path.join(self.preset_library_install_location, "FLIP_Fluids_Addon_Presets")
+                location_text1 = "Preset Scenes Library will be installed to:"
+                location_text2 = " "*12 + install_path
+
+            column.label(text=location_text1, icon='INFO')
+            if location_text2:
+                row = column.row(align=True)
+                row.enabled = False
+                row.label(text=location_text2)
+            else:
+                column.label(text="")
+            column.separator()
+
+            split = column.split(align=True)
+            column_left = split.column(align=True)
+            column_right = split.column(align=True)
+
+            column_left.label(text="2. Select and install Preset Scenes zip file")
+            column_left.operator("flip_fluid_operators.install_preset_library", text="Install Preset Scenes Library")
+
+            is_installed = installation_utils.is_preset_library_installation_complete()
+            column_right.label(text="")
+            if is_installed:
+                column_right.label(text="Status: Installed", icon="CHECKMARK")
+            else:
+                column_right.alert = True
+                column_right.label(text="Status: Not Installed", icon="CANCEL")
+
+            if self.is_preset_library_installation_error:
+                errmsg = self.preset_library_installation_error_message
+                sub_column = subbox.column(align=True)
+                sub_column.alert = True
+                sub_column.label(text=errmsg, icon='ERROR')
+        else:
+            split = column.split(align=True)
+            column_left = split.column(align=True)
+            column_right = split.column(align=True)
+
+            column_left.operator("flip_fluid_operators.select_preset_library_folder", text="Select Preset Library Folder")
+
+            is_installed = installation_utils.is_preset_library_installation_complete()
+            if is_installed:
+                column_right.label(text="Status: Installed", icon="CHECKMARK")
+            else:
+                column_right.alert = True
+                column_right.label(text="Status: Not Installed", icon="CANCEL")
+
+            if self.is_preset_library_installation_error:
+                errmsg = self.preset_library_installation_error_message
+                sub_column = subbox.column(align=True)
+                sub_column.alert = True
+                sub_column.label(text=errmsg, icon='ERROR')
+
+        is_installed = installation_utils.is_preset_library_installation_complete()
+        if is_installed:
+            box.separator()
+            subbox = box.box()
+
+            row = subbox.row(align=True)
+            row.prop(self, "preset_library_installations_expanded",
+                icon="TRIA_DOWN" if self.preset_library_installations_expanded else "TRIA_RIGHT",
+                icon_only=True, 
+                emboss=False
+            )
+            row.alignment = "LEFT"
+
+            preset_library_installations = installation_utils.get_preset_library_installations()
+            if len(preset_library_installations) > 1:
+                box_label = "Preset Library Installations:"
+            else:
+                box_label = "Preset Library Installation:"
+
+            row.label(text=box_label)
+
+            if self.preset_library_installations_expanded:
+                for install_info in preset_library_installations:
+                    name = install_info["name"]
+                    path = install_info["path"]
+                    metadata = install_info["metadata"]
+                    date_string = self.get_date_string(metadata["date_dd"], metadata["date_mm"], metadata["date_yyyy"])
+
+                    install_box = subbox.box()
+                    column = install_box.column(align=True)
+                    row = column.row(align=True)
+                    row.label(text=name + " " + date_string, icon='KEYTYPE_BREAKDOWN_VEC')
+                    row = row.row(align=True)
+                    row.alignment = 'RIGHT'
+                    row.operator("flip_fluid_operators.preset_library_copy_install_location", 
+                            text="Copy Install Location", 
+                            icon='COPYDOWN'
+                            ).install_location = install_info["install_path"]
+                    row = row.row(align=True)
+                    row.alignment = 'RIGHT'
+                    row.alert = True
+                    op = row.operator("flip_fluid_operators.uninstall_preset_library", text="Uninstall", icon='X')
+                    op.install_info_json_string = json.dumps(install_info)
+
+                    row = column.row(align=True)
+                    row.operator("wm.path_open", 
+                            text="", 
+                            icon='FILE_FOLDER'
+                            ).filepath = install_info["path"]
+                    row = row.row(align=True)
+                    row.enabled = False
+                    row.label(text="    Path: " + path)
+
+
     def draw(self, context):
         is_installation_complete = installation_utils.is_installation_complete()
         column = self.layout.column(align=True)
@@ -541,16 +783,33 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
                     icon="URL"
                 ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Mixbox-Installation-and-Uninstallation"
 
-        box = column.box()
-        box.label(text="Like our FLIP Fluids addon?", icon='FUND')
-        box.label(text="Consider purchasing a license to help support our continued development :)")
-        box.separator()
-        box.operator(
-                "wm.url_open", 
-                text="FLIP Fluids on the Blender Market", 
-                icon="WORLD"
-            ).url = "https://blendermarket.com/products/flipfluids"
-        column.separator()
+        if not self.dismiss_rtx_driver_warning:
+            model_search_string = "RTX"
+            gpu_model_string = preferences_operators.get_gpu_string()
+            if model_search_string in gpu_model_string:
+                column = self.layout.column(align=True)
+                box = column.box()
+                column = box.column(align=True)
+                column.alert = True
+                column.label(text="Warning: Potential NVIDIA GeForce RTX Driver Incompatibility", icon='ERROR')
+                column = box.column(align=True)
+                column.label(text="GPU Model: " + gpu_model_string, icon="INFO")
+                column.label(text="    A recent NVIDIA RTX 'Game Ready Driver' update may cause frequent Blender crashes.")
+                column.label(text="    It is recommented to update to the NVIDIA RTX 'Studio Drivers' that are typically more stable")
+                column.label(text="    when using content creation software.")
+                column.label(text="    If you are already running the Studio Drivers, ignore this message.")
+                column.separator()
+                box.operator(
+                        "wm.url_open", 
+                        text="Click for more information about this issue", 
+                        icon="URL"
+                    ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/issues/599"
+                box.operator(
+                        "wm.url_open", 
+                        text="Download NVIDIA Drivers", 
+                        icon="URL"
+                    ).url = "https://www.nvidia.com/en-us/geforce/drivers/"
+                box.prop(self, "dismiss_rtx_driver_warning", text="Dismiss this warning", toggle=1, icon='X')
 
         if vcu.is_blender_28() and not vcu.is_blender_281():
             box = column.box()
@@ -629,8 +888,11 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
 
         helper_column.prop(self, "engine_debug_mode")
         helper_column.prop(self, "enable_addon_directory_renaming")
+        helper_column.prop(self, "enable_blend_file_logging")
+        helper_column.prop(self, "enable_support_tools")
 
         self.draw_mixbox_menu(context)
+        self.draw_preset_library_menu(context)
 
         """
         helper_column.separator()
@@ -732,20 +994,43 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         box.enabled = is_installation_complete
         column = box.column()
         column.label(text="Warnings and Errors:")
-        row = column.row(align=True)
+
+        split = vcu.ui_split(column, factor=0.666, align=True)
+        column_left = split.column(align=True)
+        column_right = split.column(align=True)
+
+        row = column_left.row(align=True)
         row.alignment = 'LEFT'
         row.prop(self, "dismiss_T88811_crash_warning")
+
+        row = column_left.row(align=True)
+        row.alignment = 'LEFT'
+        row.prop(self, "dismiss_persistent_data_render_warning")
+
+        row = column_left.row(align=True)
+        row.alignment = 'LEFT'
+        row.prop(self, "dismiss_rtx_driver_warning")
+
+        row = column_right.row(align=True)
+        row.alignment = 'EXPAND'
         row.operator(
                 "wm.url_open", 
                 text="Bug Report: T88811", 
             ).url = "https://developer.blender.org/T88811"
-        row = column.row(align=True)
-        row.alignment = 'LEFT'
-        row.prop(self, "dismiss_persistent_data_render_warning")
+
+        row = column_right.row(align=True)
+        row.alignment = 'EXPAND'
         row.operator(
                 "wm.url_open", 
                 text="Related Bug Reports", 
             ).url = "https://developer.blender.org/maniphest/query/D0zO31gPuhUc/#R"
+
+        row = column_right.row(align=True)
+        row.alignment = 'EXPAND'
+        row.operator(
+                "wm.url_open", 
+                text="Click for More Info", 
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/issues/599"
 
 
     def _get_gpu_device_enums(self, context=None):
@@ -764,6 +1049,10 @@ def load_post():
     installation_utils.update_mixbox_installation_status()
     preferences.is_mixbox_installation_error = False
     preferences.mixbox_installation_error_message = ""
+
+    installation_utils.update_preset_library_installation_status()
+    preferences.is_preset_library_installation_error = False
+    preferences.preset_library_installation_error_message = ""
 
 
 def register():

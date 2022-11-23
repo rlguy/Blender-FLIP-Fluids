@@ -39,8 +39,11 @@ from .. import (
 from ..operators import draw_grid_operators
 from ..operators import draw_particles_operators
 from ..operators import draw_force_field_operators
+from ..operators import preferences_operators
 from ..utils import version_compatibility_utils as vcu
 from ..utils import installation_utils
+
+_LOGGING_DISABLED_MESSAGE = "(Blend file logging disabled in host preferences)"
 
 
 class VersionHistoryItem(bpy.types.PropertyGroup):
@@ -318,6 +321,7 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
     force_field_debug_settings_expanded = BoolProperty(default=False); exec(conv("force_field_debug_settings_expanded"))
 
     version_history = CollectionProperty(type=VersionHistoryItem); exec(conv("version_history"))
+    system_info = StringProperty(default=""); exec(conv("system_info"))
 
 
     def register_preset_properties(self, registry, path):
@@ -353,6 +357,8 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
 
 
     def load_post(self):
+        self.print_system_info()
+
         self.is_draw_debug_grid_operator_running = False
         is_draw_gl_particles_operator_running = False
 
@@ -367,26 +373,67 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
             bpy.ops.flip_fluid_operators.draw_force_field('INVOKE_DEFAULT')
 
 
+    def print_system_and_blend_info(self):
+        try:
+            preferences = vcu.get_addon_preferences()
+            if preferences.enable_support_tools and preferences.enable_blend_file_logging:
+                print("*** Developer Tools: FLIP Fluids Version History ***")
+                self.print_version_history()
+                print()
+                print("*** Developer Tools: FLIP Fluids System Info ***")
+                self.print_system_info()
+        except Exception as e:
+            print(e)
+            pass
+
+
     def scene_update_post(self, scene):
         self._update_debug_grid_geometry(bpy.context)
 
 
     def save_pre(self):
-        bl_info = sys.modules[installation_utils.get_module_name()].bl_info
-        vdata = self.version_history.add()
-        vdata.blender_version = bpy.app.version_string
-        vdata.flip_fluids_version = str(bl_info.get('version', (-1, -1, -1)))
-        vdata.flip_fluids_label = bl_info.get('description', "-1")
-        vdata.operating_system = platform.system()
-        if len(self.version_history) > 250:
-            self.version_history.remove(0)
+        # We don't want a potential error/failure during a save
+        try:
+            preferences = vcu.get_addon_preferences()
+            if preferences.enable_blend_file_logging:
+                # Save Version History
+                bl_info = sys.modules[installation_utils.get_module_name()].bl_info
+                vdata = self.version_history.add()
+                vdata.blender_version = bpy.app.version_string
+                vdata.flip_fluids_version = str(bl_info.get('version', (-1, -1, -1)))
+                vdata.flip_fluids_label = bl_info.get('description', "-1")
+                vdata.operating_system = platform.system()
+                if len(self.version_history) > 250:
+                    self.version_history.remove(0)
+
+                # Save System and Blend File Info
+                self.system_info = preferences_operators.get_system_info_string()
+            else:
+                global _LOGGING_DISABLED_MESSAGE
+                self.version_history.clear()
+                self.system_info = "No System and Blend File Info " + _LOGGING_DISABLED_MESSAGE
+        except Exception as e:
+            print(e)
+            pass
 
 
     def print_version_history(self):
         if len(self.version_history) == 0:
-            print("No version history")
-        for idx,vdata in enumerate(self.version_history):
-            print(idx, vdata.get_info_string())
+            global _LOGGING_DISABLED_MESSAGE
+            msg = "No version history"
+            if _LOGGING_DISABLED_MESSAGE in self.system_info:
+                msg += " " + _LOGGING_DISABLED_MESSAGE
+            print(msg)
+        else:
+            for idx,vdata in enumerate(self.version_history):
+                print(idx, vdata.get_info_string())
+
+
+    def print_system_info(self):
+        if len(self.system_info) == 0:
+            print("No System and Blend File Info")
+        else:
+            print(self.system_info)
 
 
     def get_last_saved_blender_version(self):
@@ -411,6 +458,10 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
 
     def clear_version_history(self):
         self.version_history.clear()
+
+
+    def clear_system_info(self):
+        self.system_info = ""
 
 
     def get_particle_draw_aabb_object(self):

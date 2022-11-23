@@ -79,6 +79,10 @@ class FLIPFLUID_PT_OutflowTypePanel(bpy.types.Panel):
             column = box.column(align=True)
             column.enabled = outflow_props.skip_reexport
             column.prop(outflow_props, "force_reexport_on_next_bake", toggle=True)
+
+        column = self.layout.column(align=True)
+        column.separator()
+        column.operator("flip_fluid_operators.copy_setting_to_selected", icon='COPYDOWN')
     
 
 def register():

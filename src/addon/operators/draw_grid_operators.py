@@ -165,6 +165,10 @@ class FlipFluidDrawDebugGrid(bpy.types.Operator):
 
 
     def draw_callback_2d(self, context):
+        draw_text = False
+        if not draw_text:
+            return
+
         if render.is_rendering():
             # This method does not need to be run while rendering. Can cause
             # crashes on certain systems.

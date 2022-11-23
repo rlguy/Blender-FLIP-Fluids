@@ -16,12 +16,15 @@
 
 import bpy, os, pathlib
 
+from ..utils import installation_utils
+
 
 __EXTENSION_WHITELIST = [
     ".backup",
     ".bat",
     ".bbox",
     ".bin",
+    ".blend",
     ".bobj",
     ".cpp",
     ".data",
@@ -29,6 +32,7 @@ __EXTENSION_WHITELIST = [
     ".fpd",
     ".h",
     ".info",
+    ".json",
     ".md",
     ".png",
     ".preset",
@@ -36,9 +40,15 @@ __EXTENSION_WHITELIST = [
     ".sqlite3",
     ".state",
     ".txt",
+    ".txt~",
     ".wwi",
     ".wwf",
     ".wwp"
+    ]
+
+# These extensions are not allowed to be mass-deleted within a directory
+__DELETE_DIRECTORY_EXTENSION_BLACKLIST = [
+    ".blend"
     ]
 
 
@@ -54,6 +64,11 @@ def get_extension_whitelist():
     return __EXTENSION_WHITELIST
 
 
+def get_delete_directory_extension_blacklist():
+    global __DELETE_DIRECTORY_EXTENSION_BLACKLIST
+    return __DELETE_DIRECTORY_EXTENSION_BLACKLIST
+
+
 def get_directory_whitelist():
     whitelist = []
     dprops = bpy.context.scene.flip_fluid.get_domain_properties()
@@ -63,6 +78,10 @@ def get_directory_whitelist():
     this_filepath = os.path.realpath(__file__)
     addon_filepath = os.path.dirname(os.path.dirname(this_filepath))
     whitelist.append(addon_filepath)
+
+    preset_library_installations = installation_utils.get_preset_library_installations()
+    for install in preset_library_installations:
+        whitelist.append(install["path"])
 
     return whitelist
 
@@ -110,6 +129,14 @@ def check_directory_valid(base_directory):
 
 
 def delete_files_in_directory(base_directory, extensions, remove_directory=False):
+    extension_blacklist = get_delete_directory_extension_blacklist()
+    for ext in extension_blacklist:
+        if ext in extensions:
+            error_msg = "Extension in directory deletion blacklist: "
+            error_msg += "<" + ext + "> "
+            error_msg += "***Please contact the developers with this error message***"
+            raise FilesystemProtectionError(error_msg)
+
     check_extensions_valid(extensions)
     check_directory_valid(base_directory)
 
@@ -142,7 +169,7 @@ def delete_files_in_directory(base_directory, extensions, remove_directory=False
 
     if remove_error_count > 0:
         errmsg = "Error encountered attempting to remove " + str(remove_error_count) + " file(s). Reason: <" + first_error + ">. "
-        errmsg += "Try closing all applications accessing the cache directory, restarting Blender/System, or deleting cache directory manually."
+        errmsg += "Try closing all applications accessing the directory, restarting Blender/System, or deleting directory manually."
         bpy.ops.flip_fluid_operators.display_error(
                 'INVOKE_DEFAULT',
                 error_message="Error Removing Files",
