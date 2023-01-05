@@ -22,6 +22,22 @@ from .utils import version_compatibility_utils as vcu
 IS_RENDERING = False
 IS_FRAME_REQUIRING_RELOAD = False
 RENDER_PRE_FRAME_NUMBER = 0
+IS_KEYFRAMED_HIDE_RENDER_ISSUE_RELEVANT = False
+
+
+def __update_is_keyframed_hide_render_issue_status(scene):
+    global IS_KEYFRAMED_HIDE_RENDER_ISSUE_RELEVANT
+    IS_KEYFRAMED_HIDE_RENDER_ISSUE_RELEVANT = False
+    try:
+        # See api_utils method for more information
+        IS_KEYFRAMED_HIDE_RENDER_ISSUE_RELEVANT = api_utils.is_keyframed_hide_render_issue_relevant(scene)
+    except Exception as e:
+        print("FLIP Fluids Error: ", str(e))
+
+
+def is_keyframed_hide_render_issue_relevant():
+    global IS_KEYFRAMED_HIDE_RENDER_ISSUE_RELEVANT
+    return IS_KEYFRAMED_HIDE_RENDER_ISSUE_RELEVANT
 
 
 def __get_domain_properties():
@@ -726,6 +742,8 @@ def render_pre(scene):
         if is_persistent_data_enabled:
             warning_string = api_utils.get_persistent_data_warning_string()
             print(warning_string)
+
+    __update_is_keyframed_hide_render_issue_status(scene)
 
 
 def frame_change_post(scene, depsgraph=None):

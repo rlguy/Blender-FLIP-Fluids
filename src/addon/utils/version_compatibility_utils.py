@@ -51,6 +51,10 @@ def is_blender_32():
 
 def is_blender_33():
     return bpy.app.version >= (3, 3, 0)
+
+
+def is_blender_34():
+    return bpy.app.version >= (3, 4, 0)
     
 
 def register_dict_property(dict_object, name_str, prop):
@@ -222,12 +226,13 @@ def remove_from_flip_fluids_collection(obj, context):
             flip_collection.objects.unlink(obj)
 
 
-def delete_object(obj):
+def delete_object(obj, remove_mesh_data=True):
     if obj.type == 'MESH':
         mesh_data = obj.data
         bpy.data.objects.remove(obj, do_unlink=True)
-        mesh_data.user_clear()
-        bpy.data.meshes.remove(mesh_data)
+        if remove_mesh_data:
+            mesh_data.user_clear()
+            bpy.data.meshes.remove(mesh_data)
     else:
         bpy.data.objects.remove(obj, do_unlink=True)
 
@@ -387,6 +392,11 @@ def swap_object_mesh_data_geometry(bl_object, vertices=[], triangles=[],
                                    smooth_mesh=False,
                                    octane_mesh_type='Global'):
     if is_blender_281():
+        # Vertex Groups (Blender >= 3.4)
+        if is_blender_34():
+            vg_layer_names = [vg.name for vg in bl_object.vertex_groups]
+            active_vertex_layer_index = bl_object.vertex_groups.active_index
+
         # UV Maps
         uv_layer_names = [uv.name for uv in bl_object.data.uv_layers]
         is_uv_layer_active = [uv.active for uv in bl_object.data.uv_layers]
@@ -409,6 +419,13 @@ def swap_object_mesh_data_geometry(bl_object, vertices=[], triangles=[],
         bl_object.data.from_pydata(vertices, [], triangles)
         _set_mesh_smoothness(bl_object.data, smooth_mesh)
         _set_octane_mesh_type(bl_object, octane_mesh_type)
+
+        # Vertex Groups (Blender >= 3.4)
+        if is_blender_34():
+            for i, name in enumerate(vg_layer_names):
+                vg_layer = bl_object.vertex_groups.new(name=name)
+                if active_vertex_layer_index >= 0:
+                    bl_object.vertex_groups.active_index = active_vertex_layer_index
 
         # UV Maps
         for i, name in enumerate(uv_layer_names):

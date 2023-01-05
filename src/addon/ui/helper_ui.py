@@ -74,35 +74,8 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
 
         if hprops.bake_simulation_expanded:
             if context.scene.flip_fluid.is_domain_object_set():
-                domain_simulation_ui.draw_bake_operator_UI_element(context, box)
-
                 is_saved = bool(bpy.data.filepath)
-                if is_saved:
-                    dprops = context.scene.flip_fluid.get_domain_properties()
-                    column = box.column(align=True)
-                    column.enabled = not dprops.bake.is_simulation_running
-                    column.prop(dprops.simulation, "resolution")
-                    column.separator()
-
-                    column.label(text="Cache Directory:")
-                    subcolumn = column.column(align=True)
-                    row = subcolumn.row(align=True)
-                    row.prop(dprops.cache, "cache_directory")
-                    row.operator("flip_fluid_operators.increment_decrease_cache_directory", text="", icon="REMOVE").increment_mode = "DECREASE"
-                    row.operator("flip_fluid_operators.increment_decrease_cache_directory", text="", icon="ADD").increment_mode = "INCREASE"
-                    row = column.row(align=True)
-                    row.operator("flip_fluid_operators.relative_cache_directory")
-                    row.operator("flip_fluid_operators.absolute_cache_directory")
-                    row.operator("flip_fluid_operators.match_filename_cache_directory")
-                    column.separator()
-
-                    column = box.column(align=True)
-                    column.label(text="Render Output:")
-                    column.prop(context.scene.render, "filepath", text="")
-                    row = column.row(align=True)
-                    row.operator("flip_fluid_operators.relative_to_blend_render_output")
-                    row.operator("flip_fluid_operators.prefix_to_filename_render_output")
-                else:
+                if not is_saved:
                     row = box.row(align=True)
                     row.alignment = 'LEFT'
                     row.prop(hprops, "unsaved_blend_file_tooltip", icon="ERROR", emboss=False, text="")
@@ -114,6 +87,33 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                     row.alignment = 'RIGHT'
                     row.alert = False
                     row.operator("flip_fluid_operators.helper_save_blend_file", icon='FILE_TICK', text="Save")
+                    
+                domain_simulation_ui.draw_bake_operator_UI_element(context, box)
+
+                dprops = context.scene.flip_fluid.get_domain_properties()
+                column = box.column(align=True)
+                column.enabled = not dprops.bake.is_simulation_running
+                column.prop(dprops.simulation, "resolution")
+                column.separator()
+
+                column.label(text="Cache Directory:")
+                subcolumn = column.column(align=True)
+                row = subcolumn.row(align=True)
+                row.prop(dprops.cache, "cache_directory")
+                row.operator("flip_fluid_operators.increment_decrease_cache_directory", text="", icon="REMOVE").increment_mode = "DECREASE"
+                row.operator("flip_fluid_operators.increment_decrease_cache_directory", text="", icon="ADD").increment_mode = "INCREASE"
+                row = column.row(align=True)
+                row.operator("flip_fluid_operators.relative_cache_directory")
+                row.operator("flip_fluid_operators.absolute_cache_directory")
+                row.operator("flip_fluid_operators.match_filename_cache_directory")
+                column.separator()
+
+                column = box.column(align=True)
+                column.label(text="Render Output:")
+                column.prop(context.scene.render, "filepath", text="")
+                row = column.row(align=True)
+                row.operator("flip_fluid_operators.relative_to_blend_render_output")
+                row.operator("flip_fluid_operators.prefix_to_filename_render_output")
 
             else:
                 box.label(text="Please create a domain object")

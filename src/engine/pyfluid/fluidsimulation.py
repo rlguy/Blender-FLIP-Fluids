@@ -284,6 +284,32 @@ class FluidSimulation(object):
         pb.execute_lib_func(libfunc, [self()])
 
     @property
+    def pressure_solver_max_iterations(self):
+        libfunc = lib.FluidSimulation_get_pressure_solver_max_iterations
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @pressure_solver_max_iterations.setter
+    @decorators.check_ge(1)
+    def pressure_solver_max_iterations(self, n):
+        libfunc = lib.FluidSimulation_set_pressure_solver_max_iterations
+        pb.init_lib_func(libfunc, [c_void_p, c_int, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), int(n)])
+
+    @property
+    def viscosity_solver_max_iterations(self):
+        libfunc = lib.FluidSimulation_get_viscosity_solver_max_iterations
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @viscosity_solver_max_iterations.setter
+    @decorators.check_ge(1)
+    def viscosity_solver_max_iterations(self, n):
+        libfunc = lib.FluidSimulation_set_viscosity_solver_max_iterations
+        pb.init_lib_func(libfunc, [c_void_p, c_int, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), int(n)])
+
+    @property
     def surface_subdivision_level(self):
         libfunc = lib.FluidSimulation_get_surface_subdivision_level
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)

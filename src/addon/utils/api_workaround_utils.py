@@ -291,6 +291,7 @@ def draw_persistent_data_warning(ui_box, preferences):
 
     column.prop(preferences, "dismiss_persistent_data_render_warning", text="Do not show this warning again")
 
+
 def get_persistent_data_warning_string():
     warning = ""
     warning += "************************************************\n"
@@ -301,3 +302,33 @@ def get_persistent_data_warning_string():
     warning += "Command Line Tools Documentation:\n    https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Helper-Menu-Settings#command-line-tools\n"
     warning += "************************************************\n"
     return warning
+
+
+# Blender will crash during render if:
+#     (Cycles render is used and motion blur is enabled) or other renderers are used
+#     and if there is an object with a keyframed hide_render property
+#
+# Issue thread: https://github.com/rlguy/Blender-FLIP-Fluids/issues/566
+#
+# Workaround: detect these cases and remove depsgraph.update() calls during render calls
+#     which will prevent the crash. Note: depsgraph.update() in our use case is not
+#     supported in the Python API but has a side effect of making the render more stable.
+#     Removing these calls will make the render more likely to crash, so rendering from the
+#     command line is recommended in these cases.
+def is_keyframed_hide_render_issue_relevant(scene):
+    is_relevant = False
+    using_cycles = scene.render.engine == 'CYCLES'
+    if (using_cycles and scene.render.use_motion_blur) or not using_cycles:
+        for obj in bpy.data.objects:
+            if not obj.animation_data:
+                continue
+            anim_data = obj.animation_data
+            if not anim_data.action or not anim_data.action.fcurves:
+                continue
+
+            for fcurve in anim_data.action.fcurves:
+                if fcurve.data_path == "hide_render":
+                    is_relevant = True
+                    break
+
+    return is_relevant

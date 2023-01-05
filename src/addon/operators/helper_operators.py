@@ -50,6 +50,44 @@ class FlipFluidHelperSelectDomain(bpy.types.Operator):
         domain = context.scene.flip_fluid.get_domain_object()
         if domain is None:
             return {'CANCELLED'}
+
+        num_domains = 0
+        found_domains = ""
+        for scene in bpy.data.scenes:
+            for obj in scene.objects:
+                if obj.flip_fluid.is_domain():
+                    num_domains += 1
+                    found_domains += obj.name + " <scene: " + scene.name + ">, "
+        found_domains.removesuffix(", ")
+        if num_domains > 1:
+            self.report({'ERROR'}, "Error: multiple domain objects found. Only one domain per Blend file is supported. Please remove other domains. Found domain objects: " + found_domains)
+            return {'CANCELLED'}
+
+        domain_found = False
+        for obj in context.scene.objects:
+            if obj.name == domain.name:
+                domain_found = True
+                break
+
+        if not domain_found:
+            scene_name = "Unknown Scene"
+            for scene in bpy.data.scenes:
+                for obj in scene.objects:
+                    if obj.name == domain.name:
+                        scene_name = scene.name
+                        break
+            self.report({'ERROR'}, "Unable to select domain object. Domain object is contained in another scene. Domain Scene: <" + scene_name + ">, Current Scene: <" + context.scene.name + ">")
+            return {'CANCELLED'}
+
+
+        """
+        for scene in bpy.data.scenes:
+            for obj in scene.objects:
+                if obj.flip_fluid.is_domain():
+                    domain_count += 1
+                    found_domains.append(obj.name + " <scene: " + scene.name + ">")
+        """
+
         _select_make_active(context, domain)
         return {'FINISHED'}
 
@@ -626,7 +664,7 @@ class FlipFluidHelperDeleteDomain(bpy.types.Operator):
         domain_object = bpy.data.objects.get(domain_name)
         mesh_cache = domain_object.flip_fluid.domain.mesh_cache
         mesh_cache.delete_cache_objects()
-        vcu.delete_object(domain_object)
+        vcu.delete_object(domain_object, remove_mesh_data=False)
 
 
     def execute(self, context):
@@ -1231,6 +1269,15 @@ def is_render_output_directory_createable():
     return True
 
 
+def restore_blender_original_cwd():
+    # Restore Blender's original CWD in case another addon has changed this path
+    # The command line launch features rely on the CWD being the default location
+    # of the folder containing the Blender executable.
+    # If the location is modified, the command line window will open to 
+    # the modified location and launching Blender may fail.
+    os.chdir(os.path.dirname(bpy.app.binary_path))
+
+
 class FlipFluidHelperCommandLineBake(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.helper_command_line_bake"
     bl_label = "Launch Bake"
@@ -1274,6 +1321,7 @@ class FlipFluidHelperCommandLineBake(bpy.types.Operator):
 
         system = platform.system()
         if system == "Windows":
+            restore_blender_original_cwd()
             if vcu.is_blender_28():
                 blender_exe_path = bpy.app.binary_path
                 if " " in blender_exe_path:
@@ -1414,6 +1462,7 @@ class FlipFluidHelperCommandLineRender(bpy.types.Operator):
 
         system = platform.system()
         if system == "Windows":
+            restore_blender_original_cwd()
             if vcu.is_blender_28():
                 blender_exe_path = bpy.app.binary_path
                 if " " in blender_exe_path:
@@ -1506,6 +1555,10 @@ class FlipFluidHelperCommandLineRenderFrame(bpy.types.Operator):
             self.report({'ERROR'}, errmsg)
             return {'CANCELLED'}
 
+        if not is_render_output_format_image():
+            self.report({'ERROR'}, "Render output format must be an image format. Change render output to an image, save, and try again.")
+            return {'CANCELLED'} 
+
         script_path = os.path.dirname(os.path.realpath(__file__))
         script_path = os.path.dirname(script_path)
         script_path = os.path.join(script_path, "resources", "command_line_scripts", "render_single_frame.py")
@@ -1523,6 +1576,7 @@ class FlipFluidHelperCommandLineRenderFrame(bpy.types.Operator):
 
         system = platform.system()
         if system == "Windows":
+            restore_blender_original_cwd()
             if vcu.is_blender_28():
                 blender_exe_path = bpy.app.binary_path
                 if " " in blender_exe_path:
@@ -1806,17 +1860,40 @@ def get_render_output_info():
         "OPEN_EXR_MULTILAYER" : ".exr",
         "OPEN_EXR"            : ".exr",
         "HDR"                 : ".hdr",
-        "TIFF"                : ".tif"
+        "TIFF"                : ".tif",
+        "WEBP"                : ".webp",
+        "AVI_JPEG"            : ".avi",
+        "AVI_RAW"             : ".avi",
+        "FFMPEG"              : ".mp4"
     }
 
     file_format = bpy.context.scene.render.image_settings.file_format
-    if file_format not in file_format_to_suffix:
-        self.report({'ERROR'}, "Render output file format must be an image format.")
-        return None, None, None
-
     file_suffix = file_format_to_suffix[file_format]
 
     return directory_path, file_prefix, file_suffix
+
+
+def is_render_output_format_image():
+    image_file_format_to_suffix = {
+        "BMP"                 : ".bmp",
+        "IRIS"                : ".rgb",
+        "PNG"                 : ".png",
+        "JPEG"                : ".jpg",
+        "JPEG2000"            : ".jp2",
+        "TARGA"               : ".tga",
+        "TARGA_RAW"           : ".tga",
+        "CINEON"              : ".cin",
+        "DPX"                 : ".dpx",
+        "OPEN_EXR_MULTILAYER" : ".exr",
+        "OPEN_EXR"            : ".exr",
+        "HDR"                 : ".hdr",
+        "TIFF"                : ".tif",
+        "WEBP"                : ".webp",
+    }
+
+    file_format = bpy.context.scene.render.image_settings.file_format
+    return file_format in image_file_format_to_suffix
+
 
 
 class FlipFluidHelperCommandLineRenderToScriptfile(bpy.types.Operator):
@@ -1877,6 +1954,10 @@ class FlipFluidHelperCommandLineRenderToScriptfile(bpy.types.Operator):
             errmsg = "Render output directory is not valid or writeable: <" + get_render_output_directory() + ">"
             self.report({'ERROR'}, errmsg)
             return {'CANCELLED'}
+
+        if not is_render_output_format_image():
+            self.report({'ERROR'}, "Render output format must be an image format. Change render output to an image, save, and try again.")
+            return {'CANCELLED'} 
 
         directory_path, file_prefix, file_suffix = get_render_output_info()
         if not directory_path:
@@ -2337,7 +2418,9 @@ class FlipFluidAutoLoadBakedFramesCMD(bpy.types.Operator):
 class FlipFluidCopySettingsToSelected(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.copy_setting_to_selected"
     bl_label = "Copy Settings to Selected"
-    bl_description = ("todo")
+    bl_description = ("Copy the settings of the active FLIP object to all other selected"
+                      " FLIP objects of the same type. Note: keyframed settings are not"
+                      " supported for this operator")
 
 
     @classmethod
@@ -2449,57 +2532,71 @@ class FlipFluidCopySettingsToSelected(bpy.types.Operator):
 
 
 def register():
-    bpy.utils.register_class(FlipFluidHelperSelectDomain)
-    bpy.utils.register_class(FlipFluidHelperSelectSurface)
-    bpy.utils.register_class(FlipFluidHelperSelectFoam)
-    bpy.utils.register_class(FlipFluidHelperSelectBubble)
-    bpy.utils.register_class(FlipFluidHelperSelectSpray)
-    bpy.utils.register_class(FlipFluidHelperSelectDust)
-    bpy.utils.register_class(FlipFluidHelperSelectObjects)
-    bpy.utils.register_class(FlipFluidHelperCreateDomain)
-    bpy.utils.register_class(FlipFluidHelperAddObjects)
-    bpy.utils.register_class(FlipFluidHelperRemoveObjects)
-    bpy.utils.register_class(FlipFluidHelperDeleteDomain)
-    bpy.utils.register_class(FlipFluidHelperOrganizeOutliner)
-    bpy.utils.register_class(FlipFluidHelperSeparateFLIPMeshes)
-    bpy.utils.register_class(FlipFluidHelperUndoOrganizeOutliner)
-    bpy.utils.register_class(FlipFluidHelperUndoSeparateFLIPMeshes)
-    bpy.utils.register_class(FlipFluidHelperSetObjectViewportDisplay)
-    bpy.utils.register_class(FlipFluidHelperSetObjectRenderDisplay)
-    bpy.utils.register_class(FlipFluidHelperLoadLastFrame)
-    bpy.utils.register_class(FlipFluidHelperCommandLineBake)
-    bpy.utils.register_class(FlipFluidHelperCommandLineBakeToClipboard)
-    bpy.utils.register_class(FlipFluidHelperCommandLineRender)
-    bpy.utils.register_class(FlipFluidHelperCommandLineRenderToClipboard)
-    bpy.utils.register_class(FlipFluidHelperCommandLineRenderFrame)
-    bpy.utils.register_class(FlipFluidHelperCmdRenderFrameToClipboard)
-    bpy.utils.register_class(FlipFluidHelperCommandLineRenderToScriptfile)
-    bpy.utils.register_class(FlipFluidHelperRunScriptfile)
-    bpy.utils.register_class(FlipFluidHelperOpenOutputFolder)
-    bpy.utils.register_class(FlipFluidHelperInitializeMotionBlur)
-    bpy.utils.register_class(FlipFluidHelperStableRendering279)
-    bpy.utils.register_class(FlipFluidHelperStableRendering28)
-    bpy.utils.register_class(FlipFluidHelperSetLinearOverrideKeyframes)
-    bpy.utils.register_class(FlipFluidHelperSaveBlendFile)
-    bpy.utils.register_class(FlipFluidHelperBatchSkipReexport)
-    bpy.utils.register_class(FlipFluidHelperBatchForceReexport)
-    bpy.utils.register_class(FlipFluidEnableWhitewaterSimulation)
-    bpy.utils.register_class(FlipFluidEnableWhitewaterMenu)
-    bpy.utils.register_class(FlipFluidDisplayEnableWhitewaterTooltip)
-    bpy.utils.register_class(FlipFluidEnableColorAttribute)
-    bpy.utils.register_class(FlipFluidEnableColorMixAttribute)
-    bpy.utils.register_class(FlipFluidEnableColorAttributeMenu)
-    bpy.utils.register_class(FlipFluidEnableColorAttributeTooltip)
-    bpy.utils.register_class(FlipFluidEnableViscosityAttribute)
-    bpy.utils.register_class(FlipFluidEnableViscosityAttributeMenu)
-    bpy.utils.register_class(FlipFluidEnableViscosityAttributeTooltip)
-    bpy.utils.register_class(FlipFluidEnableSourceIDAttribute)
-    bpy.utils.register_class(FlipFluidEnableSourceIDAttributeMenu)
-    bpy.utils.register_class(FlipFluidEnableSourceIDAttributeTooltip)
-    bpy.utils.register_class(FlipFluidMakeRelativeToBlendRenderOutput)
-    bpy.utils.register_class(FlipFluidMakePrefixFilenameRenderOutput)
-    bpy.utils.register_class(FlipFluidAutoLoadBakedFramesCMD)
-    bpy.utils.register_class(FlipFluidCopySettingsToSelected)
+    classes = [
+        FlipFluidHelperSelectDomain,
+        FlipFluidHelperSelectSurface,
+        FlipFluidHelperSelectFoam,
+        FlipFluidHelperSelectBubble,
+        FlipFluidHelperSelectSpray,
+        FlipFluidHelperSelectDust,
+        FlipFluidHelperSelectObjects,
+        FlipFluidHelperCreateDomain,
+        FlipFluidHelperAddObjects,
+        FlipFluidHelperRemoveObjects,
+        FlipFluidHelperDeleteDomain,
+        FlipFluidHelperOrganizeOutliner,
+        FlipFluidHelperSeparateFLIPMeshes,
+        FlipFluidHelperUndoOrganizeOutliner,
+        FlipFluidHelperUndoSeparateFLIPMeshes,
+        FlipFluidHelperSetObjectViewportDisplay,
+        FlipFluidHelperSetObjectRenderDisplay,
+        FlipFluidHelperLoadLastFrame,
+        FlipFluidHelperCommandLineBake,
+        FlipFluidHelperCommandLineBakeToClipboard,
+        FlipFluidHelperCommandLineRender,
+        FlipFluidHelperCommandLineRenderToClipboard,
+        FlipFluidHelperCommandLineRenderFrame,
+        FlipFluidHelperCmdRenderFrameToClipboard,
+        FlipFluidHelperCommandLineRenderToScriptfile,
+        FlipFluidHelperRunScriptfile,
+        FlipFluidHelperOpenOutputFolder,
+        FlipFluidHelperInitializeMotionBlur,
+        FlipFluidHelperStableRendering279,
+        FlipFluidHelperStableRendering28,
+        FlipFluidHelperSetLinearOverrideKeyframes,
+        FlipFluidHelperSaveBlendFile,
+        FlipFluidHelperBatchSkipReexport,
+        FlipFluidHelperBatchForceReexport,
+        FlipFluidEnableWhitewaterSimulation,
+        FlipFluidEnableWhitewaterMenu,
+        FlipFluidDisplayEnableWhitewaterTooltip,
+        FlipFluidEnableColorAttribute,
+        FlipFluidEnableColorMixAttribute,
+        FlipFluidEnableColorAttributeMenu,
+        FlipFluidEnableColorAttributeTooltip,
+        FlipFluidEnableViscosityAttribute,
+        FlipFluidEnableViscosityAttributeMenu,
+        FlipFluidEnableViscosityAttributeTooltip,
+        FlipFluidEnableSourceIDAttribute,
+        FlipFluidEnableSourceIDAttributeMenu,
+        FlipFluidEnableSourceIDAttributeTooltip,
+        FlipFluidMakeRelativeToBlendRenderOutput,
+        FlipFluidMakePrefixFilenameRenderOutput,
+        FlipFluidAutoLoadBakedFramesCMD,
+        FlipFluidCopySettingsToSelected,
+        ]
+
+    # Workaround for a bug in FLIP Fluids 1.6.0
+    # These classes were not unregistered correctly.
+    # This prevents errors when updating the addon to
+    # a later version.
+    for c in classes:
+        try:
+            bpy.utils.register_class(c)
+        except:
+            print(c)
+            bpy.utils.unregister_class(c)
+            bpy.utils.register_class(c)
 
 
 def unregister():

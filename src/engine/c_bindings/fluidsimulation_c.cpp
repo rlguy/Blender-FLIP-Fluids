@@ -277,6 +277,36 @@ extern "C" {
         );
     }
 
+    EXPORTDLL int FluidSimulation_get_pressure_solver_max_iterations(FluidSimulation* obj, 
+                                                                     int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getPressureSolverMaxIterations, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_set_pressure_solver_max_iterations(FluidSimulation* obj, 
+                                                                      int n,
+                                                                      int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setPressureSolverMaxIterations, n, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_get_viscosity_solver_max_iterations(FluidSimulation* obj, 
+                                                                      int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getViscositySolverMaxIterations, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_set_viscosity_solver_max_iterations(FluidSimulation* obj, 
+                                                                       int n,
+                                                                       int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setViscositySolverMaxIterations, n, err
+        );
+    }
+
     EXPORTDLL int FluidSimulation_get_surface_subdivision_level(FluidSimulation* obj, 
                                                                 int *err) {
         return CBindings::safe_execute_method_ret_0param(

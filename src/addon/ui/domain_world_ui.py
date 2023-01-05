@@ -249,7 +249,7 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
                 column.label(text="")
             else:
                 total_viscosity = wprops.viscosity * (10**(-wprops.viscosity_exponent))
-                total_viscosity_str = "Total viscosity   =   " + self.format_number_precision(total_viscosity, 6)
+                total_viscosity_str = "Total viscosity   =   " + self.format_number_precision(total_viscosity)
                 column.label(text=total_viscosity_str)
 
         if show_documentation:
@@ -291,7 +291,7 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
             row.label(text="Estimated substeps =")
 
             total_surface_tension = wprops.get_surface_tension_value()
-            surface_tension_str = self.format_number_precision(total_surface_tension, 6)
+            surface_tension_str = self.format_number_precision(total_surface_tension)
 
             column_right = split.column(align=True)
             column_right.enabled = wprops.enable_surface_tension
@@ -402,21 +402,9 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
                         column_right.prop(pgroup, "friction")
 
 
-    def format_number_precision(self, value, precision):
-        decimal_part, int_part = math.modf(value)
-        int_str = str(int(int_part))
-        decimal_str = ""
-        found_nonzero = False
-        nonzero_count = 0
-        for ch in str(decimal_part)[2:]:
-            if ch != '0':
-                found_nonzero = True
-            if found_nonzero:
-                nonzero_count += 1
-            if nonzero_count > precision:
-                break
-            decimal_str += ch
-        return int_str + "." + decimal_str
+    def format_number_precision(self, value):
+        value_str = '{:.9f}'.format(value)
+        return value_str
     
 def register():
     bpy.utils.register_class(FLIPFLUID_PT_DomainTypeFluidWorldPanel)

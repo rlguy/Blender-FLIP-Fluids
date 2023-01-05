@@ -90,4 +90,5 @@ def unregister():
     draw_grid_operators.unregister()
     draw_particles_operators.unregister()
     draw_force_field_operators.unregister()
+    helper_operators.unregister()
     support_operators.unregister()

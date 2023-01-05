@@ -1004,8 +1004,8 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
         fluidsim.surface_tension_condition_number = surface_tension_number
 
     is_sheet_seeding_enabled = __get_parameter_data(world.enable_sheet_seeding, frameno)
+    fluidsim.enable_sheet_seeding = is_sheet_seeding_enabled
     if is_sheet_seeding_enabled:
-        fluidsim.enable_sheet_seeding = is_sheet_seeding_enabled
         fluidsim.sheet_fill_rate = __get_parameter_data(world.sheet_fill_rate, frameno, value_min=0.0, value_max=1.0)
         threshold = __get_parameter_data(world.sheet_fill_threshold, frameno, value_min=0.0, value_max=1.0)
         fluidsim.sheet_fill_threshold = threshold - 1
@@ -1110,6 +1110,11 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
         __get_parameter_data(advanced.particle_jitter_factor, frameno)
     fluidsim.jitter_surface_marker_particles = \
         __get_parameter_data(advanced.jitter_surface_particles, frameno)
+
+    fluidsim.pressure_solver_max_iterations = \
+        __get_parameter_data(advanced.pressure_solver_max_iterations, frameno)
+    fluidsim.viscosity_solver_max_iterations = \
+        __get_parameter_data(advanced.viscosity_solver_max_iterations, frameno)
 
     velocity_transfer_method = __get_parameter_data(advanced.velocity_transfer_method, frameno)
     if velocity_transfer_method == 'VELOCITY_TRANSFER_METHOD_FLIP':
@@ -1862,10 +1867,10 @@ def __update_animatable_domain_properties(fluidsim, data, frameno):
         __set_property(fluidsim, 'surface_tension', 0.0)
 
     is_sheet_seeding_enabled = __get_parameter_data(world.enable_sheet_seeding, frameno)
+    __set_property(fluidsim, 'enable_sheet_seeding', is_sheet_seeding_enabled)
     if is_sheet_seeding_enabled:
         sheet_fill_rate = __get_parameter_data(world.sheet_fill_rate, frameno)
         threshold = __get_parameter_data(world.sheet_fill_threshold, frameno)
-        __set_property(fluidsim, 'enable_sheet_seeding', is_sheet_seeding_enabled)
         __set_property(fluidsim, 'sheet_fill_rate', sheet_fill_rate, value_min=0, value_max=1.0)
         __set_property(fluidsim, 'sheet_fill_threshold', threshold - 1, value_min=-1.0, value_max=0.0)
 
@@ -1947,6 +1952,12 @@ def __update_animatable_domain_properties(fluidsim, data, frameno):
 
     jitter_surface = __get_parameter_data(advanced.jitter_surface_particles, frameno)
     __set_property(fluidsim, 'jitter_surface_marker_particles', jitter_surface)
+
+    pressure_solver_iterations = __get_parameter_data(advanced.pressure_solver_max_iterations, frameno)
+    __set_property(fluidsim, 'pressure_solver_max_iterations', pressure_solver_iterations)
+
+    viscosity_solver_iterations = __get_parameter_data(advanced.viscosity_solver_max_iterations, frameno)
+    __set_property(fluidsim, 'viscosity_solver_max_iterations', viscosity_solver_iterations)
 
     PICFLIP_ratio = __get_parameter_data(advanced.PICFLIP_ratio, frameno)
     __set_property(fluidsim, 'PICFLIP_ratio', PICFLIP_ratio)

@@ -577,7 +577,8 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
                 column.label(text=str(num_baked_frames) + "  /  " + str(num_frames))
 
             column.label(text=str(simprops.frame_start))
-            column.label(text=str(simprops.frame_end))
+            #column.label(text=str(simprops.frame_end))
+            column.label(text=str(simprops.frame_start + num_baked_frames - 1))
 
             if dprops.bake.is_simulation_running:
                 column = subbox.column()
