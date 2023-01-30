@@ -101,7 +101,7 @@ Once successfully built, the FLIP Fluids addon will be located in the ```build/b
 
 - [Blender Market Page](https://www.blendermarket.com/products/flipfluids)
 - [Gumroad Page](https://flipfluids.gumroad.com/l/flipfluids)
-- [FlippedNormals Page](https://flippednormals.com/downloads/the-flip-fluids-addon-for-blender/ref/FLIPFluids/)
+- [FlippedNormals Page](https://flippednormals.com/product/the-flip-fluids-addon-for-blender-16173?dst=4DxRZXXT)
 - [Documentation and Wiki](https://github.com/rlguy/Blender-FLIP-Fluids/wiki)
 - [Bug/Issue Tracker](https://github.com/rlguy/Blender-FLIP-Fluids/issues)
 - [FLIP Fluids Homepage](http://flipfluids.com)
