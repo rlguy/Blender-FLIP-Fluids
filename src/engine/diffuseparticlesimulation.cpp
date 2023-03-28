@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2022 Ryan L. Guy
+Copyright (C) 2023 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -549,6 +549,46 @@ std::vector<bool> DiffuseParticleSimulation::getDustActiveBoundarySides() {
 void DiffuseParticleSimulation::setDustActiveBoundarySides(std::vector<bool> active) {
     FLUIDSIM_ASSERT(active.size() == 6);
     _dustActiveSides = active;
+}
+
+std::vector<bool> DiffuseParticleSimulation::getFoamBoundaryCollisions() {
+    return _foamBoundaryCollisions;
+}
+
+void DiffuseParticleSimulation::setFoamBoundaryCollisions(std::vector<bool> active) {
+    FLUIDSIM_ASSERT(active.size() == 6);
+    _foamBoundaryCollisions = active;
+}
+
+std::vector<bool> DiffuseParticleSimulation::getBubbleBoundaryCollisions() {
+    return _bubbleBoundaryCollisions;
+}
+
+void DiffuseParticleSimulation::setBubbleBoundaryCollisions(std::vector<bool> active) {
+    FLUIDSIM_ASSERT(active.size() == 6);
+    _bubbleBoundaryCollisions = active;
+}
+
+std::vector<bool> DiffuseParticleSimulation::getSprayBoundaryCollisions() {
+    return _sprayBoundaryCollisions;
+}
+
+void DiffuseParticleSimulation::setSprayBoundaryCollisions(std::vector<bool> active) {
+    FLUIDSIM_ASSERT(active.size() == 6);
+    _sprayBoundaryCollisions = active;
+}
+
+std::vector<bool> DiffuseParticleSimulation::getDustBoundaryCollisions() {
+    return _dustBoundaryCollisions;
+}
+
+void DiffuseParticleSimulation::setDustBoundaryCollisions(std::vector<bool> active) {
+    FLUIDSIM_ASSERT(active.size() == 6);
+    _dustBoundaryCollisions = active;
+}
+
+void DiffuseParticleSimulation::setDiffuseOpenBoundaryWidth(int width) {
+    _openBoundaryWidth = width;
 }
 
 void DiffuseParticleSimulation::setDomainOffset(vmath::vec3 offset) {
@@ -2557,7 +2597,54 @@ int DiffuseParticleSimulation::_getNumDustParticles() {
 void DiffuseParticleSimulation::_removeDiffuseParticles() {
 
     AABB boundary = _getBoundaryAABB();
+    AABB collisionBounds = boundary;
     boundary.expand(-_solidBufferWidth * _dx);
+
+    vmath::vec3 minp = collisionBounds.getMinPoint();
+    vmath::vec3 maxp = collisionBounds.getMaxPoint();
+    float buffer = _openBoundaryWidth * _dx;
+    float infNeg = -std::numeric_limits<float>::infinity();
+    float infPos = std::numeric_limits<float>::infinity();
+
+    float boundaryXNegFoam = _foamBoundaryCollisions[0] ? infNeg : minp.x + buffer;
+    float boundaryXPosFoam = _foamBoundaryCollisions[1] ? infPos : maxp.x - buffer;
+    float boundaryYNegFoam = _foamBoundaryCollisions[2] ? infNeg : minp.y + buffer;
+    float boundaryYPosFoam = _foamBoundaryCollisions[3] ? infPos : maxp.y - buffer;
+    float boundaryZNegFoam = _foamBoundaryCollisions[4] ? infNeg : minp.z + buffer;
+    float boundaryZPosFoam = _foamBoundaryCollisions[5] ? infPos : maxp.z - buffer;
+    bool isBoundaryAllClosedFoam = _foamBoundaryCollisions[0] && _foamBoundaryCollisions[1] &&
+                                   _foamBoundaryCollisions[2] && _foamBoundaryCollisions[3] &&
+                                   _foamBoundaryCollisions[4] && _foamBoundaryCollisions[5];
+
+    float boundaryXNegBubble = _bubbleBoundaryCollisions[0] ? infNeg : minp.x + buffer;
+    float boundaryXPosBubble = _bubbleBoundaryCollisions[1] ? infPos : maxp.x - buffer;
+    float boundaryYNegBubble = _bubbleBoundaryCollisions[2] ? infNeg : minp.y + buffer;
+    float boundaryYPosBubble = _bubbleBoundaryCollisions[3] ? infPos : maxp.y - buffer;
+    float boundaryZNegBubble = _bubbleBoundaryCollisions[4] ? infNeg : minp.z + buffer;
+    float boundaryZPosBubble = _bubbleBoundaryCollisions[5] ? infPos : maxp.z - buffer;
+    bool isBoundaryAllClosedBubble = _bubbleBoundaryCollisions[0] && _bubbleBoundaryCollisions[1] &&
+                                   _bubbleBoundaryCollisions[2] && _bubbleBoundaryCollisions[3] &&
+                                   _bubbleBoundaryCollisions[4] && _bubbleBoundaryCollisions[5];
+
+    float boundaryXNegSpray = _sprayBoundaryCollisions[0] ? infNeg : minp.x + buffer;
+    float boundaryXPosSpray = _sprayBoundaryCollisions[1] ? infPos : maxp.x - buffer;
+    float boundaryYNegSpray = _sprayBoundaryCollisions[2] ? infNeg : minp.y + buffer;
+    float boundaryYPosSpray = _sprayBoundaryCollisions[3] ? infPos : maxp.y - buffer;
+    float boundaryZNegSpray = _sprayBoundaryCollisions[4] ? infNeg : minp.z + buffer;
+    float boundaryZPosSpray = _sprayBoundaryCollisions[5] ? infPos : maxp.z - buffer;
+    bool isBoundaryAllClosedSpray = _sprayBoundaryCollisions[0] && _sprayBoundaryCollisions[1] &&
+                                   _sprayBoundaryCollisions[2] && _sprayBoundaryCollisions[3] &&
+                                   _sprayBoundaryCollisions[4] && _sprayBoundaryCollisions[5];
+
+    float boundaryXNegDust = _dustBoundaryCollisions[0] ? infNeg : minp.x + buffer;
+    float boundaryXPosDust = _dustBoundaryCollisions[1] ? infPos : maxp.x - buffer;
+    float boundaryYNegDust = _dustBoundaryCollisions[2] ? infNeg : minp.y + buffer;
+    float boundaryYPosDust = _dustBoundaryCollisions[3] ? infPos : maxp.y - buffer;
+    float boundaryZNegDust = _dustBoundaryCollisions[4] ? infNeg : minp.z + buffer;
+    float boundaryZPosDust = _dustBoundaryCollisions[5] ? infPos : maxp.z - buffer;
+    bool isBoundaryAllClosedDust = _dustBoundaryCollisions[0] && _dustBoundaryCollisions[1] &&
+                                   _dustBoundaryCollisions[2] && _dustBoundaryCollisions[3] &&
+                                   _dustBoundaryCollisions[4] && _dustBoundaryCollisions[5];
 
     DiffuseParticleAttributes atts = _getDiffuseParticleAttributes();
 
@@ -2595,6 +2682,36 @@ void DiffuseParticleSimulation::_removeDiffuseParticles() {
         if (isInBoundary && isInsideSolid[i]) {
             isRemoved[i] = true;
             continue;
+        }
+
+        if (dp.type == DiffuseParticleType::foam && !isBoundaryAllClosedFoam) {
+            if (dp.position.x < boundaryXNegFoam || dp.position.x > boundaryXPosFoam ||
+                    dp.position.y < boundaryYNegFoam || dp.position.y > boundaryYPosFoam ||
+                    dp.position.z < boundaryZNegFoam || dp.position.z > boundaryZPosFoam) {
+                isRemoved[i] = true;
+                continue;
+            }
+        } else if (dp.type == DiffuseParticleType::bubble && !isBoundaryAllClosedBubble) {
+            if (dp.position.x < boundaryXNegBubble || dp.position.x > boundaryXPosBubble ||
+                    dp.position.y < boundaryYNegBubble || dp.position.y > boundaryYPosBubble ||
+                    dp.position.z < boundaryZNegBubble || dp.position.z > boundaryZPosBubble) {
+                isRemoved[i] = true;
+                continue;
+            }
+        } else if (dp.type == DiffuseParticleType::spray && !isBoundaryAllClosedSpray) {
+            if (dp.position.x < boundaryXNegSpray || dp.position.x > boundaryXPosSpray ||
+                    dp.position.y < boundaryYNegSpray || dp.position.y > boundaryYPosSpray ||
+                    dp.position.z < boundaryZNegSpray || dp.position.z > boundaryZPosSpray) {
+                isRemoved[i] = true;
+                continue;
+            }
+        } else if (dp.type == DiffuseParticleType::dust && !isBoundaryAllClosedDust) {
+            if (dp.position.x < boundaryXNegDust || dp.position.x > boundaryXPosDust ||
+                    dp.position.y < boundaryYNegDust || dp.position.y > boundaryYPosDust ||
+                    dp.position.z < boundaryZNegDust || dp.position.z > boundaryZPosDust) {
+                isRemoved[i] = true;
+                continue;
+            }
         }
 
         GridIndex g = Grid3d::positionToGridIndex(dp.position, _dx);

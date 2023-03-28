@@ -1,6 +1,6 @@
 # MIT License
 # 
-# Copyright (C) 2022 Ryan L. Guy
+# Copyright (C) 2023 Ryan L. Guy
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -228,6 +228,42 @@ class FluidSimulation(object):
         libfunc = lib.FluidSimulation_get_simulation_depth
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
         return pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def fluid_boundary_collisions(self):
+        active = (c_int * 6)()
+        libfunc = lib.FluidSimulation_get_fluid_boundary_collisions
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p, c_void_p], c_int)
+        pb.execute_lib_func(libfunc, [self(), active])
+
+        result = []
+        for v in active:
+            result.append(bool(v))
+
+        return result
+
+    @fluid_boundary_collisions.setter
+    def fluid_boundary_collisions(self, active):
+        c_active = (c_int * 6)()
+        for i in range(6):
+            c_active[i] = int(active[i])
+
+        libfunc = lib.FluidSimulation_set_fluid_boundary_collisions
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), c_active])
+
+    @property
+    def fluid_open_boundary_width(self):
+        libfunc = lib.FluidSimulation_get_fluid_open_boundary_width
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @fluid_open_boundary_width.setter
+    @decorators.check_ge(1)
+    def fluid_open_boundary_width(self, width):
+        libfunc = lib.FluidSimulation_set_fluid_open_boundary_width
+        pb.init_lib_func(libfunc, [c_void_p, c_int, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), int(width)])
 
     @property
     def density(self):
@@ -1587,6 +1623,98 @@ class FluidSimulation(object):
             c_active[i] = int(active[i])
 
         libfunc = lib.FluidSimulation_set_diffuse_dust_active_boundary_sides
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), c_active])
+
+    @property
+    def foam_boundary_collisions(self):
+        active = (c_int * 6)()
+        libfunc = lib.FluidSimulation_get_foam_boundary_collisions
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p, c_void_p], c_int)
+        pb.execute_lib_func(libfunc, [self(), active])
+
+        result = []
+        for v in active:
+            result.append(bool(v))
+
+        return result
+
+    @foam_boundary_collisions.setter
+    def foam_boundary_collisions(self, active):
+        c_active = (c_int * 6)()
+        for i in range(6):
+            c_active[i] = int(active[i])
+
+        libfunc = lib.FluidSimulation_set_foam_boundary_collisions
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), c_active])
+
+    @property
+    def bubble_boundary_collisions(self):
+        active = (c_int * 6)()
+        libfunc = lib.FluidSimulation_get_bubble_boundary_collisions
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p, c_void_p], c_int)
+        pb.execute_lib_func(libfunc, [self(), active])
+
+        result = []
+        for v in active:
+            result.append(bool(v))
+
+        return result
+
+    @bubble_boundary_collisions.setter
+    def bubble_boundary_collisions(self, active):
+        c_active = (c_int * 6)()
+        for i in range(6):
+            c_active[i] = int(active[i])
+
+        libfunc = lib.FluidSimulation_set_bubble_boundary_collisions
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), c_active])
+
+    @property
+    def spray_boundary_collisions(self):
+        active = (c_int * 6)()
+        libfunc = lib.FluidSimulation_get_spray_boundary_collisions
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p, c_void_p], c_int)
+        pb.execute_lib_func(libfunc, [self(), active])
+
+        result = []
+        for v in active:
+            result.append(bool(v))
+
+        return result
+
+    @spray_boundary_collisions.setter
+    def spray_boundary_collisions(self, active):
+        c_active = (c_int * 6)()
+        for i in range(6):
+            c_active[i] = int(active[i])
+
+        libfunc = lib.FluidSimulation_set_spray_boundary_collisions
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), c_active])
+
+    @property
+    def dust_boundary_collisions(self):
+        active = (c_int * 6)()
+        libfunc = lib.FluidSimulation_get_dust_boundary_collisions
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p, c_void_p], c_int)
+        pb.execute_lib_func(libfunc, [self(), active])
+
+        result = []
+        for v in active:
+            result.append(bool(v))
+
+        return result
+
+    @dust_boundary_collisions.setter
+    def dust_boundary_collisions(self, active):
+        c_active = (c_int * 6)()
+        for i in range(6):
+            c_active[i] = int(active[i])
+
+        libfunc = lib.FluidSimulation_set_dust_boundary_collisions
         pb.init_lib_func(libfunc, [c_void_p, c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), c_active])
 

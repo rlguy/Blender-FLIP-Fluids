@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2022 Ryan L. Guy
+# Copyright (C) 2023 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -203,11 +203,11 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
         )
         row.label(text="Select Objects:")
         if not hprops.quick_select_expanded:
-            row.operator("flip_fluid_operators.helper_select_domain", text="Domain")
+            row.operator("flip_fluid_operators.helper_select_domain", text="Domain", icon="MESH_GRID")
 
         if hprops.quick_select_expanded:
             column = box.column(align=True)
-            column.operator("flip_fluid_operators.helper_select_domain", text="Domain")
+            column.operator("flip_fluid_operators.helper_select_domain", text="Domain", icon="MESH_GRID")
 
             column = box.column(align=True)
             column.operator(
@@ -304,8 +304,8 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
             subbox.label(text="Render Animation:")
             column = subbox.column(align=True)
             row = column.row(align=True)
-            row.operator("flip_fluid_operators.helper_command_line_render")
-            row.operator("flip_fluid_operators.helper_command_line_render_to_clipboard", text="", icon='COPYDOWN')
+            row.operator("flip_fluid_operators.helper_command_line_render").use_turbo_tools = False
+            row.operator("flip_fluid_operators.helper_command_line_render_to_clipboard", text="", icon='COPYDOWN').use_turbo_tools = False
 
             system = platform.system()
             if system == "Windows":
@@ -319,14 +319,37 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
             subbox.label(text="Render Frame:")
             column = subbox.column(align=True)
             row = column.row(align=True)
-            row.operator("flip_fluid_operators.helper_command_line_render_frame")
-            row.operator("flip_fluid_operators.helper_cmd_render_frame_to_clipboard", text="", icon='COPYDOWN')
+            row.operator("flip_fluid_operators.helper_command_line_render_frame").use_turbo_tools = False
+            row.operator("flip_fluid_operators.helper_cmd_render_frame_to_clipboard", text="", icon='COPYDOWN').use_turbo_tools = False
             row = column.row(align=True)
             row.prop(hprops, "cmd_open_image_after_render")
 
             if system == "Windows":
                 row = column.row(align=True)
                 row.prop(hprops, "cmd_close_window_after_render")
+
+
+            if installation_utils.is_turbo_tools_addon_enabled():
+                subbox = box.box()
+                subbox.label(text="Turbo Tools Command Line Render:")
+                row = subbox.row(align=True)
+                row.alignment = 'LEFT'
+                row.prop(hprops, "turbo_tools_render_tooltip", icon="QUESTION", emboss=False, text="")
+                row.label(text="Turbo Tools Addon Detected")
+
+                column = subbox.column(align=True)
+                row = column.row(align=True)
+                row.operator("flip_fluid_operators.helper_command_line_render", text="Render Animation").use_turbo_tools = True
+                row.operator("flip_fluid_operators.helper_command_line_render_to_clipboard", text="", icon='COPYDOWN').use_turbo_tools = True
+                row = column.row(align=True)
+                row.operator("flip_fluid_operators.helper_command_line_render_frame", text="Render Frame").use_turbo_tools = True
+                row.operator("flip_fluid_operators.helper_cmd_render_frame_to_clipboard", text="", icon='COPYDOWN').use_turbo_tools = True
+                row = column.row(align=True)
+                row.prop(hprops, "cmd_open_image_after_render")
+
+                if system == "Windows":
+                    row = column.row(align=True)
+                    row.prop(hprops, "cmd_close_window_after_render")
 
         #
         # Geometry Node Tools

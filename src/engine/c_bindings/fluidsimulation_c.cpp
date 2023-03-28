@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2022 Ryan L. Guy
+Copyright (C) 2023 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -209,6 +209,44 @@ extern "C" {
                                                           int *err) {
         return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getSimulationDepth, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_get_fluid_boundary_collisions(FluidSimulation* obj, 
+                                                                 int *result, int *err) {
+        std::vector<bool> boolvect = CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getFluidBoundaryCollisions, err
+        );
+
+        for (int i = 0; i < 6; i++) {
+            result[i] = boolvect[i];
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_set_fluid_boundary_collisions(FluidSimulation* obj, 
+                                                                 int *active, int *err) {
+        std::vector<bool> boolvect;
+        for (int i = 0; i < 6; i++) {
+            boolvect.push_back(active[i] != 0);
+        }
+
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setFluidBoundaryCollisions, boolvect, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_get_fluid_open_boundary_width(FluidSimulation* obj, 
+                                                                int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getFluidOpenBoundaryWidth, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_set_fluid_open_boundary_width(FluidSimulation* obj, 
+                                                                 int width,
+                                                                 int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setFluidOpenBoundaryWidth, width, err
         );
     }
 
@@ -1946,6 +1984,98 @@ extern "C" {
 
         CBindings::safe_execute_method_void_1param(
             obj, &FluidSimulation::setDiffuseDustActiveBoundarySides, boolvect, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_get_foam_boundary_collisions(FluidSimulation* obj, 
+                                                                int *result, int *err) {
+        std::vector<bool> boolvect = CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getFoamBoundaryCollisions, err
+        );
+
+        for (int i = 0; i < 6; i++) {
+            result[i] = boolvect[i];
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_set_foam_boundary_collisions(FluidSimulation* obj, 
+                                                                int *active, int *err) {
+        std::vector<bool> boolvect;
+        for (int i = 0; i < 6; i++) {
+            boolvect.push_back(active[i] != 0);
+        }
+
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setFoamBoundaryCollisions, boolvect, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_get_bubble_boundary_collisions(FluidSimulation* obj, 
+                                                                int *result, int *err) {
+        std::vector<bool> boolvect = CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getBubbleBoundaryCollisions, err
+        );
+
+        for (int i = 0; i < 6; i++) {
+            result[i] = boolvect[i];
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_set_bubble_boundary_collisions(FluidSimulation* obj, 
+                                                                int *active, int *err) {
+        std::vector<bool> boolvect;
+        for (int i = 0; i < 6; i++) {
+            boolvect.push_back(active[i] != 0);
+        }
+
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setBubbleBoundaryCollisions, boolvect, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_get_spray_boundary_collisions(FluidSimulation* obj, 
+                                                                int *result, int *err) {
+        std::vector<bool> boolvect = CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getSprayBoundaryCollisions, err
+        );
+
+        for (int i = 0; i < 6; i++) {
+            result[i] = boolvect[i];
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_set_spray_boundary_collisions(FluidSimulation* obj, 
+                                                                int *active, int *err) {
+        std::vector<bool> boolvect;
+        for (int i = 0; i < 6; i++) {
+            boolvect.push_back(active[i] != 0);
+        }
+
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setSprayBoundaryCollisions, boolvect, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_get_dust_boundary_collisions(FluidSimulation* obj, 
+                                                                int *result, int *err) {
+        std::vector<bool> boolvect = CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getDustBoundaryCollisions, err
+        );
+
+        for (int i = 0; i < 6; i++) {
+            result[i] = boolvect[i];
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_set_dust_boundary_collisions(FluidSimulation* obj, 
+                                                                int *active, int *err) {
+        std::vector<bool> boolvect;
+        for (int i = 0; i < 6; i++) {
+            boolvect.push_back(active[i] != 0);
+        }
+
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setDustBoundaryCollisions, boolvect, err
         );
     }
 

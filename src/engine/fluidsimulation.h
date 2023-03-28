@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2022 Ryan L. Guy
+Copyright (C) 2023 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -263,6 +263,17 @@ public:
     double getSimulationWidth();
     double getSimulationHeight();
     double getSimulationDepth();
+
+    /*
+        Fluid particle collisions at boundary
+
+        Closed boundary in order: [-x, +x, -y, +y, -z, +z]
+    */
+    std::vector<bool> getFluidBoundaryCollisions();
+    void setFluidBoundaryCollisions(std::vector<bool> active);
+
+    int getFluidOpenBoundaryWidth();
+    void setFluidOpenBoundaryWidth(int width);  // width in # of voxels
 
     /*
         Density of the fluid. 
@@ -873,6 +884,23 @@ public:
 
     std::vector<bool> getDiffuseDustActiveBoundarySides();
     void setDiffuseDustActiveBoundarySides(std::vector<bool> active);
+
+    /*
+        Whitewater particle collisions at boundary
+
+        Closed boundary in order: [-x, +x, -y, +y, -z, +z]
+    */
+    std::vector<bool> getFoamBoundaryCollisions();
+    void setFoamBoundaryCollisions(std::vector<bool> active);
+
+    std::vector<bool> getBubbleBoundaryCollisions();
+    void setBubbleBoundaryCollisions(std::vector<bool> active);
+
+    std::vector<bool> getSprayBoundaryCollisions();
+    void setSprayBoundaryCollisions(std::vector<bool> active);
+
+    std::vector<bool> getDustBoundaryCollisions();
+    void setDustBoundaryCollisions(std::vector<bool> active);
 
     /*
         Default value of diffue particle influence. If influence at a location
@@ -2047,10 +2075,20 @@ private:
     bool _isAdaptiveObstacleTimeSteppingEnabled = false;
     bool _isAdaptiveForceFieldTimeSteppingEnabled = false;
     bool _isExtremeVelocityRemovalEnabled = true;
+    double _extremeParticleVelocityThreshold = 0.999;
     double _maxExtremeVelocityRemovalPercent = 0.0005;
     int _maxExtremeVelocityRemovalAbsolute = 35;
+    int _maxExtremeVelocityOutlierRemovalAbsolute = 6;
     int _minTimeStepIncreaseForRemoval = 4;
     float _markerParticleStepDistanceFactor = 0.1f;
+
+    bool _openBoundaryXNeg = false;
+    bool _openBoundaryXPos = false;
+    bool _openBoundaryYNeg = false;
+    bool _openBoundaryYPos = false;
+    bool _openBoundaryZNeg = false;
+    bool _openBoundaryZPos = false;
+    int _openBoundaryWidth = 2;    // In # of voxels
     
     // OpenCL
     // NOTE: These objects are not used within the simulator, but will remain

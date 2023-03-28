@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2022 Ryan L. Guy
+# Copyright (C) 2023 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -821,6 +821,12 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
     fluidsim.set_domain_offset(bbox.x, bbox.y, bbox.z)
     fluidsim.set_domain_scale(1.0 / dprops.initialize.scale)
 
+    fluid_boundary_collisions = __get_parameter_data(dprops.simulation.fluid_boundary_collisions, frameno)
+    fluidsim.fluid_boundary_collisions = fluid_boundary_collisions
+
+    open_boundary_width = __get_parameter_data(dprops.simulation.fluid_open_boundary_width, frameno)
+    fluidsim.fluid_open_boundary_width = open_boundary_width
+
     # Whitewater Simulation Settings
 
     whitewater = dprops.whitewater
@@ -900,6 +906,25 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
         fluidsim.spray_particle_lifetime_modifier = 1.0 / max(spray_modifier, 1e-6)
         fluidsim.dust_particle_lifetime_modifier = 1.0 / max(dust_modifier, 1e-6)
 
+        boundary_collisions_mode = __get_parameter_data(whitewater.whitewater_boundary_collisions_mode, frameno)
+        if boundary_collisions_mode == 'BOUNDARY_COLLISIONS_MODE_INHERIT':
+            fluid_boundary_collisions = __get_parameter_data(dprops.simulation.fluid_boundary_collisions, frameno)
+            foam_boundary_collisions = fluid_boundary_collisions
+            bubble_boundary_collisions = fluid_boundary_collisions
+            spray_boundary_collisions = fluid_boundary_collisions
+            dust_boundary_collisions = fluid_boundary_collisions
+        else:
+            foam_boundary_collisions = __get_parameter_data(whitewater.foam_boundary_collisions, frameno)
+            bubble_boundary_collisions = __get_parameter_data(whitewater.bubble_boundary_collisions, frameno)
+            spray_boundary_collisions = __get_parameter_data(whitewater.spray_boundary_collisions, frameno)
+            dust_boundary_collisions = __get_parameter_data(whitewater.dust_boundary_collisions, frameno)
+
+        fluidsim.foam_boundary_collisions = foam_boundary_collisions
+        fluidsim.bubble_boundary_collisions = bubble_boundary_collisions
+        fluidsim.spray_boundary_collisions = spray_boundary_collisions
+        fluidsim.dust_boundary_collisions = dust_boundary_collisions
+
+        """
         foam_behaviour = __get_parameter_data(whitewater.foam_boundary_behaviour, frameno)
         bubble_behaviour = __get_parameter_data(whitewater.bubble_boundary_behaviour, frameno)
         spray_behaviour = __get_parameter_data(whitewater.spray_boundary_behaviour, frameno)
@@ -921,6 +946,7 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
         fluidsim.diffuse_bubble_active_boundary_sides = bubble_active_sides
         fluidsim.diffuse_spray_active_boundary_sides = spray_active_sides
         fluidsim.diffuse_dust_active_boundary_sides = dust_active_sides
+        """
 
         strength = __get_parameter_data(whitewater.foam_advection_strength, frameno)
         foam_depth = __get_parameter_data(whitewater.foam_layer_depth, frameno)
@@ -1054,8 +1080,12 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
 
     fluidsim.enable_surface_velocity_attribute = \
         __get_parameter_data(surface.enable_velocity_vector_attribute, frameno)
-    fluidsim.enable_surface_velocity_attribute_against_obstacles = \
-        __get_parameter_data(surface.enable_velocity_vector_attribute_against_obstacles, frameno)
+
+    # Option should always be enabled
+    # fluidsim.enable_surface_velocity_attribute_against_obstacles = \
+    #     __get_parameter_data(surface.enable_velocity_vector_attribute_against_obstacles, frameno)
+    fluidsim.enable_surface_velocity_attribute_against_obstacles = True
+
     fluidsim.enable_surface_speed_attribute = \
         __get_parameter_data(surface.enable_speed_attribute, frameno)
     fluidsim.enable_surface_vorticity_attribute = \
@@ -1705,6 +1735,13 @@ def __set_meshing_volume_object(fluidsim, data, frameid=0):
 def __update_animatable_domain_properties(fluidsim, data, frameno):
     dprops = data.domain_data
 
+    # Simulation Settings
+    fluid_boundary_collisions = __get_parameter_data(dprops.simulation.fluid_boundary_collisions, frameno)
+    __set_property(fluidsim, 'fluid_boundary_collisions', fluid_boundary_collisions)
+
+    open_boundary_width = __get_parameter_data(dprops.simulation.fluid_open_boundary_width, frameno)
+    __set_property(fluidsim, 'fluid_open_boundary_width', open_boundary_width)
+
     # Whitewater Simulation Settings
     whitewater = dprops.whitewater
     if __get_parameter_data(whitewater.enable_whitewater_simulation):
@@ -1771,6 +1808,25 @@ def __update_animatable_domain_properties(fluidsim, data, frameno):
         __set_property(fluidsim, 'spray_particle_lifetime_modifier', 1.0 / max(spray_modifier, 1e-6))
         __set_property(fluidsim, 'dust_particle_lifetime_modifier', 1.0 / max(dust_modifier, 1e-6))
 
+        boundary_collisions_mode = __get_parameter_data(whitewater.whitewater_boundary_collisions_mode, frameno)
+        if boundary_collisions_mode == 'BOUNDARY_COLLISIONS_MODE_INHERIT':
+            fluid_boundary_collisions = __get_parameter_data(dprops.simulation.fluid_boundary_collisions, frameno)
+            foam_boundary_collisions = fluid_boundary_collisions
+            bubble_boundary_collisions = fluid_boundary_collisions
+            spray_boundary_collisions = fluid_boundary_collisions
+            dust_boundary_collisions = fluid_boundary_collisions
+        else:
+            foam_boundary_collisions = __get_parameter_data(whitewater.foam_boundary_collisions, frameno)
+            bubble_boundary_collisions = __get_parameter_data(whitewater.bubble_boundary_collisions, frameno)
+            spray_boundary_collisions = __get_parameter_data(whitewater.spray_boundary_collisions, frameno)
+            dust_boundary_collisions = __get_parameter_data(whitewater.dust_boundary_collisions, frameno)
+
+        __set_property(fluidsim, 'foam_boundary_collisions', foam_boundary_collisions)
+        __set_property(fluidsim, 'bubble_boundary_collisions', bubble_boundary_collisions)
+        __set_property(fluidsim, 'spray_boundary_collisions', spray_boundary_collisions)
+        __set_property(fluidsim, 'dust_boundary_collisions', dust_boundary_collisions)
+
+        """
         foam_behaviour = __get_parameter_data(whitewater.foam_boundary_behaviour, frameno)
         bubble_behaviour = __get_parameter_data(whitewater.bubble_boundary_behaviour, frameno)
         spray_behaviour = __get_parameter_data(whitewater.spray_boundary_behaviour, frameno)
@@ -1792,6 +1848,7 @@ def __update_animatable_domain_properties(fluidsim, data, frameno):
         __set_property(fluidsim, 'diffuse_bubble_active_boundary_sides', bubble_active_sides)
         __set_property(fluidsim, 'diffuse_spray_active_boundary_sides', spray_active_sides)
         __set_property(fluidsim, 'diffuse_dust_active_boundary_sides', dust_active_sides)
+        """
 
         strength = __get_parameter_data(whitewater.foam_advection_strength, frameno)
         foam_depth = __get_parameter_data(whitewater.foam_layer_depth, frameno)

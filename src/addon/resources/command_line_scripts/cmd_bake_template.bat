@@ -1,4 +1,5 @@
 echo off
+chcp 65001
 set /a launch_attempts = MAX_LAUNCH_ATTEMPTS
 set /a launch_counter = %launch_attempts%
 :DoWhile

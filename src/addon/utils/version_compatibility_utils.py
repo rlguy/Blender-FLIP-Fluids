@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2022 Ryan L. Guy
+# Copyright (C) 2023 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -55,6 +55,10 @@ def is_blender_33():
 
 def is_blender_34():
     return bpy.app.version >= (3, 4, 0)
+
+
+def is_blender_35():
+    return bpy.app.version >= (3, 5, 0)
     
 
 def register_dict_property(dict_object, name_str, prop):
@@ -217,6 +221,11 @@ def remove_from_flip_fluids_collection(obj, context):
 
         num_collections = 0
         for collection in bpy.data.collections:
+            if collection.name.startswith("RigidBodyWorld"):
+                # The RigidBodyWorld collection (for RBD objects) is more hidden within the Blend file
+                # and may not be apparent to many users. Ignore this collection in the count so that
+                # it does not appear that the objects dissappear.
+                continue
             if collection.objects.get(obj.name):
                 num_collections += 1
         if num_collections == 1 and context.scene.collection.objects.get(obj.name) is None:
@@ -441,10 +450,15 @@ def swap_object_mesh_data_geometry(bl_object, vertices=[], triangles=[],
                         type=ca_layer_data_types[i], 
                         domain=ca_layer_domain_types[i]
                         )
+                # Unable to set active color/render index > 0. Possibly a Blender bug that we need
+                # to report. For now, the Color Attributes layer will be limited to a single layer.
+                # As far as we know, this feature does not need to be used outside of Octane Render.
+                """
                 if active_color_layer_index >= 0:
                     bl_object.data.color_attributes.active_color_index = active_color_layer_index
                 if active_color_render_index >= 0:
                     bl_object.data.color_attributes.render_color_index = active_color_render_index
+                """
         else:
             # Vertex Colors (Blender <= 3.1)
             for i, name in enumerate(vc_layer_names):

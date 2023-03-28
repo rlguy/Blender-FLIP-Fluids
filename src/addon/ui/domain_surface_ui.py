@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2022 Ryan L. Guy
+# Copyright (C) 2023 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -142,7 +142,10 @@ class FLIPFLUID_PT_DomainTypeFluidSurfacePanel(bpy.types.Panel):
                 column_right = split.column(align=True)
                 column_right.enabled = sprops.enable_velocity_vector_attribute or sprops.enable_speed_attribute or sprops.enable_vorticity_vector_attribute
                 column_left.prop(sprops, "enable_velocity_vector_attribute", text="Velocity Attributes")
-                column_right.prop(sprops, "enable_velocity_vector_attribute_against_obstacles", text="Generate Against Obstacles")
+                
+                # This option should always be on. Hiding option from UI, and always enabling this in the simulator.
+                #column_right.prop(sprops, "enable_velocity_vector_attribute_against_obstacles", text="Generate Against Obstacles")
+                
                 column.prop(sprops, "enable_speed_attribute", text="Speed Attributes")
                 column.prop(sprops, "enable_vorticity_vector_attribute", text="Vorticity Attributes")
                 

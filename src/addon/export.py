@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2022 Ryan L. Guy
+# Copyright (C) 2023 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -132,6 +132,7 @@ def __get_domain_data_dict(context, dobj):
 
     d['initialize'] = initialize_properties
 
+    dprops.advanced.initialize_num_threads_auto_detect()
     d['advanced']['num_threads_auto_detect'] = dprops.advanced.num_threads_auto_detect
     d['simulation']['frames_per_second'] = dprops.simulation.get_frame_rate_data_dict()
     d['world']['gravity'] = dprops.world.get_gravity_data_dict()

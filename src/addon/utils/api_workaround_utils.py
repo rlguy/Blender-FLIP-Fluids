@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2022 Ryan L. Guy
+# Copyright (C) 2023 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -223,7 +223,7 @@ def draw_T88811_ui_warning(ui_box, preferences, feature_dict):
             "wm.url_open", 
             text="Bug Report: T88811", 
             icon="URL"
-        ).url = "https://developer.blender.org/T88811"
+        ).url = "https://projects.blender.org/blender/blender/issues/88811"
 
     column.prop(preferences, "dismiss_T88811_crash_warning", text="Do not show this warning again")
 
@@ -308,6 +308,9 @@ def get_persistent_data_warning_string():
 #     (Cycles render is used and motion blur is enabled) or other renderers are used
 #     and if there is an object with a keyframed hide_render property
 #
+# In rare cases, Blender may also crash regardless of the above condition if there is an object with a
+#     keyframed hide_render property. It is not certain what exact conditions are required for this case.
+#
 # Issue thread: https://github.com/rlguy/Blender-FLIP-Fluids/issues/566
 #
 # Workaround: detect these cases and remove depsgraph.update() calls during render calls
@@ -318,7 +321,8 @@ def get_persistent_data_warning_string():
 def is_keyframed_hide_render_issue_relevant(scene):
     is_relevant = False
     using_cycles = scene.render.engine == 'CYCLES'
-    if (using_cycles and scene.render.use_motion_blur) or not using_cycles:
+    override_condition = True
+    if (using_cycles and scene.render.use_motion_blur) or not using_cycles or override_condition:
         for obj in bpy.data.objects:
             if not obj.animation_data:
                 continue

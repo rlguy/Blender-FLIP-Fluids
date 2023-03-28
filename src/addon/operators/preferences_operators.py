@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2022 Ryan L. Guy
+# Copyright (C) 2023 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -702,6 +702,7 @@ class FLIPFluidUninstallPresetLibrary(bpy.types.Operator):
             "blender_assets.cats.txt~",
             "README.txt",
             ".metadata/version.json",
+            "releasenotes.txt"
         ]
 
         library_filenames = blend_filenames + other_filenames

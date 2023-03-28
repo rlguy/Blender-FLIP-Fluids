@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2022 Ryan L. Guy
+# Copyright (C) 2023 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -82,6 +82,14 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
                 " simulation so you do not accidentally lose your simulation progress or settings", 
             default=True,
             ); exec(conv("unsaved_blend_file_tooltip"))
+
+    turbo_tools_render_tooltip = BoolProperty(
+            name="Turbo Tools command line rendering support", 
+            description="An installation of the Turbo Tools addon has been detected. Use these operators to launch"
+                " a Turbo Tools render process or copy the render command. Refer to the Turbo Tools documentation for more info"
+                " on command line rendering", 
+            default=True,
+            ); exec(conv("turbo_tools_render_tooltip"))
 
     is_auto_frame_load_cmd_operator_running = BoolProperty(default=False); exec(conv("is_auto_frame_load_cmd_operator_running"))
 

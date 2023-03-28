@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2022 Ryan L. Guy
+# Copyright (C) 2023 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, os, stat, subprocess, platform, math, mathutils, fnmatch, random
+import bpy, os, stat, subprocess, platform, math, mathutils, fnmatch, random, shutil
 from bpy.props import (
         BoolProperty,
         StringProperty
@@ -1379,7 +1379,21 @@ class FlipFluidHelperCommandLineBake(bpy.types.Operator):
             if system == "Darwin":
                 subprocess.call(["open", "-a", "Terminal", script_filepath])
             else:
-                subprocess.call(["xterm", "-hold", "-e", script_filepath])
+                if shutil.which("gnome-terminal") is not None and shutil.which("bash") is not None:
+                    subprocess.call(["gnome-terminal", "--", "bash", "-c", script_filepath + "; exec bash"])
+                elif shutil.which("xterm") is not None:
+                    subprocess.call(["xterm", "-hold", "-e", script_filepath])
+                else:
+                    errmsg = "This feature requires the Xterm program to be installed and to be accessible on the"
+                    errmsg += " system path. Either install Xterm, restart Blender, and try again or use the"
+                    errmsg += " Copy Command to Clipboard operator and paste into a terminal program of your choice."
+                    bpy.ops.flip_fluid_operators.display_error(
+                        'INVOKE_DEFAULT',
+                        error_message="Linux: Unable to launch new terminal window",
+                        error_description=errmsg,
+                        popup_width=600
+                        )
+
 
         else:
             # Platform not found
@@ -1447,6 +1461,9 @@ class FlipFluidHelperCommandLineRender(bpy.types.Operator):
     bl_description = ("Launch a new command line window and start rendering the animation." +
                      " The .blend file will need to be saved before using this operator")
 
+    use_turbo_tools = BoolProperty(False)
+    exec(vcu.convert_attribute_to_28("use_turbo_tools"))
+
 
     @classmethod
     def poll(cls, context):
@@ -1459,6 +1476,11 @@ class FlipFluidHelperCommandLineRender(bpy.types.Operator):
             errmsg = "Render output directory is not valid or writeable: <" + get_render_output_directory() + ">"
             self.report({'ERROR'}, errmsg)
             return {'CANCELLED'}
+
+        if self.use_turbo_tools:
+            command_text = "\"" + bpy.app.binary_path + "\" -b \"" +  bpy.data.filepath + "\" --python-expr \"import bpy; bpy.ops.threedi.render_animation()\""
+        else:
+            command_text = "\"" + bpy.app.binary_path + "\" -b \"" +  bpy.data.filepath + "\" -a"
 
         system = platform.system()
         if system == "Windows":
@@ -1474,12 +1496,14 @@ class FlipFluidHelperCommandLineRender(bpy.types.Operator):
                 # changed Blender's working directory
                 blender_exe_path = "blender.exe"
 
-            command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" -a"
-            command = ["start", "cmd", "/k", blender_exe_path, "--background", bpy.data.filepath, "-a"]
+            if self.use_turbo_tools:
+                command = ["start", "cmd", "/k", blender_exe_path, "-b", bpy.data.filepath, "--python-expr", "import bpy; bpy.ops.threedi.render_animation()"]
+            else:
+                command = ["start", "cmd", "/k", blender_exe_path, "-b", bpy.data.filepath, "-a"]
+
             subprocess.call(command, shell=True)
 
         elif system == "Darwin" or system == "Linux":
-            command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" -a"
             script_text = "#!/bin/bash\n" + command_text
             script_name = "RENDER_ANIMATION_" + bpy.path.basename(context.blend_data.filepath) + ".sh"
             script_filepath = os.path.join(os.path.dirname(bpy.data.filepath), script_name)
@@ -1492,7 +1516,20 @@ class FlipFluidHelperCommandLineRender(bpy.types.Operator):
             if system == "Darwin":
                 subprocess.call(["open", "-a", "Terminal", script_filepath])
             else:
-                subprocess.call(["xterm", "-hold", "-e", script_filepath])
+                if shutil.which("gnome-terminal") is not None and shutil.which("bash") is not None:
+                    subprocess.call(["gnome-terminal", "--", "bash", "-c", script_filepath + "; exec bash"])
+                elif shutil.which("xterm") is not None:
+                    subprocess.call(["xterm", "-hold", "-e", script_filepath])
+                else:
+                    errmsg = "This feature requires the Xterm program to be installed and to be accessible on the"
+                    errmsg += " system path. Either install Xterm, restart Blender, and try again or use the"
+                    errmsg += " Copy Command to Clipboard operator and paste into a terminal program of your choice."
+                    bpy.ops.flip_fluid_operators.display_error(
+                        'INVOKE_DEFAULT',
+                        error_message="Linux: Unable to launch new terminal window",
+                        error_description=errmsg,
+                        popup_width=600
+                        )
 
         else:
             # Platform not found
@@ -1516,6 +1553,8 @@ class FlipFluidHelperCommandLineRenderToClipboard(bpy.types.Operator):
     bl_description = ("Copy command for rendering to your system clipboard." +
                      " The .blend file will need to be saved before using this operator")
 
+    use_turbo_tools = BoolProperty(False)
+    exec(vcu.convert_attribute_to_28("use_turbo_tools"))
 
     @classmethod
     def poll(cls, context):
@@ -1524,7 +1563,12 @@ class FlipFluidHelperCommandLineRenderToClipboard(bpy.types.Operator):
 
     def execute(self, context):
         
-        command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" -a"
+        if self.use_turbo_tools:
+            command_text = "\"" + bpy.app.binary_path + "\" -b \"" +  bpy.data.filepath + "\" --python-expr \"import bpy; bpy.ops.threedi.render_animation()\""
+        else:
+            command_text = "\"" + bpy.app.binary_path + "\" -b \"" +  bpy.data.filepath + "\" -a"
+
+
         bpy.context.window_manager.clipboard = command_text
           
         info_msg = "Copied the following render command to your clipboard:\n\n"
@@ -1541,6 +1585,9 @@ class FlipFluidHelperCommandLineRenderFrame(bpy.types.Operator):
     bl_label = "Launch Frame Render"
     bl_description = ("Launch a new command line window and start rendering the current timeline frame." +
                      " The .blend file will need to be saved before using this operator")
+
+    use_turbo_tools = BoolProperty(False)
+    exec(vcu.convert_attribute_to_28("use_turbo_tools"))
 
 
     @classmethod
@@ -1559,9 +1606,13 @@ class FlipFluidHelperCommandLineRenderFrame(bpy.types.Operator):
             self.report({'ERROR'}, "Render output format must be an image format. Change render output to an image, save, and try again.")
             return {'CANCELLED'} 
 
+        script_name = "render_single_frame.py"
+        if self.use_turbo_tools:
+            script_name = "render_single_frame_turbo_tools.py"
+
         script_path = os.path.dirname(os.path.realpath(__file__))
         script_path = os.path.dirname(script_path)
-        script_path = os.path.join(script_path, "resources", "command_line_scripts", "render_single_frame.py")
+        script_path = os.path.join(script_path, "resources", "command_line_scripts", script_name)
 
         frame_string = str(bpy.context.scene.frame_current)
 
@@ -1606,7 +1657,20 @@ class FlipFluidHelperCommandLineRenderFrame(bpy.types.Operator):
             if system == "Darwin":
                 subprocess.call(["open", "-a", "Terminal", script_filepath])
             else:
-                subprocess.call(["xterm", "-hold", "-e", script_filepath])
+                if shutil.which("gnome-terminal") is not None and shutil.which("bash") is not None:
+                    subprocess.call(["gnome-terminal", "--", "bash", "-c", script_filepath + "; exec bash"])
+                elif shutil.which("xterm") is not None:
+                    subprocess.call(["xterm", "-hold", "-e", script_filepath])
+                else:
+                    errmsg = "This feature requires the Xterm program to be installed and to be accessible on the"
+                    errmsg += " system path. Either install Xterm, restart Blender, and try again or use the"
+                    errmsg += " Copy Command to Clipboard operator and paste into a terminal program of your choice."
+                    bpy.ops.flip_fluid_operators.display_error(
+                        'INVOKE_DEFAULT',
+                        error_message="Linux: Unable to launch new terminal window",
+                        error_description=errmsg,
+                        popup_width=600
+                        )
 
         else:
             # Platform not found
@@ -1629,6 +1693,9 @@ class FlipFluidHelperCmdRenderFrameToClipboard(bpy.types.Operator):
     bl_description = ("Copy command for frame rendering to your system clipboard." +
                      " The .blend file will need to be saved before using this operator")
 
+    use_turbo_tools = BoolProperty(False)
+    exec(vcu.convert_attribute_to_28("use_turbo_tools"))
+
 
     @classmethod
     def poll(cls, context):
@@ -1636,9 +1703,14 @@ class FlipFluidHelperCmdRenderFrameToClipboard(bpy.types.Operator):
 
 
     def execute(self, context):
+        script_name = "render_single_frame.py"
+        if self.use_turbo_tools:
+            script_name = "render_single_frame_turbo_tools.py"
+
         script_path = os.path.dirname(os.path.realpath(__file__))
         script_path = os.path.dirname(script_path)
-        script_path = os.path.join(script_path, "resources", "command_line_scripts", "render_single_frame.py")
+        script_path = os.path.join(script_path, "resources", "command_line_scripts", script_name)
+
         frame_string = str(bpy.context.scene.frame_current)
         hprops = context.scene.flip_fluid_helper
         open_image_after = "0"
@@ -1940,7 +2012,7 @@ class FlipFluidHelperCommandLineRenderToScriptfile(bpy.types.Operator):
         blender_exe_path = "\"" + bpy.app.binary_path + "\""
         blend_path = "\"" + bpy.data.filepath + "\""
 
-        file_text = "echo.\n"
+        file_text = "echo.\nchcp 65001\n"
         for n in missing_frames:
             command_text = blender_exe_path + " -b " + blend_path + " -f " + str(n)
             file_text += command_text + "\n"
@@ -2245,7 +2317,7 @@ class FlipFluidMakeRelativeToBlendRenderOutput(bpy.types.Operator):
         blend_name = os.path.basename(bpy.data.filepath)
         blend_name = os.path.splitext(blend_name)[0]
 
-        output_str = "//render_" + blend_name + "/"
+        output_str = "//" + blend_name + "_render/"
         context.scene.render.filepath = output_str
 
         return {'FINISHED'}
@@ -2417,10 +2489,10 @@ class FlipFluidAutoLoadBakedFramesCMD(bpy.types.Operator):
 
 class FlipFluidCopySettingsToSelected(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.copy_setting_to_selected"
-    bl_label = "Copy Settings to Selected"
-    bl_description = ("Copy the settings of the active FLIP object to all other selected"
-                      " FLIP objects of the same type. Note: keyframed settings are not"
-                      " supported for this operator")
+    bl_label = "Copy Active Object Settings to Selected Objects"
+    bl_description = ("Copy the settings of the active FLIP object (highlighted object) to all other selected"
+                      " FLIP objects of the same type. The settings displayed in this panel are the settings"
+                      " of the active FLIP object. Note: keyframed settings are not supported for this operator")
 
 
     @classmethod

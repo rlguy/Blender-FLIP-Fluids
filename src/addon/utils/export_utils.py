@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2022 Ryan L. Guy
+# Copyright (C) 2023 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +20,8 @@ from . import version_compatibility_utils as vcu
 
 
 def flip_fluid_object_to_dict(obj, object_properties):
+    object_properties.refresh_property_registry()
+
     d = {}
     for p in object_properties.property_registry.properties:
         path_elements = p.path.split('.')

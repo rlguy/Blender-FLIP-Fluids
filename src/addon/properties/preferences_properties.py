@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2022 Ryan L. Guy
+# Copyright (C) 2023 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -788,7 +788,8 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
                         icon="URL"
                     ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Mixbox-Installation-and-Uninstallation"
 
-        if not self.dismiss_rtx_driver_warning:
+        show_rtx_driver_warning = False  # Fixed in recent drivers (~January 2023)
+        if not self.dismiss_rtx_driver_warning and show_rtx_driver_warning:
             model_search_string = "RTX"
             gpu_model_string = preferences_operators.get_gpu_string()
             if model_search_string in gpu_model_string:
@@ -1012,31 +1013,32 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         row.alignment = 'LEFT'
         row.prop(self, "dismiss_persistent_data_render_warning")
 
-        row = column_left.row(align=True)
-        row.alignment = 'LEFT'
-        row.prop(self, "dismiss_rtx_driver_warning")
+        if show_rtx_driver_warning:
+            row = column_left.row(align=True)
+            row.alignment = 'LEFT'
+            row.prop(self, "dismiss_rtx_driver_warning")
 
         row = column_right.row(align=True)
         row.alignment = 'EXPAND'
         row.operator(
                 "wm.url_open", 
                 text="Bug Report: T88811", 
-            ).url = "https://developer.blender.org/T88811"
+            ).url = "https://projects.blender.org/blender/blender/issues/88811"
 
         row = column_right.row(align=True)
         row.alignment = 'EXPAND'
         row.operator(
                 "wm.url_open", 
                 text="Related Bug Reports", 
-            ).url = "https://developer.blender.org/maniphest/query/D0zO31gPuhUc/#R"
+            ).url = "https://projects.blender.org/blender/blender/issues?type=all&state=open&labels=&milestone=0&project=0&assignee=0&poster=0&q=Persistent+Data"
 
-        row = column_right.row(align=True)
-        row.alignment = 'EXPAND'
-        row.operator(
-                "wm.url_open", 
-                text="Click for More Info", 
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/issues/599"
-
+        if show_rtx_driver_warning:
+            row = column_right.row(align=True)
+            row.alignment = 'EXPAND'
+            row.operator(
+                    "wm.url_open", 
+                    text="Click for More Info", 
+                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/issues/599"
 
     def _get_gpu_device_enums(self, context=None):
         device_enums = []

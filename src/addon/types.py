@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2022 Ryan L. Guy
+# Copyright (C) 2023 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -150,6 +150,11 @@ boundary_behaviours = (
     ('BEHAVIOUR_KILL',      "Kill",      "Kill any foam particles when outside boundary limits"),
     ('BEHAVIOUR_BALLISTIC', "Ballistic", "Make foam particles follow ballistic trajectory"),
     ('BEHAVIOUR_COLLIDE',   "Collide",   "Collide with boundary limits")
+    )
+
+boundary_collisions_modes = (
+    ('BOUNDARY_COLLISIONS_MODE_INHERIT', "Inherit", "Use the same boundary collisions as set in the FLIP Fluid Simulation panel"),
+    ('BOUNDARY_COLLISIONS_MODE_CUSTOM',  "Custom",  "Set custom boundary collisions for each whitewater particle type")
     )
 
 world_scale_mode = (

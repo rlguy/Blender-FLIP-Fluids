@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2022 Ryan L. Guy
+# Copyright (C) 2023 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -169,6 +169,10 @@ def update_preset_library_installation_status():
     IS_PRESET_LIBRARY_INSTALLATION_COMPLETE = False
     PRESET_LIBRARY_INSTALLATIONS = []
 
+    if not vcu.is_blender_33():
+        # Asset library is only available in Blender 3.3 or later
+        return
+
     bl_preferences = bpy.context.preferences
     bl_filepaths = bl_preferences.filepaths
     for lib_entry in bl_filepaths.asset_libraries:
@@ -202,6 +206,12 @@ def is_preset_library_installation_complete():
 def get_preset_library_installations():
     global PRESET_LIBRARY_INSTALLATIONS
     return PRESET_LIBRARY_INSTALLATIONS
+
+
+def is_turbo_tools_addon_enabled():
+    # Used for command line tools to launch Turbo Tools Render processes
+    #     https://blendermarket.com/products/turbo-tools-v3---turbo-render-turbo-comp-temporal-stabilizer
+    return "Turbo Tools" in vcu.get_blender_preferences().addons
 
 
 def __load_post_update_is_addon_active():

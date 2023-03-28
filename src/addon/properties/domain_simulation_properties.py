@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2022 Ryan L. Guy
+# Copyright (C) 2023 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
 import bpy, math, os, json
 from bpy.props import (
         BoolProperty,
+        BoolVectorProperty,
         EnumProperty,
         FloatProperty,
         IntProperty,
@@ -150,6 +151,23 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
             update=lambda self, context: self._update_lock_cell_size(context),
             options = {'HIDDEN'},
             ); exec(conv("lock_cell_size"))
+    fluid_boundary_collisions = BoolVectorProperty(
+            name="",
+            description="Enable collisions on the corresponding side of the domain."
+                " If disabled, this side of the boundary will be open and will act"
+                " as an outflow",
+            default=(True, True, True, True, True, True),
+            size=6,
+            ); exec(conv("fluid_boundary_collisions"))
+    fluid_open_boundary_width = IntProperty(
+            name="Open Boundary Width",
+            description="The distance (in number of voxels) from the domain boundary that fluid will be"
+                " removed for open boundary sides. Note: This setting is for testing purposes and may"
+                " be removed in a future update if not needed",
+            min=1,
+            soft_max=10,
+            default=2,
+            ); exec(conv("fluid_open_boundary_width"))
     frame_rate_mode = EnumProperty(
             name="Frame Rate Mode",
             description="Select the frame rate for the simulation animation",
@@ -242,14 +260,15 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
 
     def register_preset_properties(self, registry, path):
         add = registry.add_property
-        add(path + ".resolution",              "Resolution",              group_id=0)
-        add(path + ".preview_resolution",      "Preview Resolution",      group_id=0)
-        add(path + ".auto_preview_resolution", "Auto Preview Resolution", group_id=0)
-        add(path + ".lock_cell_size",          "Lock Cell Size",          group_id=0)
-        add(path + ".frame_rate_mode",         "Frame Rate Mode",         group_id=0)
-        add(path + ".frame_rate_custom",       "Frame Rate",              group_id=0)
-        add(path + ".time_scale",              "Time Scale",              group_id=0)
-
+        add(path + ".resolution",                 "Resolution",                 group_id=0)
+        add(path + ".preview_resolution",         "Preview Resolution",         group_id=0)
+        add(path + ".auto_preview_resolution",    "Auto Preview Resolution",    group_id=0)
+        add(path + ".lock_cell_size",             "Lock Cell Size",             group_id=0)
+        add(path + ".frame_rate_mode",            "Frame Rate Mode",            group_id=0)
+        add(path + ".frame_rate_custom",          "Frame Rate",                 group_id=0)
+        add(path + ".time_scale",                 "Time Scale",                 group_id=0)
+        add(path + ".fluid_boundary_collisions",  "Boundary Collisions",        group_id=0)
+        add(path + ".fluid_open_boundary_width",  "Open Boundary Width",        group_id=0)
         add(path + ".frame_range_mode",           "Frame Range Mode",           group_id=1)
         add(path + ".frame_range_custom",         "Frame Range (Custom)",       group_id=1)
         add(path + ".update_settings_on_resume",  "Update Settings on Resume",  group_id=1)
