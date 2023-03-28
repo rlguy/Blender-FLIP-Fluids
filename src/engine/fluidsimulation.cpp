@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2022 Ryan L. Guy
+Copyright (C) 2023 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -171,6 +171,53 @@ double FluidSimulation::getSimulationHeight() {
 
 double FluidSimulation::getSimulationDepth() {  
     return (double)_ksize*_dx; 
+}
+
+std::vector<bool> FluidSimulation::getFluidBoundaryCollisions() {
+    std::vector<bool> closedBoundaryCollisions{
+        !_openBoundaryXNeg, !_openBoundaryXPos,
+        !_openBoundaryYNeg, !_openBoundaryYPos,
+        !_openBoundaryZNeg, !_openBoundaryZPos,
+    };
+    return closedBoundaryCollisions;
+}
+
+void FluidSimulation::setFluidBoundaryCollisions(std::vector<bool> active) {
+    if (active.size() != 6) {
+        std::string msg = "Error: fluid boundary collisions vector must be of length 6.\n";
+        msg += "length: " + _toString(active.size()) + "\n";
+        throw std::domain_error(msg);
+    }
+
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " setFluidBoundaryCollisions: " << 
+                 active[0] << " " << active[1] << " " << active[2] << " " << 
+                 active[3] << " " << active[4] << " " << active[5] << std::endl);
+
+    _openBoundaryXNeg = !active[0];
+    _openBoundaryXPos = !active[1];
+    _openBoundaryYNeg = !active[2];
+    _openBoundaryYPos = !active[3];
+    _openBoundaryZNeg = !active[4];
+    _openBoundaryZPos = !active[5];
+}
+
+int FluidSimulation::getFluidOpenBoundaryWidth() {
+    return _openBoundaryWidth;
+}
+
+void FluidSimulation::setFluidOpenBoundaryWidth(int width) {
+    if (width < 1) {
+        std::string msg = "Error: width must be greater than or equal to 1.\n";
+        msg += "Open Boundary Width: " + _toString(width) + "\n";
+        throw std::domain_error(msg);
+    }
+
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " setFluidOpenBoundaryWidth: " << width << std::endl);
+
+    _openBoundaryWidth = width;
+    _diffuseMaterial.setDiffuseOpenBoundaryWidth(width);
 }
 
 double FluidSimulation::getDensity() { 
@@ -1810,6 +1857,84 @@ void FluidSimulation::setDiffuseDustActiveBoundarySides(std::vector<bool> active
                  active[3] << " " << active[4] << " " << active[5] << std::endl);
 
     _diffuseMaterial.setDustActiveBoundarySides(active);
+}
+
+std::vector<bool> FluidSimulation::getFoamBoundaryCollisions() {
+    return _diffuseMaterial.getFoamBoundaryCollisions();
+}
+
+void FluidSimulation::setFoamBoundaryCollisions(std::vector<bool> active) {
+    if (active.size() != 6) {
+        std::string msg = "Error: foam boundary collisions vector must be of length 6.\n";
+        msg += "length: " + _toString(active.size()) + "\n";
+        throw std::domain_error(msg);
+    }
+
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " setFoamBoundaryCollisions: " << 
+                 active[0] << " " << active[1] << " " << active[2] << " " << 
+                 active[3] << " " << active[4] << " " << active[5] << std::endl);
+
+    return _diffuseMaterial.setFoamBoundaryCollisions(active);
+}
+
+
+std::vector<bool> FluidSimulation::getBubbleBoundaryCollisions() {
+    return _diffuseMaterial.getBubbleBoundaryCollisions();
+}
+
+void FluidSimulation::setBubbleBoundaryCollisions(std::vector<bool> active) {
+    if (active.size() != 6) {
+        std::string msg = "Error: bubble boundary collisions vector must be of length 6.\n";
+        msg += "length: " + _toString(active.size()) + "\n";
+        throw std::domain_error(msg);
+    }
+
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " setBubbleBoundaryCollisions: " << 
+                 active[0] << " " << active[1] << " " << active[2] << " " << 
+                 active[3] << " " << active[4] << " " << active[5] << std::endl);
+
+    return _diffuseMaterial.setBubbleBoundaryCollisions(active);
+}
+
+
+std::vector<bool> FluidSimulation::getSprayBoundaryCollisions() {
+    return _diffuseMaterial.getSprayBoundaryCollisions();
+}
+
+void FluidSimulation::setSprayBoundaryCollisions(std::vector<bool> active) {
+    if (active.size() != 6) {
+        std::string msg = "Error: spray boundary collisions vector must be of length 6.\n";
+        msg += "length: " + _toString(active.size()) + "\n";
+        throw std::domain_error(msg);
+    }
+
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " setSprayBoundaryCollisions: " << 
+                 active[0] << " " << active[1] << " " << active[2] << " " << 
+                 active[3] << " " << active[4] << " " << active[5] << std::endl);
+
+    return _diffuseMaterial.setSprayBoundaryCollisions(active);
+}
+
+std::vector<bool> FluidSimulation::getDustBoundaryCollisions() {
+    return _diffuseMaterial.getDustBoundaryCollisions();
+}
+
+void FluidSimulation::setDustBoundaryCollisions(std::vector<bool> active) {
+    if (active.size() != 6) {
+        std::string msg = "Error: dust boundary collisions vector must be of length 6.\n";
+        msg += "length: " + _toString(active.size()) + "\n";
+        throw std::domain_error(msg);
+    }
+
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " setDustBoundaryCollisions: " << 
+                 active[0] << " " << active[1] << " " << active[2] << " " << 
+                 active[3] << " " << active[4] << " " << active[5] << std::endl);
+
+    return _diffuseMaterial.setDustBoundaryCollisions(active);
 }
 
 double FluidSimulation::getDiffuseObstacleInfluenceBaseLevel() {
@@ -6119,12 +6244,14 @@ float FluidSimulation::_getMarkerParticleSpeedLimit(double dt) {
     std::vector<vmath::vec3> *velocities;
     _markerParticles.getAttributeValues("VELOCITY", velocities);
 
+    double maxParticleSpeed = 0.0;
     double speedLimitStep = _CFLConditionNumber * _dx / dt;
     std::vector<int> speedLimitCounts(_maxFrameTimeSteps, 0);
     for (unsigned int i = 0; i < velocities->size(); i++) {
         double speed = (double)velocities->at(i).length();
         int speedLimitIndex = fmin(floor(speed / speedLimitStep), _maxFrameTimeSteps - 1);
         speedLimitCounts[speedLimitIndex]++;
+        maxParticleSpeed = std::max(speed, maxParticleSpeed);
     }
 
     double maxpct = _maxExtremeVelocityRemovalPercent;
@@ -6141,10 +6268,41 @@ float FluidSimulation::_getMarkerParticleSpeedLimit(double dt) {
         maxspeed = std::max(i + _minTimeStepIncreaseForRemoval, _maxFrameTimeSteps) * speedLimitStep;
     }
 
+    double extremeSpeedOutlierThreshold = _extremeParticleVelocityThreshold * maxParticleSpeed;
+    int extremeParticleVelocityOutlierCount = 0;
+    for (unsigned int i = 0; i < velocities->size(); i++) {
+        double speed = (double)velocities->at(i).length();
+        if (speed >= extremeSpeedOutlierThreshold) {
+            extremeParticleVelocityOutlierCount++;
+        }
+    }
+
+    if (extremeParticleVelocityOutlierCount <= _maxExtremeVelocityOutlierRemovalAbsolute) {
+        maxspeed = std::min(extremeSpeedOutlierThreshold, maxspeed);
+    }
+
     return maxspeed;
 }
 
 void FluidSimulation::_removeMarkerParticles(double dt) {
+
+    AABB boundaryAABB = _getBoundaryAABB();
+    vmath::vec3 minp = boundaryAABB.getMinPoint();
+    vmath::vec3 maxp = boundaryAABB.getMaxPoint();
+    float buffer = _openBoundaryWidth * _dx;
+    float infNeg = -std::numeric_limits<float>::infinity();
+    float infPos = std::numeric_limits<float>::infinity();
+
+    float boundaryXNeg = _openBoundaryXNeg ? minp.x + buffer : infNeg;
+    float boundaryXPos = _openBoundaryXPos ? maxp.x - buffer : infPos;
+    float boundaryYNeg = _openBoundaryYNeg ? minp.y + buffer : infNeg;
+    float boundaryYPos = _openBoundaryYPos ? maxp.y - buffer : infPos;
+    float boundaryZNeg = _openBoundaryZNeg ? minp.z + buffer : infNeg;
+    float boundaryZPos = _openBoundaryZPos ? maxp.z - buffer : infPos;
+    bool isBoundaryAllClosed = !_openBoundaryXNeg && !_openBoundaryXPos &&
+                               !_openBoundaryYNeg && !_openBoundaryYPos &&
+                               !_openBoundaryZNeg && !_openBoundaryZPos;
+
     Array3d<int> countGrid = Array3d<int>(_isize, _jsize, _ksize, 0);
 
     float maxspeed = _getMarkerParticleSpeedLimit(dt);
@@ -6162,7 +6320,14 @@ void FluidSimulation::_removeMarkerParticles(double dt) {
         }
 
         vmath::vec3 position = positions->at(i);
-        vmath::vec3 velocity = velocities->at(i);
+        if (!isBoundaryAllClosed) {
+            if (position.x < boundaryXNeg || position.x > boundaryXPos ||
+                    position.y < boundaryYNeg || position.y > boundaryYPos ||
+                    position.z < boundaryZNeg || position.z > boundaryZPos) {
+                isRemoved[i] = true;
+                continue;
+            }
+        }
 
         GridIndex g = Grid3d::positionToGridIndex(position, _dx);
         if (countGrid(g) >= _maxMarkerParticlesPerCell) {
@@ -6171,6 +6336,7 @@ void FluidSimulation::_removeMarkerParticles(double dt) {
         }
         countGrid.add(g, 1);
 
+        vmath::vec3 velocity = velocities->at(i);
         if (_isExtremeVelocityRemovalEnabled && 
                 vmath::dot(velocity, velocity) > maxspeedsq) {
             isRemoved[i] = true;
@@ -7980,6 +8146,10 @@ double FluidSimulation::_calculateNextTimeStep(double dt) {
         timeStep = fmin(timeStep, _surfaceTensionConditionNumber * restriction);
     }
 
+    int estimatedNumFrameSubsteps = std::max((int)std::ceil(dt / timeStep), 1);
+
+    timeStep = dt / estimatedNumFrameSubsteps;
+
     return timeStep;
 }
 
@@ -8234,7 +8404,7 @@ void FluidSimulation::update(double dt) {
     _outputData.frameData.viscositySolverSuccess = (int)_viscositySolverSuccess;
     _outputData.frameData.viscositySolverError = (double)_viscositySolverError;
     _outputData.frameData.viscositySolverIterations = _viscositySolverIterations;
-    _outputData.frameData.viscositySolverMaxIterations = getPressureSolverMaxIterations();
+    _outputData.frameData.viscositySolverMaxIterations = getViscositySolverMaxIterations();
 
     _outputData.isInitialized = true;
 

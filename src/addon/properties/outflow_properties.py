@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2022 Ryan L. Guy
+# Copyright (C) 2023 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -84,6 +84,14 @@ class FlipFluidOutflowProperties(bpy.types.PropertyGroup):
 
 
     def initialize(self):
+        self._initialize_property_registry()
+
+
+    def refresh_property_registry(self):
+        self._initialize_property_registry()
+
+
+    def _initialize_property_registry(self):
         self.property_registry.clear()
         add = self.property_registry.add_property
         add("outflow.is_enabled", "")
@@ -93,7 +101,6 @@ class FlipFluidOutflowProperties(bpy.types.PropertyGroup):
         add("outflow.export_animated_mesh", "")
         add("outflow.skip_reexport", "")
         add("outflow.force_reexport_on_next_bake", "")
-
         self._validate_property_registry()
 
 

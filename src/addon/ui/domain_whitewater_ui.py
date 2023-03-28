@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2022 Ryan L. Guy
+# Copyright (C) 2023 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -256,61 +256,98 @@ class FLIPFLUID_PT_DomainTypeWhitewaterPanel(bpy.types.Panel):
                     column.enabled = wprops.enable_dust
                     column.prop(wprops, "dust_lifespan_modifier", text="Dust")
 
-        if show_advanced_whitewater:
-            box = self.layout.box()
-            box.alert = highlight_advanced
-            row = box.row(align=True)
-            row.prop(wprops, "boundary_behaviour_settings_expanded",
-                icon="TRIA_DOWN" if wprops.boundary_behaviour_settings_expanded else "TRIA_RIGHT",
-                icon_only=True, 
-                emboss=False
-            )
-            row.label(text="Behaviour At Boundary:")
+        box = self.layout.box()
+        row = box.row(align=True)
+        row.prop(wprops, "boundary_behaviour_settings_expanded",
+            icon="TRIA_DOWN" if wprops.boundary_behaviour_settings_expanded else "TRIA_RIGHT",
+            icon_only=True, 
+            emboss=False
+        )
+        row.label(text="Domain Boundary Collisions:")
 
-            if wprops.boundary_behaviour_settings_expanded:
+        if wprops.boundary_behaviour_settings_expanded:
+            column = box.column()
+            row = column.row(align=True)
+            row.prop(wprops, "whitewater_boundary_collisions_mode", expand=True)
+
+            if wprops.whitewater_boundary_collisions_mode == 'BOUNDARY_COLLISIONS_MODE_INHERIT':
+                sprops = dprops.simulation
                 column = box.column()
-                row = box.row()
-                column = row.column(align=True)
-                column.label(text="Foam:")
-                column.prop(wprops, "foam_boundary_behaviour", text="")
-                if wprops.foam_boundary_behaviour != 'BEHAVIOUR_COLLIDE':
-                    r = column.row(align=True)
-                    r.prop(wprops, "foam_boundary_active", index=0, text="X –")
-                    r.prop(wprops, "foam_boundary_active", index=1, text="X+")
-                    r = column.row(align=True)
-                    r.prop(wprops, "foam_boundary_active", index=2, text="Y –")
-                    r.prop(wprops, "foam_boundary_active", index=3, text="Y+")
-                    r = column.row(align=True)
-                    r.prop(wprops, "foam_boundary_active", index=4, text="Z –")
-                    r.prop(wprops, "foam_boundary_active", index=5, text="Z+")
+                column.enabled = False
+                row = column.row(align=True)
+                row.alignment = 'LEFT'
+                row.prop(sprops, "fluid_boundary_collisions", index=0, text="X –")
+                row.prop(sprops, "fluid_boundary_collisions", index=1, text="X+")
+                row = column.row(align=True)
+                row.alignment = 'LEFT'
+                row.prop(sprops, "fluid_boundary_collisions", index=2, text="Y –")
+                row.prop(sprops, "fluid_boundary_collisions", index=3, text="Y+")
+                row = column.row(align=True)
+                row.alignment = 'LEFT'
+                row.prop(sprops, "fluid_boundary_collisions", index=4, text="Z –")
+                row.prop(sprops, "fluid_boundary_collisions", index=5, text="Z+")
+            else:
+                split = column.split(align=True)
+                column1 = split.column(align=True)
+                column2 = split.column(align=True)
+                column3 = split.column(align=True)
+                column4 = split.column(align=True)
 
-                column = row.column(align=True)
-                column.label(text="Bubble:")
-                column.prop(wprops, "bubble_boundary_behaviour", text="")
-                if wprops.bubble_boundary_behaviour != 'BEHAVIOUR_COLLIDE':
-                    r = column.row(align=True)
-                    r.prop(wprops, "bubble_boundary_active", index=0, text="X –")
-                    r.prop(wprops, "bubble_boundary_active", index=1, text="X+")
-                    r = column.row(align=True)
-                    r.prop(wprops, "bubble_boundary_active", index=2, text="Y –")
-                    r.prop(wprops, "bubble_boundary_active", index=3, text="Y+")
-                    r = column.row(align=True)
-                    r.prop(wprops, "bubble_boundary_active", index=4, text="Z –")
-                    r.prop(wprops, "bubble_boundary_active", index=5, text="Z+")
+                column1.label(text="Foam:")
+                row = column1.row(align=True)
+                row.alignment = 'LEFT'
+                row.prop(wprops, "foam_boundary_collisions", index=0, text="X –")
+                row.prop(wprops, "foam_boundary_collisions", index=1, text="X+")
+                row = column1.row(align=True)
+                row.alignment = 'LEFT'
+                row.prop(wprops, "foam_boundary_collisions", index=2, text="Y –")
+                row.prop(wprops, "foam_boundary_collisions", index=3, text="Y+")
+                row = column1.row(align=True)
+                row.alignment = 'LEFT'
+                row.prop(wprops, "foam_boundary_collisions", index=4, text="Z –")
+                row.prop(wprops, "foam_boundary_collisions", index=5, text="Z+")
 
-                column = row.column(align=True)
-                column.label(text="Spray:")
-                column.prop(wprops, "spray_boundary_behaviour", text="")
-                if wprops.spray_boundary_behaviour != 'BEHAVIOUR_COLLIDE':
-                    r = column.row(align=True)
-                    r.prop(wprops, "spray_boundary_active", index=0, text="X –")
-                    r.prop(wprops, "spray_boundary_active", index=1, text="X+")
-                    r = column.row(align=True)
-                    r.prop(wprops, "spray_boundary_active", index=2, text="Y –")
-                    r.prop(wprops, "spray_boundary_active", index=3, text="Y+")
-                    r = column.row(align=True)
-                    r.prop(wprops, "spray_boundary_active", index=4, text="Z –")
-                    r.prop(wprops, "spray_boundary_active", index=5, text="Z+")
+                column2.label(text="Bubble:")
+                row = column2.row(align=True)
+                row.alignment = 'LEFT'
+                row.prop(wprops, "bubble_boundary_collisions", index=0, text="X –")
+                row.prop(wprops, "bubble_boundary_collisions", index=1, text="X+")
+                row = column2.row(align=True)
+                row.alignment = 'LEFT'
+                row.prop(wprops, "bubble_boundary_collisions", index=2, text="Y –")
+                row.prop(wprops, "bubble_boundary_collisions", index=3, text="Y+")
+                row = column2.row(align=True)
+                row.alignment = 'LEFT'
+                row.prop(wprops, "bubble_boundary_collisions", index=4, text="Z –")
+                row.prop(wprops, "bubble_boundary_collisions", index=5, text="Z+")
+
+                column3.label(text="Spray:")
+                row = column3.row(align=True)
+                row.alignment = 'LEFT'
+                row.prop(wprops, "spray_boundary_collisions", index=0, text="X –")
+                row.prop(wprops, "spray_boundary_collisions", index=1, text="X+")
+                row = column3.row(align=True)
+                row.alignment = 'LEFT'
+                row.prop(wprops, "spray_boundary_collisions", index=2, text="Y –")
+                row.prop(wprops, "spray_boundary_collisions", index=3, text="Y+")
+                row = column3.row(align=True)
+                row.alignment = 'LEFT'
+                row.prop(wprops, "spray_boundary_collisions", index=4, text="Z –")
+                row.prop(wprops, "spray_boundary_collisions", index=5, text="Z+")
+
+                column4.label(text="Dust:")
+                row = column4.row(align=True)
+                row.alignment = 'LEFT'
+                row.prop(wprops, "dust_boundary_collisions", index=0, text="X –")
+                row.prop(wprops, "dust_boundary_collisions", index=1, text="X+")
+                row = column4.row(align=True)
+                row.alignment = 'LEFT'
+                row.prop(wprops, "dust_boundary_collisions", index=2, text="Y –")
+                row.prop(wprops, "dust_boundary_collisions", index=3, text="Y+")
+                row = column4.row(align=True)
+                row.alignment = 'LEFT'
+                row.prop(wprops, "dust_boundary_collisions", index=4, text="Z –")
+                row.prop(wprops, "dust_boundary_collisions", index=5, text="Z+")
 
         if show_advanced:
             box = self.layout.box()

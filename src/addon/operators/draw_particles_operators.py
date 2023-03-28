@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2022 Ryan L. Guy
+# Copyright (C) 2023 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, bgl, blf, math, colorsys
+import bpy, blf, math, colorsys
+
+try:
+    import bgl
+except ImportError:
+    # bgl module may be deprecated depending on Blender version
+    pass
+
 from bpy.props import (
         IntProperty
         )
@@ -221,7 +228,12 @@ class FlipFluidDrawGLParticles(bpy.types.Operator):
         if vcu.is_blender_28():
             global particle_shader
             global particle_batch_draw
-            bgl.glPointSize(dprops.debug.particle_size)
+            if vcu.is_blender_35():
+                # Warnings in Blender 3.5 when using bgl module, which is to
+                # be deprecated in Blender 3.7. Use gpu module instead.
+                gpu.state.point_size_set(dprops.debug.particle_size)
+            else:
+                bgl.glPointSize(dprops.debug.particle_size)
             particle_batch_draw.draw(particle_shader)
         else:
             bgl.glPointSize(dprops.debug.particle_size)

@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2022 Ryan L. Guy
+# Copyright (C) 2023 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -66,7 +66,7 @@ class FLIPFluidInfoAddonPreferences(bpy.types.AddonPreferences):
         column.operator(
                 "wm.url_open", 
                 text="Purchase the FLIP Fluids addon on FlippedNormals", 
-            ).url = "https://flippednormals.com/downloads/the-flip-fluids-addon-for-blender/ref/FLIPFluids/"
+            ).url = "https://flippednormals.com/product/the-flip-fluids-addon-for-blender-16173?dst=4DxRZXXT"
 
 
 def register():

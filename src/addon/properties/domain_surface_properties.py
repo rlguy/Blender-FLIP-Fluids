@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2022 Ryan L. Guy
+# Copyright (C) 2023 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -172,7 +172,7 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
                 " rendering with velocity-based shaders and/or motion blur where the liquid-obstacle"
                 " interface will be visible such as when there are transparent/invisible obstacles"
                 " in the render",
-            default=False,
+            default=True,
             options={'HIDDEN'},
             ); exec(conv("enable_velocity_vector_attribute_against_obstacles"))
     enable_speed_attribute = BoolProperty(

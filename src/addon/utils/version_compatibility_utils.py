@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2022 Ryan L. Guy
+# Copyright (C) 2023 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -51,6 +51,14 @@ def is_blender_32():
 
 def is_blender_33():
     return bpy.app.version >= (3, 3, 0)
+
+
+def is_blender_34():
+    return bpy.app.version >= (3, 4, 0)
+
+
+def is_blender_35():
+    return bpy.app.version >= (3, 5, 0)
     
 
 def register_dict_property(dict_object, name_str, prop):
@@ -213,6 +221,11 @@ def remove_from_flip_fluids_collection(obj, context):
 
         num_collections = 0
         for collection in bpy.data.collections:
+            if collection.name.startswith("RigidBodyWorld"):
+                # The RigidBodyWorld collection (for RBD objects) is more hidden within the Blend file
+                # and may not be apparent to many users. Ignore this collection in the count so that
+                # it does not appear that the objects dissappear.
+                continue
             if collection.objects.get(obj.name):
                 num_collections += 1
         if num_collections == 1 and context.scene.collection.objects.get(obj.name) is None:
@@ -222,12 +235,13 @@ def remove_from_flip_fluids_collection(obj, context):
             flip_collection.objects.unlink(obj)
 
 
-def delete_object(obj):
+def delete_object(obj, remove_mesh_data=True):
     if obj.type == 'MESH':
         mesh_data = obj.data
         bpy.data.objects.remove(obj, do_unlink=True)
-        mesh_data.user_clear()
-        bpy.data.meshes.remove(mesh_data)
+        if remove_mesh_data:
+            mesh_data.user_clear()
+            bpy.data.meshes.remove(mesh_data)
     else:
         bpy.data.objects.remove(obj, do_unlink=True)
 
@@ -387,6 +401,11 @@ def swap_object_mesh_data_geometry(bl_object, vertices=[], triangles=[],
                                    smooth_mesh=False,
                                    octane_mesh_type='Global'):
     if is_blender_281():
+        # Vertex Groups (Blender >= 3.4)
+        if is_blender_34():
+            vg_layer_names = [vg.name for vg in bl_object.vertex_groups]
+            active_vertex_layer_index = bl_object.vertex_groups.active_index
+
         # UV Maps
         uv_layer_names = [uv.name for uv in bl_object.data.uv_layers]
         is_uv_layer_active = [uv.active for uv in bl_object.data.uv_layers]
@@ -410,6 +429,13 @@ def swap_object_mesh_data_geometry(bl_object, vertices=[], triangles=[],
         _set_mesh_smoothness(bl_object.data, smooth_mesh)
         _set_octane_mesh_type(bl_object, octane_mesh_type)
 
+        # Vertex Groups (Blender >= 3.4)
+        if is_blender_34():
+            for i, name in enumerate(vg_layer_names):
+                vg_layer = bl_object.vertex_groups.new(name=name)
+                if active_vertex_layer_index >= 0:
+                    bl_object.vertex_groups.active_index = active_vertex_layer_index
+
         # UV Maps
         for i, name in enumerate(uv_layer_names):
             uv_layer = bl_object.data.uv_layers.new(name=name)
@@ -424,10 +450,15 @@ def swap_object_mesh_data_geometry(bl_object, vertices=[], triangles=[],
                         type=ca_layer_data_types[i], 
                         domain=ca_layer_domain_types[i]
                         )
+                # Unable to set active color/render index > 0. Possibly a Blender bug that we need
+                # to report. For now, the Color Attributes layer will be limited to a single layer.
+                # As far as we know, this feature does not need to be used outside of Octane Render.
+                """
                 if active_color_layer_index >= 0:
                     bl_object.data.color_attributes.active_color_index = active_color_layer_index
                 if active_color_render_index >= 0:
                     bl_object.data.color_attributes.render_color_index = active_color_render_index
+                """
         else:
             # Vertex Colors (Blender <= 3.1)
             for i, name in enumerate(vc_layer_names):

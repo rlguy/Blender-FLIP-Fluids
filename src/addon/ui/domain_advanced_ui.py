@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2022 Ryan L. Guy
+# Copyright (C) 2023 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -97,15 +97,19 @@ class FLIPFLUID_PT_DomainTypeAdvancedPanel(bpy.types.Panel):
                 icon="WORLD"
             ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Advanced-Settings#flip-vs-apic"
 
-        subbox = self.layout.box()
-        column = subbox.column()
-        column.label(text="Simulation Stability:")
-
         if show_advanced:
+            subbox = self.layout.box()
+            column = subbox.column()
+            column.label(text="Simulation Stability:")
+
             row = column.row(align=True)
             row.prop(aprops, "particle_jitter_factor", slider=True)
             row.prop(aprops, "jitter_surface_particles")
             column.prop(aprops, "enable_extreme_velocity_removal")
+            column.separator()
+            column = subbox.column(align=True)
+            column.prop(aprops, "pressure_solver_max_iterations")
+            column.prop(aprops, "viscosity_solver_max_iterations")
 
         if show_advanced:
             subbox = self.layout.box()

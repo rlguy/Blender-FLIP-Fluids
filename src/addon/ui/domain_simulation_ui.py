@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2022 Ryan L. Guy
+# Copyright (C) 2023 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -370,6 +370,20 @@ class FLIPFLUID_PT_DomainTypePanel(bpy.types.Panel):
                     text="World Scaling Documentation", 
                     icon="WORLD"
                 ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-World-Settings#world-size"
+
+        subbox = box.box()
+        column = subbox.column(align=True)
+        column.label(text="Domain Boundary Collisions:")
+        row = column.row(align=True)
+        row.prop(sprops, "fluid_boundary_collisions", index=0, text="X –")
+        row.prop(sprops, "fluid_boundary_collisions", index=1, text="X+")
+        row = column.row(align=True)
+        row.prop(sprops, "fluid_boundary_collisions", index=2, text="Y –")
+        row.prop(sprops, "fluid_boundary_collisions", index=3, text="Y+")
+        row = column.row(align=True)
+        row.prop(sprops, "fluid_boundary_collisions", index=4, text="Z –")
+        row.prop(sprops, "fluid_boundary_collisions", index=5, text="Z+")
+        column.prop(sprops, "fluid_open_boundary_width", slider=True)
 
         subbox = box.box()
         row = subbox.row()

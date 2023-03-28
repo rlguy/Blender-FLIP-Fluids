@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2022 Ryan L. Guy
+# Copyright (C) 2023 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -577,7 +577,8 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
                 column.label(text=str(num_baked_frames) + "  /  " + str(num_frames))
 
             column.label(text=str(simprops.frame_start))
-            column.label(text=str(simprops.frame_end))
+            #column.label(text=str(simprops.frame_end))
+            column.label(text=str(simprops.frame_start + num_baked_frames - 1))
 
             if dprops.bake.is_simulation_running:
                 column = subbox.column()

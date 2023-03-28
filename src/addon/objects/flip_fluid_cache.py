@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2022 Ryan L. Guy
+# Copyright (C) 2023 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -244,8 +244,10 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
             is_smooth = self._is_mesh_smooth(mesh_data)
             octane_mesh_type = self._get_octane_mesh_type(cache_object)
 
-            mesh_data.clear_geometry()
-            mesh_data.from_pydata([], [], [])
+            vcu.swap_object_mesh_data_geometry(cache_object, [], [], 
+                                               mesh_data,
+                                               is_smooth,
+                                               octane_mesh_type)
 
             self._set_mesh_smoothness(mesh_data, is_smooth)
             self._set_octane_settings(cache_object, octane_mesh_type)
@@ -611,9 +613,10 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         self.current_loaded_frame = render.get_current_render_frame()
         self._commit_loaded_frame_data(frameno)
 
-        use_persistent_data = bpy.context.scene.render.use_persistent_data
         if vcu.is_blender_279() or render.is_rendering():
-            if not use_persistent_data:
+            use_persistent_data = bpy.context.scene.render.use_persistent_data
+            is_keyframed_hide_render = render.is_keyframed_hide_render_issue_relevant()
+            if not use_persistent_data and not is_keyframed_hide_render:
                 # Updating depsgraph when 'Persistent Data' option is enabled
                 # causes incorrect render. Note: ignoring the depsgraph update
                 # can result in more frequent render crashes. 

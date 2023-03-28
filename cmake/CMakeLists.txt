@@ -1,5 +1,5 @@
 #[[
-Copyright (C) 2022 Ryan L. Guy
+Copyright (C) 2023 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -53,8 +53,8 @@ set(CMAKE_BUILD_TYPE Release)
 set(FLUIDENGINE_VERSION_TYPE_IS_STABLE_BUILD TRUE)
 set(FLUIDENGINE_VERSION_MAJOR 1)
 set(FLUIDENGINE_VERSION_MINOR 6)
-set(FLUIDENGINE_VERSION_REVISION 0)
-set(FLUIDENGINE_VERSION_DATE "25-NOV-2022")
+set(FLUIDENGINE_VERSION_REVISION 2)
+set(FLUIDENGINE_VERSION_DATE "29-MAR-2023")
 
 if(FLUIDENGINE_VERSION_TYPE_IS_STABLE_BUILD)
     set(FLUIDENGINE_VERSION_TYPE_LABEL "GitHub Release")

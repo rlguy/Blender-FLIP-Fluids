@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2022 Ryan L. Guy
+# Copyright (C) 2023 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -438,6 +438,45 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
             default=(True, True, True, True, False, True),
             size=6,
             ); exec(conv("spray_boundary_active"))
+    whitewater_boundary_collisions_mode = EnumProperty(
+            name="Domain Boundary Collisions Mode",
+            description="Select how to set the domain boundary collisions",
+            items=types.boundary_collisions_modes,
+            default='BOUNDARY_COLLISIONS_MODE_INHERIT',
+            options={'HIDDEN'},
+            ); exec(conv("whitewater_boundary_collisions_mode"))
+    foam_boundary_collisions = BoolVectorProperty(
+            name="",
+            description="Enable collisions on the corresponding side of the domain for whitewater foam particles."
+                " If disabled, this side of the boundary will be open and will act"
+                " as an outflow",
+            default=(True, True, True, True, True, True),
+            size=6,
+            ); exec(conv("foam_boundary_collisions"))
+    bubble_boundary_collisions = BoolVectorProperty(
+            name="",
+            description="Enable collisions on the corresponding side of the domain for whitewater bubble particles."
+                " If disabled, this side of the boundary will be open and will act"
+                " as an outflow",
+            default=(True, True, True, True, True, True),
+            size=6,
+            ); exec(conv("bubble_boundary_collisions"))
+    spray_boundary_collisions = BoolVectorProperty(
+            name="",
+            description="Enable collisions on the corresponding side of the domain for whitewater spray particles."
+                " If disabled, this side of the boundary will be open and will act"
+                " as an outflow",
+            default=(True, True, True, True, True, True),
+            size=6,
+            ); exec(conv("spray_boundary_collisions"))
+    dust_boundary_collisions = BoolVectorProperty(
+            name="",
+            description="Enable collisions on the corresponding side of the domain for whitewater dust particles."
+                " If disabled, this side of the boundary will be open and will act"
+                " as an outflow",
+            default=(True, True, True, True, True, True),
+            size=6,
+            ); exec(conv("dust_boundary_collisions"))
     obstacle_influence_base_level = FloatProperty(
             name="Influence Base Level", 
             description="The default value of whitewater influence. If a location"
@@ -516,6 +555,11 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
         add(path + ".foam_boundary_active",                     "Foam Boundary X–/+ Y–/+ Z–/+",   group_id=2)
         add(path + ".bubble_boundary_active",                   "Bubble Boundary X–/+ Y–/+ Z–/+", group_id=2)
         add(path + ".spray_boundary_active",                    "Spray Boundary X–/+ Y–/+ Z–/+",  group_id=2)
+        add(path + ".whitewater_boundary_collisions_mode",      "Boundary Collisions Mode",       group_id=2)
+        add(path + ".foam_boundary_collisions",                 "Foam Boundary Collisions",       group_id=2)
+        add(path + ".bubble_boundary_collisions",               "Bubble Boundary Collisions",     group_id=2)
+        add(path + ".spray_boundary_collisions",                "Spray Boundary Collisions",      group_id=2)
+        add(path + ".dust_boundary_collisions",                 "Dust Boundary Collisions",       group_id=2)
         add(path + ".obstacle_influence_base_level",            "Obstacle Influence Base Level",  group_id=2)
         add(path + ".obstacle_influence_decay_rate",            "Obstacle Influence Base Level",  group_id=2)
 

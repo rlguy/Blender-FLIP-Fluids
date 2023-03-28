@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2022 Ryan L. Guy
+# Copyright (C) 2023 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -76,6 +76,22 @@ class DomainAdvancedProperties(bpy.types.PropertyGroup):
             " initial fluid shape",
             default=False,
             ); exec(conv("jitter_surface_particles"))
+    pressure_solver_max_iterations = IntProperty(
+            name="Pressure Solver Max Iterations",
+            description="Maximum number of iterations that the pressure solver is allowed"
+                " to run during a substep. The default value of 900 is often a good choice and does"
+                " not need to be changed. See documentation for more information on this setting",
+            min=1, soft_max=10000,
+            default=900,
+            ); exec(conv("pressure_solver_max_iterations"))
+    viscosity_solver_max_iterations = IntProperty(
+            name="Viscosity Solver Max Iterations",
+            description="Maximum number of iterations that the viscosity solver is allowed"
+                " to run during a substep. The default value of 900 is often a good choice and does"
+                " not need to be changed. See documentation for more information on this setting",
+            min=1, soft_max=10000,
+            default=900,
+            ); exec(conv("viscosity_solver_max_iterations"))
     velocity_transfer_method = EnumProperty(
             name="Velocity Transfer Method",
             description="Simulation method to use",
@@ -147,6 +163,7 @@ class DomainAdvancedProperties(bpy.types.PropertyGroup):
             description="Determing the amount of simulation threads used",
             items=types.threading_modes,
             default='THREADING_MODE_AUTO_DETECT',
+            update=lambda self, context: self.initialize_num_threads_auto_detect(),
             options={'HIDDEN'},
             ); exec(conv("threading_mode"))
     enable_asynchronous_meshing = BoolProperty(
@@ -199,6 +216,8 @@ class DomainAdvancedProperties(bpy.types.PropertyGroup):
         add(path + ".enable_adaptive_force_field_time_stepping", "Adaptive Force Field Stepping",      group_id=0)
         add(path + ".particle_jitter_factor",                    "Jitter Factor",                      group_id=0)
         add(path + ".jitter_surface_particles",                  "Jitter Surface Particles",           group_id=0)
+        add(path + ".pressure_solver_max_iterations",            "Pressure Solver Iterations",         group_id=0)
+        add(path + ".viscosity_solver_max_iterations",           "Viscosity Solver Iterations",        group_id=0)
         add(path + ".velocity_transfer_method",                  "Velocity Transfer Method",           group_id=0)
         add(path + ".PICFLIP_ratio",                             "PIC/FLIP Ratio",                     group_id=0)
         add(path + ".PICAPIC_ratio",                             "PIC/APIC Ratio",                     group_id=0)
@@ -214,14 +233,14 @@ class DomainAdvancedProperties(bpy.types.PropertyGroup):
 
 
     def initialize(self):
-        self._initialize_num_threads_auto_detect()
+        self.initialize_num_threads_auto_detect()
 
 
     def load_post(self):
-        self._initialize_num_threads_auto_detect()
+        self.initialize_num_threads_auto_detect()
         
 
-    def _initialize_num_threads_auto_detect(self):
+    def initialize_num_threads_auto_detect(self):
         original_threads_mode = bpy.context.scene.render.threads_mode
         bpy.context.scene.render.threads_mode = 'AUTO'
         self.num_threads_auto_detect = bpy.context.scene.render.threads

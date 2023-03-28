@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2022 Ryan L. Guy
+# Copyright (C) 2023 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -218,6 +218,14 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
         if domain_object is None:
             return
         self.mesh_cache.delete_cache_objects()
+
+
+    def refresh_property_registry(self):
+        # Call to re-initialize properties. The object in the scene is not
+        # guaranteed to contain all properties of the current version of the addon,
+        # such as a domain imported from the asset browser that was created in an earlier
+        # version.
+        self._initialize_property_registry()
 
 
     def _initialize_property_registry(self):

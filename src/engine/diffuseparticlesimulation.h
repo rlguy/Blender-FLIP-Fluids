@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2022 Ryan L. Guy
+Copyright (C) 2023 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -226,6 +226,20 @@ public:
 
     std::vector<bool> getDustActiveBoundarySides();
     void setDustActiveBoundarySides(std::vector<bool> active);
+
+    std::vector<bool> getFoamBoundaryCollisions();
+    void setFoamBoundaryCollisions(std::vector<bool> active);
+
+    std::vector<bool> getBubbleBoundaryCollisions();
+    void setBubbleBoundaryCollisions(std::vector<bool> active);
+
+    std::vector<bool> getSprayBoundaryCollisions();
+    void setSprayBoundaryCollisions(std::vector<bool> active);
+
+    std::vector<bool> getDustBoundaryCollisions();
+    void setDustBoundaryCollisions(std::vector<bool> active);
+
+    void setDiffuseOpenBoundaryWidth(int width);
 
     void setDomainOffset(vmath::vec3 offset);
     vmath::vec3 getDomainOffset();
@@ -474,11 +488,17 @@ private:
     LimitBehaviour _bubbleLimitBehaviour = LimitBehaviour::collide;
     LimitBehaviour _sprayLimitBehaviour = LimitBehaviour::collide;
     LimitBehaviour _dustLimitBehaviour = LimitBehaviour::collide;
-    std::vector<bool> _foamActiveSides;
-    std::vector<bool> _bubbleActiveSides;
-    std::vector<bool> _sprayActiveSides;
-    std::vector<bool> _dustActiveSides;
+    std::vector<bool> _foamActiveSides{true, true, true, true, true, true};
+    std::vector<bool> _bubbleActiveSides{true, true, true, true, true, true};
+    std::vector<bool> _sprayActiveSides{true, true, true, true, true, true};
+    std::vector<bool> _dustActiveSides{true, true, true, true, true, true};
     AABB _emitterGenerationBounds;
+
+    std::vector<bool> _foamBoundaryCollisions{true, true, true, true, true, true};
+    std::vector<bool> _bubbleBoundaryCollisions{true, true, true, true, true, true};
+    std::vector<bool> _sprayBoundaryCollisions{true, true, true, true, true, true};
+    std::vector<bool> _dustBoundaryCollisions{true, true, true, true, true, true};
+    int _openBoundaryWidth = 2;    // in # of voxels
 
     ParticleSystem *_markerParticles;
     MACVelocityField *_vfield;
