@@ -200,12 +200,18 @@ int DiffuseParticleSimulation::getNumDiffuseParticles() {
 }
 
 int DiffuseParticleSimulation::getMaxNumDiffuseParticles() {
+    if (_maxNumDiffuseParticles == std::numeric_limits<unsigned int>::max()) {
+        return 0;
+    }
     return _maxNumDiffuseParticles;
 }
 
 void DiffuseParticleSimulation::setMaxNumDiffuseParticles(int n) {
     FLUIDSIM_ASSERT(n >= 0);
     _maxNumDiffuseParticles = n;
+    if (n == 0) {
+        _maxNumDiffuseParticles = std::numeric_limits<unsigned int>::max();
+    }
 }
 
 AABB DiffuseParticleSimulation::getEmitterGenerationBounds() {

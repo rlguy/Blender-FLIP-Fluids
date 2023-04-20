@@ -205,27 +205,32 @@ class FlipFluidFluidProperties(bpy.types.PropertyGroup):
 
 
     def _initialize_property_registry(self):
-        self.property_registry.clear()
-        add = self.property_registry.add_property
-        add("fluid.initial_velocity", "")
-        add("fluid.append_object_velocity", "")
-        add("fluid.append_object_velocity_influence", "")
-        add("fluid.priority", "")
-        add("fluid.fluid_velocity_mode", "")
-        add("fluid.initial_speed", "")
-        add("fluid.fluid_axis_mode", "")
-        add("fluid.source_id", "")
-        add("fluid.viscosity", "")
-        add("fluid.color", "")
-        add("fluid.target_object", "")
-        add("fluid.export_animated_target", "")
-        add("fluid.export_animated_mesh", "")
-        add("fluid.skip_reexport", "")
-        add("fluid.force_reexport_on_next_bake", "")
-        add("fluid.frame_offset_type", "")
-        add("fluid.frame_offset", "")
-        add("fluid.timeline_offset", "")
-        self._validate_property_registry()
+        try:
+            self.property_registry.clear()
+            add = self.property_registry.add_property
+            add("fluid.initial_velocity", "")
+            add("fluid.append_object_velocity", "")
+            add("fluid.append_object_velocity_influence", "")
+            add("fluid.priority", "")
+            add("fluid.fluid_velocity_mode", "")
+            add("fluid.initial_speed", "")
+            add("fluid.fluid_axis_mode", "")
+            add("fluid.source_id", "")
+            add("fluid.viscosity", "")
+            add("fluid.color", "")
+            add("fluid.target_object", "")
+            add("fluid.export_animated_target", "")
+            add("fluid.export_animated_mesh", "")
+            add("fluid.skip_reexport", "")
+            add("fluid.force_reexport_on_next_bake", "")
+            add("fluid.frame_offset_type", "")
+            add("fluid.frame_offset", "")
+            add("fluid.timeline_offset", "")
+            self._validate_property_registry()
+        except:
+            # Object is immutable if it is a linked library or library_override
+            # In this case, pass on modifying the object
+            pass
 
 
     def _validate_property_registry(self):

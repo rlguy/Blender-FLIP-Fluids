@@ -232,17 +232,17 @@ void TriangleMesh::getMeshFileDataPLY(std::vector<char> &data) {
 }
 
 void TriangleMesh::getMeshFileDataBOBJ(std::vector<char> &data) {
-    int numVertices = (int)vertices.size();
-    int numTriangles = (int)triangles.size();
-    int vertexDataSize = 3 * numVertices * sizeof(float);
-    int triangleDataSize = 3 * numTriangles * sizeof(int);
-    int dataSize = sizeof(int) + vertexDataSize + sizeof(int) + triangleDataSize;
+    size_t numVertices = vertices.size();
+    size_t numTriangles = triangles.size();
+    size_t vertexDataSize = 3 * numVertices * sizeof(float);
+    size_t triangleDataSize = 3 * numTriangles * sizeof(int);
+    size_t dataSize = sizeof(int) + vertexDataSize + sizeof(int) + triangleDataSize;
 
     data.clear();
     data.resize(dataSize);
     data.shrink_to_fit();
 
-    int byteOffset = 0;
+    size_t byteOffset = 0;
     std::memcpy(data.data() + byteOffset, &numVertices, sizeof(int));
     byteOffset += sizeof(int);
 

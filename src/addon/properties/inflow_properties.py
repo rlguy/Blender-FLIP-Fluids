@@ -200,27 +200,32 @@ class FlipFluidInflowProperties(bpy.types.PropertyGroup):
 
 
     def _initialize_property_registry(self):
-        self.property_registry.clear()
-        add = self.property_registry.add_property
-        add("inflow.is_enabled", "")
-        add("inflow.substep_emissions", "")
-        add("inflow.inflow_velocity_mode", "")
-        add("inflow.inflow_velocity", "")
-        add("inflow.append_object_velocity", "")
-        add("inflow.append_object_velocity_influence", "")
-        add("inflow.priority", "")
-        add("inflow.constrain_fluid_velocity", "")
-        add("inflow.inflow_speed", "")
-        add("inflow.inflow_axis_mode", "")
-        add("inflow.source_id", "")
-        add("inflow.viscosity", "")
-        add("inflow.color", "")
-        add("inflow.target_object", "")
-        add("inflow.export_animated_target", "")
-        add("inflow.export_animated_mesh", "")
-        add("inflow.skip_reexport", "")
-        add("inflow.force_reexport_on_next_bake", "")
-        self._validate_property_registry()
+        try:
+            self.property_registry.clear()
+            add = self.property_registry.add_property
+            add("inflow.is_enabled", "")
+            add("inflow.substep_emissions", "")
+            add("inflow.inflow_velocity_mode", "")
+            add("inflow.inflow_velocity", "")
+            add("inflow.append_object_velocity", "")
+            add("inflow.append_object_velocity_influence", "")
+            add("inflow.priority", "")
+            add("inflow.constrain_fluid_velocity", "")
+            add("inflow.inflow_speed", "")
+            add("inflow.inflow_axis_mode", "")
+            add("inflow.source_id", "")
+            add("inflow.viscosity", "")
+            add("inflow.color", "")
+            add("inflow.target_object", "")
+            add("inflow.export_animated_target", "")
+            add("inflow.export_animated_mesh", "")
+            add("inflow.skip_reexport", "")
+            add("inflow.force_reexport_on_next_bake", "")
+            self._validate_property_registry()
+        except:
+            # Object is immutable if it is a linked library or library_override
+            # In this case, pass on modifying the object
+            pass
 
 
     def _validate_property_registry(self):
