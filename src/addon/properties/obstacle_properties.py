@@ -134,19 +134,24 @@ class FlipFluidObstacleProperties(bpy.types.PropertyGroup):
 
 
     def _initialize_property_registry(self):
-        self.property_registry.clear()
-        add = self.property_registry.add_property
-        add("obstacle.is_enabled", "")
-        add("obstacle.is_inversed", "")
-        add("obstacle.export_animated_mesh", "")
-        add("obstacle.skip_reexport", "")
-        add("obstacle.force_reexport_on_next_bake", "")
-        add("obstacle.friction", "")
-        add("obstacle.whitewater_influence", "")
-        add("obstacle.dust_emission_strength", "")
-        add("obstacle.sheeting_strength", "")
-        add("obstacle.mesh_expansion", "")
-        self._validate_property_registry()
+        try:
+            self.property_registry.clear()
+            add = self.property_registry.add_property
+            add("obstacle.is_enabled", "")
+            add("obstacle.is_inversed", "")
+            add("obstacle.export_animated_mesh", "")
+            add("obstacle.skip_reexport", "")
+            add("obstacle.force_reexport_on_next_bake", "")
+            add("obstacle.friction", "")
+            add("obstacle.whitewater_influence", "")
+            add("obstacle.dust_emission_strength", "")
+            add("obstacle.sheeting_strength", "")
+            add("obstacle.mesh_expansion", "")
+            self._validate_property_registry()
+        except:
+            # Object is immutable if it is a linked library or library_override
+            # In this case, pass on modifying the object
+            pass
 
 
     def _validate_property_registry(self):

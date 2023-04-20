@@ -223,7 +223,10 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
             name="Max Particles (in millions)", 
             description="Maximum number of whitewater particles (in millions)"
                 " to simulate. The solver will stop generating new whitewater"
-                " particles to prevent exceeding this limit", 
+                " particles to prevent exceeding this limit. If set to 0, the"
+                " solver will not limit the number of whitewater particles,"
+                " however this may require large amounts of storage space depending"
+                " on the simulation", 
             min=0, max=2000,
             default=12,
             precision=2,

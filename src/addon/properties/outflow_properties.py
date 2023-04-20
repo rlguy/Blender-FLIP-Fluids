@@ -92,16 +92,21 @@ class FlipFluidOutflowProperties(bpy.types.PropertyGroup):
 
 
     def _initialize_property_registry(self):
-        self.property_registry.clear()
-        add = self.property_registry.add_property
-        add("outflow.is_enabled", "")
-        add("outflow.remove_fluid", "")
-        add("outflow.remove_whitewater", "")
-        add("outflow.is_inversed", "")
-        add("outflow.export_animated_mesh", "")
-        add("outflow.skip_reexport", "")
-        add("outflow.force_reexport_on_next_bake", "")
-        self._validate_property_registry()
+        try:
+            self.property_registry.clear()
+            add = self.property_registry.add_property
+            add("outflow.is_enabled", "")
+            add("outflow.remove_fluid", "")
+            add("outflow.remove_whitewater", "")
+            add("outflow.is_inversed", "")
+            add("outflow.export_animated_mesh", "")
+            add("outflow.skip_reexport", "")
+            add("outflow.force_reexport_on_next_bake", "")
+            self._validate_property_registry()
+        except:
+            # Object is immutable if it is a linked library or library_override
+            # In this case, pass on modifying the object
+            pass
 
 
     def _validate_property_registry(self):

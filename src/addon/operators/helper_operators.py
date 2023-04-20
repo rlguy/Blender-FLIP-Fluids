@@ -1380,6 +1380,8 @@ class FlipFluidHelperCommandLineBake(bpy.types.Operator):
                 subprocess.call(["open", "-a", "Terminal", script_filepath])
             else:
                 if shutil.which("gnome-terminal") is not None and shutil.which("bash") is not None:
+                    # Requited to escape spaces for the script_filepath + "; exec bash" command to run
+                    script_filepath = script_filepath.replace(" ", "\\ ")
                     subprocess.call(["gnome-terminal", "--", "bash", "-c", script_filepath + "; exec bash"])
                 elif shutil.which("xterm") is not None:
                     subprocess.call(["xterm", "-hold", "-e", script_filepath])
@@ -1517,6 +1519,8 @@ class FlipFluidHelperCommandLineRender(bpy.types.Operator):
                 subprocess.call(["open", "-a", "Terminal", script_filepath])
             else:
                 if shutil.which("gnome-terminal") is not None and shutil.which("bash") is not None:
+                    # Requited to escape spaces for the script_filepath + "; exec bash" command to run
+                    script_filepath = script_filepath.replace(" ", "\\ ")
                     subprocess.call(["gnome-terminal", "--", "bash", "-c", script_filepath + "; exec bash"])
                 elif shutil.which("xterm") is not None:
                     subprocess.call(["xterm", "-hold", "-e", script_filepath])
@@ -1658,6 +1662,8 @@ class FlipFluidHelperCommandLineRenderFrame(bpy.types.Operator):
                 subprocess.call(["open", "-a", "Terminal", script_filepath])
             else:
                 if shutil.which("gnome-terminal") is not None and shutil.which("bash") is not None:
+                    # Requited to escape spaces for the script_filepath + "; exec bash" command to run
+                    script_filepath = script_filepath.replace(" ", "\\ ")
                     subprocess.call(["gnome-terminal", "--", "bash", "-c", script_filepath + "; exec bash"])
                 elif shutil.which("xterm") is not None:
                     subprocess.call(["xterm", "-hold", "-e", script_filepath])

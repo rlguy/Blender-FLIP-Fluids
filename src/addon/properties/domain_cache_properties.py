@@ -132,6 +132,7 @@ class DomainCacheProperties(bpy.types.PropertyGroup):
         if os.path.isdir(linked_export_directory):
             return True
         else:
+            database_filename = "export_data.sqlite3" 
             incorrect_filepath_test = os.path.join(linked_geometry_directory, database_filename)
             if os.path.isfile(incorrect_filepath_test):
                 return True

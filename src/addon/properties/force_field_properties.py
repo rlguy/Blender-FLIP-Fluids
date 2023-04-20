@@ -281,35 +281,40 @@ class FlipFluidForceFieldProperties(bpy.types.PropertyGroup):
 
 
     def _initialize_property_registry(self):
-        self.property_registry.clear()
-        add = self.property_registry.add_property
-        add("force_field.force_field_type", "")
-        add("force_field.is_enabled", "")
-        add("force_field.strength", "")
-        add("force_field.flow_strength", "")
-        add("force_field.spin_strength", "")
-        add("force_field.enable_endcaps", "")
-        add("force_field.falloff_power", "")
-        add("force_field.falloff_shape", "")
-        add("force_field.enable_min_distance", "")
-        add("force_field.enable_max_distance", "")
-        add("force_field.min_max_distance", "")
-        add("force_field.maximum_force_limit_factor", "")
-        add("force_field.gravity_scale_point", "")
-        add("force_field.gravity_scale_surface", "")
-        add("force_field.enable_frontfacing", "")
-        add("force_field.enable_backfacing", "")
-        add("force_field.enable_edgefacing", "")
-        add("force_field.gravity_scale_volume", "")
-        add("force_field.gravity_scale_curve", "")
-        add("force_field.gravity_scale_width_point", "")
-        add("force_field.gravity_scale_width_surface", "")
-        add("force_field.gravity_scale_width_volume", "")
-        add("force_field.gravity_scale_width_curve", "")
-        add("force_field.export_animated_mesh", "")
-        add("force_field.skip_reexport", "")
-        add("force_field.force_reexport_on_next_bake", "")
-        self._validate_property_registry()
+        try:
+            self.property_registry.clear()
+            add = self.property_registry.add_property
+            add("force_field.force_field_type", "")
+            add("force_field.is_enabled", "")
+            add("force_field.strength", "")
+            add("force_field.flow_strength", "")
+            add("force_field.spin_strength", "")
+            add("force_field.enable_endcaps", "")
+            add("force_field.falloff_power", "")
+            add("force_field.falloff_shape", "")
+            add("force_field.enable_min_distance", "")
+            add("force_field.enable_max_distance", "")
+            add("force_field.min_max_distance", "")
+            add("force_field.maximum_force_limit_factor", "")
+            add("force_field.gravity_scale_point", "")
+            add("force_field.gravity_scale_surface", "")
+            add("force_field.enable_frontfacing", "")
+            add("force_field.enable_backfacing", "")
+            add("force_field.enable_edgefacing", "")
+            add("force_field.gravity_scale_volume", "")
+            add("force_field.gravity_scale_curve", "")
+            add("force_field.gravity_scale_width_point", "")
+            add("force_field.gravity_scale_width_surface", "")
+            add("force_field.gravity_scale_width_volume", "")
+            add("force_field.gravity_scale_width_curve", "")
+            add("force_field.export_animated_mesh", "")
+            add("force_field.skip_reexport", "")
+            add("force_field.force_reexport_on_next_bake", "")
+            self._validate_property_registry()
+        except:
+            # Object is immutable if it is a linked library or library_override
+            # In this case, pass on modifying the object
+            pass
 
 
     def _validate_property_registry(self):

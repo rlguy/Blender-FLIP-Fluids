@@ -133,8 +133,9 @@ class DomainAdvancedProperties(bpy.types.PropertyGroup):
             description="Attempt to remove extreme particle velocities that"
                 " cause the simulator to exceed the maximum number of allowed"
                 " frame substeps. Enabling this option may prevent simulation"
-                " blow-up in extreme cases. Disable this option if fast moving"
-                " fluid is disappearing from the simulation domain",
+                " blow-up in extreme cases. It is not recommended to disable"
+                " this option outside of experimentation and testing. Disabling"
+                " can result in unstable simulations and/or extreme simulation times",
             default=True,
             ); exec(conv("enable_extreme_velocity_removal"))
     enable_gpu_features = BoolProperty(

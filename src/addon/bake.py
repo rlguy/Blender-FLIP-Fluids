@@ -722,6 +722,7 @@ def __delete_outdated_savestates(cache_directory, savestate_id):
         if savestate_number > savestate_id:
             path = os.path.join(savestate_directory, d)
             try:
+                print("Delete savestate", path)
                 fpl.delete_files_in_directory(path, extensions, remove_directory=True)
             except:
                 print("Error: unable to delete directory <" + path + "> (skipping)")
@@ -786,11 +787,14 @@ def __load_save_state_data(fluidsim, data, cache_directory, savestate_id):
         current_autosave_directory = os.path.join(savestate_directory, "autosave")
         if savestate_name != "autosave" and os.path.isdir(current_autosave_directory):
             backup_autosave_directory = current_autosave_directory + ".backup"
+            if os.path.isdir(backup_autosave_directory):
+                # Backup autosave directory may already exist from a previous bake, remove if so
+                fpl.delete_files_in_directory(backup_autosave_directory, [".state", ".data"], remove_directory=True)
             os.rename(current_autosave_directory, backup_autosave_directory)
             try:
                 old_directory = autosave_directory
                 new_directory = os.path.join(savestate_directory, "autosave")
-                os.rename(old_directory, new_directory)
+                shutil.copytree(old_directory, new_directory, dirs_exist_ok=True)
                 fpl.delete_files_in_directory(backup_autosave_directory, [".state", ".data"], remove_directory=True)
             except Exception as e:
                 os.rename(backup_autosave_directory, current_autosave_directory)

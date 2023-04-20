@@ -16,12 +16,6 @@
 
 import bpy, blf, math, colorsys
 
-try:
-    import bgl
-except ImportError:
-    # bgl module may be deprecated depending on Blender version
-    pass
-
 from bpy.props import (
         IntProperty
         )
@@ -194,9 +188,15 @@ class FlipFluidDrawForceField(bpy.types.Operator):
                 # be deprecated in Blender 3.7. Use gpu module instead.
                 gpu.state.point_size_set(dprops.debug.force_field_line_size)
             else:
+                # only attempt to import bgl when necessary (older versions of Blender). In Blender >= 3.5,
+                # importing bgl generates a warning, and possibly an error in Blender >= 4.0.
+                import bgl
                 bgl.glPointSize(dprops.debug.force_field_line_size)
             particle_batch_draw.draw(particle_shader)
         else:
+            # only attempt to import bgl when necessary (older versions of Blender). In Blender >= 3.5,
+            # importing bgl generates a warning, and possibly an error in Blender >= 4.0.
+            import bgl
             bgl.glPointSize(dprops.debug.force_field_line_size)
             bgl.glBegin(bgl.GL_POINTS)
 

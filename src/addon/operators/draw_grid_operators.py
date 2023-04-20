@@ -16,12 +16,6 @@
 
 import bpy, blf, math, colorsys
 
-try:
-    import bgl
-except ImportError:
-    # bgl module may be deprecated depending on Blender version
-    pass
-
 from bpy.props import (
         IntProperty
         )
@@ -395,6 +389,7 @@ class FlipFluidDrawDebugGrid(bpy.types.Operator):
                 shader.uniform_float("color", (bounds_color[0], bounds_color[1], bounds_color[2], 1.0))
                 batch.draw(shader)
         else:
+            import bgl
             bgl.glLineWidth(1)
             bgl.glBegin(bgl.GL_LINES)
 
