@@ -28,8 +28,8 @@ SOFTWARE.
 #if defined(__linux__) || defined(__APPLE__) || defined(__MACOSX)
     #include <sys/time.h>
 #elif defined(_WIN32)
-    #include <Windows.h>
-    #include <Winbase.h>
+    #include <windows.h>
+    #include <winbase.h>
 #else
 #endif
 
