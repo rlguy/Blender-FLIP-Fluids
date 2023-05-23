@@ -254,10 +254,11 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
             self._toggle_cycles_ray_visibility(active_object, True)
 
         if oldtype != 'TYPE_DOMAIN' and newtype == 'TYPE_DOMAIN':
-            active_object.flip_fluid.domain.initialize()
-            active_object.lock_rotation = (True, True, True)
-            self._toggle_cycles_ray_visibility(active_object, False)
-            self._lock_interface()
+            if bpy.context.scene.flip_fluid.get_num_domain_objects() <= 1:
+                active_object.flip_fluid.domain.initialize()
+                active_object.lock_rotation = (True, True, True)
+                self._toggle_cycles_ray_visibility(active_object, False)
+                self._lock_interface()
         if oldtype == 'TYPE_DOMAIN' and newtype != 'TYPE_DOMAIN':
             active_object.lock_rotation = (False, False, False)
             active_object.flip_fluid.domain.destroy()

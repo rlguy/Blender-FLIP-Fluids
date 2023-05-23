@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, os, sys, platform
+import bpy, os, sys, platform, traceback
 from bpy.props import (
         BoolProperty,
         BoolVectorProperty,
@@ -413,8 +413,8 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
                 self.version_history.clear()
                 self.system_info = "No System and Blend File Info " + _LOGGING_DISABLED_MESSAGE
         except Exception as e:
+            print(traceback.format_exc())
             print(e)
-            pass
 
 
     def print_version_history(self):

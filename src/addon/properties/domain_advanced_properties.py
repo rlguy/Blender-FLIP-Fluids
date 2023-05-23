@@ -157,7 +157,7 @@ class DomainAdvancedProperties(bpy.types.PropertyGroup):
             name="Threads",
             description="Number of threads to use simultaneously while simulating",
             min=1, max=1024,
-            default=1,
+            default=4,
             ); exec(conv("num_threads_fixed"))
     threading_mode = EnumProperty(
             name="Threading Mode",

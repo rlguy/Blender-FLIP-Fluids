@@ -219,6 +219,8 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
     def delete_cache_object(self):
         if self.cache_object is None:
             return
+        if not bpy.context.scene.flip_fluid.is_domain_in_active_scene():
+            return
         self.unload_duplivert_object()
         cache_object = self.cache_object
         vcu.delete_object(cache_object)
@@ -850,6 +852,8 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
 
     def get_cache_object(self):
+        if not bpy.context.scene.flip_fluid.is_domain_in_active_scene():
+            return None
         if self.cache_object is None:
             return None
             
@@ -1731,6 +1735,8 @@ class FlipFluidCache(bpy.types.PropertyGroup):
         self.initialize_cache_settings()
         if not self._is_domain_set():
             return
+        if not bpy.context.scene.flip_fluid.is_domain_in_active_scene():
+            return
 
         self.surface.initialize_cache_object()
 
@@ -1785,6 +1791,9 @@ class FlipFluidCache(bpy.types.PropertyGroup):
         self.initialize_cache_settings()
         if not self._is_domain_set():
             return
+        if not bpy.context.scene.flip_fluid.is_domain_in_active_scene():
+            return
+
         self.surface.reset_cache_object()
         self.foam.reset_cache_object()
         self.bubble.reset_cache_object()

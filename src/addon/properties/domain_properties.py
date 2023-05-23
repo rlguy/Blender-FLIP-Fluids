@@ -307,6 +307,8 @@ def scene_update_post(scene):
     dprops = scene.flip_fluid.get_domain_properties()
     if dprops is None:
         return
+    if not scene.flip_fluid.is_domain_in_active_scene():
+        return
     dprops.scene_update_post(scene)
 
 

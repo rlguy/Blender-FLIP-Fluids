@@ -33,6 +33,7 @@ def play_sound(json_audio_filepath, block=False):
 
 
 bpy.ops.flip_fluid_operators.bake_fluid_simulation_cmd()
+bpy.ops.wm.revert_mainfile()
 bpy.ops.render.render(animation=True)
 
 resources_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))

@@ -85,6 +85,7 @@ struct FluidSimulationFrameStats {
     double deltaTime = 0.0;
     int fluidParticles = 0;
     int diffuseParticles = 0;
+    int performanceScore = 0;
 
     int pressureSolverEnabled = 1;
     int pressureSolverSuccess = 0;
@@ -1869,6 +1870,9 @@ private:
     double _currentFrameTimeStep = 0.0;
     double _currentFrameDeltaTime = 0.0;
     double _currentFrameDeltaTimeRemaining = 0.0;
+    int _currentNumFluidCells = 0;
+    int _currentPerformanceScore = 0;
+    int _currentExtremeVelocityParticlesRemoved = 0;
     bool _isLastFrameTimeStep = false;
     bool _isZeroLengthDeltaTime = false;
     bool _isSkippedFrame = false;
@@ -2075,7 +2079,8 @@ private:
     bool _isAdaptiveObstacleTimeSteppingEnabled = false;
     bool _isAdaptiveForceFieldTimeSteppingEnabled = false;
     bool _isExtremeVelocityRemovalEnabled = true;
-    double _extremeParticleVelocityThreshold = 0.999;
+    double _extremeParticleVelocityThreshold = 0.99999;
+    double _extremeParticleVelocityThresholdLower = 0.90;
     double _maxExtremeVelocityRemovalPercent = 0.0005;
     int _maxExtremeVelocityRemovalAbsolute = 35;
     int _maxExtremeVelocityOutlierRemovalAbsolute = 6;

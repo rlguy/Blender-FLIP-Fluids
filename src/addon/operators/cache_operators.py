@@ -411,7 +411,7 @@ class FlipFluidMatchFilenameCacheDirectory(bpy.types.Operator):
 
 
 class FlipFluidIncreaseDecreaseCacheDirectory(bpy.types.Operator):
-    bl_idname = "flip_fluid_operators.increment_decrease_cache_directory"
+    bl_idname = "flip_fluid_operators.increase_decrease_cache_directory"
     bl_label = "Increase/Decrease Cache Directory"
     bl_description = ("Increase or decrease a numbered suffix on the cache directory." + 
         " Note: this will not rename an existing cache directory")
@@ -465,6 +465,105 @@ class FlipFluidIncreaseDecreaseCacheDirectory(bpy.types.Operator):
         if is_relative:
             bpy.ops.flip_fluid_operators.relative_cache_directory()
 
+        return {'FINISHED'}
+
+
+class FlipFluidIncreaseDecreaseRenderDirectory(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.increase_decrease_render_directory"
+    bl_label = "Increase/Decrease Render Directory"
+    bl_description = ("Increase or decrease a numbered suffix on the render output directory." + 
+        " Note: this will not rename an existing render output directory")
+
+    increment_mode = StringProperty(default="INCREASE")
+    exec(vcu.convert_attribute_to_28("increment_mode"))
+
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+
+    def get_trailing_number(self, s):
+        m = re.search(r'\d+$', s)
+        return int(m.group()) if m else None
+
+
+    def ends_with_slash(self, s):
+        return s.endswith("/") or s.endswith("\\")
+
+
+    def ends_with_underscore(self, s):
+        return s.endswith("_")
+
+
+    def execute(self, context):
+        render_directory = context.scene.render.filepath
+        
+        basename = render_directory
+        endswith_slash = self.ends_with_slash(basename)
+        endswith_underscore = self.ends_with_underscore(basename)
+
+        slash_character = ""
+        if endswith_slash:
+            slash_character = basename[-1]
+            basename = basename[:-1]
+        elif endswith_underscore:
+            basename = basename[:-1]
+
+        suffix_number = self.get_trailing_number(basename)
+        if suffix_number:
+            basename = basename[:-len(str(suffix_number))]
+            if endswith_underscore:
+                if self.ends_with_underscore(basename):
+                    basename = basename[:-1]
+
+        if self.increment_mode == 'INCREASE':
+            if not suffix_number:
+                suffix_number = 0
+            suffix_number += 1
+            suffix_string = str(suffix_number)
+        else:
+            if not suffix_number:
+                return {'FINISHED'}
+            if suffix_number <= 1:
+                suffix_string = ""
+
+            else:
+                suffix_string = str(suffix_number - 1)
+
+        if endswith_slash:
+            new_basename = basename + suffix_string + slash_character
+        elif endswith_underscore:
+            if suffix_string:
+                new_basename = basename + "_" + suffix_string + "_"
+            else:
+                new_basename = basename + "_"
+        else:
+            new_basename = basename + suffix_string
+
+        context.scene.render.filepath = new_basename
+        return {'FINISHED'}
+
+
+class FlipFluidIncreaseDecreaseCacheRenderVersion(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.increase_decrease_cache_render_version"
+    bl_label = "Increase/Decrease Cache and Render Version"
+    bl_description = ("Increase or decrease a numbered suffix on both the cache" +
+        " directory and render output directory. Note: this will not rename an" +
+        " existing cache our render output directory")
+
+    increment_mode = StringProperty(default="INCREASE")
+    exec(vcu.convert_attribute_to_28("increment_mode"))
+
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+
+    def execute(self, context):
+        bpy.ops.flip_fluid_operators.increase_decrease_cache_directory(increment_mode=self.increment_mode)
+        bpy.ops.flip_fluid_operators.increase_decrease_render_directory(increment_mode=self.increment_mode)
         return {'FINISHED'}
 
 
@@ -569,6 +668,8 @@ def register():
     bpy.utils.register_class(FlipFluidAbsoluteCacheDirectory)
     bpy.utils.register_class(FlipFluidMatchFilenameCacheDirectory)
     bpy.utils.register_class(FlipFluidIncreaseDecreaseCacheDirectory)
+    bpy.utils.register_class(FlipFluidIncreaseDecreaseRenderDirectory)
+    bpy.utils.register_class(FlipFluidIncreaseDecreaseCacheRenderVersion)
     bpy.utils.register_class(FlipFluidRelativeLinkedGeometryDirectory)
     bpy.utils.register_class(FlipFluidAbsoluteLinkedGeometryDirectory)
     bpy.utils.register_class(FlipFluidClearLinkedGeometryDirectory)
@@ -588,6 +689,8 @@ def unregister():
     bpy.utils.unregister_class(FlipFluidAbsoluteCacheDirectory)
     bpy.utils.unregister_class(FlipFluidMatchFilenameCacheDirectory)
     bpy.utils.unregister_class(FlipFluidIncreaseDecreaseCacheDirectory)
+    bpy.utils.unregister_class(FlipFluidIncreaseDecreaseRenderDirectory)
+    bpy.utils.unregister_class(FlipFluidIncreaseDecreaseCacheRenderVersion)
     bpy.utils.unregister_class(FlipFluidRelativeLinkedGeometryDirectory)
     bpy.utils.unregister_class(FlipFluidAbsoluteLinkedGeometryDirectory)
     bpy.utils.unregister_class(FlipFluidClearLinkedGeometryDirectory)

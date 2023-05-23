@@ -48,6 +48,16 @@ def __is_domain_set():
     return bpy.context.scene.flip_fluid.get_domain_object() is not None
 
 
+def __is_domain_in_scene():
+    bl_domain = bpy.context.scene.flip_fluid.get_domain_object()
+    if bl_domain is None:
+        return False
+    for obj in bpy.context.scene.collection.all_objects:
+        if obj == bl_domain:
+            return True
+    return False
+
+
 def get_current_simulation_frame():
     dprops = bpy.context.scene.flip_fluid.get_domain_properties()
     if dprops is None:
@@ -664,6 +674,11 @@ def __load_frame(frameno, force_reload=False, depsgraph=None):
     if not __is_domain_set():
         return
 
+    if not __is_domain_in_scene():
+        # Domain shouldn't be operated on if it is not contained in the
+        # active scene
+        return
+
     dprops = __get_domain_properties()
     dprops.mesh_cache.initialize_cache_objects()
 
@@ -677,11 +692,15 @@ def __load_frame(frameno, force_reload=False, depsgraph=None):
 def reload_frame(frameno):
     if not __is_domain_set():
         return
+    if not __is_domain_in_scene():
+        return
     __load_frame(frameno, True)
 
 
 def render_init(scene):
     if not __is_domain_set():
+        return
+    if not __is_domain_in_scene():
         return
 
     global IS_RENDERING
@@ -700,34 +719,30 @@ def render_init(scene):
 def render_complete(scene):
     if not __is_domain_set():
         return
+    if not __is_domain_in_scene():
+        return
 
     global IS_RENDERING
     global IS_FRAME_REQUIRING_RELOAD
     IS_RENDERING = False
     IS_FRAME_REQUIRING_RELOAD = True
 
-    # Testing potential fix for whitewater not rendering on first frame (v1.0.8)
-    # For part of this fix, we no longer want to unload the duplivert object 
-    # after render completes
-    """
-    dprops = __get_domain_properties()
-    if dprops.whitewater.enable_whitewater_simulation:
-        if not __get_whitewater_particle_object_display_bool('FOAM'):
-            dprops.mesh_cache.foam.unload_duplivert_object()
-        if not __get_whitewater_particle_object_display_bool('BUBBLE'):
-            dprops.mesh_cache.bubble.unload_duplivert_object()
-        if not __get_whitewater_particle_object_display_bool('SPRAY'):
-            dprops.mesh_cache.spray.unload_duplivert_object()
-        if not __get_whitewater_particle_object_display_bool('DUST'):
-            dprops.mesh_cache.dust.unload_duplivert_object()
-    """
-
 
 def render_cancel(scene):
+    if not __is_domain_set():
+        return
+    if not __is_domain_in_scene():
+        return
+
     render_complete(scene)
 
 
 def render_pre(scene):
+    if not __is_domain_set():
+        return
+    if not __is_domain_in_scene():
+        return
+
     global RENDER_PRE_FRAME_NUMBER
     RENDER_PRE_FRAME_NUMBER = __get_render_pre_current_frame()
 
@@ -749,6 +764,8 @@ def render_pre(scene):
 def frame_change_post(scene, depsgraph=None):
     if not __is_domain_set():
         return
+    if not __is_domain_in_scene():
+        return
 
     if is_rendering() and vcu.is_blender_28():
         if not scene.render.use_lock_interface:
@@ -765,6 +782,8 @@ def frame_change_post(scene, depsgraph=None):
 
 def scene_update_post(scene):
     if not __is_domain_set():
+        return
+    if not __is_domain_in_scene():
         return
 
     global IS_FRAME_REQUIRING_RELOAD

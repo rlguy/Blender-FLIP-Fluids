@@ -84,12 +84,19 @@ void ForceFieldCurve::addGravityScaleToGrid(ForceFieldGravityScaleGrid &scaleGri
     for (int k = 0; k < _ksizeSDF + 1; k++) {
         for (int j = 0; j < _jsizeSDF + 1; j++) {
             for (int i = 0; i < _isizeSDF + 1; i++) {
-                float d = _sdf(i, j, k);
-                if (d < scaleWidth) {
-                    float factor = 1.0f - (d / scaleWidth);
-                    float scale = factor * _gravityScale + (1.0f - factor);
-                    scaleGrid.addScale(i + _ioffsetSDF, j + _joffsetSDF, k + _koffsetSDF, scale);
+                vmath::vec3 vectToCurve = _vectorField(i, j, k);
+                float distanceToCurve = vectToCurve.length();
+                if (distanceToCurve > scaleWidth) {
+                    scaleGrid.addScale(i + _ioffsetSDF, j + _joffsetSDF, k + _koffsetSDF, 1.0f);
+                    continue;
                 }
+
+                float scaleFactor = 1.0f;
+                float distanceFactor = distanceToCurve / scaleWidth;
+                if (distanceFactor > _gravityScaleFalloffThreshold) {
+                    scaleFactor = 1.0f - (distanceFactor - _gravityScaleFalloffThreshold) / (1.0f - _gravityScaleFalloffThreshold);
+                }
+                scaleGrid.addScale(i + _ioffsetSDF, j + _joffsetSDF, k + _koffsetSDF, scaleFactor * _gravityScale);
             }
         }
     }

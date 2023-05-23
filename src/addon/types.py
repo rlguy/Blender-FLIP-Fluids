@@ -194,8 +194,8 @@ surface_tension_solver_methods = (
     )
 
 threading_modes = (
-    ('THREADING_MODE_AUTO_DETECT', "Auto-detect", "Automatically determine the number of threads, based on CPUs"),
-    ('THREADING_MODE_FIXED',       "Fixed",       "Manually determine the number of threads")
+    ('THREADING_MODE_AUTO_DETECT', "Auto-detect", "Use the maximum number of threads available on the CPU for the simulation. Tip: Running smaller low resolution simulations with too many threads may actually harm performance due to overhead of thread management - this mode may be more performant for running medium to high resolution simulations."),
+    ('THREADING_MODE_FIXED',       "Fixed",       "Use a specified fixed number of threads for the simulation. TIP: Running smaller low resolution simulations with less threads may boost baking speed due to reducing overhead from thread management - try values around 4 threads for default lower resolution simulations.")
     )
 
 

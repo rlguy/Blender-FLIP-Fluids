@@ -93,6 +93,8 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
                 column.label(text="             Bubble:")
                 column.label(text="             Spray:")
                 column.label(text="             Dust:")
+            if sprops.frame_performance_score != -1:
+                column.label(text="Performance Score:")
 
             column = split.column()
             column.label(text=str(sprops.frame_info_id))
@@ -106,6 +108,9 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
                 column.label(text=self.format_number(sprops.bubble_mesh.verts).lstrip())
                 column.label(text=self.format_number(sprops.spray_mesh.verts).lstrip())
                 column.label(text=self.format_number(sprops.dust_mesh.verts).lstrip())
+
+            if sprops.frame_performance_score != -1:
+                column.label(text=str(sprops.frame_performance_score))
 
 
     def draw_frame_info_solver_stats(self, context, box):
@@ -570,6 +575,9 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
             column.label(text="Start Frame:")
             column.label(text="End Frame:")
 
+            if sprops.is_average_performance_score_enabled:
+                column.label(text="Average Performance Score:")
+
             column = split.column()
             if num_baked_frames > num_frames:
                 column.label(text=str(num_baked_frames))
@@ -579,6 +587,9 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
             column.label(text=str(simprops.frame_start))
             #column.label(text=str(simprops.frame_end))
             column.label(text=str(simprops.frame_start + num_baked_frames - 1))
+
+            if sprops.is_average_performance_score_enabled:
+                column.label(text=str(sprops.average_performance_score))
 
             if dprops.bake.is_simulation_running:
                 column = subbox.column()

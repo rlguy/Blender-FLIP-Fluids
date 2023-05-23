@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2023 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -83,16 +83,31 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             default=True,
             ); exec(conv("unsaved_blend_file_tooltip"))
 
-    turbo_tools_render_tooltip = BoolProperty(
-            name="Turbo Tools command line rendering support", 
-            description="An installation of the Turbo Tools addon has been detected. Use these operators to launch"
-                " a Turbo Tools render process or copy the render command. Refer to the Turbo Tools documentation for more info"
-                " on command line rendering", 
+    flip_fluids_remesh_skip_hide_render_objects = BoolProperty(
+            name="Skip Hidden Render Objects",
+            description="Skip remeshing objects in the collection that are hidden from render (outliner camera icon)",
+            default=False,
+            ); exec(conv("flip_fluids_remesh_skip_hide_render_objects"))
+    flip_fluids_remesh_apply_object_modifiers = BoolProperty(
+            name="Apply Object Modifiers",
+            description="Automatically apply modifiers to objects in collection. If disabled, objects with modifiers will"
+                " need to have modifiers applied manually or excluded from the viewport (disable outliner monitor icon)"
+                " before proceeding with the remesh process. Modifiers may not be applied in the intended order and objects"
+                " with complex modifier dependencies may need to be applied manually for accuracy",
             default=True,
-            ); exec(conv("turbo_tools_render_tooltip"))
+            ); exec(conv("flip_fluids_remesh_apply_object_modifiers"))
+    flip_fluids_remesh_convert_objects_to_mesh = BoolProperty(
+            name="Convert Objects to Mesh",
+            description="Automatically convert non-mesh type objects in the collection to a mesh type if applicable. If an object cannot"
+                " be converted to a mesh (empties, armatures, etc), the object will be skipped from the remeshing process."
+                " If disabled, non-mesh type objects will need to be manually converted to a mesh or excluded from the viewport"
+                " (disable outliner monitor icon) before proceeding with the remesh process",
+            default=True,
+            ); exec(conv("flip_fluids_remesh_convert_objects_to_mesh"))
 
     is_auto_frame_load_cmd_operator_running = BoolProperty(default=False); exec(conv("is_auto_frame_load_cmd_operator_running"))
 
+    prepare_geometry_tools_expanded = BoolProperty(default=False); exec(conv("prepare_geometry_tools_expanded"))
     bake_simulation_expanded = BoolProperty(default=True); exec(conv("bake_simulation_expanded"))
     add_remove_objects_expanded = BoolProperty(default=True); exec(conv("add_remove_objects_expanded"))
     outliner_organization_expanded = BoolProperty(default=False); exec(conv("outliner_organization_expanded"))

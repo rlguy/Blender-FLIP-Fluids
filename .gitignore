@@ -4,3 +4,4 @@ src/addon/__init__.py
 src/addon/utils/installation_utils.py
 CMakeLists.txt
 build
+.DS_Store

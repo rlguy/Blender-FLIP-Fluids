@@ -307,6 +307,12 @@ class BakeFluidSimulation(bpy.types.Operator):
             self.cancel(context)
             return {'CANCELLED'}
 
+        if not context.scene.flip_fluid.is_domain_in_active_scene():
+            self.report({"ERROR"}, 
+                         "Active scene must contain domain object to begin baking. Select the scene that contains the domain object and try again.")
+            self.cancel(context)
+            return {'CANCELLED'}
+
         dprops = self._get_domain_properties()
         if dprops.bake.is_simulation_running:
             self.cancel(context)
@@ -522,6 +528,12 @@ class BakeFluidSimulationCommandLine(bpy.types.Operator):
         if context.scene.flip_fluid.get_num_domain_objects() > 1:
             self.report({"ERROR_INVALID_INPUT"}, 
                         "There must be only one domain object")
+            self.cancel(context)
+            return {'CANCELLED'}
+
+        if not context.scene.flip_fluid.is_domain_in_active_scene():
+            self.report({"ERROR"}, 
+                        "Active scene must contain domain object to begin baking. Select the scene that contains the domain object, save, and try again.")
             self.cancel(context)
             return {'CANCELLED'}
 

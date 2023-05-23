@@ -173,6 +173,8 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
     cache_info_viscosity_solver_stats_expanded = BoolProperty(default=True); exec(conv("cache_info_viscosity_solver_stats_expanded"))
     is_cache_info_available = BoolProperty(default=False); exec(conv("is_cache_info_available"))
     num_cache_frames = IntProperty(default=-1); exec(conv("num_cache_frames"))
+    is_average_performance_score_enabled = BoolProperty(default=False); exec(conv("is_average_performance_score_enabled"))
+    average_performance_score = IntProperty(default=-1); exec(conv("average_performance_score"))
     estimated_frame_speed = FloatProperty(default=-1); exec(conv("estimated_frame_speed"))
     estimated_time_remaining = IntProperty(default=-1); exec(conv("estimated_time_remaining"))
     estimated_time_remaining_timestamp = IntProperty(default=-1); exec(conv("estimated_time_remaining_timestamp"))
@@ -215,6 +217,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
     frame_delta_time = FloatProperty(default=0.0); exec(conv("frame_delta_time"))
     frame_fluid_particles = IntProperty(default=-1); exec(conv("frame_fluid_particles"))
     frame_diffuse_particles = IntProperty(default=-1); exec(conv("frame_diffuse_particles"))
+    frame_performance_score = IntProperty(default=-1); exec(conv("frame_performance_score"))
 
     frame_pressure_solver_enabled = BoolProperty(default=False); exec(conv("frame_pressure_solver_enabled"))
     frame_pressure_solver_success = BoolProperty(default=True); exec(conv("frame_pressure_solver_success"))
@@ -305,6 +308,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             "frame_delta_time",
             "frame_fluid_particles",
             "frame_diffuse_particles",
+            "frame_performance_score",
             "frame_pressure_solver_enabled",
             "frame_pressure_solver_success",
             "frame_pressure_solver_error",
@@ -461,6 +465,9 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.frame_delta_time = data['delta_time']
         self.frame_fluid_particles = data['fluid_particles']
         self.frame_diffuse_particles = data['diffuse_particles']
+
+        if 'performance_score' in data:
+            self.frame_performance_score = data['performance_score']
 
         if 'pressure_solver_enabled' in data:
             self.frame_pressure_solver_enabled = bool(data['pressure_solver_enabled'])
@@ -781,6 +788,8 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         time_other = 0.0
         is_data_in_cache = False
         num_cache_frames = 0
+        average_performance_score = 0
+        is_average_performance_score_enabled = False
         for key in cachedata.keys():
             if not key.isdigit():
                 continue
@@ -789,6 +798,10 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             num_cache_frames += 1
 
             fdata = cachedata[key]
+            if 'performance_score' in fdata:
+                is_average_performance_score_enabled = True
+                average_performance_score += fdata['performance_score']
+
             if fdata['surface']['enabled']:
                 is_surface_enabled = True
                 surface_bytes += fdata['surface']['bytes']
@@ -899,7 +912,15 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             self.is_cache_info_available = False
             return
 
+        if num_cache_frames > 0 and is_average_performance_score_enabled:
+            average_performance_score /= num_cache_frames
+        else:
+            is_average_performance_score_enabled = False
+            average_performance_score = 0
+
         self.num_cache_frames = num_cache_frames
+        self.is_average_performance_score_enabled = is_average_performance_score_enabled
+        self.average_performance_score = int(average_performance_score)
 
         self.surface_mesh.enabled = is_surface_enabled
         self.preview_mesh.enabled = is_preview_enabled
