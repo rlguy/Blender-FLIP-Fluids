@@ -9,7 +9,8 @@ With our reputation for delivering high quality software and outstanding custome
 - [Try out our free demo! We're sure you'll like it :)](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/FLIP-Fluids-Demo-Addon)
 - [Frequently Asked Questions (FAQ)](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Frequently-Asked-Questions)
 - [What is the difference between Blender's Mantaflow FLIP simulator and the FLIP Fluids addon?](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Frequently-Asked-Questions#what-is-the-difference-between-blenders-mantaflow-fluid-simulator-and-the-flip-fluids-addon)
-Have any question? Do not hesitate to ask us here or at support@flipfluids.com!
+
+Have any questions? Do not hesitate to ask us here or at support@flipfluids.com!
 
 ## Getting the FLIP Fluids Addon
 
