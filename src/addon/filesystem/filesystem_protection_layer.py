@@ -219,7 +219,7 @@ def clear_cache_directory(cache_directory, clear_export=False, clear_logs=False,
 
     savestates_dir = os.path.join(cache_directory, "savestates")
     if os.path.isdir(savestates_dir):
-        extensions = [".data", ".state"]
+        extensions = [".data", ".state", ".backup"]
         savestate_subdirs = [d for d in os.listdir(savestates_dir) if os.path.isdir(os.path.join(savestates_dir, d))]
         for subd in savestate_subdirs:
             if subd.startswith("autosave"):

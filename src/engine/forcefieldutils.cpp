@@ -52,7 +52,7 @@ void generateSurfaceVectorField(MeshLevelSet &sdf, TriangleMesh &mesh, Array3d<v
 
     VectorFieldGenerationData data;
     data.phi = Array3d<float>(isize, jsize, ksize, distUpperBound);
-    data.closestTriangle = Array3d<int>(isize, jsize, ksize);
+    data.closestTriangle = Array3d<int>(isize, jsize, ksize, -1);
     data.closestPoint = Array3d<vmath::vec3>(isize, jsize, ksize);
     data.isClosestPointSet = Array3d<bool>(isize, jsize, ksize, false);
     data.dx = dx;
@@ -102,7 +102,7 @@ void generateSurfaceVectorField(MeshLevelSet &sdf, TriangleMesh &mesh, Array3d<v
 
                 vmath::vec3 tn;
                 int tidx = data.closestTriangle(i, j, k);
-                if (tidx != -1) {
+                if (tidx >= 0 && tidx <= (int)mesh.triangles.size()) {
                     tn = mesh.getTriangleNormal(tidx);
                 }
 

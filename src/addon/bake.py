@@ -722,7 +722,6 @@ def __delete_outdated_savestates(cache_directory, savestate_id):
         if savestate_number > savestate_id:
             path = os.path.join(savestate_directory, d)
             try:
-                print("Delete savestate", path)
                 fpl.delete_files_in_directory(path, extensions, remove_directory=True)
             except:
                 print("Error: unable to delete directory <" + path + "> (skipping)")
@@ -2371,6 +2370,7 @@ def __get_frame_stats_dict(cstats):
     stats["fluid_particles"] = cstats.fluid_particles
     stats["diffuse_particles"] = cstats.diffuse_particles
     stats["substeps"] = cstats.substeps
+    stats["performance_score"] = cstats.performance_score
     stats["pressure_solver_enabled"] = cstats.pressure_solver_enabled
     stats["pressure_solver_success"] = cstats.pressure_solver_success
     stats["pressure_solver_error"] = cstats.pressure_solver_error
@@ -2664,7 +2664,7 @@ def __write_autosave_data(domain_data, cache_directory, fluidsim, frameno):
             savestate_dir = os.path.join(cache_directory, "savestates", "autosave" + numstr)
             if os.path.isdir(savestate_dir):
                 fpl.delete_files_in_directory(savestate_dir, [".state", ".data"], remove_directory=True)
-            shutil.copytree(autosave_dir, savestate_dir)
+            shutil.copytree(autosave_dir, savestate_dir, dirs_exist_ok=True)
 
 
 def __write_simulation_output(domain_data, fluidsim, frameno, cache_directory):

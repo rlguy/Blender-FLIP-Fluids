@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2023 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@ from .. import render
 from ..utils import api_workaround_utils as api_utils
 from ..utils import version_compatibility_utils as vcu
 from ..utils import installation_utils
-
 
 class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
     bl_label = "Simulation Setup"
@@ -58,7 +57,7 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
         if is_persistent_data_enabled and not preferences.dismiss_persistent_data_render_warning:
             box = self.layout.box()
             api_utils.draw_persistent_data_warning(box, preferences)
-
+       
         #
         # Bake Simulation
         #
@@ -96,12 +95,25 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                 column.prop(dprops.simulation, "resolution")
                 column.separator()
 
+                split = column.split(align=True)
+                column_left = split.column(align=True)
+                column_left.label(text="Multithreading:")
+                row = column_left.row(align=True)
+                row.prop(dprops.advanced, "threading_mode", expand=True)
+                row = column_left.row(align=True)
+                if dprops.advanced.threading_mode == 'THREADING_MODE_AUTO_DETECT':
+                    row.enabled = False
+                    row.prop(dprops.advanced, "num_threads_auto_detect")
+                elif dprops.advanced.threading_mode == 'THREADING_MODE_FIXED':
+                    row.prop(dprops.advanced, "num_threads_fixed")
+                column.separator()
+
                 column.label(text="Cache Directory:")
                 subcolumn = column.column(align=True)
                 row = subcolumn.row(align=True)
                 row.prop(dprops.cache, "cache_directory")
-                row.operator("flip_fluid_operators.increment_decrease_cache_directory", text="", icon="REMOVE").increment_mode = "DECREASE"
-                row.operator("flip_fluid_operators.increment_decrease_cache_directory", text="", icon="ADD").increment_mode = "INCREASE"
+                row.operator("flip_fluid_operators.increase_decrease_cache_directory", text="", icon="REMOVE").increment_mode = "DECREASE"
+                row.operator("flip_fluid_operators.increase_decrease_cache_directory", text="", icon="ADD").increment_mode = "INCREASE"
                 row = column.row(align=True)
                 row.operator("flip_fluid_operators.relative_cache_directory")
                 row.operator("flip_fluid_operators.absolute_cache_directory")
@@ -110,15 +122,92 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
 
                 column = box.column(align=True)
                 column.label(text="Render Output:")
-                column.prop(context.scene.render, "filepath", text="")
+                row = column.row(align=True)
+                row.prop(context.scene.render, "filepath", text="")
+                row.operator("flip_fluid_operators.increase_decrease_render_directory", text="", icon="REMOVE").increment_mode = "DECREASE"
+                row.operator("flip_fluid_operators.increase_decrease_render_directory", text="", icon="ADD").increment_mode = "INCREASE"
                 row = column.row(align=True)
                 row.operator("flip_fluid_operators.relative_to_blend_render_output")
                 row.operator("flip_fluid_operators.prefix_to_filename_render_output")
+
+                column = box.column(align=True)
+                column.label(text="Cache and Render Output:")
+                row = column.row(align=True)
+                row.operator("flip_fluid_operators.increase_decrease_cache_render_version", text="Decrease Version", icon="REMOVE").increment_mode = "DECREASE"
+                row.operator("flip_fluid_operators.increase_decrease_cache_render_version", text="Increase Version", icon="ADD").increment_mode = "INCREASE"
 
             else:
                 box.label(text="Please create a domain object")
                 box.operator("flip_fluid_operators.helper_create_domain")
 
+        #
+        # New Prepare Geometry Tools: 
+        #
+        
+        box = self.layout.box()
+        row = box.row(align=True)
+        row.prop(hprops, "prepare_geometry_tools_expanded",
+            icon="TRIA_DOWN" if hprops.prepare_geometry_tools_expanded else "TRIA_RIGHT",
+            icon_only=True, 
+            emboss=False
+        )
+        row.label(text="Prepare Geometry Tools:")
+
+        if hprops.prepare_geometry_tools_expanded:
+            column = box.column(align=True)
+
+            if not vcu.is_blender_31():
+                column.label(text="Blender 3.1 or later required")
+
+            prefs = vcu.get_addon_preferences()
+            is_developer_mode = prefs.is_developer_tools_enabled()
+            if is_developer_mode:
+                active_collection = context.view_layer.active_layer_collection.collection
+                is_active_collection_selected = False
+                active_collection_name = "No Collection Selected"
+                if active_collection is not None:
+                    is_active_collection_selected = True
+                    active_collection_name = active_collection.name
+
+                options_box = column.box()
+                options_box.label(text="Remesh Options:", icon='TOOL_SETTINGS')
+                options_column = options_box.column(align=True)
+                options_column.prop(hprops, "flip_fluids_remesh_convert_objects_to_mesh")
+                options_column.prop(hprops, "flip_fluids_remesh_apply_object_modifiers")
+                options_column.prop(hprops, "flip_fluids_remesh_skip_hide_render_objects")
+                options_column.label(text="Active collection will be remeshed:")
+                options_column.label(text=active_collection_name, icon="OUTLINER_COLLECTION")
+
+                column = box.column(align=True)
+                column.enabled = vcu.is_blender_31() and is_developer_mode
+                column.alert = column.enabled and not is_active_collection_selected
+
+                row = column.row(align=True)
+                op = row.operator("flip_fluid_operators.helper_remesh", icon="MOD_REMESH")
+                op.skip_hide_render_objects = hprops.flip_fluids_remesh_skip_hide_render_objects
+                op.apply_object_modifiers = hprops.flip_fluids_remesh_apply_object_modifiers
+                op.convert_objects_to_mesh = hprops.flip_fluids_remesh_convert_objects_to_mesh
+
+                row.operator(
+                        "wm.url_open", 
+                        text="", 
+                        icon="URL"
+                    ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Helper-Menu-Settings#prepare-geometry-tools"
+            else:
+                warn_box = box.box()
+                warn_column = warn_box.column(align=True)
+                warn_column.enabled = True
+                warn_column.label(text="     Experimental Developer Tools must be")
+                warn_column.label(text="     enabled in preferences to use this feature")
+                warn_column.separator()
+                warn_column.prop(prefs, "enable_developer_tools", text="Enable Developer Tools in Preferences")
+                warn_column.separator()
+                warn_column.operator(
+                    "wm.url_open", 
+                    text="Important Info and Limitations", 
+                    icon="WORLD"
+                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Preferences-Menu-Settings#developer-tools"
+      
         #
         # Add Objects
         #
@@ -255,7 +344,7 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
             )
             row.label(text="Organize Outliner:")
             if not hprops.outliner_organization_expanded:
-                row.operator("flip_fluid_operators.helper_organize_outliner", text="Organize")
+                row.operator("flip_fluid_operators.helper_organize_outliner", text="Organize", icon="GROUP")
 
             if hprops.outliner_organization_expanded:
                 column = box.column(align=True)
@@ -304,8 +393,8 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
             subbox.label(text="Render Animation:")
             column = subbox.column(align=True)
             row = column.row(align=True)
-            row.operator("flip_fluid_operators.helper_command_line_render").use_turbo_tools = False
-            row.operator("flip_fluid_operators.helper_command_line_render_to_clipboard", text="", icon='COPYDOWN').use_turbo_tools = False
+            row.operator("flip_fluid_operators.helper_command_line_render")
+            row.operator("flip_fluid_operators.helper_command_line_render_to_clipboard", text="", icon='COPYDOWN')
 
             system = platform.system()
             if system == "Windows":
@@ -319,37 +408,14 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
             subbox.label(text="Render Frame:")
             column = subbox.column(align=True)
             row = column.row(align=True)
-            row.operator("flip_fluid_operators.helper_command_line_render_frame").use_turbo_tools = False
-            row.operator("flip_fluid_operators.helper_cmd_render_frame_to_clipboard", text="", icon='COPYDOWN').use_turbo_tools = False
+            row.operator("flip_fluid_operators.helper_command_line_render_frame")
+            row.operator("flip_fluid_operators.helper_cmd_render_frame_to_clipboard", text="", icon='COPYDOWN')
             row = column.row(align=True)
             row.prop(hprops, "cmd_open_image_after_render")
 
             if system == "Windows":
                 row = column.row(align=True)
                 row.prop(hprops, "cmd_close_window_after_render")
-
-
-            if installation_utils.is_turbo_tools_addon_enabled():
-                subbox = box.box()
-                subbox.label(text="Turbo Tools Command Line Render:")
-                row = subbox.row(align=True)
-                row.alignment = 'LEFT'
-                row.prop(hprops, "turbo_tools_render_tooltip", icon="QUESTION", emboss=False, text="")
-                row.label(text="Turbo Tools Addon Detected")
-
-                column = subbox.column(align=True)
-                row = column.row(align=True)
-                row.operator("flip_fluid_operators.helper_command_line_render", text="Render Animation").use_turbo_tools = True
-                row.operator("flip_fluid_operators.helper_command_line_render_to_clipboard", text="", icon='COPYDOWN').use_turbo_tools = True
-                row = column.row(align=True)
-                row.operator("flip_fluid_operators.helper_command_line_render_frame", text="Render Frame").use_turbo_tools = True
-                row.operator("flip_fluid_operators.helper_cmd_render_frame_to_clipboard", text="", icon='COPYDOWN').use_turbo_tools = True
-                row = column.row(align=True)
-                row.prop(hprops, "cmd_open_image_after_render")
-
-                if system == "Windows":
-                    row = column.row(align=True)
-                    row.prop(hprops, "cmd_close_window_after_render")
 
         #
         # Geometry Node Tools
@@ -570,7 +636,6 @@ class FLIPFLUID_PT_HelperPanelDisplay(bpy.types.Panel):
             column.separator()
             column.operator("flip_fluid_operators.reload_frame", text="Reload Frame")
 
-
 class FLIPFLUID_PT_HelperTechnicalSupport(bpy.types.Panel):
     bl_label = "Technical Support Tools"
     bl_category = "FLIP Fluids"
@@ -608,6 +673,7 @@ class FLIPFLUID_PT_HelperTechnicalSupport(bpy.types.Panel):
 
 def register():
     # These panels will be registered in properties.preferences_properties.py
+    # Small fix: It´s properties.helper_properties.py
     pass
 
 

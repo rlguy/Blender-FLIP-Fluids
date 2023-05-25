@@ -127,6 +127,8 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
     def _update_surface_material(self, context):
         if not self._is_domain_set():
             return
+        if not context.scene.flip_fluid.is_domain_in_active_scene():
+            return
         dprops = self._get_domain_properties()
         surface_object = dprops.mesh_cache.surface.get_cache_object()
         self._update_cache_object_material(
@@ -139,6 +141,8 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
 
     def _update_whitewater_foam_material(self, context):
         if not self._is_domain_set():
+            return
+        if not context.scene.flip_fluid.is_domain_in_active_scene():
             return
         dprops = self._get_domain_properties()
         foam_object = dprops.mesh_cache.foam.get_cache_object()
@@ -154,6 +158,8 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
     def _update_whitewater_bubble_material(self, context):
         if not self._is_domain_set():
             return
+        if not context.scene.flip_fluid.is_domain_in_active_scene():
+            return
         dprops = self._get_domain_properties()
         bubble_object = dprops.mesh_cache.bubble.get_cache_object()
         self._update_cache_object_material(
@@ -168,6 +174,8 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
     def _update_whitewater_spray_material(self, context):
         if not self._is_domain_set():
             return
+        if not context.scene.flip_fluid.is_domain_in_active_scene():
+            return
         dprops = self._get_domain_properties()
         spray_object = dprops.mesh_cache.spray.get_cache_object()
         self._update_cache_object_material(
@@ -181,6 +189,8 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
 
     def _update_whitewater_dust_material(self, context):
         if not self._is_domain_set():
+            return
+        if not context.scene.flip_fluid.is_domain_in_active_scene():
             return
         dprops = self._get_domain_properties()
         dust_object = dprops.mesh_cache.dust.get_cache_object()

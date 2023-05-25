@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2023 Ryan L. Guy
+# Copyright (C) 2022 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, os, stat, subprocess, platform, math, mathutils, fnmatch, random, shutil
+import bpy, os, stat, subprocess, platform, math, mathutils, fnmatch, random
 from bpy.props import (
         BoolProperty,
         StringProperty
@@ -33,6 +33,159 @@ def _select_make_active(context, active_object):
         vcu.select_set(obj, False)
     vcu.select_set(active_object, True)
     vcu.set_active_object(active_object, context)
+
+
+class FlipFluidHelperRemesh(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_remesh"
+    bl_label = "FLIP Fluids Remesh Collection"
+    bl_description = ("Combine object geometry within a collection and remesh into a single object for use in the simulator." +
+        " Optionally convert non-mesh objects to mesh, apply modifiers, and skip objects hidden from render." +
+        " Saving is recommended before using this operator - this operator may take some time to compute depending on complexity" +
+        " of the input geometry. Use the link next to this operator to view documentation and a video guide" + 
+        " for using this feature")
+
+    skip_hide_render_objects = BoolProperty(True)
+    exec(vcu.convert_attribute_to_28("skip_hide_render_objects"))
+
+    apply_object_modifiers = BoolProperty(True)
+    exec(vcu.convert_attribute_to_28("apply_object_modifiers"))
+
+    convert_objects_to_mesh = BoolProperty(True)
+    exec(vcu.convert_attribute_to_28("convert_objects_to_mesh"))
+
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+
+    def display_convert_to_mesh_popup(self, object_list):
+        def draw_func(self, context):
+            text_label = "The following (" + str(len(object_list)) 
+            text_label += ") selected objects are required be converted to a mesh type before using this operator:"
+            self.layout.label(text=text_label)
+            column = self.layout.column(align=True)
+            split = column.split(align=True)
+            column_left = split.column(align=True)
+            column_right = split.column(align=True)
+            for obj in object_list:
+                column_left.label(text=5*" " + "Name: " + obj.name)
+                column_right.label(text="Type: " + obj.type)
+            self.layout.label(text="")
+            self.layout.label(text="Solutions: ", icon="INFO")
+            self.layout.label(text=5*" " + "(1) Convert objects to a Blender mesh object")
+            self.layout.label(text=5*" " + "(2) Or disable objects in viewport (outliner monitor icon)")
+            self.layout.label(text=5*" " + "(3) Or enable 'Convert Objects to Mesh' option")
+
+        bpy.context.window_manager.popup_menu(draw_func, title="FLIP Fluids Remesh: Actions Required", icon='INFO')
+
+
+    def display_apply_modifiers_popup(self, object_list):
+        def draw_func(self, context):
+            text_label = "The following (" + str(len(object_list)) 
+            text_label += ") selected objects are required to have modifiers applied before using this operator:"
+            self.layout.label(text=text_label)
+            column = self.layout.column(align=True)
+            split = column.split(align=True)
+            column_left = split.column(align=True)
+            column_right = split.column(align=True)
+            for obj in object_list:
+                column_left.label(text=5*" " + "Name: " + obj.name)
+                column_right.label(text="# Modifiers: " + str(len(obj.modifiers)))
+            self.layout.label(text="")
+            self.layout.label(text="Solutions: ", icon="INFO")
+            self.layout.label(text=5*" " + "(1) Apply modifiers to objects")
+            self.layout.label(text=5*" " + "(2) Or disable objects in viewport (outliner monitor icon)")
+            self.layout.label(text=5*" " + "(3) Or enable 'Apply Object Modifiers' option")
+
+        bpy.context.window_manager.popup_menu(draw_func, title="FLIP Fluids Remesh: Actions Required", icon='INFO')
+
+
+    def set_blender_object_selection(self, context, object_list):
+        # Select valid objects and set a valid active object if possible
+        bpy.ops.object.select_all(action='DESELECT')
+        if object_list:
+            context.view_layer.objects.active = object_list[0]
+        for obj in object_list:
+            obj.select_set(True)
+
+
+    def execute(self, context):
+        # Object types that can be converted to a mesh and can have modifiers applied
+        valid_object_types = ['MESH', 'CURVE', 'SURFACE', 'META', 'FONT']
+
+        # Operator can only function in Object mode
+        if bpy.context.object.mode != 'OBJECT':
+            err_msg = "FLIP Fluids Remesh: Viewport must be in Object mode to use this operator. "
+            err_msg += " Current viewport mode: <" + bpy.context.object.mode + ">."
+            self.report({'ERROR'}, err_msg)
+            return {'CANCELLED'}
+
+        # Objects will be operated on if they are contained in this collection or any valid subcollections
+        active_collection = context.view_layer.active_layer_collection.collection
+        if active_collection is None:
+            self.report({'ERROR'}, "FLIP Fluids Remesh: No collection selected. Select a collection to remesh.")
+            return {'CANCELLED'}
+        
+        # Filter out objects that are invalid types that cannot be converted to a mesh and have modifiers applied
+        skipped_invalid_type_objects = [obj for obj in active_collection.all_objects if obj.type not in valid_object_types]
+        valid_collection_objects = [obj for obj in active_collection.all_objects if obj.type in valid_object_types]
+        
+        # Filter out objects that are disabled in the viewport and are unable to be operated on
+        skipped_non_visible_objects = [obj for obj in valid_collection_objects if not obj.visible_get()]
+        valid_collection_objects = [obj for obj in valid_collection_objects if obj.visible_get()]
+        
+        # Filter out objects that have selection disabled and are unable to be operated on
+        skipped_hide_select_objects = [obj for obj in valid_collection_objects if obj.hide_select]
+        valid_collection_objects = [obj for obj in valid_collection_objects if not obj.hide_select]
+
+        # Filter out objects that have render visibility disabled
+        skipped_hide_render_objects = []
+        if self.skip_hide_render_objects:
+            skipped_hide_render_objects = [obj for obj in valid_collection_objects if obj.hide_render]
+            valid_collection_objects = [obj for obj in valid_collection_objects if not obj.hide_render]
+
+        # If in the case there are no objects that can be operated on, there is nothing that can be done
+        if not valid_collection_objects:
+            self.report({'ERROR'}, "FLIP Fluids Remesh: No valid objects to remesh.")
+            return {'CANCELLED'}
+
+        # Objects that can be automatically converted to a mesh
+        objects_to_convert_to_mesh = [obj for obj in valid_collection_objects if obj.type != 'MESH' and obj.type in valid_object_types]
+        if not self.convert_objects_to_mesh and objects_to_convert_to_mesh:
+            self.set_blender_object_selection(context, objects_to_convert_to_mesh)
+            self.display_convert_to_mesh_popup(objects_to_convert_to_mesh)
+            return {'CANCELLED'}
+
+        # Objects that have modifiers to be applied
+        objects_with_modifiers = [obj for obj in valid_collection_objects if len(obj.modifiers) >= 1]
+        if not self.apply_object_modifiers and objects_with_modifiers:
+            self.set_blender_object_selection(context, objects_with_modifiers)
+            self.display_apply_modifiers_popup(objects_with_modifiers)
+            return {'CANCELLED'}
+
+        valid_object_count = len(valid_collection_objects)
+        self.set_blender_object_selection(context, valid_collection_objects)
+        
+        # Covert all selected objects to MESH type and apply modifiers
+        bpy.ops.object.convert(target='MESH')
+        
+        # Join all selected objects and rename object
+        bpy.ops.object.join()
+        context.view_layer.objects.active.name = active_collection.name + "_joined"
+
+        # Add REMESH modifier
+        remesh_modifier = context.view_layer.objects.active.modifiers.new("FLIP Fluids Remesh", 'REMESH')
+        remesh_modifier.mode = 'VOXEL'
+        remesh_modifier.voxel_size = 0.04
+        remesh_modifier.adaptivity = 0.1
+        remesh_modifier.use_smooth_shade = True
+
+        info_msg = "FLIP Fluids Remesh: Successfully merged and remeshed " 
+        info_msg += str(valid_object_count) + " valid objects into object <" + context.view_layer.objects.active.name + ">"
+        self.report({'INFO'}, info_msg)
+
+        return {'FINISHED'}
 
 
 class FlipFluidHelperSelectDomain(bpy.types.Operator):
@@ -107,6 +260,10 @@ class FlipFluidHelperSelectSurface(bpy.types.Operator):
         dprops = context.scene.flip_fluid.get_domain_properties()
         if dprops is None:
             return {'CANCELLED'}
+        if not context.scene.flip_fluid.is_domain_in_active_scene():
+            self.report({'ERROR'}, "Unable to select Surface object: Domain object is not located in the active scene>")
+            return {'CANCELLED'}
+
         dprops.mesh_cache.initialize_cache_objects()
         surface_object = dprops.mesh_cache.surface.get_cache_object()
         if surface_object is None:
@@ -131,6 +288,10 @@ class FlipFluidHelperSelectFoam(bpy.types.Operator):
         dprops = context.scene.flip_fluid.get_domain_properties()
         if dprops is None:
             return {'CANCELLED'}
+        if not context.scene.flip_fluid.is_domain_in_active_scene():
+            self.report({'ERROR'}, "Unable to select Whitewater Foam object: Domain object is not located in the active scene>")
+            return {'CANCELLED'}
+
         dprops.mesh_cache.initialize_cache_objects()
         foam_object = dprops.mesh_cache.foam.get_cache_object()
         if foam_object is None:
@@ -156,6 +317,10 @@ class FlipFluidHelperSelectBubble(bpy.types.Operator):
         dprops = context.scene.flip_fluid.get_domain_properties()
         if dprops is None:
             return {'CANCELLED'}
+        if not context.scene.flip_fluid.is_domain_in_active_scene():
+            self.report({'ERROR'}, "Unable to select Whitewater Bubble object: Domain object is not located in the active scene>")
+            return {'CANCELLED'}
+
         dprops.mesh_cache.initialize_cache_objects()
         bubble_object = dprops.mesh_cache.bubble.get_cache_object()
         if bubble_object is None:
@@ -180,6 +345,10 @@ class FlipFluidHelperSelectSpray(bpy.types.Operator):
         dprops = context.scene.flip_fluid.get_domain_properties()
         if dprops is None:
             return {'CANCELLED'}
+        if not context.scene.flip_fluid.is_domain_in_active_scene():
+            self.report({'ERROR'}, "Unable to select Whitewater Spray object: Domain object is not located in the active scene>")
+            return {'CANCELLED'}
+
         dprops.mesh_cache.initialize_cache_objects()
         spray_object = dprops.mesh_cache.spray.get_cache_object()
         if spray_object is None:
@@ -204,6 +373,10 @@ class FlipFluidHelperSelectDust(bpy.types.Operator):
         dprops = context.scene.flip_fluid.get_domain_properties()
         if dprops is None:
             return {'CANCELLED'}
+        if not context.scene.flip_fluid.is_domain_in_active_scene():
+            self.report({'ERROR'}, "Unable to select Whitewater Dust object: Domain object is not located in the active scene>")
+            return {'CANCELLED'}
+
         dprops.mesh_cache.initialize_cache_objects()
         dust_object = dprops.mesh_cache.dust.get_cache_object()
         if dust_object is None:
@@ -1057,6 +1230,11 @@ class FlipFluidHelperLoadLastFrame(bpy.types.Operator):
             # Setting a frame during render will disrupt the render process
             return {'CANCELLED'}
 
+        if not context.scene.flip_fluid.is_domain_in_active_scene():
+            # Active scene does not contain the simulation and should not load the frame
+            return {'CANCELLED'}
+
+
         dprops = context.scene.flip_fluid.get_domain_properties()
         cache_dir = dprops.cache.get_cache_abspath()
         bakefiles_dir = os.path.join(cache_dir, "bakefiles")
@@ -1297,6 +1475,11 @@ class FlipFluidHelperCommandLineBake(bpy.types.Operator):
         if domain is None:
             return {'CANCELLED'}
 
+        if not context.scene.flip_fluid.is_domain_in_active_scene():
+            self.report({"ERROR"}, 
+                        "Active scene must contain domain object to launch bake. Select the scene that contains the domain object, save, and try again.")
+            return {'CANCELLED'}
+
         hprops = context.scene.flip_fluid_helper
         if hprops.cmd_launch_render_after_bake and not is_render_output_directory_createable():
             errmsg = "Render output directory is not valid or writeable: <" + get_render_output_directory() + ">"
@@ -1307,7 +1490,7 @@ class FlipFluidHelperCommandLineBake(bpy.types.Operator):
         if hprops.cmd_launch_render_after_bake:
             system = platform.system()
             render_mode = hprops.cmd_launch_render_mode
-            if system != "WINDOWS":
+            if system != "Windows":
                 render_mode = 'CMD_RENDER_MODE_NORMAL'
 
             if render_mode == 'CMD_RENDER_MODE_NORMAL':
@@ -1396,7 +1579,6 @@ class FlipFluidHelperCommandLineBake(bpy.types.Operator):
                         popup_width=600
                         )
 
-
         else:
             # Platform not found
             return {'CANCELLED'}
@@ -1463,9 +1645,6 @@ class FlipFluidHelperCommandLineRender(bpy.types.Operator):
     bl_description = ("Launch a new command line window and start rendering the animation." +
                      " The .blend file will need to be saved before using this operator")
 
-    use_turbo_tools = BoolProperty(False)
-    exec(vcu.convert_attribute_to_28("use_turbo_tools"))
-
 
     @classmethod
     def poll(cls, context):
@@ -1478,11 +1657,6 @@ class FlipFluidHelperCommandLineRender(bpy.types.Operator):
             errmsg = "Render output directory is not valid or writeable: <" + get_render_output_directory() + ">"
             self.report({'ERROR'}, errmsg)
             return {'CANCELLED'}
-
-        if self.use_turbo_tools:
-            command_text = "\"" + bpy.app.binary_path + "\" -b \"" +  bpy.data.filepath + "\" --python-expr \"import bpy; bpy.ops.threedi.render_animation()\""
-        else:
-            command_text = "\"" + bpy.app.binary_path + "\" -b \"" +  bpy.data.filepath + "\" -a"
 
         system = platform.system()
         if system == "Windows":
@@ -1498,14 +1672,12 @@ class FlipFluidHelperCommandLineRender(bpy.types.Operator):
                 # changed Blender's working directory
                 blender_exe_path = "blender.exe"
 
-            if self.use_turbo_tools:
-                command = ["start", "cmd", "/k", blender_exe_path, "-b", bpy.data.filepath, "--python-expr", "import bpy; bpy.ops.threedi.render_animation()"]
-            else:
-                command = ["start", "cmd", "/k", blender_exe_path, "-b", bpy.data.filepath, "-a"]
-
+            command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" -a"
+            command = ["start", "cmd", "/k", blender_exe_path, "--background", bpy.data.filepath, "-a"]
             subprocess.call(command, shell=True)
 
         elif system == "Darwin" or system == "Linux":
+            command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" -a"
             script_text = "#!/bin/bash\n" + command_text
             script_name = "RENDER_ANIMATION_" + bpy.path.basename(context.blend_data.filepath) + ".sh"
             script_filepath = os.path.join(os.path.dirname(bpy.data.filepath), script_name)
@@ -1534,7 +1706,6 @@ class FlipFluidHelperCommandLineRender(bpy.types.Operator):
                         error_description=errmsg,
                         popup_width=600
                         )
-
         else:
             # Platform not found
             return {'CANCELLED'}
@@ -1557,8 +1728,6 @@ class FlipFluidHelperCommandLineRenderToClipboard(bpy.types.Operator):
     bl_description = ("Copy command for rendering to your system clipboard." +
                      " The .blend file will need to be saved before using this operator")
 
-    use_turbo_tools = BoolProperty(False)
-    exec(vcu.convert_attribute_to_28("use_turbo_tools"))
 
     @classmethod
     def poll(cls, context):
@@ -1567,12 +1736,7 @@ class FlipFluidHelperCommandLineRenderToClipboard(bpy.types.Operator):
 
     def execute(self, context):
         
-        if self.use_turbo_tools:
-            command_text = "\"" + bpy.app.binary_path + "\" -b \"" +  bpy.data.filepath + "\" --python-expr \"import bpy; bpy.ops.threedi.render_animation()\""
-        else:
-            command_text = "\"" + bpy.app.binary_path + "\" -b \"" +  bpy.data.filepath + "\" -a"
-
-
+        command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" -a"
         bpy.context.window_manager.clipboard = command_text
           
         info_msg = "Copied the following render command to your clipboard:\n\n"
@@ -1589,9 +1753,6 @@ class FlipFluidHelperCommandLineRenderFrame(bpy.types.Operator):
     bl_label = "Launch Frame Render"
     bl_description = ("Launch a new command line window and start rendering the current timeline frame." +
                      " The .blend file will need to be saved before using this operator")
-
-    use_turbo_tools = BoolProperty(False)
-    exec(vcu.convert_attribute_to_28("use_turbo_tools"))
 
 
     @classmethod
@@ -1610,13 +1771,9 @@ class FlipFluidHelperCommandLineRenderFrame(bpy.types.Operator):
             self.report({'ERROR'}, "Render output format must be an image format. Change render output to an image, save, and try again.")
             return {'CANCELLED'} 
 
-        script_name = "render_single_frame.py"
-        if self.use_turbo_tools:
-            script_name = "render_single_frame_turbo_tools.py"
-
         script_path = os.path.dirname(os.path.realpath(__file__))
         script_path = os.path.dirname(script_path)
-        script_path = os.path.join(script_path, "resources", "command_line_scripts", script_name)
+        script_path = os.path.join(script_path, "resources", "command_line_scripts", "render_single_frame.py")
 
         frame_string = str(bpy.context.scene.frame_current)
 
@@ -1699,9 +1856,6 @@ class FlipFluidHelperCmdRenderFrameToClipboard(bpy.types.Operator):
     bl_description = ("Copy command for frame rendering to your system clipboard." +
                      " The .blend file will need to be saved before using this operator")
 
-    use_turbo_tools = BoolProperty(False)
-    exec(vcu.convert_attribute_to_28("use_turbo_tools"))
-
 
     @classmethod
     def poll(cls, context):
@@ -1709,14 +1863,9 @@ class FlipFluidHelperCmdRenderFrameToClipboard(bpy.types.Operator):
 
 
     def execute(self, context):
-        script_name = "render_single_frame.py"
-        if self.use_turbo_tools:
-            script_name = "render_single_frame_turbo_tools.py"
-
         script_path = os.path.dirname(os.path.realpath(__file__))
         script_path = os.path.dirname(script_path)
-        script_path = os.path.join(script_path, "resources", "command_line_scripts", script_name)
-
+        script_path = os.path.join(script_path, "resources", "command_line_scripts", "render_single_frame.py")
         frame_string = str(bpy.context.scene.frame_current)
         hprops = context.scene.flip_fluid_helper
         open_image_after = "0"
@@ -1840,6 +1989,11 @@ class FlipFluidHelperInitializeMotionBlur(bpy.types.Operator):
             self.report({'INFO'}, "Blender 3.1 or later is required for this feature")
             return {'CANCELLED'}
 
+        if not context.scene.flip_fluid.is_domain_in_active_scene():
+            self.report({"ERROR"}, 
+                         "Active scene must contain domain object to use this operator. Select the scene that contains the domain object and try again.")
+            return {'CANCELLED'}
+        
         if context.scene.render.engine != 'CYCLES':
             context.scene.render.engine = 'CYCLES'
             self.report({'INFO'}, "Setting render engine to Cycles")
@@ -2018,7 +2172,7 @@ class FlipFluidHelperCommandLineRenderToScriptfile(bpy.types.Operator):
         blender_exe_path = "\"" + bpy.app.binary_path + "\""
         blend_path = "\"" + bpy.data.filepath + "\""
 
-        file_text = "echo.\nchcp 65001\n"
+        file_text = "echo.\n"
         for n in missing_frames:
             command_text = blender_exe_path + " -b " + blend_path + " -f " + str(n)
             file_text += command_text + "\n"
@@ -2255,6 +2409,30 @@ def _get_simulation_objects_by_filtered_motion_type(context):
     return filtered_objects
 
 
+class FlipFluidHelperBatchExportAnimatedMesh(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_batch_export_animated_mesh"
+    bl_label = ""
+    bl_description = "Enable or Disable the 'Export Animated Mesh' option for all objects in list"
+
+
+    enable_state = BoolProperty(True)
+    exec(vcu.convert_attribute_to_28("enable_state"))
+
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.flip_fluid.get_domain_object() is not None
+
+
+    def execute(self, context):
+        filtered_objects = _get_simulation_objects_by_filtered_motion_type(context)
+        for obj in filtered_objects:
+            oprops = obj.flip_fluid.get_property_group()
+            oprops.export_animated_mesh = self.enable_state
+
+        return {'FINISHED'}
+
+
 class FlipFluidHelperBatchSkipReexport(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.helper_batch_skip_reexport"
     bl_label = ""
@@ -2409,6 +2587,8 @@ class FlipFluidAutoLoadBakedFramesCMD(bpy.types.Operator):
 
 
     def _update_frame(self, context, frameno):
+        if not context.scene.flip_fluid.is_domain_in_active_scene():
+            return
         if context.scene.frame_current != frameno and frameno >= 0:
             context.scene.frame_set(frameno)
 
@@ -2423,6 +2603,8 @@ class FlipFluidAutoLoadBakedFramesCMD(bpy.types.Operator):
         dprops = context.scene.flip_fluid.get_domain_properties()
         if dprops is None:
             return
+
+        print("Update Modal")
 
         if dprops.bake.is_simulation_running:
             # Don't update if a simulation bake is already running in the UI
@@ -2441,6 +2623,11 @@ class FlipFluidAutoLoadBakedFramesCMD(bpy.types.Operator):
         if current_num_bakefiles != self.num_bakefiles:
             self.num_bakefiles = current_num_bakefiles
             self._num_bakefiles_changed_handler(context, bakefiles_directory)
+
+
+    def set_running_state(self, is_running):
+        for scene in bpy.data.scenes:
+            scene.flip_fluid_helper.is_auto_frame_load_cmd_operator_running = is_running
 
 
     def modal(self, context, event):
@@ -2478,7 +2665,7 @@ class FlipFluidAutoLoadBakedFramesCMD(bpy.types.Operator):
         self.modal_timer = context.window_manager.event_timer_add(0.1, window=context.window)
         bpy.app.timers.register(self.modal_ups_timer)
 
-        context.scene.flip_fluid_helper.is_auto_frame_load_cmd_operator_running = True
+        self.set_running_state(True)
         return {'RUNNING_MODAL'}
 
 
@@ -2489,11 +2676,11 @@ class FlipFluidAutoLoadBakedFramesCMD(bpy.types.Operator):
 
         if bpy.app.timers.is_registered(self.modal_ups_timer):
             bpy.app.timers.unregister(self.modal_ups_timer)
+        
+        self.set_running_state(False)
 
-        context.scene.flip_fluid_helper.is_auto_frame_load_cmd_operator_running = False
 
-
-class FlipFluidCopySettingsToSelected(bpy.types.Operator):
+class FlipFluidCopySettingsFromActive(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.copy_setting_to_selected"
     bl_label = "Copy Active Object Settings to Selected Objects"
     bl_description = ("Copy the settings of the active FLIP object (highlighted object) to all other selected"
@@ -2611,6 +2798,7 @@ class FlipFluidCopySettingsToSelected(bpy.types.Operator):
 
 def register():
     classes = [
+        FlipFluidHelperRemesh,
         FlipFluidHelperSelectDomain,
         FlipFluidHelperSelectSurface,
         FlipFluidHelperSelectFoam,
@@ -2643,6 +2831,7 @@ def register():
         FlipFluidHelperStableRendering28,
         FlipFluidHelperSetLinearOverrideKeyframes,
         FlipFluidHelperSaveBlendFile,
+        FlipFluidHelperBatchExportAnimatedMesh,
         FlipFluidHelperBatchSkipReexport,
         FlipFluidHelperBatchForceReexport,
         FlipFluidEnableWhitewaterSimulation,
@@ -2661,7 +2850,7 @@ def register():
         FlipFluidMakeRelativeToBlendRenderOutput,
         FlipFluidMakePrefixFilenameRenderOutput,
         FlipFluidAutoLoadBakedFramesCMD,
-        FlipFluidCopySettingsToSelected,
+        FlipFluidCopySettingsFromActive,
         ]
 
     # Workaround for a bug in FLIP Fluids 1.6.0
@@ -2678,6 +2867,7 @@ def register():
 
 
 def unregister():
+    bpy.utils.unregister_class(FlipFluidHelperRemesh)
     bpy.utils.unregister_class(FlipFluidHelperSelectDomain)
     bpy.utils.unregister_class(FlipFluidHelperSelectSurface)
     bpy.utils.unregister_class(FlipFluidHelperSelectFoam)
@@ -2710,6 +2900,7 @@ def unregister():
     bpy.utils.unregister_class(FlipFluidHelperStableRendering28)
     bpy.utils.unregister_class(FlipFluidHelperSetLinearOverrideKeyframes)
     bpy.utils.unregister_class(FlipFluidHelperSaveBlendFile)
+    bpy.utils.unregister_class(FlipFluidHelperBatchExportAnimatedMesh)
     bpy.utils.unregister_class(FlipFluidHelperBatchSkipReexport)
     bpy.utils.unregister_class(FlipFluidHelperBatchForceReexport)
     bpy.utils.unregister_class(FlipFluidEnableWhitewaterSimulation)
@@ -2728,4 +2919,4 @@ def unregister():
     bpy.utils.unregister_class(FlipFluidMakeRelativeToBlendRenderOutput)
     bpy.utils.unregister_class(FlipFluidMakePrefixFilenameRenderOutput)
     bpy.utils.unregister_class(FlipFluidAutoLoadBakedFramesCMD)
-    bpy.utils.unregister_class(FlipFluidCopySettingsToSelected)
+    bpy.utils.unregister_class(FlipFluidCopySettingsFromActive)

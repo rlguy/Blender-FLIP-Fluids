@@ -132,6 +132,7 @@ protected:
 
     float _gravityScale = 1.0f;
     float _gravityScaleWidth = 0.0f;
+    float _gravityScaleFalloffThreshold = 0.90f;    // in % of the width
     
 };
 

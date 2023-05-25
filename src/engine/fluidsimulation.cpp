@@ -6268,16 +6268,22 @@ float FluidSimulation::_getMarkerParticleSpeedLimit(double dt) {
         maxspeed = std::max(i + _minTimeStepIncreaseForRemoval, _maxFrameTimeSteps) * speedLimitStep;
     }
 
+    double extremeSpeedOutlierThresholdLower = _extremeParticleVelocityThresholdLower * maxParticleSpeed;
     double extremeSpeedOutlierThreshold = _extremeParticleVelocityThreshold * maxParticleSpeed;
+    int extremeParticleVelocityOutlierCountLower = 0;
     int extremeParticleVelocityOutlierCount = 0;
     for (unsigned int i = 0; i < velocities->size(); i++) {
         double speed = (double)velocities->at(i).length();
+        if (speed >= extremeSpeedOutlierThresholdLower && speed < extremeSpeedOutlierThreshold) {
+            extremeParticleVelocityOutlierCountLower++;
+        }
         if (speed >= extremeSpeedOutlierThreshold) {
             extremeParticleVelocityOutlierCount++;
         }
     }
 
-    if (extremeParticleVelocityOutlierCount <= _maxExtremeVelocityOutlierRemovalAbsolute) {
+    if (extremeParticleVelocityOutlierCount <= _maxExtremeVelocityOutlierRemovalAbsolute &&
+            extremeParticleVelocityOutlierCountLower <= _maxExtremeVelocityOutlierRemovalAbsolute) {
         maxspeed = std::min(extremeSpeedOutlierThreshold, maxspeed);
     }
 
@@ -6307,6 +6313,7 @@ void FluidSimulation::_removeMarkerParticles(double dt) {
 
     float maxspeed = _getMarkerParticleSpeedLimit(dt);
     double maxspeedsq = maxspeed * maxspeed;
+    int numExtremeVelocityParticlesRemoved = 0;
 
     std::vector<vmath::vec3> *positions, *velocities;
     _markerParticles.getAttributeValues("POSITION", positions);
@@ -6340,11 +6347,13 @@ void FluidSimulation::_removeMarkerParticles(double dt) {
         if (_isExtremeVelocityRemovalEnabled && 
                 vmath::dot(velocity, velocity) > maxspeedsq) {
             isRemoved[i] = true;
+            numExtremeVelocityParticlesRemoved++;
             continue;
         }
     }
 
     _markerParticles.removeParticles(isRemoved);
+    _currentExtremeVelocityParticlesRemoved = numExtremeVelocityParticlesRemoved;
 }
 
 void FluidSimulation::_advanceMarkerParticles(double dt) {
@@ -8243,6 +8252,8 @@ void FluidSimulation::_logFrameInfo() {
     }
 
     _logfile.newline();
+    _logfile.log("Performance Score:   ", _currentPerformanceScore, 0);
+    _logfile.newline();
     _logfile.log("Frame Time:   ", tdata.frameTime, 3);
     _logfile.log("Total Time:   ", _totalSimulationTime, 3);
     _logfile.newline();
@@ -8255,7 +8266,10 @@ void FluidSimulation::_logStepInfo() {
 
     std::stringstream ss;
     ss << "Fluid Particles:   " << _markerParticles.size() << std::endl << 
-          "Fluid Cells:       " << _getNumFluidCells();
+          "Fluid Cells:       " << _currentNumFluidCells;
+    if (_currentExtremeVelocityParticlesRemoved > 0) {
+        ss << std::endl << "Extreme Velocity Fluid Particles Removed: " << _currentExtremeVelocityParticlesRemoved;
+    }
     _logfile.logString(ss.str());
 
     if (_isDiffuseMaterialOutputEnabled) {
@@ -8332,6 +8346,9 @@ void FluidSimulation::update(double dt) {
     _viscositySolverIterations = 0;
     _viscositySolverError = 0.0f;
 
+    int totalFluidParticlesProcessed = 0;
+    float totalFluidParticlesProcessedTime = 0.0f;
+
     double eps = 1e-9;
     do {
         StopWatch stepTimer;
@@ -8356,8 +8373,6 @@ void FluidSimulation::update(double dt) {
         double frameProgress = 100 * (1.0 - _currentFrameDeltaTimeRemaining/dt);
         int numFrames = _timelineFrameEnd - _timelineFrameStart + 1;
         std::ostringstream ss;
-        // ss << "Frame: " << _currentFrame << " (Step " << _currentFrameTimeStepNumber + 1 << ")\n" <<
-        //      "Step time: " << _currentFrameTimeStep << " (" << frameProgress << "% of frame)\n";
 
         ss << "Simulation Frame: " << _currentFrame + 1 << " / " << numFrames << "\n"
               "  Timeline Frame: " << _currentFrame + _timelineFrameStart << " / " << _timelineFrameEnd << "\n"
@@ -8371,11 +8386,16 @@ void FluidSimulation::update(double dt) {
         _logfile.newline();
 
         _stepFluid(_currentFrameTimeStep);
+        _currentNumFluidCells = _getNumFluidCells();
+
         _logStepInfo();
 
         stepTimer.stop();
         _logfile.log("Step Update Time:   ", stepTimer.getTime(), 3);
         _logfile.newline();
+
+        totalFluidParticlesProcessed += _markerParticles.size();
+        totalFluidParticlesProcessedTime += (float)stepTimer.getTime();
 
         _currentFrameTimeStepNumber++;
     } while (_currentFrameDeltaTimeRemaining > eps);
@@ -8383,6 +8403,8 @@ void FluidSimulation::update(double dt) {
     frameTimer.stop();
     _timingData.frameTime = frameTimer.getTime();
     _totalSimulationTime += frameTimer.getTime();
+
+    _currentPerformanceScore = (int)((float)totalFluidParticlesProcessed / totalFluidParticlesProcessedTime) / (1000.0f);
 
     _updateTimingData();
     _logFrameInfo();
@@ -8393,6 +8415,7 @@ void FluidSimulation::update(double dt) {
     _outputData.frameData.timing.total = frameTimer.getTime();
     _outputData.frameData.fluidParticles = (int)_markerParticles.size();
     _outputData.frameData.diffuseParticles = (int)(_diffuseMaterial.getDiffuseParticles()->size());
+    _outputData.frameData.performanceScore = _currentPerformanceScore;
     
     _outputData.frameData.pressureSolverEnabled = 1;
     _outputData.frameData.pressureSolverSuccess = (int)_pressureSolverSuccess;

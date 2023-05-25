@@ -4,7 +4,7 @@ The **[FLIP Fluids addon](https://blendermarket.com/products/flipfluids)** is a 
 
 With our reputation for delivering high quality software and outstanding customer support, the FLIP Fluids addon is one of the best selling products in the Blender community.
 
-- 9000+ sales, 5 star rating, excellent value
+- Over 10,000 copies sold, 5 star rating, excellent value
 - No subscriptions, all future updates included
 - [Try out our free demo! We're sure you'll like it :)](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/FLIP-Fluids-Demo-Addon)
 - [Frequently Asked Questions (FAQ)](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Frequently-Asked-Questions)
@@ -26,7 +26,7 @@ See any of our [market place product pages](https://github.com/rlguy/Blender-FLI
 ## System Requirements
 
 - Windows, MacOS, or Linux operating system
-- Blender 2.8+* or 2.9+ or 3.0+ (64-bit)
+- Blender 2.8 to 3.5 compatible
 - CPU 64-bit Intel® or AMD® or Apple Silicon multi-core processor
 - 8 GB RAM minimum, 16 GB of RAM or more is highly recommended
 

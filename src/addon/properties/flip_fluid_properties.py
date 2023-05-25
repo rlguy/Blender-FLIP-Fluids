@@ -69,7 +69,7 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
 
     def get_num_domain_objects(self):
         n = 0
-        for obj in vcu.get_all_scene_objects():
+        for obj in bpy.data.objects:
             if obj.flip_fluid.is_domain():
                 n += 1
         return n
@@ -98,6 +98,16 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
         if domain_object is None:
             return
         return domain_object.flip_fluid.domain
+
+
+    def is_domain_in_active_scene(self):
+        domain_object = self.get_domain_object()
+        if domain_object is None:
+            return False
+        for obj in bpy.context.scene.collection.all_objects:
+            if obj == domain_object:
+                return True
+        return False
 
 
     def get_num_fluid_objects(self):

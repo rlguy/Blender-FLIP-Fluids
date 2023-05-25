@@ -1655,21 +1655,15 @@ void DiffuseParticleSimulation::
     std::vector<vmath::vec3> velocities(surface.size());
     _trilinearInterpolate(surface, _vfield, velocities);
 
-    int count1 = 0;
-    int count2 = 0;
-
     vmath::vec3 hdx(0.5*_dx, 0.5*_dx, 0.5*_dx);
     double eps = 1e-6;
     for (size_t i = 0; i < surface.size(); i++) {
         vmath::vec3 p = surface[i];
         vmath::vec3 v = velocities[i];
 
-        count1++;
-
         double dist = Interpolation::trilinearInterpolate(p - hdx, _dx, *_surfaceSDF);
         if (dist > -0.75 * _dx) {
             v *= _randomDouble(1.0f, _sprayEmissionSpeedFactor);
-            count2++;
         }
 
         double Ie = _getEnergyPotential(v);
@@ -1989,13 +1983,10 @@ void DiffuseParticleSimulation::_computeNewDiffuseParticleVelocities(std::vector
 
     _trilinearInterpolate(data, _vfield, data);
 
-    int count = 0;
-
     for (size_t i = 0; i < particles.size(); i++) {
         vmath::vec3 v = data[i];
         if (particles[i].type == DiffuseParticleType::spray) {
             v *= _randomDouble(1.0, _sprayEmissionSpeedFactor);
-            count++;
         }
 
         particles[i].velocity = v;

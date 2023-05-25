@@ -2730,6 +2730,7 @@ class FluidSimulationFrameStats_t(ctypes.Structure):
                 ("delta_time", c_double),
                 ("fluid_particles", c_int),
                 ("diffuse_particles", c_int),
+                ("performance_score", c_int),
                 ("pressure_solver_enabled", c_int),
                 ("pressure_solver_success", c_int),
                 ("pressure_solver_error", c_double),

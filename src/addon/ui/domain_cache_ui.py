@@ -77,8 +77,8 @@ class FLIPFLUID_PT_DomainTypeCachePanel(bpy.types.Panel):
         subcolumn.enabled = not dprops.bake.is_simulation_running
         row = subcolumn.row(align=True)
         row.prop(cprops, "cache_directory")
-        row.operator("flip_fluid_operators.increment_decrease_cache_directory", text="", icon="REMOVE").increment_mode = "DECREASE"
-        row.operator("flip_fluid_operators.increment_decrease_cache_directory", text="", icon="ADD").increment_mode = "INCREASE"
+        row.operator("flip_fluid_operators.increase_decrease_cache_directory", text="", icon="REMOVE").increment_mode = "DECREASE"
+        row.operator("flip_fluid_operators.increase_decrease_cache_directory", text="", icon="ADD").increment_mode = "INCREASE"
 
         row = column.row(align=True)
         row.operator("flip_fluid_operators.relative_cache_directory")

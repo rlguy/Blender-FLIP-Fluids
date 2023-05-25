@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, os, shutil, json, zipfile, urllib.request, sys, textwrap, platform, random
+import bpy, os, shutil, json, zipfile, urllib.request, sys, textwrap, platform, random, traceback
 from bpy_extras.io_utils import ImportHelper
 
 from bpy.props import (
@@ -913,15 +913,24 @@ def get_system_info_dict():
         try:
             import gpu
             gpu_string = gpu.platform.renderer_get() + " " + gpu.platform.vendor_get() + " " + gpu.platform.version_get()
-        except:
-            pass
+        except Exception as e:
+            print(traceback.format_exc())
+            print(e)
 
     cpu_string = "Unknown (fill in)"
     try:
         from ..third_party import cpuinfo
         cpu_string = cpuinfo.cpu.info[0]['ProcessorNameString']
-    except:
-        pass
+    except KeyError:
+        # Apple Silicon systems may not contain the ProcessorNameString
+        try:
+            cpu_string = cpuinfo.cpu.info['arch'].decode("utf-8")
+        except Exception as e:
+            print(traceback.format_exc())
+            print(e)
+    except Exception as e:
+        print(traceback.format_exc())
+        print(e)
 
     threads_string = "Unknown"
     try:
@@ -930,8 +939,9 @@ def get_system_info_dict():
         num_threads = bpy.context.scene.render.threads
         bpy.context.scene.render.threads_mode = original_threads_mode
         threads_string = str(num_threads)
-    except:
-        pass
+    except Exception as e:
+        print(traceback.format_exc())
+        print(e)
 
     addon_path_string = _get_addon_directory()
 
@@ -949,8 +959,9 @@ def get_system_info_dict():
                 if os.path.isdir(logs_directory):
                     log_files = [f for f in os.listdir(logs_directory) if os.path.isfile(os.path.join(logs_directory, f))]
                     log_files_string = str(len(log_files))
-    except:
-        pass
+    except Exception as e:
+        print(traceback.format_exc())
+        print(e)
 
     default_addons = [
             "Pose Library",
@@ -974,23 +985,26 @@ def get_system_info_dict():
             if addon_name not in default_addons:
                 addons_string += addon_name + ", "
         addons_string = addons_string.removesuffix(", ")
-    except:
+    except Exception as e:
+        print(traceback.format_exc())
+        print(e)
         addons_string = "Unknown"
-        pass
 
     developer_tools_string = "Uknown"
     try:
         preferences = vcu.get_addon_preferences()
         developer_tools_string = "Enabled" if preferences.enable_developer_tools else "Disabled"
-    except:
-        pass
+    except Exception as e:
+        print(traceback.format_exc())
+        print(e)
 
     mixbox_installed_string = "Unknown"
     try:
         is_mixbox_installed = installation_utils.is_mixbox_installation_complete()
         mixbox_installed_string = "Installed" if is_mixbox_installed else "Not Installed"
-    except:
-        pass
+    except Exception as e:
+        print(traceback.format_exc())
+        print(e)
 
     features_string = "N/A"
     try:
@@ -1011,44 +1025,50 @@ def get_system_info_dict():
             features_string = features_string.removesuffix(", ")
         if not features_string:
             features_string = "Default"
-    except:
+    except Exception as e:
+        print(traceback.format_exc())
+        print(e)
         features_string = "Unknown"
-        pass
 
     attributes_string = "N/A"
     try:
         dprops = bpy.context.scene.flip_fluid.get_domain_properties()
         if dprops is not None:
             d = api_utils.get_enabled_features_affected_by_T88811()
-            if d["attributes"]["surface"] or d["attributes"]["whitewater"] or d["viscosity"]:
-                attributes_string = ""
-                for att in d["attributes"]["surface"]:
-                    attributes_string += "Surface " + att + ", "
-                if d["viscosity"]:
-                    attributes_string += "Surface Viscosity, "
-                for att in d["attributes"]["whitewater"]:
-                    attributes_string += "Whitewater " + att + ", "
-                attributes_string = attributes_string.removesuffix(", ")
-    except:
-        pass
+            if d is not None:
+                if d["attributes"]["surface"] or d["attributes"]["whitewater"] or d["viscosity"]:
+                    attributes_string = ""
+                    for att in d["attributes"]["surface"]:
+                        attributes_string += "Surface " + att + ", "
+                    if d["viscosity"]:
+                        attributes_string += "Surface Viscosity, "
+                    for att in d["attributes"]["whitewater"]:
+                        attributes_string += "Whitewater " + att + ", "
+                    attributes_string = attributes_string.removesuffix(", ")
+    except Exception as e:
+        print(traceback.format_exc())
+        print(e)
 
     lock_interface_string = "Unknown"
     try:
         lock_interface_string = "Enabled" if bpy.context.scene.render.use_lock_interface else "Disabled"
-    except:
-        pass
+    except Exception as e:
+        print(traceback.format_exc())
+        print(e)
 
     persistent_data_string = "Disabled"
     try:
         persistent_data_string = "Enabled" if api_utils.is_persistent_data_issue_relevant() else "Disabled"
-    except:
-        pass
+    except Exception as e:
+        print(traceback.format_exc())
+        print(e)
 
     blender_binary_string = "Unknown"
     try:
         blender_binary_string  = bpy.app.binary_path
-    except:
-        pass
+    except Exception as e:
+        print(traceback.format_exc())
+        print(e)
 
     viewport_modes_string = "N/A"
     try:
@@ -1063,9 +1083,10 @@ def get_system_info_dict():
             for mode in shading_modes:
                 viewport_modes_string += mode + ", "
         viewport_modes_string = viewport_modes_string.removesuffix(", ")
-    except:
+    except Exception as e:
+        print(traceback.format_exc())
+        print(e)
         viewport_modes_string = "Unknown"
-        pass
 
     domains_string = "N/A"
     domain_count = 0
@@ -1100,8 +1121,8 @@ def get_system_info_dict():
     skip_export_outflows_string = "Unknown"
     skip_export_force_fields_string = "Unknown"
     flip_objects_string = "Unknown"
+    found_domains = []
     try:
-        found_domains = []
         for scene in bpy.data.scenes:
             for obj in scene.objects:
                 if obj.flip_fluid.is_domain():
@@ -1173,15 +1194,15 @@ def get_system_info_dict():
             force_fields_string = str(force_field_count) + animated_force_fields_string + skip_export_force_fields_string
         flip_objects_string = str(domain_count + obstacle_count + fluid_count + inflow_count + outflow_count + force_field_count)
     except Exception as e:
+        print(traceback.format_exc())
         print(e)
-        domains_string = "Unknown"
-        pass
 
     objects_string = "Unknown"
     try:
         objects_string = str(len(bpy.data.objects))
-    except:
-        pass
+    except Exception as e:
+        print(traceback.format_exc())
+        print(e)
 
     renderer_string = "Unknown"
     cycles_device_string = "N/A"
@@ -1189,8 +1210,9 @@ def get_system_info_dict():
         renderer_string = bpy.context.scene.render.engine
         if renderer_string == 'CYCLES':
             cycles_device_string = bpy.context.scene.cycles.device
-    except:
-        pass
+    except Exception as e:
+        print(traceback.format_exc())
+        print(e)
 
     simulation_visibility_string = "N/A"
     surface_visibility_string = "N/A"
@@ -1218,8 +1240,9 @@ def get_system_info_dict():
                 whitewater_viewport = str(dprops.render.whitewater_viewport_display)
                 whitewater_render = str(dprops.render.whitewater_render_display)
                 whitewater_visibility_string = "<Viewport: " + whitewater_viewport + "> <Render: " + whitewater_render + ">"
-    except:
-        pass
+    except Exception as e:
+        print(traceback.format_exc())
+        print(e)
 
     d = {}
     d['blender_version'] = blender_version

@@ -207,6 +207,7 @@ class FLIPFLUID_PT_DomainTypePanel(bpy.types.Panel):
                            flip_props.get_force_field_objects())
             flip_objects.sort(key=lambda x: x.name)
 
+            is_all_filter_selected = sprops.mesh_reexport_type_filter == 'MOTION_FILTER_TYPE_ALL'
             if sprops.mesh_reexport_type_filter == 'MOTION_FILTER_TYPE_ALL':
                 filtered_objects = flip_objects
                 motion_type_string = "simulation"
@@ -225,6 +226,9 @@ class FLIPFLUID_PT_DomainTypePanel(bpy.types.Panel):
             else:
                 split = column.split()
                 column_left = split.column(align=True)
+                if is_all_filter_selected:
+                    column_animated = split.column(align=True)
+
                 column_middle = split.column(align=True)
                 column_right = split.column(align=True)
 
@@ -232,6 +236,16 @@ class FLIPFLUID_PT_DomainTypePanel(bpy.types.Panel):
                 column_left.label(text="Object")
                 op_box = column_left.box()
                 op_box.label(text="")
+
+                if is_all_filter_selected:
+                    column_animated.label(text="")
+                    column_animated.label(text="Export Animated")
+                    op_box = column_animated.box()
+                    row = op_box.row(align=True)
+                    row.alignment = 'LEFT'
+                    row.operator("flip_fluid_operators.helper_batch_export_animated_mesh", icon='CHECKBOX_HLT', text="").enable_state = True
+                    row.operator("flip_fluid_operators.helper_batch_export_animated_mesh", icon='CHECKBOX_DEHLT', text="").enable_state = False
+                    row.label(text="All")
 
                 column_middle.label(text="")
                 column_middle.label(text="Skip Re-Export")
@@ -254,6 +268,8 @@ class FLIPFLUID_PT_DomainTypePanel(bpy.types.Panel):
                 for ob in filtered_objects:
                     pgroup = ob.flip_fluid.get_property_group()
                     column_left.label(text=ob.name, icon="OBJECT_DATA")
+                    if is_all_filter_selected:
+                        column_animated.prop(pgroup, "export_animated_mesh", text="animated", toggle=True)
                     column_middle.prop(pgroup, "skip_reexport", text="skip", toggle=True)
                     column_right.prop(pgroup, "force_reexport_on_next_bake", text="force", toggle=True)
 

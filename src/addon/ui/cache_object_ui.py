@@ -32,6 +32,8 @@ class FLIPFLUID_PT_CacheObjectTypePanel(bpy.types.Panel):
         dprops = context.scene.flip_fluid.get_domain_properties()
         if dprops is None:
             return False
+        if not context.scene.flip_fluid.is_domain_in_active_scene():
+            return False
         obj = vcu.get_active_object(context)
         return dprops.mesh_cache.is_cache_object(obj)
 

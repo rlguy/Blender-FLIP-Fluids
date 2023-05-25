@@ -133,6 +133,12 @@ class ExportFluidSimulation(bpy.types.Operator):
             self.cancel(context)
             return {'CANCELLED'}
 
+        if not context.scene.flip_fluid.is_domain_in_active_scene():
+            self.report({"ERROR"},
+                        "Active scene must contain domain object during export - halting export and baking process. Please do not switch active scenes during export.")
+            self.cancel(context)
+            return {'CANCELLED'}
+
         if dprops.bake.is_export_operator_cancelled:
             self.cancel(context)
             return {'FINISHED'}
