@@ -1689,11 +1689,16 @@ private:
     void _updateMarkerParticleVelocityAttributeGrid();
     void _updateMarkerParticleVelocityBasedAttributes();
     void _updateMarkerParticleVorticityAttributeGrid();
-    void _updateMarkerParticleAgeAttributeGrid();
+    void _updateMarkerParticleAgeAttributeGrid(Array3d<float> &ageAttributeGrid,
+                                               Array3d<bool> &ageAttributeValidGrid);
     void _updateMarkerParticleAgeAttribute(double dt);
-    void _updateMarkerParticleViscosityAttributeGrid();
+    void _updateMarkerParticleViscosityAttributeGrid(Array3d<float> &viscosityAttributeGrid,
+                                                     Array3d<bool> &viscosityAttributeValidGrid);
     void _updateMarkerParticleViscosityAttribute();
-    void _updateMarkerParticleColorAttributeGrid();
+    void _updateMarkerParticleColorAttributeGrid(Array3d<float> &colorAttributeGridR,
+                                                 Array3d<float> &colorAttributeGridG,
+                                                 Array3d<float> &colorAttributeGridB,
+                                                 Array3d<bool> &colorAttributeValidGrid);
     void _updateMarkerParticleColorAttributeMixing(double dt);
     vmath::vec3 _RGBToHSV(vmath::vec3 in);
     vmath::vec3 _HSVToRGB(vmath::vec3 in);
