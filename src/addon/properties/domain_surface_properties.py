@@ -35,8 +35,9 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
             description="The level of detail of the generated surface mesh."
                 " This value is the number of times that the simulation grid"
                 " cells are split. A value of 1 is recommended for"
-                " final simulation. Use a value of 0 to speed up baking during"
-                " testing",
+                " most final simulations. A value of 2 or 3 is recommended"
+                " to reduce flickering in slow motion simulations."
+                " Use a value of 0 to speed up baking during testing",
             min=0,
             soft_max=2,
             default=1,
@@ -287,6 +288,12 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
 
     native_particle_scale = FloatProperty(default=3.0); exec(conv("native_particle_scale"))
     default_cells_per_compute_chunk = FloatProperty(default=15.0); exec(conv("default_cells_per_compute_chunk"))   # in millions
+
+    surface_mesh_expanded = BoolProperty(default=True); exec(conv("surface_mesh_expanded"))
+    meshing_volume_expanded = BoolProperty(default=False); exec(conv("meshing_volume_expanded"))
+    meshing_against_boundary_expanded = BoolProperty(default=False); exec(conv("meshing_against_boundary_expanded"))
+    meshing_against_obstacles_expanded = BoolProperty(default=False); exec(conv("meshing_against_obstacles_expanded"))
+    geometry_attributes_expanded = BoolProperty(default=False); exec(conv("geometry_attributes_expanded"))
 
 
     def register_preset_properties(self, registry, path):

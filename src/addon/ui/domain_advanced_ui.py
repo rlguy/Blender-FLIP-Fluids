@@ -29,6 +29,8 @@ class FLIPFLUID_PT_DomainTypeAdvancedPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
+        if vcu.get_addon_preferences(context).enable_tabbed_domain_settings:
+            return False
         obj_props = vcu.get_active_object(context).flip_fluid
         return obj_props.is_active and obj_props.object_type == "TYPE_DOMAIN"
 
@@ -47,93 +49,154 @@ class FLIPFLUID_PT_DomainTypeAdvancedPanel(bpy.types.Panel):
                 icon="WORLD"
             ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Advanced-Settings"
 
-        subbox = self.layout.box()
-        column = subbox.column(align=True)
-        column.label(text="Frame Substeps:")
+        box = self.layout.box()
+        column = box.column(align=True)
+        split = vcu.ui_split(column, factor=0.45)
+        column_left = split.column(align=True)
+        column_right = split.column(align=True)
 
-        if wprops.enable_surface_tension and aprops.min_max_time_steps_per_frame.value_max < wprops.minimum_surface_tension_substeps:
-            row = column.row(align=True)
-            row.alert = True
-            row.prop(aprops, "surface_tension_substeps_exceeded_tooltip", icon="QUESTION", emboss=False, text="")
-            row.label(text="  Warning: Not Enough Max Substeps")
+        row = column_left.row(align=True)
+        row.prop(aprops, "frame_substeps_expanded",
+            icon="TRIA_DOWN" if aprops.frame_substeps_expanded else "TRIA_RIGHT",
+            icon_only=True, 
+            emboss=False
+        )
+        row.label(text="Frame Substeps:")
 
-        row = column.row(align=True)
-        row.prop(aprops.min_max_time_steps_per_frame, "value_min", text="Min")
-        row.prop(aprops.min_max_time_steps_per_frame, "value_max", text="Max")
-        column.prop(aprops, "CFL_condition_number")
+        if not aprops.frame_substeps_expanded:
+            row = column_right.row(align=True)
+            row.prop(aprops.min_max_time_steps_per_frame, "value_min", text="Min")
+            row.prop(aprops.min_max_time_steps_per_frame, "value_max", text="Max")
 
-        if show_advanced:
-            column.prop(aprops, "enable_adaptive_obstacle_time_stepping")
-            column.prop(aprops, "enable_adaptive_force_field_time_stepping")
-
-        if show_documentation:
-            column = subbox.column(align=True)
-            column.operator(
-                    "wm.url_open", 
-                    text="What are substeps?", 
-                    icon="WORLD"
-                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Advanced-Settings#what-are-substeps-and-how-do-the-min-max-and-cfl-parameters-relate-to-each-other"
-
-        subbox = self.layout.box()
-        column = subbox.column(align=True)
-        column.label(text="Simulation Method:")
-        row = column.row(align=True)
-        row.prop(aprops, "velocity_transfer_method", expand=True)
-        if aprops.velocity_transfer_method == 'VELOCITY_TRANSFER_METHOD_FLIP':
-            column.prop(aprops, "PICFLIP_ratio", slider=True)
-        else:
-            column.label(text="")
-
-        if show_documentation:
-            column = subbox.column(align=True)
-            column.operator(
-                "wm.url_open", 
-                text="What are applications of the PIC/FLIP Ratio?", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Advanced-Settings#simulation-stability"
-            column.operator(
-                "wm.url_open", 
-                text="FLIP vs APIC", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Advanced-Settings#flip-vs-apic"
-
-        if show_advanced:
-            subbox = self.layout.box()
-            column = subbox.column()
-            column.label(text="Simulation Stability:")
+        if aprops.frame_substeps_expanded:
+            column = box.column(align=True)
+            if wprops.enable_surface_tension and aprops.min_max_time_steps_per_frame.value_max < wprops.minimum_surface_tension_substeps:
+                row = column.row(align=True)
+                row.alert = True
+                row.prop(aprops, "surface_tension_substeps_exceeded_tooltip", icon="QUESTION", emboss=False, text="")
+                row.label(text="  Warning: Not Enough Max Substeps")
 
             row = column.row(align=True)
-            row.prop(aprops, "particle_jitter_factor", slider=True)
-            row.prop(aprops, "jitter_surface_particles")
-            column.prop(aprops, "enable_extreme_velocity_removal")
-            column.separator()
-            column = subbox.column(align=True)
-            column.prop(aprops, "pressure_solver_max_iterations")
-            column.prop(aprops, "viscosity_solver_max_iterations")
+            row.prop(aprops.min_max_time_steps_per_frame, "value_min", text="Min")
+            row.prop(aprops.min_max_time_steps_per_frame, "value_max", text="Max")
+            column.prop(aprops, "CFL_condition_number")
 
-        if show_advanced:
-            subbox = self.layout.box()
-            column = subbox.column()
-            split = column.split(align=True)
-
-            column_left = split.column(align=True)
-            column_left.label(text="Multithreading:")
-            row = column_left.row(align=True)
-            row.prop(aprops, "threading_mode", expand=True)
-            row = column_left.row(align=True)
-            if aprops.threading_mode == 'THREADING_MODE_AUTO_DETECT':
-                row.enabled = False
-                row.prop(aprops, "num_threads_auto_detect")
-            elif aprops.threading_mode == 'THREADING_MODE_FIXED':
-                row.prop(aprops, "num_threads_fixed")
+            if show_advanced:
+                column.prop(aprops, "enable_adaptive_obstacle_time_stepping")
+                column.prop(aprops, "enable_adaptive_force_field_time_stepping")
 
             if show_documentation:
-                column = subbox.column(align=True)
+                column = box.column(align=True)
+                column.operator(
+                        "wm.url_open", 
+                        text="What are substeps?", 
+                        icon="WORLD"
+                    ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Advanced-Settings#what-are-substeps-and-how-do-the-min-max-and-cfl-parameters-relate-to-each-other"
+
+        box = self.layout.box()
+        column = box.column(align=True)
+        split = vcu.ui_split(column, factor=0.5)
+        column_left = split.column(align=True)
+        column_right = split.column(align=True)
+
+        row = column_left.row(align=True)
+        row.prop(aprops, "simulation_method_expanded",
+            icon="TRIA_DOWN" if aprops.simulation_method_expanded else "TRIA_RIGHT",
+            icon_only=True, 
+            emboss=False
+        )
+        row.label(text="Simulation Method:")
+
+        if not aprops.simulation_method_expanded:
+            row = column_right.row(align=True)
+            row.prop(aprops, "velocity_transfer_method", expand=True)
+
+        if aprops.simulation_method_expanded:
+            column = box.column(align=True)
+            row = column.row(align=True)
+            row.prop(aprops, "velocity_transfer_method", expand=True)
+            if aprops.velocity_transfer_method == 'VELOCITY_TRANSFER_METHOD_FLIP':
+                column.prop(aprops, "PICFLIP_ratio", slider=True)
+            else:
+                column.label(text="")
+
+            if show_documentation:
+                column = box.column(align=True)
                 column.operator(
                     "wm.url_open", 
-                    text="CPU usage is under 100%, is this normal?", 
+                    text="What are applications of the PIC/FLIP Ratio?", 
                     icon="WORLD"
-                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Frequently-Asked-Questions#my-cpu-is-running-under-100-usage-while-simulating-is-this-normal"
+                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Advanced-Settings#simulation-stability"
+                column.operator(
+                    "wm.url_open", 
+                    text="FLIP vs APIC", 
+                    icon="WORLD"
+                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Advanced-Settings#flip-vs-apic"
+
+        if show_advanced:
+            box = self.layout.box()
+            row = box.row(align=True)
+            row.prop(aprops, "simulation_stability_expanded",
+                icon="TRIA_DOWN" if aprops.simulation_stability_expanded else "TRIA_RIGHT",
+                icon_only=True, 
+                emboss=False
+            )
+            row.label(text="Simulation and Particle Stability:")
+
+            if aprops.simulation_stability_expanded:
+                column = box.column()
+
+                row = column.row(align=True)
+                row.prop(aprops, "particle_jitter_factor", slider=True)
+                row.prop(aprops, "jitter_surface_particles")
+                column.prop(aprops, "enable_extreme_velocity_removal")
+                column.separator()
+                column = box.column(align=True)
+                column.prop(aprops, "pressure_solver_max_iterations")
+                column.prop(aprops, "viscosity_solver_max_iterations")
+
+        if show_advanced:
+            box = self.layout.box()
+            row = box.row(align=True)
+            row.prop(aprops, "multithreading_expanded",
+                icon="TRIA_DOWN" if aprops.multithreading_expanded else "TRIA_RIGHT",
+                icon_only=True, 
+                emboss=False
+            )
+            row.label(text="Multithreading:")
+
+            if not aprops.multithreading_expanded:
+                info_text = ""
+                if aprops.threading_mode == 'THREADING_MODE_AUTO_DETECT':
+                    info_text = "Auto-detect " + str(aprops.num_threads_auto_detect) + " threads"
+                elif aprops.threading_mode == 'THREADING_MODE_FIXED':
+                    info_text = "Fixed " + str(aprops.num_threads_fixed) + " threads"
+
+                row = row.row(align=True)
+                row.alignment = 'RIGHT'
+                row.label(text=info_text)
+
+            if aprops.multithreading_expanded:
+                column = box.column()
+                split = column.split(align=True)
+
+                column_left = split.column(align=True)
+                row = column_left.row(align=True)
+                row.prop(aprops, "threading_mode", expand=True)
+                row = column_left.row(align=True)
+                if aprops.threading_mode == 'THREADING_MODE_AUTO_DETECT':
+                    row.enabled = False
+                    row.prop(aprops, "num_threads_auto_detect")
+                elif aprops.threading_mode == 'THREADING_MODE_FIXED':
+                    row.prop(aprops, "num_threads_fixed")
+
+                if show_documentation:
+                    column = box.column(align=True)
+                    column.operator(
+                        "wm.url_open", 
+                        text="CPU usage is under 100%, is this normal?", 
+                        icon="WORLD"
+                    ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Performance-Notes-and-Tips"
             
             # Performance and optimization settings are hidden from the UI.
             # These should always be enabled for performance.
@@ -146,11 +209,18 @@ class FLIPFLUID_PT_DomainTypeAdvancedPanel(bpy.types.Panel):
             column.prop(aprops, "reserve_temporary_grids")
             """
 
-            subbox = self.layout.box()
-            column = subbox.column(align=True)
-            column.separator()
-            column.label(text="Warnings and Errors:")
-            column.prop(aprops, "disable_changing_topology_warning")
+            box = self.layout.box()
+            row = box.row(align=True)
+            row.prop(aprops, "warnings_and_errors_expanded",
+                icon="TRIA_DOWN" if aprops.warnings_and_errors_expanded else "TRIA_RIGHT",
+                icon_only=True, 
+                emboss=False
+            )
+            row.label(text="Warnings and Errors:")
+
+            if aprops.warnings_and_errors_expanded:
+                column = box.column(align=True)
+                column.prop(aprops, "disable_changing_topology_warning")
         
     
 def register():

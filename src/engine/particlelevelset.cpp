@@ -290,6 +290,44 @@ void ParticleLevelSet::calculateCurvatureGrid(Array3d<float> &surfacePhi,
     GridUtils::extrapolateGrid(&kgrid, &validNodes, _curvatureGridExtrapolationLayers);
 }
 
+Array3d<float>* ParticleLevelSet::getPhiGrid() {
+    return &_phi;
+}
+
+void ParticleLevelSet::getGridDimensions(int *i, int *j, int *k) {
+    _phi.getGridDimensions(i, j, k);
+}
+
+void ParticleLevelSet::getCoarseGridDimensions(int *i, int *j, int *k) {
+    _phi.getCoarseGridDimensions(i, j, k);
+}
+
+bool ParticleLevelSet::isDimensionsValidForCoarseGridGeneration() {
+    return _phi.isDimensionsValidForCoarseGridGeneration();
+}
+
+void ParticleLevelSet::generateCoarseGrid(ParticleLevelSet &coarseGrid) {
+    FLUIDSIM_ASSERT(isDimensionsValidForCoarseGridGeneration());
+
+    Array3d<float> *coarsePhi = coarseGrid.getPhiGrid();
+    FLUIDSIM_ASSERT(_phi.isMatchingDimensionsForCoarseGrid(*coarsePhi));
+
+    _phi.generateCoarseGrid(*coarsePhi);
+}
+
+ParticleLevelSet ParticleLevelSet::generateCoarseGrid() {
+    FLUIDSIM_ASSERT(isDimensionsValidForCoarseGridGeneration());
+
+    double dxcoarse = _dx * 2.0;
+    int icoarse = 0; int jcoarse = 0; int kcoarse = 0;
+    getCoarseGridDimensions(&icoarse, &jcoarse, &kcoarse);
+
+    ParticleLevelSet coarseParticleLevelSet(icoarse, jcoarse, kcoarse, dxcoarse);
+    generateCoarseGrid(coarseParticleLevelSet);
+
+    return coarseParticleLevelSet;
+}
+
 float ParticleLevelSet::_getMaxDistance() {
     return 3.0 * _dx;
 }

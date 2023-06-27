@@ -364,26 +364,30 @@ class FlipFluidDrawDebugGrid(bpy.types.Operator):
         # Draw
         display_grid = dprops.debug.display_simulation_grid
         if vcu.is_blender_28():
+            line_draw_mode = '3D_UNIFORM_COLOR'
+            if vcu.is_blender_36():
+                # 3D/2D prefix deprecated in recent versions of Blender
+                line_draw_mode = 'UNIFORM_COLOR'
             if display_grid and dprops.debug.enabled_debug_grids[2]:
-                shader = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
+                shader = gpu.shader.from_builtin(line_draw_mode)
                 batch = batch_for_shader(shader, 'LINES', {"pos": z_coords})
                 shader.bind()
                 shader.uniform_float("color", (z_color[0], z_color[1], z_color[2], 1.0))
                 batch.draw(shader)
             if display_grid and dprops.debug.enabled_debug_grids[1]:
-                shader = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
+                shader = gpu.shader.from_builtin(line_draw_mode)
                 batch = batch_for_shader(shader, 'LINES', {"pos": y_coords})
                 shader.bind()
                 shader.uniform_float("color", (y_color[0], y_color[1], y_color[2], 1.0))
                 batch.draw(shader)
             if display_grid and dprops.debug.enabled_debug_grids[0]:
-                shader = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
+                shader = gpu.shader.from_builtin(line_draw_mode)
                 batch = batch_for_shader(shader, 'LINES', {"pos": x_coords})
                 shader.bind()
                 shader.uniform_float("color", (x_color[0], x_color[1], x_color[2], 1.0))
                 batch.draw(shader)
             if dprops.debug.display_domain_bounds:
-                shader = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
+                shader = gpu.shader.from_builtin(line_draw_mode)
                 batch = batch_for_shader(shader, 'LINES', {"pos": bounds_coords})
                 shader.bind()
                 shader.uniform_float("color", (bounds_color[0], bounds_color[1], bounds_color[2], 1.0))

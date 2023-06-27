@@ -24,12 +24,20 @@ SOFTWARE.
 
 #include "pressuresolver.h"
 
+// Not currently supported for Apple systems
+// Support to be added later
+#if !__APPLE__
+    #include <omp.h>
+#endif
+
 #include "pcgsolver/pcgsolver.h"
 #include "threadutils.h"
 #include "macvelocityfield.h"
 #include "particlelevelset.h"
 #include "meshlevelset.h"
 #include "interpolation.h"
+
+#include "stopwatch.h"
 
 /********************************************************************************
     PressureSolver
@@ -42,6 +50,7 @@ PressureSolver::~PressureSolver() {
 }
 
 bool PressureSolver::solve(PressureSolverParameters params) {
+
     _initialize(params);
     _conditionSolidVelocityField();
     _initializeSurfaceTensionClusterData();
@@ -57,6 +66,7 @@ bool PressureSolver::solve(PressureSolverParameters params) {
     }
 
     if (maxAbsCoeff < _pressureSolveTolerance) {
+        _pressureGrid->fill(0.0f);
         _solverIterations = 0;
         _solverError = 0.0f;
         _solverStatus = "Pressure Solver Iterations: 0\nEstimated Error: 0.0";
@@ -64,18 +74,41 @@ bool PressureSolver::solve(PressureSolverParameters params) {
     }
 
     std::vector<double> soln(_matSize, 0);
+    for (size_t i = 0; i < soln.size(); i++) {
+        GridIndex g = _pressureCells[i];
+        float pressure = _pressureGrid->get(g);
+        soln[i] = pressure;
+    }
+
     SparseMatrixd matrix(_matSize, 7);
     _calculateMatrixCoefficients(matrix);
 
     bool success = _solveLinearSystem(matrix, rhs, soln);
-
     if (!success) {
         return false;
     }
 
-    _applySolutionToVelocityField(soln);
-
     return true;
+}
+
+void PressureSolver::applySolutionToVelocityField() {
+    FluidMaterialGrid mgrid(_isize, _jsize, _ksize);
+    for(int k = 0; k < _ksize; k++) {
+        for(int j = 0; j < _jsize; j++) {
+            for(int i = 0; i < _isize; i++) {
+                if (_liquidSDF->get(i, j, k) < 0.0) {
+                    mgrid.setFluid(i, j, k);
+                }
+            }
+        }
+    }
+
+    _validVelocities->reset();
+
+    int U = 0; int V = 1; int W = 2;
+    _applyPressureToVelocityFieldMT(mgrid, U);
+    _applyPressureToVelocityFieldMT(mgrid, V);
+    _applyPressureToVelocityFieldMT(mgrid, W);
 }
 
 std::string PressureSolver::getSolverStatus() {
@@ -83,18 +116,19 @@ std::string PressureSolver::getSolverStatus() {
 }
 
 void PressureSolver::_initialize(PressureSolverParameters params) {
-    params.velocityField->getGridDimensions(&_isize, &_jsize, &_ksize);
+    params.velocityFieldFluid->getGridDimensions(&_isize, &_jsize, &_ksize);
     _dx = params.cellwidth;
     _deltaTime = params.deltaTime;
     _pressureSolveTolerance = params.tolerance;
     _pressureSolveAcceptableTolerance = params.acceptableTolerance;
     _maxCGIterations = params.maxIterations;
 
-    _vField = params.velocityField;
+    _vFieldFluid = params.velocityFieldFluid;
+    _vFieldSolid = params.velocityFieldSolid;
     _validVelocities = params.validVelocities;
     _liquidSDF = params.liquidSDF;
-    _solidSDF = params.solidSDF;
     _weightGrid = params.weightGrid;
+    _pressureGrid = params.pressureGrid;
 
     _isSurfaceTensionEnabled = params.isSurfaceTensionEnabled;
     _surfaceTensionConstant = params.surfaceTensionConstant;
@@ -147,6 +181,7 @@ void PressureSolver::_conditionSolidVelocityField() {
     std::vector<GridIndex> group;
     Array3d<bool> isProcessed(_isize, _jsize, _ksize, false);
     std::vector<GridIndex> queue;
+    GridIndex g, n;
     float eps = 1e-6;
     for (int k = 1; k < _ksize - 1; k++) {
         for (int j = 1; j < _jsize - 1; j++) {
@@ -167,49 +202,55 @@ void PressureSolver::_conditionSolidVelocityField() {
                 
                 group.clear();
                 while (!queue.empty()) {
-                    GridIndex g = queue.back();
+                    g = queue.back();
                     queue.pop_back();
 
-                    if (!isProcessed(g.i - 1, g.j, g.k) && 
-                            _liquidSDF->get(g.i - 1, g.j, g.k) < 0.0f && 
-                            _weightGrid->U(g.i, g.j, g.k) >= 0.0f + eps) {
-                        queue.push_back(GridIndex(g.i - 1, g.j, g.k));
-                        isProcessed.set(g.i - 1, g.j, g.k, true);
+                    n = GridIndex(g.i - 1, g.j, g.k);
+                    if (!isProcessed(n) && _liquidSDF->get(n) < 0.0f && _weightGrid->U(g) >= eps) {
+                        isProcessed.set(n, true);
+                        if (!Grid3d::isGridIndexOnBorder(n, _isize, _jsize, _ksize)) {
+                            queue.push_back(n);
+                        }
                     }
 
-                    if (!isProcessed(g.i + 1, g.j, g.k) && 
-                            _liquidSDF->get(g.i + 1, g.j, g.k) < 0.0f && 
-                            _weightGrid->U(g.i + 1, g.j, g.k) >= 0.0f + eps) {
-                        queue.push_back(GridIndex(g.i + 1, g.j, g.k));
-                        isProcessed.set(g.i + 1, g.j, g.k, true);
+                    n = GridIndex(g.i + 1, g.j, g.k);
+                    if (!isProcessed(n) && _liquidSDF->get(n) < 0.0f && _weightGrid->U(n) >= eps) {
+                        isProcessed.set(n, true);
+                        if (!Grid3d::isGridIndexOnBorder(n, _isize, _jsize, _ksize)) {
+                            queue.push_back(GridIndex(n));
+                        }
                     }
 
-                    if (!isProcessed(g.i, g.j - 1, g.k) && 
-                            _liquidSDF->get(g.i, g.j - 1, g.k) < 0.0f && 
-                            _weightGrid->V(g.i, g.j, g.k) >= 0.0f + eps) {
-                        queue.push_back(GridIndex(g.i, g.j - 1, g.k));
-                        isProcessed.set(g.i, g.j - 1, g.k, true);
+                    n = GridIndex(g.i, g.j - 1, g.k);
+                    if (!isProcessed(n) && _liquidSDF->get(n) < 0.0f && _weightGrid->V(g) >= eps) {
+                        isProcessed.set(n, true);
+                        if (!Grid3d::isGridIndexOnBorder(n, _isize, _jsize, _ksize)) {
+                            queue.push_back(GridIndex(n));
+                        }
                     }
 
-                    if (!isProcessed(g.i, g.j + 1, g.k) && 
-                            _liquidSDF->get(g.i, g.j + 1, g.k) < 0.0f && 
-                            _weightGrid->V(g.i, g.j + 1, g.k) >= 0.0f + eps) {
-                        queue.push_back(GridIndex(g.i, g.j + 1, g.k));
-                        isProcessed.set(g.i, g.j + 1, g.k, true);
+                    n = GridIndex(g.i, g.j + 1, g.k);
+                    if (!isProcessed(n) && _liquidSDF->get(n) < 0.0f && _weightGrid->V(n) >= eps) {
+                        isProcessed.set(n, true);
+                        if (!Grid3d::isGridIndexOnBorder(n, _isize, _jsize, _ksize)) {
+                            queue.push_back(GridIndex(n));
+                        }
                     }
 
-                    if (!isProcessed(g.i, g.j, g.k - 1) && 
-                            _liquidSDF->get(g.i, g.j, g.k - 1) < 0.0f && 
-                            _weightGrid->W(g.i, g.j, g.k) >= 0.0f + eps) {
-                        queue.push_back(GridIndex(g.i, g.j, g.k - 1));
-                        isProcessed.set(g.i, g.j, g.k - 1, true);
+                    n = GridIndex(g.i, g.j, g.k - 1);
+                    if (!isProcessed(n) && _liquidSDF->get(n) < 0.0f && _weightGrid->W(g) >= eps) {
+                        isProcessed.set(n, true);
+                        if (!Grid3d::isGridIndexOnBorder(n, _isize, _jsize, _ksize)) {
+                            queue.push_back(GridIndex(n));
+                        }
                     }
 
-                    if (!isProcessed(g.i, g.j, g.k + 1) && 
-                            _liquidSDF->get(g.i, g.j, g.k + 1) < 0.0f && 
-                            _weightGrid->W(g.i, g.j, g.k + 1) >= 0.0f + eps) {
-                        queue.push_back(GridIndex(g.i, g.j, g.k + 1));
-                        isProcessed.set(g.i, g.j, g.k + 1, true);
+                    n = GridIndex(g.i, g.j, g.k + 1);
+                    if (!isProcessed(n) && _liquidSDF->get(n) < 0.0f && _weightGrid->W(n) >= eps) {
+                        isProcessed.set(n, true);
+                        if (!Grid3d::isGridIndexOnBorder(n, _isize, _jsize, _ksize)) {
+                            queue.push_back(GridIndex(n));
+                        }
                     }
 
                     group.push_back(g);
@@ -230,12 +271,12 @@ void PressureSolver::_conditionSolidVelocityField() {
                 if (isIsolated) {
                     for (size_t gidx = 0; gidx < group.size(); gidx++) {
                         GridIndex g = group[gidx];
-                        _solidSDF->setFaceVelocityU(g.i,     g.j,     g.k,     0.0f);
-                        _solidSDF->setFaceVelocityU(g.i + 1, g.j,     g.k,     0.0f);
-                        _solidSDF->setFaceVelocityV(g.i,     g.j,     g.k,     0.0f);
-                        _solidSDF->setFaceVelocityV(g.i,     g.j + 1, g.k,     0.0f);
-                        _solidSDF->setFaceVelocityW(g.i,     g.j,     g.k,     0.0f);
-                        _solidSDF->setFaceVelocityW(g.i,     g.j,     g.k + 1, 0.0f);
+                        _vFieldSolid->setU(g.i,     g.j,     g.k,     0.0f);
+                        _vFieldSolid->setU(g.i + 1, g.j,     g.k,     0.0f);
+                        _vFieldSolid->setV(g.i,     g.j,     g.k,     0.0f);
+                        _vFieldSolid->setV(g.i,     g.j + 1, g.k,     0.0f);
+                        _vFieldSolid->setW(g.i,     g.j,     g.k,     0.0f);
+                        _vFieldSolid->setW(g.i,     g.j,     g.k + 1, 0.0f);
                     }
                 }
 
@@ -600,19 +641,19 @@ void PressureSolver::_calculateNegativeDivergenceVectorThread(int startidx,
         double volBack =   _weightGrid->W(i,     j,     k    );
 
         double divergence = 0.0;
-        divergence += -factor * volRight  * _vField->U(i + 1, j,     k    );
-        divergence +=  factor * volLeft   * _vField->U(i,     j,     k    );
-        divergence += -factor * volTop    * _vField->V(i,     j + 1, k    );
-        divergence +=  factor * volBottom * _vField->V(i,     j,     k    );
-        divergence += -factor * volFront  * _vField->W(i,     j,     k + 1);
-        divergence +=  factor * volBack   * _vField->W(i,     j,     k    );
+        divergence += -factor * volRight  * _vFieldFluid->U(i + 1, j,     k    );
+        divergence +=  factor * volLeft   * _vFieldFluid->U(i,     j,     k    );
+        divergence += -factor * volTop    * _vFieldFluid->V(i,     j + 1, k    );
+        divergence +=  factor * volBottom * _vFieldFluid->V(i,     j,     k    );
+        divergence += -factor * volFront  * _vFieldFluid->W(i,     j,     k + 1);
+        divergence +=  factor * volBack   * _vFieldFluid->W(i,     j,     k    );
 
-        divergence +=  factor * (volRight -  volCenter) * _solidSDF->getFaceVelocityU(i + 1, j,     k    );
-        divergence += -factor * (volLeft -   volCenter) * _solidSDF->getFaceVelocityU(i,     j,     k    );
-        divergence +=  factor * (volTop -    volCenter) * _solidSDF->getFaceVelocityV(i,     j + 1, k    );
-        divergence += -factor * (volBottom - volCenter) * _solidSDF->getFaceVelocityV(i,     j,     k    );
-        divergence +=  factor * (volFront -  volCenter) * _solidSDF->getFaceVelocityW(i,     j,     k + 1);
-        divergence += -factor * (volBack -   volCenter) * _solidSDF->getFaceVelocityW(i,     j,     k    );
+        divergence +=  factor * (volRight -  volCenter) * _vFieldSolid->U(i + 1, j,     k    );
+        divergence += -factor * (volLeft -   volCenter) * _vFieldSolid->U(i,     j,     k    );
+        divergence +=  factor * (volTop -    volCenter) * _vFieldSolid->V(i,     j + 1, k    );
+        divergence += -factor * (volBottom - volCenter) * _vFieldSolid->V(i,     j,     k    );
+        divergence +=  factor * (volFront -  volCenter) * _vFieldSolid->W(i,     j,     k + 1);
+        divergence += -factor * (volBack -   volCenter) * _vFieldSolid->W(i,     j,     k    );
 
         if (_isSurfaceTensionEnabled) {
             double phiCenter = _liquidSDF->get(i,     j,     k    );
@@ -811,33 +852,45 @@ void PressureSolver::_calculateMatrixCoefficientsThread(int startidx, int endidx
 
 bool PressureSolver::_solveLinearSystem(SparseMatrixd &matrix, std::vector<double> &rhs, 
                                         std::vector<double> &soln) {
-    _solverIterations = 0;
-    _solverError = 0.0f;
+    bool success = true;
+    double estimatedError = -1.0f;
+    int numIterations = 0;
 
-    PCGSolver<double> solver;
-    solver.setSolverParameters(_pressureSolveTolerance, _maxCGIterations);
+    bool useJacobiSolve = false;
+    if (useJacobiSolve) {
+        // Basic Jacobi Solve
+        success = _solveLinearSystemJacobi(matrix, rhs, soln, &numIterations, &estimatedError);
+    } else {
+        // PCG Solve
+        PCGSolver<double> solver;
+        solver.setSolverParameters(_pressureSolveTolerance, _maxCGIterations);
+        success = solver.solve(matrix, rhs, soln, estimatedError, numIterations);
+    }
 
-    double estimatedError;
-    int numIterations;
-    bool success = solver.solve(matrix, rhs, soln, estimatedError, numIterations);
+    _pressureGrid->fill(0.0f);
+    for (size_t i = 0; i < _pressureCells.size(); i++) {
+        GridIndex g = _pressureCells[i];
+        _pressureGrid->set(g, soln[i]);
+    }
+
     _solverIterations = numIterations;
     _solverError = (float)estimatedError;
 
     bool retval;
     std::ostringstream ss;
     if (success) {
-        ss << "Pressure Solver Iterations: " << numIterations <<
-              "\nEstimated Error: " << estimatedError;
+        ss << "Pressure Solver Iterations: " << _solverIterations <<
+              "\nEstimated Error: " << _solverError;
         retval = true;
-    } else if (numIterations == _maxCGIterations && 
-                    estimatedError < _pressureSolveAcceptableTolerance) {
-        ss << "Pressure Solver Iterations: " << numIterations <<
-              "\nEstimated Error: " << estimatedError;
+    } else if (_solverIterations == _maxCGIterations && 
+                    _solverError < _pressureSolveAcceptableTolerance) {
+        ss << "Pressure Solver Iterations: " << _solverIterations <<
+              "\nEstimated Error: " << _solverError;
         retval = true;
     } else {
         ss << "***Pressure Solver FAILED" <<
-              "\nPressure Solver Iterations: " << numIterations <<
-              "\nEstimated Error: " << estimatedError;
+              "\nPressure Solver Iterations: " << _solverIterations <<
+              "\nEstimated Error: " << _solverError;
         retval = false;
     }
 
@@ -846,35 +899,110 @@ bool PressureSolver::_solveLinearSystem(SparseMatrixd &matrix, std::vector<doubl
     return retval;
 }
 
-void PressureSolver::_applySolutionToVelocityField(std::vector<double> &soln) {
-    Array3d<float> pressureGrid(_isize, _jsize, _ksize, 0.0);
-    for (int i = 0; i < (int)_pressureCells.size(); i++) {
-        GridIndex g = _pressureCells.get(i);
-        pressureGrid.set(g, soln[i]);
-    }
+bool PressureSolver::_solveLinearSystemJacobi(SparseMatrixd &matrix, std::vector<double> &b, 
+                                              std::vector<double> &x, int *iterations, double *error) {
+    // Not currently supported for Apple systems
+    #if !__APPLE__
 
-    FluidMaterialGrid mgrid(_isize, _jsize, _ksize);
-    for(int k = 0; k < _ksize; k++) {
-        for(int j = 0; j < _jsize; j++) {
-            for(int i = 0; i < _isize; i++) {
-                if (_liquidSDF->get(i, j, k) < 0.0) {
-                    mgrid.setFluid(i, j, k);
+        std::vector<double> next_x = x;
+
+        int numCPU = ThreadUtils::getMaxThreadCount();
+        int numthreads = (int)fmin(numCPU, x.size());
+        std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, x.size(), numthreads);
+        std::vector<int> is_global_converged(numthreads, 0);
+
+        int max_iterations = 100000;
+        int num_iterations = 0;
+        float error_tolerance = 1e-6f;
+        float weight = 1.0;
+        double eps = 1e-6;
+        bool converged_condition = false;
+
+        #pragma omp parallel num_threads(numthreads)
+        {
+            FLUIDSIM_ASSERT(omp_get_num_threads() == numthreads);
+
+            int thread_id = omp_get_thread_num();
+            int startidx = intervals[thread_id];
+            int endidx = intervals[thread_id + 1];
+
+            for (int iter = 0; iter < max_iterations; iter++) {
+
+                for (int i = startidx; i < endidx; i++) {
+                    double sigma = 0.0;
+                    double diag_value = 0.0;
+                    for (size_t colidx = 0; colidx < matrix.index[i].size(); colidx++) {
+                        int j = (int)(matrix.index[i][colidx]);
+                        double value = matrix.value[i][colidx];
+                        if (j != i) {
+                            sigma += value * x[j];
+                        } else {
+                            diag_value = value;
+                        }
+                    }
+
+                    if (std::abs(diag_value) < eps ) {
+                        next_x[i] = 0.0;
+                        continue;
+                    }
+
+                    double x_value = x[i];
+                    double next_x_value = (b[i] - sigma) / diag_value;
+
+                    next_x[i] = x_value + weight * (next_x_value - x_value);
+                }
+
+                #pragma omp barrier
+
+                bool is_local_converged = true;
+                double local_max_error = 0.0;
+                for (int i = startidx; i < endidx; i++) {
+                    double abs_error = std::abs(next_x[i] - x[i]);
+                    if (abs_error > error_tolerance) {
+                        local_max_error = std::max(abs_error, local_max_error);
+                        is_local_converged = false;
+                    }
+                }
+                is_global_converged[thread_id] = is_local_converged;
+
+                #pragma omp barrier
+
+                if (thread_id == 0) {
+                    bool is_converged = true;
+                    for (size_t i = 0; i < is_global_converged.size(); i++) {
+                        if (!is_global_converged[i]) {
+                            is_converged = false;
+                            break;
+                        }
+                    }
+                    converged_condition = is_converged;
+
+                    x = next_x;
+                    num_iterations += 1;
+                }
+
+                #pragma omp barrier
+
+                if (converged_condition) {
+                    break;
                 }
             }
+
         }
-    }
 
-    _validVelocities->reset();
+        *iterations = num_iterations;
+        *error = -1.0f;
 
-    int U = 0; int V = 1; int W = 2;
-    _applyPressureToVelocityFieldMT(pressureGrid, mgrid, U);
-    _applyPressureToVelocityFieldMT(pressureGrid, mgrid, V);
-    _applyPressureToVelocityFieldMT(pressureGrid, mgrid, W);
+        return true;
+
+    #else
+
+        return false;
+
+    #endif
 }
 
-void PressureSolver::_applyPressureToVelocityFieldMT(Array3d<float> &pressureGrid, 
-                                                      FluidMaterialGrid &mgrid,
-                                                      int dir) {
+void PressureSolver::_applyPressureToVelocityFieldMT(FluidMaterialGrid &mgrid, int dir) {
     int U = 0; int V = 1; int W = 2;
 
     int gridsize = 0;
@@ -892,7 +1020,7 @@ void PressureSolver::_applyPressureToVelocityFieldMT(Array3d<float> &pressureGri
     std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&PressureSolver::_applyPressureToVelocityFieldThread, this,
-                                 intervals[i], intervals[i + 1], &pressureGrid, &mgrid, dir);
+                                 intervals[i], intervals[i + 1], &mgrid, dir);
     }
 
     for (int i = 0; i < numthreads; i++) {
@@ -901,7 +1029,6 @@ void PressureSolver::_applyPressureToVelocityFieldMT(Array3d<float> &pressureGri
 }
 
 void PressureSolver::_applyPressureToVelocityFieldThread(int startidx, int endidx, 
-                                                          Array3d<float> *pressureGrid, 
                                                           FluidMaterialGrid *mgrid,
                                                           int dir) {
     int U = 0; int V = 1; int W = 2;
@@ -925,8 +1052,8 @@ void PressureSolver::_applyPressureToVelocityFieldThread(int startidx, int endid
                 float p1 = 0.0f;
                 float p2 = 0.0f;
                 if (mgrid->isCellFluid(pi, pj, pk) && mgrid->isCellFluid(pi + 1, pj, pk)) {
-                    p1 = pressureGrid->get(pi, pj, pk);
-                    p2 = pressureGrid->get(pi + 1, pj, pk);
+                    p1 = _pressureGrid->get(pi, pj, pk);
+                    p2 = _pressureGrid->get(pi + 1, pj, pk);
                 } else {
                     float phi1 = _liquidSDF->get(pi, pj, pk);
                     float phi2 = _liquidSDF->get(pi + 1, pj, pk);
@@ -936,22 +1063,22 @@ void PressureSolver::_applyPressureToVelocityFieldThread(int startidx, int endid
                         thetaPressure = _clamp((double)thetaPressure, -_maxtheta, _maxtheta);
                         float thetaTension = (phi1 - phi2) / (phi1 + eps);
                         thetaTension = _clamp((double)thetaTension, -_maxtheta, _maxtheta);
-                        p1 = pressureGrid->get(pi, pj, pk);
+                        p1 = _pressureGrid->get(pi, pj, pk);
                         p2 = thetaTension * tension + thetaPressure * p1;
                     } else {
                         float thetaPressure = phi1 / (phi2 + eps);
                         thetaPressure = _clamp((double)thetaPressure, -_maxtheta, _maxtheta);
                         float thetaTension = (phi2 - phi1) / (phi2 + eps);
                         thetaTension = _clamp((double)thetaTension, -_maxtheta, _maxtheta);
-                        p2 = pressureGrid->get(pi + 1, pj, pk);
+                        p2 = _pressureGrid->get(pi + 1, pj, pk);
                         p1 = thetaTension * tension + thetaPressure * p2;
                     }
                 }
-                _vField->addU(g, -factor * (p2 - p1));
+                _vFieldFluid->addU(g, -factor * (p2 - p1));
                 _validVelocities->validU.set(g, true);
 
             } else {
-                _vField->setU(g, 0.0);
+                _vFieldFluid->setU(g, 0.0);
             }
 
         }
@@ -973,8 +1100,8 @@ void PressureSolver::_applyPressureToVelocityFieldThread(int startidx, int endid
                 float p1 = 0.0f;
                 float p2 = 0.0f;
                 if (mgrid->isCellFluid(pi, pj, pk) && mgrid->isCellFluid(pi, pj + 1, pk)) {
-                    p1 = pressureGrid->get(pi, pj, pk);
-                    p2 = pressureGrid->get(pi, pj + 1, pk);
+                    p1 = _pressureGrid->get(pi, pj, pk);
+                    p2 = _pressureGrid->get(pi, pj + 1, pk);
                 } else {
                     float phi1 = _liquidSDF->get(pi, pj, pk);
                     float phi2 = _liquidSDF->get(pi, pj + 1, pk);
@@ -984,22 +1111,22 @@ void PressureSolver::_applyPressureToVelocityFieldThread(int startidx, int endid
                         thetaPressure = _clamp((double)thetaPressure, -_maxtheta, _maxtheta);
                         float thetaTension = (phi1 - phi2) / (phi1 + eps);
                         thetaTension = _clamp((double)thetaTension, -_maxtheta, _maxtheta);
-                        p1 = pressureGrid->get(pi, pj, pk);
+                        p1 = _pressureGrid->get(pi, pj, pk);
                         p2 = thetaTension * tension + thetaPressure * p1;
                     } else {
                         float thetaPressure = phi1 / (phi2 + eps);
                         thetaPressure = _clamp((double)thetaPressure, -_maxtheta, _maxtheta);
                         float thetaTension = (phi2 - phi1) / (phi2 + eps);
                         thetaTension = _clamp((double)thetaTension, -_maxtheta, _maxtheta);
-                        p2 = pressureGrid->get(pi, pj + 1, pk);
+                        p2 = _pressureGrid->get(pi, pj + 1, pk);
                         p1 = thetaTension * tension + thetaPressure * p2;
                     }
                 }
-                _vField->addV(g, -factor * (p2 - p1));
+                _vFieldFluid->addV(g, -factor * (p2 - p1));
                 _validVelocities->validV.set(g, true);
 
             } else {
-                _vField->setV(g, 0.0);
+                _vFieldFluid->setV(g, 0.0);
             }
         }
 
@@ -1020,8 +1147,8 @@ void PressureSolver::_applyPressureToVelocityFieldThread(int startidx, int endid
                 float p1 = 0.0f;
                 float p2 = 0.0f;
                 if (mgrid->isCellFluid(pi, pj, pk) && mgrid->isCellFluid(pi, pj, pk + 1)) {
-                    p1 = pressureGrid->get(pi, pj, pk);
-                    p2 = pressureGrid->get(pi, pj, pk + 1);
+                    p1 = _pressureGrid->get(pi, pj, pk);
+                    p2 = _pressureGrid->get(pi, pj, pk + 1);
                 } else {
                     float phi1 = _liquidSDF->get(pi, pj, pk);
                     float phi2 = _liquidSDF->get(pi, pj, pk + 1);
@@ -1031,22 +1158,22 @@ void PressureSolver::_applyPressureToVelocityFieldThread(int startidx, int endid
                         thetaPressure = _clamp((double)thetaPressure, -_maxtheta, _maxtheta);
                         float thetaTension = (phi1 - phi2) / (phi1 + eps);
                         thetaTension = _clamp((double)thetaTension, -_maxtheta, _maxtheta);
-                        p1 = pressureGrid->get(pi, pj, pk);
+                        p1 = _pressureGrid->get(pi, pj, pk);
                         p2 = thetaTension * tension + thetaPressure * p1;
                     } else {
                         float thetaPressure = phi1 / (phi2 + eps);
                         thetaPressure = _clamp((double)thetaPressure, -_maxtheta, _maxtheta);
                         float thetaTension = (phi2 - phi1) / (phi2 + eps);
                         thetaTension = _clamp((double)thetaTension, -_maxtheta, _maxtheta);
-                        p2 = pressureGrid->get(pi, pj, pk + 1);
+                        p2 = _pressureGrid->get(pi, pj, pk + 1);
                         p1 = thetaTension * tension + thetaPressure * p2;
                     }
                 }
-                _vField->addW(g, -factor * (p2 - p1));
+                _vFieldFluid->addW(g, -factor * (p2 - p1));
                 _validVelocities->validW.set(g, true);
 
             } else {
-                _vField->setW(g, 0.0);
+                _vFieldFluid->setW(g, 0.0);
             }
         }
 

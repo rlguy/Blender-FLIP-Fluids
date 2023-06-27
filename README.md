@@ -27,7 +27,7 @@ See any of our [market place product pages](https://github.com/rlguy/Blender-FLI
 ## System Requirements
 
 - Windows, MacOS, or Linux operating system
-- Blender 2.8 to 3.5 compatible
+- Blender 2.8 to 3.6 compatible
 - CPU 64-bit Intel® or AMD® or Apple Silicon multi-core processor
 - 8 GB RAM minimum, 16 GB of RAM or more is highly recommended
 

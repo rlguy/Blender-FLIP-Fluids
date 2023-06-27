@@ -29,6 +29,10 @@ def is_blender_281():
     return bpy.app.version >= (2, 81, 0)
 
 
+def is_blender_282():
+    return bpy.app.version >= (2, 82, 0)
+
+
 def is_blender_29():
     return bpy.app.version >= (2, 90, 0)
 
@@ -59,6 +63,13 @@ def is_blender_34():
 
 def is_blender_35():
     return bpy.app.version >= (3, 5, 0)
+
+
+def is_blender_36():
+    return bpy.app.version >= (3, 6, 0)
+
+def is_blender_40():
+    return bpy.app.version >= (4, 0, 0)
     
 
 def register_dict_property(dict_object, name_str, prop):

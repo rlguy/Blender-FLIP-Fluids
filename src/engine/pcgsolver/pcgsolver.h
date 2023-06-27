@@ -276,7 +276,7 @@ struct PCGSolver {
             z.resize(n); 
             r.resize(n); 
         }
-        std::fill(result.begin(), result.end(), 0);
+        //std::fill(result.begin(), result.end(), 0);
 
         r = rhs;
         residualOut = BLAS::absMax(r);

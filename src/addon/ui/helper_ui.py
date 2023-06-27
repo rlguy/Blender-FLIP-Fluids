@@ -456,6 +456,130 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
             column = box.column(align=True)
             column.enabled = vcu.is_blender_31() and is_developer_mode
             column.operator("flip_fluid_operators.helper_initialize_motion_blur")
+
+
+        #
+        # Object Speed Measurement Tools
+        #
+
+        box = self.layout.box()
+        row = box.row(align=True)
+        row.prop(hprops, "object_speed_measurement_tools_expanded",
+            icon="TRIA_DOWN" if hprops.object_speed_measurement_tools_expanded else "TRIA_RIGHT",
+            icon_only=True, 
+            emboss=False
+        )
+        row.label(text="Measure Object Speed Tool:")
+
+        if hprops.object_speed_measurement_tools_expanded:
+            selected_objects = bpy.context.selected_objects
+            bl_object = vcu.get_active_object(context)
+            if selected_objects:
+                if bl_object not in selected_objects:
+                    bl_object = selected_objects[0]
+            else:
+                bl_object = None
+
+            op_text = "Measure Object Speed: "
+            if bl_object is not None:
+                op_text += bl_object.name
+            else:
+                op_text += "No Object Selected"
+
+            column = box.column(align=True)
+            row = column.row(align=True)
+            row.operator("flip_fluid_operators.measure_object_speed", text=op_text)
+            if hprops.is_translation_data_available:
+                row.operator("flip_fluid_operators.clear_measure_object_speed", text="", icon="X")
+
+            column = column.column(align=True)
+            split = vcu.ui_split(ui_element=column, factor=0.66, align=True)
+            column_left = split.column(align=True)
+            column_right = split.column(align=True)
+
+            column_left.prop(hprops, "update_object_speed_data_on_frame_change")
+            row = column_right.row(align=True)
+            row.prop(hprops, "measure_object_speed_units_mode", expand=True)
+            column.separator()
+
+            if not hprops.is_translation_data_available:
+                column.label(text="No Speed Data Available")
+                column.label(text="Select an object and use the above operator")
+            else:
+                try:
+                    world_scale = 1.0
+                    time_scale = 1.0
+                    frame_rate = bpy.context.scene.render.fps
+                    dprops = context.scene.flip_fluid.get_domain_properties()
+                    if dprops is not None:
+                        if dprops.world.world_scale_mode == 'WORLD_SCALE_MODE_RELATIVE':
+                            world_scale = dprops.world.world_scale_relative
+                        elif dprops.world.world_scale_mode == 'WORLD_SCALE_MODE_ABSOLUTE': 
+                            view_x, view_y, view_z = dprops.world.get_viewport_dimensions(context)
+                            longest_side = max(view_x, view_y, view_z, 1e-6)
+                            world_scale = dprops.world.world_scale_absolute / longest_side
+
+                        eps = 1e-6
+                        time_scale = max(dprops.simulation.get_current_frame_time_scale(), eps)
+                        frame_rate = dprops.simulation.get_frame_rate()
+                except Exception as e:
+                    print("FLIP Fluids Object Speed Measurement Tools Error: ", str(e))
+
+                mps_speed_factor = world_scale * frame_rate / time_scale    # Meters per second factor
+                fps_speed_factor = 3.28084 * mps_speed_factor               # Feet per second factor
+                mps_to_kph_factor = 3.6
+                mps_to_mph_factor = 2.23694
+
+                units_str = "m/s"
+                min_vertex_speed = mps_speed_factor * hprops.min_vertex_translation
+                max_vertex_speed = mps_speed_factor * hprops.max_vertex_translation
+                center_speed = mps_speed_factor * hprops.center_translation
+
+                alt_units_str = "km/h"
+                min_vertex_speed_alt = mps_to_kph_factor * min_vertex_speed
+                max_vertex_speed_alt = mps_to_kph_factor * max_vertex_speed
+                center_speed_alt = mps_to_kph_factor * center_speed
+
+                if hprops.measure_object_speed_units_mode == 'MEASUREMENT_UNITS_MODE_IMPERIAL':
+                    alt_units_str = "mph"
+                    min_vertex_speed_alt = mps_to_mph_factor * min_vertex_speed
+                    max_vertex_speed_alt = mps_to_mph_factor * max_vertex_speed
+                    center_speed_alt = mps_to_mph_factor * center_speed
+
+                    units_str = "ft/s"
+                    min_vertex_speed = fps_speed_factor * hprops.min_vertex_translation
+                    max_vertex_speed = fps_speed_factor * hprops.max_vertex_translation
+                    center_speed = fps_speed_factor * hprops.center_translation
+
+                header_text = "Name: " + hprops.translation_data_object_name + " | "
+                header_text += "Frame: " + str(hprops.translation_data_object_frame) + " | "
+                header_text += "Verts: " + str(hprops.translation_data_object_vertices) + " | "
+                header_text += "Time: " + str(hprops.translation_data_object_compute_time) + "ms"
+                column.label(text=header_text)
+                column.separator()
+                
+                split = column.split(align=True)
+                column1 = split.column(align=True)
+                column2 = split.column(align=True)
+                column3 = split.column(align=True)
+
+                column1.label(text="Center Speed:")
+                column1.label(text="Min Vertex Speed:")
+                column1.label(text="Max Vertex Speed:")
+
+                column2.label(text='{0:.2f}'.format(center_speed) + " " + units_str)
+                column2.label(text='{0:.2f}'.format(min_vertex_speed) + " " + units_str)
+                column2.label(text='{0:.2f}'.format(max_vertex_speed) + " " + units_str)
+
+                column3.label(text='{0:.2f}'.format(center_speed_alt) + " " + alt_units_str)
+                column3.label(text='{0:.2f}'.format(min_vertex_speed_alt) + " " + alt_units_str)
+                column3.label(text='{0:.2f}'.format(max_vertex_speed_alt) + " " + alt_units_str)
+
+                footer_text = "World Scale: " + '{0:.3f}'.format(world_scale) + " | "
+                footer_text += "Time Scale: " + '{0:.3f}'.format(time_scale) + " | "
+                footer_text += "FPS: " + '{0:.2f}'.format(frame_rate)
+                column.separator()
+                column.label(text=footer_text)
             
 
         #

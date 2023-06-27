@@ -140,6 +140,14 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
             type=preset_properties.PresetRegistry,
             ); exec(conv("property_registry"))
 
+    domain_settings_tabbed_panel_view = EnumProperty(
+            name="Domain Panel View",
+            description="Select settings panel to display",
+            items=types.domain_settings_panel,
+            default='DOMAIN_SETTINGS_PANEL_SIMULATION',
+            options={'HIDDEN'},
+            ); exec(conv("domain_settings_tabbed_panel_view"))
+
 
     def initialize(self):
         self.simulation.initialize()

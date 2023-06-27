@@ -5071,11 +5071,61 @@ void FluidSimulation::_updateWeightGridThread(int startidx, int endidx, int dir)
 
 void FluidSimulation::_pressureSolve(double dt) {
     _logfile.logString(_logfile.getTime() + " BEGIN       Solve Pressure System");
-
     StopWatch t;
     t.start();
 
     _updateWeightGrid();
+
+    /*
+    // Testing Coarse Grid Solve
+    double dxcoarse = _dx * 2.0;
+    int icoarse = 0; int jcoarse = 0; int kcoarse = 0;
+    _MACVelocity.getCoarseGridDimensions(&icoarse, &jcoarse, &kcoarse);
+    Array3d<float> pressureGridLevel1(icoarse, jcoarse, kcoarse, 0.0f);
+    {
+
+        StopWatch timerLevel1;
+        timerLevel1.start();
+
+        PressureSolverParameters params;
+        params.cellwidth = dxcoarse;
+        params.deltaTime = dt;
+        params.tolerance = _pressureSolveTolerance;
+        params.acceptableTolerance = _pressureSolveAcceptableTolerance;
+        params.maxIterations = _maxPressureSolveIterations;
+
+        MACVelocityField vfieldLevel1 = _MACVelocity.generateCoarseGrid();
+        MACVelocityField vfieldSolidLevel1 = _solidSDF.getVelocityDataGrid()->field.generateCoarseGrid();
+        ValidVelocityComponentGrid validVelocitiesLevel1(icoarse, jcoarse, kcoarse);
+        Array3d<float> LiquidSDFLevel1 = _liquidSDF.getPhiGrid()->generateCoarseGrid();
+        WeightGrid weightGridLevel1 = _weightGrid.generateCoarseGrid();
+        Array3d<float> fluidCurvatureGridLevel1;
+        if (_isSurfaceTensionEnabled) {
+            fluidCurvatureGridLevel1 = _fluidCurvatureGrid.generateCoarseGrid();
+        }
+
+        params.velocityFieldFluid = &vfieldLevel1;
+        params.velocityFieldSolid = &vfieldSolidLevel1;
+        params.validVelocities = &validVelocitiesLevel1;
+        params.liquidSDF = &LiquidSDFLevel1;
+        params.weightGrid = &weightGridLevel1;
+        params.pressureGrid = &pressureGridLevel1;
+
+        params.isSurfaceTensionEnabled = _isSurfaceTensionEnabled;
+        if (_isSurfaceTensionEnabled) {
+            params.surfaceTensionConstant = _surfaceTensionConstant;
+            params.curvatureGrid = &fluidCurvatureGridLevel1;
+        }
+
+        PressureSolver psolver;
+        bool success = psolver.solve(params);
+        std::string pressureSolverStatus = psolver.getSolverStatus();
+
+        timerLevel1.stop();
+    }
+    */
+
+    Array3d<float> pressureGrid(_isize, _jsize, _ksize, 0.0f);
 
     PressureSolverParameters params;
     params.cellwidth = _dx;
@@ -5084,11 +5134,12 @@ void FluidSimulation::_pressureSolve(double dt) {
     params.acceptableTolerance = _pressureSolveAcceptableTolerance;
     params.maxIterations = _maxPressureSolveIterations;
 
-    params.velocityField = &_MACVelocity;
+    params.velocityFieldFluid = &_MACVelocity;
+    params.velocityFieldSolid = &(_solidSDF.getVelocityDataGrid()->field);
     params.validVelocities = &_validVelocities;
-    params.liquidSDF = &_liquidSDF;
-    params.solidSDF = &_solidSDF;
+    params.liquidSDF = _liquidSDF.getPhiGrid();
     params.weightGrid = &_weightGrid;
+    params.pressureGrid = &pressureGrid;
 
     params.isSurfaceTensionEnabled = _isSurfaceTensionEnabled;
     if (_isSurfaceTensionEnabled) {
@@ -5098,8 +5149,11 @@ void FluidSimulation::_pressureSolve(double dt) {
 
     PressureSolver psolver;
     bool success = psolver.solve(params);
-    _pressureSolverStatus = psolver.getSolverStatus();
+    if (success) {
+        psolver.applySolutionToVelocityField();
+    }
 
+    _pressureSolverStatus = psolver.getSolverStatus();
     if (_currentFrameTimeStepNumber == 0) {
         _pressureSolverSuccess = success;
         _pressureSolverIterations = psolver.getIterations();
@@ -5407,21 +5461,40 @@ void FluidSimulation::_updateSheetSeeding() {
     _markerParticles.getAttributeValues("VELOCITY", velocities);
 
     std::vector<float> *ages;
+    Array3d<float> tempAgeAttributeGrid;
+    Array3d<bool> tempAgeAttributeValidGrid;
     if (_isSurfaceAgeAttributeEnabled) {
+        tempAgeAttributeGrid = _ageAttributeGrid;
+        tempAgeAttributeValidGrid = _ageAttributeValidGrid;
         _markerParticles.getAttributeValues("AGE", ages);
-        _updateMarkerParticleAgeAttributeGrid();
+        _updateMarkerParticleAgeAttributeGrid(tempAgeAttributeGrid, tempAgeAttributeValidGrid);
     }
 
     std::vector<float> *viscosities;
+    Array3d<float> tempViscosityAttributeGrid;
+    Array3d<bool> tempViscosityAttributeValidGrid;
     if (_isSurfaceSourceViscosityAttributeEnabled) {
+        tempViscosityAttributeGrid = _viscosityAttributeGrid;
+        tempViscosityAttributeValidGrid = _viscosityAttributeValidGrid;
         _markerParticles.getAttributeValues("VISCOSITY", viscosities);
-        _updateMarkerParticleViscosityAttributeGrid();
+        _updateMarkerParticleViscosityAttributeGrid(tempViscosityAttributeGrid, tempViscosityAttributeValidGrid);
     }
 
     std::vector<vmath::vec3> *colors;
+    Array3d<float> tempColorAttributeGridR;
+    Array3d<float> tempColorAttributeGridG;
+    Array3d<float> tempColorAttributeGridB;
+    Array3d<bool> tempColorAttributeValidGrid;
     if (_isSurfaceSourceColorAttributeEnabled) {
+        tempColorAttributeGridR = _colorAttributeGridR;
+        tempColorAttributeGridG = _colorAttributeGridG;
+        tempColorAttributeGridB = _colorAttributeGridB;
+        tempColorAttributeValidGrid = _colorAttributeValidGrid;
         _markerParticles.getAttributeValues("COLOR", colors);
-        _updateMarkerParticleColorAttributeGrid();
+        _updateMarkerParticleColorAttributeGrid(tempColorAttributeGridR,
+                                                tempColorAttributeGridG,
+                                                tempColorAttributeGridB,
+                                                tempColorAttributeValidGrid);
     }
 
     vmath::vec3 goffset(0.5f * _dx, 0.5f * _dx, 0.5f * _dx);
@@ -5448,19 +5521,19 @@ void FluidSimulation::_updateSheetSeeding() {
         velocities->push_back(v);
 
         if (_isSurfaceAgeAttributeEnabled) {
-            float age = Interpolation::trilinearInterpolate(p - goffset, _dx, _ageAttributeGrid);
+            float age = Interpolation::trilinearInterpolate(p - goffset, _dx, tempAgeAttributeGrid);
             ages->push_back(age);
         }
 
         if (_isSurfaceSourceViscosityAttributeEnabled) {
-            float viscosity = Interpolation::trilinearInterpolate(p - goffset, _dx, _viscosityAttributeGrid);
+            float viscosity = Interpolation::trilinearInterpolate(p - goffset, _dx, tempViscosityAttributeGrid);
             viscosities->push_back(viscosity);
         }
 
         if (_isSurfaceSourceColorAttributeEnabled) {
-            float r = Interpolation::trilinearInterpolate(p - goffset, _dx, _colorAttributeGridR);
-            float g = Interpolation::trilinearInterpolate(p - goffset, _dx, _colorAttributeGridG);
-            float b = Interpolation::trilinearInterpolate(p - goffset, _dx, _colorAttributeGridB);
+            float r = Interpolation::trilinearInterpolate(p - goffset, _dx, tempColorAttributeGridR);
+            float g = Interpolation::trilinearInterpolate(p - goffset, _dx, tempColorAttributeGridG);
+            float b = Interpolation::trilinearInterpolate(p - goffset, _dx, tempColorAttributeGridB);
             vmath::vec3 color(r, g, b);
             colors->push_back(color);
         }
@@ -5756,9 +5829,10 @@ void FluidSimulation::_updateMarkerParticleVorticityAttributeGrid() {
     }
 }
 
-void FluidSimulation::_updateMarkerParticleAgeAttributeGrid() {
-    _ageAttributeGrid.fill(0.0f);
-    _ageAttributeValidGrid.fill(false);
+void FluidSimulation::_updateMarkerParticleAgeAttributeGrid(Array3d<float> &ageAttributeGrid,
+                                                            Array3d<bool> &ageAttributeValidGrid) {
+    ageAttributeGrid.fill(0.0f);
+    ageAttributeValidGrid.fill(false);
 
     std::vector<vmath::vec3> *positions;
     std::vector<float> *ages;
@@ -5769,20 +5843,21 @@ void FluidSimulation::_updateMarkerParticleAgeAttributeGrid() {
     AttributeTransferParameters<float> params;
     params.positions = positions;
     params.attributes = ages;
-    params.attributeGrid = &_ageAttributeGrid;
-    params.validGrid = &_ageAttributeValidGrid;
+    params.attributeGrid = &ageAttributeGrid;
+    params.validGrid = &ageAttributeValidGrid;
     params.particleRadius = radius;
     params.dx = _dx;
 
     AttributeToGridTransfer<float> attributeTransfer;
     attributeTransfer.transfer(params);
 
-    GridUtils::extrapolateGrid(&_ageAttributeGrid, &_ageAttributeValidGrid, _CFLConditionNumber);
+    GridUtils::extrapolateGrid(&ageAttributeGrid, &ageAttributeValidGrid, _CFLConditionNumber);
 }
 
-void FluidSimulation::_updateMarkerParticleViscosityAttributeGrid() {
-    _ageAttributeGrid.fill(0.0f);
-    _ageAttributeValidGrid.fill(false);
+void FluidSimulation::_updateMarkerParticleViscosityAttributeGrid(Array3d<float> &viscosityAttributeGrid,
+                                                                  Array3d<bool> &viscosityAttributeValidGrid) {
+    viscosityAttributeGrid.fill(0.0f);
+    viscosityAttributeValidGrid.fill(false);
 
     std::vector<vmath::vec3> *positions;
     std::vector<float> *viscosities;
@@ -5793,22 +5868,25 @@ void FluidSimulation::_updateMarkerParticleViscosityAttributeGrid() {
     AttributeTransferParameters<float> params;
     params.positions = positions;
     params.attributes = viscosities;
-    params.attributeGrid = &_viscosityAttributeGrid;
-    params.validGrid = &_viscosityAttributeValidGrid;
+    params.attributeGrid = &viscosityAttributeGrid;
+    params.validGrid = &viscosityAttributeValidGrid;
     params.particleRadius = radius;
     params.dx = _dx;
 
     AttributeToGridTransfer<float> attributeTransfer;
     attributeTransfer.transfer(params);
 
-    GridUtils::extrapolateGrid(&_viscosityAttributeGrid, &_viscosityAttributeValidGrid, _CFLConditionNumber);
+    GridUtils::extrapolateGrid(&viscosityAttributeGrid, &viscosityAttributeValidGrid, _CFLConditionNumber);
 }
 
-void FluidSimulation::_updateMarkerParticleColorAttributeGrid() {
-    _colorAttributeGridR.fill(0.0f);
-    _colorAttributeGridG.fill(0.0f);
-    _colorAttributeGridB.fill(0.0f);
-    _colorAttributeValidGrid.fill(false);
+void FluidSimulation::_updateMarkerParticleColorAttributeGrid(Array3d<float> &colorAttributeGridR,
+                                                              Array3d<float> &colorAttributeGridG,
+                                                              Array3d<float> &colorAttributeGridB,
+                                                              Array3d<bool> &colorAttributeValidGrid) {
+    colorAttributeGridR.fill(0.0f);
+    colorAttributeGridG.fill(0.0f);
+    colorAttributeGridB.fill(0.0f);
+    colorAttributeValidGrid.fill(false);
 
     Array3d<vmath::vec3> colorAttributeGrid(_isize, _jsize, _ksize, vmath::vec3());
 
@@ -5822,7 +5900,7 @@ void FluidSimulation::_updateMarkerParticleColorAttributeGrid() {
     params.positions = positions;
     params.attributes = colors;
     params.attributeGrid = &colorAttributeGrid;
-    params.validGrid = &_colorAttributeValidGrid;
+    params.validGrid = &colorAttributeValidGrid;
     params.particleRadius = radius;
     params.dx = _dx;
 
@@ -5836,16 +5914,16 @@ void FluidSimulation::_updateMarkerParticleColorAttributeGrid() {
                 float rval = _clamp(color.x, 0.0f, 1.0f);
                 float gval = _clamp(color.y, 0.0f, 1.0f);
                 float bval = _clamp(color.z, 0.0f, 1.0f);
-                _colorAttributeGridR.set(i, j, k, rval);
-                _colorAttributeGridG.set(i, j, k, gval);
-                _colorAttributeGridB.set(i, j, k, bval);
+                colorAttributeGridR.set(i, j, k, rval);
+                colorAttributeGridG.set(i, j, k, gval);
+                colorAttributeGridB.set(i, j, k, bval);
             }
         }
     }
 
-    GridUtils::extrapolateGrid(&_colorAttributeGridR, &_colorAttributeValidGrid, _CFLConditionNumber);
-    GridUtils::extrapolateGrid(&_colorAttributeGridG, &_colorAttributeValidGrid, _CFLConditionNumber);
-    GridUtils::extrapolateGrid(&_colorAttributeGridB, &_colorAttributeValidGrid, _CFLConditionNumber);
+    GridUtils::extrapolateGrid(&colorAttributeGridR, &colorAttributeValidGrid, _CFLConditionNumber);
+    GridUtils::extrapolateGrid(&colorAttributeGridG, &colorAttributeValidGrid, _CFLConditionNumber);
+    GridUtils::extrapolateGrid(&colorAttributeGridB, &colorAttributeValidGrid, _CFLConditionNumber);
 }
 
 void FluidSimulation::_updateMarkerParticleColorAttributeMixing(double dt) {
@@ -6080,7 +6158,7 @@ void FluidSimulation::_updateMarkerParticleAgeAttribute(double dt) {
     }
 
     if (_currentFrameTimeStepNumber == 0) {
-        _updateMarkerParticleAgeAttributeGrid();
+        _updateMarkerParticleAgeAttributeGrid(_ageAttributeGrid, _ageAttributeValidGrid);
     }
 
     std::vector<float> *ages;
@@ -6096,7 +6174,7 @@ void FluidSimulation::_updateMarkerParticleViscosityAttribute() {
     }
 
     if (_currentFrameTimeStepNumber == 0) {
-        _updateMarkerParticleViscosityAttributeGrid();
+        _updateMarkerParticleViscosityAttributeGrid(_viscosityAttributeGrid, _viscosityAttributeValidGrid);
     }
 }
 
@@ -6106,7 +6184,10 @@ void FluidSimulation::_updateMarkerParticleColorAttribute(double dt) {
     }
 
     if (_currentFrameTimeStepNumber == 0) {
-        _updateMarkerParticleColorAttributeGrid();
+        _updateMarkerParticleColorAttributeGrid(_colorAttributeGridR, 
+                                                _colorAttributeGridG, 
+                                                _colorAttributeGridB,
+                                                _colorAttributeValidGrid);
     }
 
     _updateMarkerParticleColorAttributeMixing(dt);

@@ -209,6 +209,12 @@ class DomainAdvancedProperties(bpy.types.PropertyGroup):
             default=True,
             ); exec(conv("surface_tension_substeps_exceeded_tooltip"))
 
+    frame_substeps_expanded = BoolProperty(default=True); exec(conv("frame_substeps_expanded"))
+    simulation_method_expanded = BoolProperty(default=True); exec(conv("simulation_method_expanded"))
+    simulation_stability_expanded = BoolProperty(default=False); exec(conv("simulation_stability_expanded"))
+    multithreading_expanded = BoolProperty(default=True); exec(conv("multithreading_expanded"))
+    warnings_and_errors_expanded = BoolProperty(default=False); exec(conv("warnings_and_errors_expanded"))
+
 
     def register_preset_properties(self, registry, path):
         add = registry.add_property

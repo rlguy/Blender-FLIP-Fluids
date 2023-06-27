@@ -192,10 +192,9 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
 
     enable_developer_tools = BoolProperty(
             name="Enable Developer Tools", 
-            description="Enable Developer Tools. Enable to unlock features that may be experimental, not yet completed,"
-                " or considered unstable due to current bugs in Blender. Not recommended for production use."
-                " Developer tools are always enabled in an experimental build regardless of whether or not this"
-                " option is enabled", 
+            description="Enable to unlock developer tools and hidden features. Enable to unlock features"
+                " that may be experimental or considered unstable for rendering due to current bugs in Blender."
+                " Rendering issues can be completely avoided by rendering from the command line", 
             default=False,
             ); 
     exec(vcu.convert_attribute_to_28("enable_developer_tools"))
@@ -371,6 +370,16 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
             ); 
     exec(vcu.convert_attribute_to_28("dismiss_rtx_driver_warning"))
     FAKE_PREFERENCES.dismiss_rtx_driver_warning = False
+
+    enable_tabbed_domain_settings = BoolProperty(
+                name="Enable Tabbed Domain Settings",
+                description="Enable tabbed domain settings view. If enabled, domain panel categories will be displayed"
+                    " using a tab header selector. If disabled, the classic view will display all domain panel categories in a vertical stack",
+                default=False,
+                options={'HIDDEN'},
+                )
+    exec(vcu.convert_attribute_to_28("enable_tabbed_domain_settings"))
+    FAKE_PREFERENCES.enable_tabbed_domain_settings = False
 
 
     def is_developer_tools_enabled(self):
@@ -848,6 +857,7 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         row.alignment = 'LEFT'
         row.enabled = self.enable_helper
         row.prop(self, "helper_category_name")
+        helper_column.prop(self, "enable_tabbed_domain_settings")
         helper_column.separator()
 
         box = self.layout.box()

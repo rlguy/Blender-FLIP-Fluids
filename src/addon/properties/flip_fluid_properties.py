@@ -104,10 +104,7 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
         domain_object = self.get_domain_object()
         if domain_object is None:
             return False
-        for obj in bpy.context.scene.collection.all_objects:
-            if obj == domain_object:
-                return True
-        return False
+        return domain_object.name in bpy.context.scene.collection.all_objects
 
 
     def get_num_fluid_objects(self):
