@@ -59,7 +59,6 @@ def is_property_animated(obj, prop_name, index=0, use_exact_path=False):
 
     for fcurve in anim_data.action.fcurves:
         path = fcurve.data_path
-
         is_match = path.endswith(prop_name)
         if use_exact_path:
             is_match = path == prop_name

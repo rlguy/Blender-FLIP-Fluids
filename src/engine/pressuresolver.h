@@ -39,6 +39,7 @@ SOFTWARE.
 #include "gridindexvector.h"
 #include "fluidmaterialgrid.h"
 #include "vmath.h"
+#include "fluidsimassert.h"
 
 class MACVelocityField;
 struct ValidVelocityComponentGrid;
@@ -57,6 +58,41 @@ struct WeightGrid {
         U(i + 1, j, k, 0.0f),
         V(i, j + 1, k, 0.0f),
         W(i, j, k + 1, 0.0f) {}
+
+    void getGridDimensions(int *i, int *j, int *k) {
+        center.getGridDimensions(i, j, k);
+    }
+
+    void getCoarseGridDimensions(int *i, int *j, int *k) {
+        center.getCoarseGridDimensions(i, j, k);
+    }
+
+    bool isDimensionsValidForCoarseGridGeneration() {
+        return center.isDimensionsValidForCoarseGridGeneration();
+    }
+
+    void generateCoarseGrid(WeightGrid &coarseWeightGrid) {
+        FLUIDSIM_ASSERT(isDimensionsValidForCoarseGridGeneration());
+        FLUIDSIM_ASSERT(center.isMatchingDimensionsForCoarseGrid(coarseWeightGrid.center));
+
+        center.generateCoarseGrid(coarseWeightGrid.center);
+        U.generateCoarseFaceGridU(coarseWeightGrid.U);
+        V.generateCoarseFaceGridV(coarseWeightGrid.V);
+        W.generateCoarseFaceGridW(coarseWeightGrid.W);
+    }
+
+    WeightGrid generateCoarseGrid() {
+        FLUIDSIM_ASSERT(isDimensionsValidForCoarseGridGeneration());
+
+        int icoarse = 0; int jcoarse = 0; int kcoarse = 0;
+        getCoarseGridDimensions(&icoarse, &jcoarse, &kcoarse);
+
+        WeightGrid coarseWeightGrid(icoarse, jcoarse, kcoarse);
+        generateCoarseGrid(coarseWeightGrid);
+
+        return coarseWeightGrid;
+    }
+
 };
 
 
@@ -67,11 +103,12 @@ struct PressureSolverParameters {
     double acceptableTolerance;
     int maxIterations;
     
-    MACVelocityField *velocityField;
+    MACVelocityField *velocityFieldFluid;
+    MACVelocityField *velocityFieldSolid;
     ValidVelocityComponentGrid *validVelocities;
-    ParticleLevelSet *liquidSDF;
-    MeshLevelSet *solidSDF;
+    Array3d<float> *liquidSDF;
     WeightGrid *weightGrid;
+    Array3d<float> *pressureGrid;
 
     bool isSurfaceTensionEnabled = false;
     double surfaceTensionConstant;
@@ -90,6 +127,8 @@ public:
 
     bool solve(PressureSolverParameters params);
     std::string getSolverStatus();
+
+    void applySolutionToVelocityField();
 
     int getMaxIterations() { return _maxCGIterations; }
     void setMaxIterations(int n) { _maxCGIterations = n; }
@@ -148,15 +187,15 @@ private:
                                             SparseMatrixd *matrix);
     bool _solveLinearSystem(SparseMatrixd &matrix, std::vector<double> &rhs, 
                             std::vector<double> &soln);
-    void _applySolutionToVelocityField(std::vector<double> &soln);
-    void _applyPressureToVelocityFieldMT(Array3d<float> &pressureGrid, 
-                                         FluidMaterialGrid &mgrid,
-                                         int dir);
-    void _applyPressureToVelocityFieldThread(int startidx, int endidx, 
-                                             Array3d<float> *pressureGrid, 
-                                             FluidMaterialGrid *mgrid,
-                                             int dir);
 
+    bool _solveLinearSystemJacobi(SparseMatrixd &matrix, std::vector<double> &b, 
+                                  std::vector<double> &x, int *iterations, double *error);
+
+    void _applyPressureToVelocityFieldMT(FluidMaterialGrid &mgrid, int dir);
+    void _applyPressureToVelocityFieldThread(int startidx, int endidx,
+                                             FluidMaterialGrid *mgrid, int dir);
+
+    
     int _isize = 0;
     int _jsize = 0;
     int _ksize = 0;
@@ -170,11 +209,12 @@ private:
     int _surfaceTensionClusterThreshold = 36;
     int _blockwidth = 4;
 
-    MACVelocityField *_vField;
+    MACVelocityField *_vFieldFluid;
+    MACVelocityField *_vFieldSolid;
     ValidVelocityComponentGrid *_validVelocities;
-    ParticleLevelSet *_liquidSDF;
-    MeshLevelSet *_solidSDF;
+    Array3d<float> *_liquidSDF;
     WeightGrid *_weightGrid;
+    Array3d<float> *_pressureGrid;
 
     bool _isSurfaceTensionEnabled = false;
     double _surfaceTensionConstant;

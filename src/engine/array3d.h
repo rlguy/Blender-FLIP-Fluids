@@ -28,6 +28,7 @@ SOFTWARE.
 #include <stdexcept>
 #include <sstream>
 #include <vector>
+#include <cmath>
 
 struct GridIndex {
     int i, j, k;
@@ -405,6 +406,280 @@ public:
         return _outOfRangeValue;
     }
 
+    bool isDimensionsValidForCoarseGridGeneration() {
+        return width % 2 == 0 || height % 2 == 0 || depth % 2 == 0;
+    }
+
+    bool isDimensionsValidForCoarseFaceGridGenerationU() {
+        return (width - 1) % 2 == 0 || height % 2 == 0 || depth % 2 == 0;
+    }
+
+    bool isDimensionsValidForCoarseFaceGridGenerationV() {
+        return width % 2 == 0 || (height - 1) % 2 == 0 || depth % 2 == 0;
+    }
+
+    bool isDimensionsValidForCoarseFaceGridGenerationW() {
+        return width % 2 == 0 || height % 2 == 0 || (depth - 1) % 2 == 0;
+    }
+
+    bool isMatchingDimensionsForCoarseGrid(Array3d<T> &coarseGrid) {
+        int icoarse = 0; int jcoarse = 0; int kcoarse = 0;
+        getCoarseGridDimensions(&icoarse, &jcoarse, &kcoarse);
+        return coarseGrid.width == icoarse && coarseGrid.height == jcoarse && coarseGrid.depth == kcoarse;
+    }
+
+    bool isMatchingDimensionsForCoarseFaceGridU(Array3d<T> &coarseGridU) {
+        int icoarse = 0; int jcoarse = 0; int kcoarse = 0;
+        getCoarseFaceGridDimensionsU(&icoarse, &jcoarse, &kcoarse);
+        return coarseGridU.width == icoarse && coarseGridU.height == jcoarse && coarseGridU.depth == kcoarse;
+    }
+
+    bool isMatchingDimensionsForCoarseFaceGridV(Array3d<T> &coarseGridV) {
+        int icoarse = 0; int jcoarse = 0; int kcoarse = 0;
+        getCoarseFaceGridDimensionsV(&icoarse, &jcoarse, &kcoarse);
+        return coarseGridV.width == icoarse && coarseGridV.height == jcoarse && coarseGridV.depth == kcoarse;
+    }
+
+    bool isMatchingDimensionsForCoarseFaceGridW(Array3d<T> &coarseGridW) {
+        int icoarse = 0; int jcoarse = 0; int kcoarse = 0;
+        getCoarseFaceGridDimensionsW(&icoarse, &jcoarse, &kcoarse);
+        return coarseGridW.width == icoarse && coarseGridW.height == jcoarse && coarseGridW.depth == kcoarse;
+    }
+
+    bool isMatchingDimensionsForFineGrid(Array3d<T> &fineGrid) {
+        int ifine = 0; int jfine = 0; int kfine = 0;
+        getFineGridDimensions(&ifine, &jfine, &kfine);
+        return fineGrid.width == ifine && fineGrid.height == jfine && fineGrid.depth == kfine;
+    }
+
+    void getGridDimensions(int *i, int *j, int *k) {
+        *i = width;
+        *j = height;
+        *k = depth;
+    }
+
+    void getCoarseGridDimensions(int *i, int *j, int *k) {
+        *i = width / 2;
+        *j = height / 2;
+        *k = depth / 2;
+    }
+
+    void getCoarseFaceGridDimensionsU(int *i, int *j, int *k) {
+        *i = ((width - 1) / 2) + 1;
+        *j = height / 2;
+        *k = depth / 2;
+    }
+
+    void getCoarseFaceGridDimensionsV(int *i, int *j, int *k) {
+        *i = width / 2;
+        *j = ((height - 1) / 2) + 1;
+        *k = depth / 2;
+    }
+
+    void getCoarseFaceGridDimensionsW(int *i, int *j, int *k) {
+        *i = width / 2;
+        *j = height / 2;
+        *k = ((depth - 1) / 2) + 1;
+    }
+
+    void getFineGridDimensions(int *i, int *j, int *k) {
+        *i = width * 2;
+        *j = height * 2;
+        *k = depth * 2;
+    }
+
+    Array3d<T> generateCoarseGrid() {
+        if (!isDimensionsValidForCoarseGridGeneration()) {
+            std::string msg = "Error: coarse grid can only be generated from dimensions divisible by 2.\n";
+            throw std::runtime_error(msg);
+        }
+        
+        int icoarse = 0; int jcoarse = 0; int kcoarse = 0;
+        getCoarseGridDimensions(&icoarse, &jcoarse, &kcoarse);
+
+        Array3d<T> coarseGrid(icoarse, jcoarse, kcoarse);
+        generateCoarseGrid(coarseGrid);
+        return coarseGrid;
+    }
+
+    Array3d<T> generateCoarseFaceGridU() {
+        if (!isDimensionsValidForCoarseFaceGridGenerationU()) {
+            std::string msg = "Error: U coarse grid can only be generated from cell dimensions divisible by 2.\n";
+            throw std::runtime_error(msg);
+        }
+        
+        int icoarse = 0; int jcoarse = 0; int kcoarse = 0;
+        getCoarseFaceGridDimensionsU(&icoarse, &jcoarse, &kcoarse);
+
+        Array3d<T> coarseGridU(icoarse, jcoarse, kcoarse);
+        generateCoarseFaceGridU(coarseGridU);
+        return coarseGridU;
+    }
+
+    Array3d<T> generateCoarseFaceGridV() {
+        if (!isDimensionsValidForCoarseFaceGridGenerationV()) {
+            std::string msg = "Error: V coarse grid can only be generated from cell dimensions divisible by 2.\n";
+            throw std::runtime_error(msg);
+        }
+        
+        int icoarse = 0; int jcoarse = 0; int kcoarse = 0;
+        getCoarseFaceGridDimensionsV(&icoarse, &jcoarse, &kcoarse);
+
+        Array3d<T> coarseGridV(icoarse, jcoarse, kcoarse);
+        generateCoarseFaceGridV(coarseGridV);
+        return coarseGridV;
+    }
+
+    Array3d<T> generateCoarseFaceGridW() {
+        if (!isDimensionsValidForCoarseFaceGridGenerationW()) {
+            std::string msg = "Error: W coarse grid can only be generated from cell dimensions divisible by 2.\n";
+            throw std::runtime_error(msg);
+        }
+        
+        int icoarse = 0; int jcoarse = 0; int kcoarse = 0;
+        getCoarseFaceGridDimensionsW(&icoarse, &jcoarse, &kcoarse);
+
+        Array3d<T> coarseGridW(icoarse, jcoarse, kcoarse);
+        generateCoarseFaceGridW(coarseGridW);
+        return coarseGridW;
+    }
+
+    Array3d<T> generateFineGrid() {
+        int ifine = 0; int jfine = 0; int kfine = 0;
+        getFineGridDimensions(&ifine, &jfine, &kfine);
+
+        Array3d<T> fineGrid(ifine, jfine, kfine);
+        generateFineGrid(fineGrid);
+        return fineGrid;
+    }
+
+    void generateCoarseGrid(Array3d<T> &coarseGrid) {
+        if (!isDimensionsValidForCoarseGridGeneration()) {
+            std::string msg = "Error: coarse grid can only be generated from dimensions divisible by 2.\n";
+            throw std::runtime_error(msg);
+        }
+
+        if (!isMatchingDimensionsForCoarseGrid(coarseGrid)) {
+            std::string msg = "Error: coarse grid dimensions must be the halved dimensions of this grid.\n";
+            throw std::runtime_error(msg);
+        }
+
+        for (int k = 0; k < coarseGrid.depth; k++) {
+            for (int j = 0; j < coarseGrid.height; j++) {
+                for (int i = 0; i < coarseGrid.width; i++) {
+                    
+                    T sum = 0;
+                    int neighbours = 0;
+                    for (int nk = 2*k - 1; nk <= 2*k + 1; nk++) {
+                        for (int nj = 2*j - 1; nj <= 2*j + 1; nj++) {
+                            for (int ni = 2*i - 1; ni <= 2*i + 1; ni++) {
+                                if (isIndexInRange(ni, nj, nk)) {
+                                    sum += get(ni, nj, nk);
+                                    neighbours++;
+                                }
+                            }
+                        }
+                    }
+                    coarseGrid.set(i, j, k, sum / (T)neighbours);
+
+                }
+            }
+        }
+    }
+
+    void generateCoarseFaceGridU(Array3d<T> &coarseGrid) {
+        if (!isDimensionsValidForCoarseFaceGridGenerationU()) {
+            std::string msg = "Error: U coarse grid can only be generated from cell dimensions divisible by 2.\n";
+            throw std::runtime_error(msg);
+        }
+
+        if (!isMatchingDimensionsForCoarseFaceGridU(coarseGrid)) {
+            std::string msg = "Error: U coarse grid dimensions must be the halved cell dimensions of this grid.\n";
+            throw std::runtime_error(msg);
+        }
+
+        for (int k = 0; k < coarseGrid.depth; k++) {
+            for (int j = 0; j < coarseGrid.height; j++) {
+                for (int i = 0; i < coarseGrid.width; i++) {
+                    float ucoarse = 0.25f * (get(2*i, 2*j,     2*k) + 
+                                             get(2*i, 2*j + 1, 2*k) + 
+                                             get(2*i, 2*j + 1, 2*k + 1) + 
+                                             get(2*i, 2*j,     2*k + 1));
+                    coarseGrid.set(i, j, k, ucoarse);
+                }
+            }
+        }
+    }
+
+    void generateCoarseFaceGridV(Array3d<T> &coarseGrid) {
+        if (!isDimensionsValidForCoarseFaceGridGenerationU()) {
+            std::string msg = "Error: V coarse grid can only be generated from cell dimensions divisible by 2.\n";
+            throw std::runtime_error(msg);
+        }
+
+        if (!isMatchingDimensionsForCoarseFaceGridV(coarseGrid)) {
+            std::string msg = "Error: V coarse grid dimensions must be the halved cell dimensions of this grid.\n";
+            throw std::runtime_error(msg);
+        }
+
+        for (int k = 0; k < coarseGrid.depth; k++) {
+            for (int j = 0; j < coarseGrid.height; j++) {
+                for (int i = 0; i < coarseGrid.width; i++) {
+                    float vcoarse = 0.25f * (get(2*i,     2*j, 2*k) + 
+                                             get(2*i + 1, 2*j, 2*k) + 
+                                             get(2*i + 1, 2*j, 2*k + 1) + 
+                                             get(2*i,     2*j, 2*k + 1));
+                    coarseGrid.set(i, j, k, vcoarse);
+                }
+            }
+        }
+    }
+
+    void generateCoarseFaceGridW(Array3d<T> &coarseGrid) {
+        if (!isDimensionsValidForCoarseFaceGridGenerationW()) {
+            std::string msg = "Error: W coarse grid can only be generated from cell dimensions divisible by 2.\n";
+            throw std::runtime_error(msg);
+        }
+
+        if (!isMatchingDimensionsForCoarseFaceGridW(coarseGrid)) {
+            std::string msg = "Error: W coarse grid dimensions must be the halved cell dimensions of this grid.\n";
+            throw std::runtime_error(msg);
+        }
+
+        for (int k = 0; k < coarseGrid.depth; k++) {
+            for (int j = 0; j < coarseGrid.height; j++) {
+                for (int i = 0; i < coarseGrid.width; i++) {
+                    float wcoarse = 0.25f * (get(2*i,     2*j,     2*k) + 
+                                             get(2*i + 1, 2*j,     2*k) + 
+                                             get(2*i + 1, 2*j + 1, 2*k) + 
+                                             get(2*i,     2*j + 1, 2*k));
+                    coarseGrid.set(i, j, k, wcoarse);
+                }
+            }
+        }
+    }
+
+    void generateFineGrid(Array3d<T> &fineGrid) {
+        if (!isMatchingDimensionsForFineGrid(fineGrid)) {
+            std::string msg = "Error: fine grid dimensions must be the doubled dimensions of this grid.\n";
+            throw std::runtime_error(msg);
+        }
+
+        for (int k = 0; k < fineGrid.depth; k++) {
+            for (int j = 0; j < fineGrid.height; j++) {
+                for (int i = 0; i < fineGrid.width; i++) {
+                    T value = 0;
+                    if (i % 2 == 0 && j % 2 == 0 && k % 2 == 0) {
+                        value = get(i >> 1, j >> 1, k >> 1);
+                    } else {
+                        value = _trilinearInterpolate(0.5f * i, 0.5f * j, 0.5f * k);
+                    }
+                    fineGrid.set(i, j, k, value);
+                }
+            }
+        }
+    }
+
     inline bool isIndexInRange(int i, int j, int k) {
         return i >= 0 && j >= 0 && k >= 0 && i < width && j < height && k < depth;
     }
@@ -430,6 +705,63 @@ private:
         #endif
 
         _grid = new T[width*height*depth];
+    }
+
+    // vertices p are ordered {(0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1), 
+    //                         (1, 0, 1), (0, 1, 1), (1, 1, 0), (1, 1, 1)}
+    // x, y, z, in range [0,1]
+    double _trilinearInterpolate(T p[8], float x, float y, float z) {
+        return p[0] * (1 - x) * (1 - y) * (1 - z) +
+               p[1] * x * (1 - y) * (1 - z) + 
+               p[2] * (1 - x) * y * (1 - z) + 
+               p[3] * (1 - x) * (1 - y) * z +
+               p[4] * x * (1 - y) * z + 
+               p[5] * (1 - x) * y * z + 
+               p[6] * x * y * (1 - z) + 
+               p[7] * x * y * z;
+    }
+
+    T _trilinearInterpolate(float px, float py, float pz) {
+        double dx = 1.0;
+        double inv_dx = 1.0;
+        GridIndex g = GridIndex((int)std::floor(px),
+                                (int)std::floor(py),
+                                (int)std::floor(pz));
+        float gx = g.i * dx;
+        float gy = g.j * dx;
+        float gz = g.k * dx;
+
+        float ix = (px - gx) * inv_dx;
+        float iy = (py - gy) * inv_dx;
+        float iz = (pz - gz) * inv_dx;
+
+        T points[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        if (isIndexInRange(g.i,   g.j,   g.k))   { 
+            points[0] = get(g.i,   g.j,   g.k); 
+        }
+        if (isIndexInRange(g.i+1, g.j,   g.k))   { 
+            points[1] = get(g.i+1, g.j,   g.k); 
+        }
+        if (isIndexInRange(g.i,   g.j+1, g.k))   { 
+            points[2] = get(g.i,   g.j+1, g.k); 
+        }
+        if (isIndexInRange(g.i,   g.j,   g.k+1)) {
+            points[3] = get(g.i,   g.j,   g.k+1); 
+        }
+        if (isIndexInRange(g.i+1, g.j,   g.k+1)) { 
+            points[4] = get(g.i+1, g.j,   g.k+1); 
+        }
+        if (isIndexInRange(g.i,   g.j+1, g.k+1)) { 
+            points[5] = get(g.i,   g.j+1, g.k+1); 
+        }
+        if (isIndexInRange(g.i+1, g.j+1, g.k))   { 
+            points[6] = get(g.i+1, g.j+1, g.k); 
+        }
+        if (isIndexInRange(g.i+1, g.j+1, g.k+1)) { 
+            points[7] = get(g.i+1, g.j+1, g.k+1); 
+        }
+
+        return _trilinearInterpolate(points, ix, iy, iz);
     }
 
     inline bool _isIndexInRange(int i, int j, int k) {

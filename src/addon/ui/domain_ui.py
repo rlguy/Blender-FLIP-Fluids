@@ -27,7 +27,8 @@ if "bpy" in locals():
         'domain_materials_ui',
         'domain_advanced_ui',
         'domain_debug_ui',
-        'domain_stats_ui'
+        'domain_stats_ui',
+        'domain_tabbed_ui',
     ]
     for module_name in reloadable_modules:
         if module_name in locals():
@@ -46,7 +47,8 @@ from . import(
         domain_materials_ui,
         domain_advanced_ui,
         domain_debug_ui,
-        domain_stats_ui
+        domain_stats_ui,
+        domain_tabbed_ui,
         )
 
 
@@ -62,6 +64,7 @@ def register():
     domain_advanced_ui.register()
     domain_debug_ui.register()
     domain_stats_ui.register()
+    domain_tabbed_ui.register()
 
 
 def unregister():
@@ -76,3 +79,4 @@ def unregister():
     domain_advanced_ui.unregister()
     domain_debug_ui.unregister()
     domain_stats_ui.unregister()
+    domain_tabbed_ui.unregister()

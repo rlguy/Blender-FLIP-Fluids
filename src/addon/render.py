@@ -52,10 +52,7 @@ def __is_domain_in_scene():
     bl_domain = bpy.context.scene.flip_fluid.get_domain_object()
     if bl_domain is None:
         return False
-    for obj in bpy.context.scene.collection.all_objects:
-        if obj == bl_domain:
-            return True
-    return False
+    return bl_domain.name in bpy.context.scene.collection.all_objects
 
 
 def get_current_simulation_frame():

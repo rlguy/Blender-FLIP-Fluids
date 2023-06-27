@@ -48,6 +48,7 @@ def scene_update_post(scene):
 
 def frame_change_post(scene, depsgraph=None):
     object_properties.frame_change_post(scene, depsgraph)
+    helper_properties.frame_change_post(scene, depsgraph)
 
 
 def load_pre():

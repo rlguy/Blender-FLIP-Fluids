@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, os, stat, subprocess, platform, math, mathutils, fnmatch, random
+import bpy, os, stat, subprocess, platform, math, mathutils, fnmatch, random, mathutils, datetime
 from bpy.props import (
         BoolProperty,
         StringProperty
@@ -23,6 +23,7 @@ from bpy.props import (
 from ..utils import version_compatibility_utils as vcu
 from ..utils import export_utils
 from ..utils import audio_utils
+from ..objects import flip_fluid_cache
 from ..objects import flip_fluid_aabb
 from . import bake_operators
 from .. import render
@@ -2796,6 +2797,160 @@ class FlipFluidCopySettingsFromActive(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class FlipFluidMeasureObjectSpeed(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.measure_object_speed"
+    bl_label = "Measure Object Speed"
+    bl_description = ("Measure and display the speed of the active object within the simulation" + 
+        " for the current frame. The measured speed depends on the object animation, simulation" +
+        " world scale and time scale, and animation frame rate." +
+        " The objects center speed, min vertex speed, and max vertex speed will be computed. Using" +
+        " this operator on an object with complex geometry or a high polycount may cause Blender to" +
+        " pause during computation")
+
+
+    @classmethod
+    def poll(cls, context):
+        selected_objects = bpy.context.selected_objects
+        bl_object = vcu.get_active_object(context)
+        if selected_objects:
+            if bl_object not in selected_objects:
+                bl_object = selected_objects[0]
+        else:
+            bl_object = None
+        return bl_object is not None
+
+
+    def frame_set(self, context, frameno):
+        from ..properties import helper_properties
+        helper_properties.DISABLE_FRAME_CHANGE_POST_HANDLER = True
+        flip_fluid_cache.DISABLE_MESH_CACHE_LOAD = True
+        context.scene.frame_set(frameno)
+        flip_fluid_cache.DISABLE_MESH_CACHE_LOAD = False
+        helper_properties.DISABLE_FRAME_CHANGE_POST_HANDLER = False
+
+
+    def get_object_vertices_and_center(self, context, bl_object, frameno):
+        self.frame_set(context, frameno)
+
+        vertices = []
+        center = None
+        if bl_object.type == 'EMPTY':
+            vertices.append(mathutils.Vector(bl_object.matrix_world.translation))
+            center = mathutils.Vector(bl_object.matrix_world.translation)
+        else:
+            depsgraph = context.evaluated_depsgraph_get()
+            obj_eval = bl_object.evaluated_get(depsgraph)
+            evaluated_mesh = obj_eval.to_mesh(preserve_all_data_layers=True, depsgraph=depsgraph)
+            for mv in evaluated_mesh.vertices:
+                vertices.append(obj_eval.matrix_world @ mv.co)
+
+            local_bbox_center = 0.125 * sum((mathutils.Vector(b) for b in bl_object.bound_box), mathutils.Vector())
+            center = bl_object.matrix_world @ local_bbox_center
+
+        return vertices, center
+
+
+    def execute(self, context):
+        timer_start = datetime.datetime.now()
+
+        hprops = context.scene.flip_fluid_helper
+        hprops.is_translation_data_available = False
+
+        selected_objects = bpy.context.selected_objects
+        bl_object = vcu.get_active_object(context)
+        if selected_objects:
+            if bl_object not in selected_objects:
+                bl_object = selected_objects[0]
+        else:
+            bl_object = None
+
+        if bl_object is None:
+            err_msg = "No active object selected."
+            self.report({'ERROR'}, err_msg)
+            print("Measure Object Speed Error: " + err_msg + "\n")
+            return {'CANCELLED'}
+
+        valid_object_types = ['MESH', 'EMPTY', 'CURVE']
+        if bl_object.type not in valid_object_types:
+            err_msg = "Invalid object type <" + bl_object.type + ">. Object must be a Mesh, Curve, or Empty to measure speed."
+            self.report({'ERROR'}, err_msg)
+            print("Measure Object Speed Error: " + err_msg + "\n")
+            return {'CANCELLED'}
+
+        original_frame = context.scene.frame_current
+        frame1 = original_frame - 1
+        frame2 = original_frame + 1
+
+        print("Measure Object Speed: Exporting <" + bl_object.name + "> geometry for frame " + str(frame1) + "...", end=' ')
+        vertices1, center1 = self.get_object_vertices_and_center(context, bl_object, frame1)
+        print("Exported " + str(len(vertices1)) + " vertices.")
+
+        if len(vertices1) == 0:
+            err_msg = "Object does not contain geometry."
+            self.report({'ERROR'}, err_msg)
+            print("Measure Object Speed Error: " + err_msg + "\n")
+            self.frame_set(context, original_frame)
+            return {'CANCELLED'}
+
+        print("Measure Object Speed: Exporting <" + bl_object.name + "> geometry for frame " + str(frame2) + "...", end=' ')
+        vertices2, center2 = self.get_object_vertices_and_center(context, bl_object, frame2)
+        print("Exported " + str(len(vertices2)) + " vertices.")
+        self.frame_set(context, original_frame)
+
+        if len(vertices1) != len(vertices1):
+            err_msg = "Cannot measure velocity of object with changing topology."
+            self.report({'ERROR'}, err_msg)
+            print("Measure Object Speed Error: " + err_msg + "\n")
+            return {'CANCELLED'}
+
+        center_translation = (center2 - center1).length / float(frame2 - frame1)
+        min_translation = float('inf')
+        max_translation = -float('inf')
+        sum_translation = 0.0
+        for i in range(len(vertices1)):
+            translation = (vertices2[i] - vertices1[i]).length / float(frame2 - frame1)
+            min_translation = min(min_translation, translation)
+            max_translation = max(max_translation, translation)
+            sum_translation += translation
+        avg_translation = sum_translation / len(vertices1)
+
+        timer_end = datetime.datetime.now()
+        ms_duration = int((timer_end - timer_start).microseconds / 1000)
+
+        hprops.min_vertex_translation = min_translation
+        hprops.max_vertex_translation = max_translation
+        hprops.avg_vertex_translation = avg_translation
+        hprops.center_translation = center_translation
+        hprops.translation_data_object_name = bl_object.name
+        hprops.translation_data_object_vertices = len(vertices1)
+        hprops.translation_data_object_frame = original_frame
+        hprops.translation_data_object_compute_time = ms_duration
+        hprops.is_translation_data_available = True
+
+        info_str = "Measure Object Speed: Finished computing <" + bl_object.name + "> vertex translations for frame "
+        info_str += str(original_frame) + " in " + str(ms_duration) + " milliseconds.\n"
+        print(info_str)
+
+        return {'FINISHED'}
+
+
+class FlipFluidClearMeasureObjectSpeed(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.clear_measure_object_speed"
+    bl_label = "Clear Speed Data"
+    bl_description = "Clear the measured object speed display"
+
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+
+    def execute(self, context):
+        hprops = context.scene.flip_fluid_helper
+        hprops.is_translation_data_available = False
+        return {'FINISHED'}
+
+
 def register():
     classes = [
         FlipFluidHelperRemesh,
@@ -2851,6 +3006,8 @@ def register():
         FlipFluidMakePrefixFilenameRenderOutput,
         FlipFluidAutoLoadBakedFramesCMD,
         FlipFluidCopySettingsFromActive,
+        FlipFluidMeasureObjectSpeed,
+        FlipFluidClearMeasureObjectSpeed,
         ]
 
     # Workaround for a bug in FLIP Fluids 1.6.0
@@ -2920,3 +3077,5 @@ def unregister():
     bpy.utils.unregister_class(FlipFluidMakePrefixFilenameRenderOutput)
     bpy.utils.unregister_class(FlipFluidAutoLoadBakedFramesCMD)
     bpy.utils.unregister_class(FlipFluidCopySettingsFromActive)
+    bpy.utils.unregister_class(FlipFluidMeasureObjectSpeed)
+    bpy.utils.unregister_class(FlipFluidClearMeasureObjectSpeed)

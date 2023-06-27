@@ -19,6 +19,11 @@ import bpy, math
 from ..utils import version_compatibility_utils as vcu
 
 
+def format_number_precision(self, value):
+    value_str = '{:.9f}'.format(value)
+    return value_str
+
+
 class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
@@ -29,6 +34,8 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
+        if vcu.get_addon_preferences(context).enable_tabbed_domain_settings:
+            return False
         obj_props = vcu.get_active_object(context).flip_fluid
         return obj_props.is_active and obj_props.object_type == "TYPE_DOMAIN"
 
@@ -59,7 +66,18 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
                 icon_only=True, 
                 emboss=False
             )
-            row.label(text="World Scaling:")
+            row.label(text="World Scale:")
+
+            if not wprops.world_scale_settings_expanded:
+                xdims, ydims, zdims = wprops.get_simulation_dimensions(context)
+                xdims_str = '{:.2f}'.format(round(xdims, 2)) + " m"
+                ydims_str = '{:.2f}'.format(round(ydims, 2)) + " m"
+                zdims_str = '{:.2f}'.format(round(zdims, 2)) + " m"
+
+                info_text = xdims_str + " x " + ydims_str + " x " + zdims_str
+                row = row.row(align=True)
+                row.alignment = 'RIGHT'
+                row.label(text=info_text)
 
             if wprops.world_scale_settings_expanded:
                 row = box.row(align=True)
@@ -221,9 +239,17 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
                 row.prop(wprops, "enable_viscosity", text="")
         row.label(text="Viscosity:")
 
-        if wprops.viscosity_settings_expanded:
-            is_variable_viscosity_enabled = attrprops.enable_viscosity_attribute
+        is_variable_viscosity_enabled = attrprops.enable_viscosity_attribute
+        if not wprops.viscosity_settings_expanded:
+            if not is_variable_viscosity_enabled:
+                total_viscosity = wprops.viscosity * (10**(-wprops.viscosity_exponent))
+                total_viscosity_str = format_number_precision(self, total_viscosity)
+                row = row.row(align=True)
+                row.alignment = 'RIGHT'
+                row.enabled = wprops.enable_viscosity
+                row.label(text=total_viscosity_str)
 
+        if wprops.viscosity_settings_expanded:
             column = box.column(align=True)
             row = column.row(align=True)
             row.prop(wprops, "enable_viscosity")
@@ -249,7 +275,7 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
                 column.label(text="")
             else:
                 total_viscosity = wprops.viscosity * (10**(-wprops.viscosity_exponent))
-                total_viscosity_str = "Total viscosity   =   " + self.format_number_precision(total_viscosity)
+                total_viscosity_str = "Total viscosity   =   " + format_number_precision(self, total_viscosity)
                 column.label(text=total_viscosity_str)
 
         if show_documentation:
@@ -271,6 +297,15 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
                 row.prop(wprops, "enable_surface_tension", text="")
         row.label(text="Surface Tension:")
 
+        if not wprops.surface_tension_settings_expanded:
+            total_surface_tension = wprops.get_surface_tension_value()
+            surface_tension_str = format_number_precision(self, total_surface_tension)
+            row = row.row(align=True)
+            row.alignment = 'RIGHT'
+            row.enabled = wprops.enable_surface_tension
+            row.alert = wprops.enable_surface_tension and wprops.minimum_surface_tension_substeps > aprops.min_max_time_steps_per_frame.value_max
+            row.label(text=surface_tension_str)
+
         if wprops.surface_tension_settings_expanded:
             column = box.column(align=True)
             split = column.split(align=True)
@@ -291,7 +326,7 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
             row.label(text="Estimated substeps =")
 
             total_surface_tension = wprops.get_surface_tension_value()
-            surface_tension_str = self.format_number_precision(total_surface_tension)
+            surface_tension_str = format_number_precision(self, total_surface_tension)
 
             column_right = split.column(align=True)
             column_right.enabled = wprops.enable_surface_tension
@@ -369,6 +404,12 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
         )
         row.label(text="Friction:")
 
+        if not wprops.friction_settings_expanded:
+            row = row.row(align=True)
+            row.alignment = 'RIGHT'
+            row.label(text="Boundary Friction  ")
+            row.prop(wprops, "boundary_friction", text="")
+
         if wprops.friction_settings_expanded:
             column = box.column()
             split = column.split(align=True)
@@ -401,10 +442,6 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
                         column_left.label(text=ob.name, icon="OBJECT_DATA")
                         column_right.prop(pgroup, "friction")
 
-
-    def format_number_precision(self, value):
-        value_str = '{:.9f}'.format(value)
-        return value_str
     
 def register():
     bpy.utils.register_class(FLIPFLUID_PT_DomainTypeFluidWorldPanel)

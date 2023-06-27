@@ -86,6 +86,10 @@ class DomainCacheProperties(bpy.types.PropertyGroup):
 
     is_cache_directory_set = BoolProperty(default=False); exec(conv("is_cache_directory_set"))
 
+    cache_directory_expanded = BoolProperty(default=True); exec(conv("cache_directory_expanded"))
+    link_exported_geometry_expanded = BoolProperty(default=False); exec(conv("link_exported_geometry_expanded"))
+    cache_operators_expanded = BoolProperty(default=False); exec(conv("cache_operators_expanded"))
+
 
     def register_preset_properties(self, registry, path):
         pass

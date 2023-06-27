@@ -135,6 +135,7 @@ def __get_domain_data_dict(context, dobj):
     dprops.advanced.initialize_num_threads_auto_detect()
     d['advanced']['num_threads_auto_detect'] = dprops.advanced.num_threads_auto_detect
     d['simulation']['frames_per_second'] = dprops.simulation.get_frame_rate_data_dict()
+    d['simulation']['time_scale'] = dprops.simulation.get_time_scale_data_dict()
     d['world']['gravity'] = dprops.world.get_gravity_data_dict()
     d['world']['scene_use_gravity'] = dprops.world.get_scene_use_gravity_data_dict()
     d['world']['native_surface_tension_scale'] = dprops.world.native_surface_tension_scale

@@ -72,6 +72,14 @@ frame_rate_modes = (
     ('FRAME_RATE_MODE_CUSTOM', "Custom", "Use a custom frame rate")
     )
 
+time_scale_modes = (
+    ('TIME_SCALE_MODE_RIGID_BODY', "Rigid",  "Use the simulation time scale specified in the rigid body world."),
+    ('TIME_SCALE_MODE_SOFT_BODY',  "Soft",   "Use the simulation time scale specified in the object softbody modifier."),
+    ('TIME_SCALE_MODE_CLOTH',      "Cloth",  "Use the simulation time scale specified in the object cloth modifier."),
+    ('TIME_SCALE_MODE_FLUID',      "Fluid",  "Use the simulation time scale specified in the Blender Mantaflow domain object fluid modifier."),
+    ('TIME_SCALE_MODE_CUSTOM',     "Custom", "Use a custom simulation time scale.")
+    )
+
 simulation_playback_mode = (
     ('PLAYBACK_MODE_TIMELINE',       "Timeline",       "Use the current timeline frame for simulation playback"),
     ('PLAYBACK_MODE_OVERRIDE_FRAME', "Override Frame", "Use a custom frame for simulation playback instead of the current timeline frame. TIP: the overridden frame value can be keyframed for complex control of playback"),
@@ -133,7 +141,7 @@ whitewater_particle_object_modes = (
 
 whitewater_ui_modes = (
     ('WHITEWATER_UI_MODE_BASIC',    "Basic",    "Display only the basic and most important whitewater simulation parameters"),
-    ('WHITEWATER_UI_MODE_ADVANCED', "Advanced", "Display all whitewater simulation parameters. For most simulations, you will not need to change these settings from their defaults.")
+    ('WHITEWATER_UI_MODE_ADVANCED', "Advanced", "Display all whitewater simulation parameters. Advanced settings will be highlighted in red by default. For most simulations, you will not need to change these settings from their defaults.")
     )
 
 cache_info_modes = (
@@ -237,4 +245,22 @@ color_mixing_modes = (
 preset_library_install_modes = (
     ('PRESET_LIBRARY_INSTALL_ZIP',    "Install Preset Library Zip File",        "Install the Preset Library zip file to a location of your choice. Choose this option for installing or updating to new preset library versions."),
     ('PRESET_LIBRARY_INSTALL_FOLDER', "Install Existing Preset Library Folder", "Install an existing Preset Library folder. Choose this option to select a preset library that was already installed in another version of Blender."),
+    )
+
+domain_settings_panel = (
+    ('DOMAIN_SETTINGS_PANEL_SIMULATION', "Simulation", "Grid resolution, simulation method, world scale, frame rate, and time scale settings"),
+    ('DOMAIN_SETTINGS_PANEL_CACHE',      "Cache",      "Cache directory location settings"),
+    ('DOMAIN_SETTINGS_PANEL_DISPLAY',    "Display",    "Viewport display and render display settings"),
+    ('DOMAIN_SETTINGS_PANEL_SURFACE',    "Surface",    "Surface mesh generation and surface attribute settings"),
+    ('DOMAIN_SETTINGS_PANEL_WHITEWATER', "Whitewater", "Whitewater simulation and whitewater attribute settings"),
+    ('DOMAIN_SETTINGS_PANEL_WORLD',      "World",      "World scale, gravity and forcefield, viscosity, surface tension, sheeting effects, and friction settings"),
+    ('DOMAIN_SETTINGS_PANEL_MATERIALS',  "Materials",  "Surface and whitewater material library settings"),
+    ('DOMAIN_SETTINGS_PANEL_ADVANCED',   "Advanced",   "Frame substeps, simulation method, simulation stability, and multithreading settings"),
+    ('DOMAIN_SETTINGS_PANEL_DEBUG',      "Debug",      "Grid visualization, particle debugging, force field debugging, and obstacle debugging settings"),
+    ('DOMAIN_SETTINGS_PANEL_STATS',      "Stats",      "View cache and frame stats of the simulation cache")
+    )
+
+measurement_units_mode = (
+    ('MEASUREMENT_UNITS_MODE_METRIC',   "Metric",   "Display measurements in metric units"),
+    ('MEASUREMENT_UNITS_MODE_IMPERIAL', "Imperial", "Display measurements in imperial units")
     )

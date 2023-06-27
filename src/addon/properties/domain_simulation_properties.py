@@ -180,11 +180,82 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
             description="Frame rate in frames per second", 
             min=0.001,
             default=60.0,
-            precision=1,
+            precision=2,
             ); exec(conv("frame_rate_custom"))
+    time_scale_mode = EnumProperty(
+            name="Time Scale Mode",
+            description="Select the time scale mode for the simulation. Use either a custom"
+                " value or match the value of another simulation. The simulation speed will be"
+                " scaled by this value",
+            items=types.time_scale_modes,
+            default='TIME_SCALE_MODE_CUSTOM',
+            options={'HIDDEN'},
+            ); exec(conv("time_scale_mode"))
+
+    def time_scale_object_soft_body_poll(self, bl_object):
+        for mod in bl_object.modifiers:
+            if mod.type == 'SOFT_BODY':
+                return True
+        return False
+    def get_selected_time_scale_object_soft_body_modifier(self):
+        if self.time_scale_object_soft_body is None:
+            return None
+        for mod in self.time_scale_object_soft_body.modifiers:
+            if mod.type == 'SOFT_BODY':
+                return mod
+        return None
+    time_scale_object_soft_body = PointerProperty(
+            name="Soft Body Object", 
+            type=bpy.types.Object,
+            poll=time_scale_object_soft_body_poll,
+            options={'HIDDEN'},
+            ); exec(conv("time_scale_object_soft_body"))
+
+    def time_scale_object_cloth_poll(self, bl_object):
+        for mod in bl_object.modifiers:
+            if mod.type == 'CLOTH':
+                return True
+        return False
+    def get_selected_time_scale_object_cloth_modifier(self):
+        if self.time_scale_object_cloth is None:
+            return None
+        for mod in self.time_scale_object_cloth.modifiers:
+            if mod.type == 'CLOTH':
+                return mod
+        return None
+    time_scale_object_cloth = PointerProperty(
+            name="Cloth Object", 
+            type=bpy.types.Object,
+            poll=time_scale_object_cloth_poll,
+            options={'HIDDEN'},
+            ); exec(conv("time_scale_object_cloth"))
+
+    def time_scale_object_fluid_poll(self, bl_object):
+        if not vcu.is_blender_282():
+            return False
+        for mod in bl_object.modifiers:
+            if mod.type == 'FLUID' and mod.fluid_type == 'DOMAIN':
+                return True
+        return False
+    def get_selected_time_scale_object_fluid_modifier(self):
+        if not vcu.is_blender_282():
+            return False
+        if self.time_scale_object_fluid is None:
+            return None
+        for mod in self.time_scale_object_fluid.modifiers:
+            if mod.type == 'FLUID' and mod.fluid_type == 'DOMAIN':
+                return mod
+        return None
+    time_scale_object_fluid = PointerProperty(
+            name="Fluid Domain Object", 
+            type=bpy.types.Object,
+            poll=time_scale_object_fluid_poll,
+            options={'HIDDEN'},
+            ); exec(conv("time_scale_object_fluid"))
+
     time_scale = FloatProperty(
-            name="Speed", 
-            description="Scale the frame timestep by this value. If set to less than"
+            name="Custom Time Scale", 
+            description="Scale the simulation speed by this value. If set to less than"
                 " 1.0, the simulation will appear in slow motion. If set to greater than"
                 " 1.0, the simulation will appear sped up", 
             min=0.0,
@@ -198,7 +269,12 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
 
     more_bake_settings_expanded = BoolProperty(default=False); exec(conv("more_bake_settings_expanded"))
     skip_mesh_reexport_expanded = BoolProperty(default=False); exec(conv("skip_mesh_reexport_expanded"))
-    grid_info_expanded = BoolProperty(default=True); exec(conv("grid_info_expanded"))
+    simulation_resolution_expanded = BoolProperty(default=False); exec(conv("simulation_resolution_expanded"))
+    grid_info_expanded = BoolProperty(default=False); exec(conv("grid_info_expanded"))
+    simulation_method_expanded = BoolProperty(default=False); exec(conv("simulation_method_expanded"))
+    world_scale_expanded = BoolProperty(default=False); exec(conv("world_scale_expanded"))
+    boundary_collisions_expanded = BoolProperty(default=False); exec(conv("boundary_collisions_expanded"))
+    frame_rate_and_time_scale_expanded = BoolProperty(default=False); exec(conv("frame_rate_and_time_scale_expanded"))
     last_selected_savestate_int = IntProperty(default=-1); exec(conv("last_selected_savestate_int"))
     selected_savestate_int_label = StringProperty(default=""); exec(conv("selected_savestate_int_label"))
 
@@ -260,22 +336,23 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
 
     def register_preset_properties(self, registry, path):
         add = registry.add_property
-        add(path + ".resolution",                 "Resolution",                 group_id=0)
-        add(path + ".preview_resolution",         "Preview Resolution",         group_id=0)
-        add(path + ".auto_preview_resolution",    "Auto Preview Resolution",    group_id=0)
-        add(path + ".lock_cell_size",             "Lock Cell Size",             group_id=0)
-        add(path + ".frame_rate_mode",            "Frame Rate Mode",            group_id=0)
-        add(path + ".frame_rate_custom",          "Frame Rate",                 group_id=0)
-        add(path + ".time_scale",                 "Time Scale",                 group_id=0)
-        add(path + ".fluid_boundary_collisions",  "Boundary Collisions",        group_id=0)
-        add(path + ".fluid_open_boundary_width",  "Open Boundary Width",        group_id=0)
-        add(path + ".frame_range_mode",           "Frame Range Mode",           group_id=1)
-        add(path + ".frame_range_custom",         "Frame Range (Custom)",       group_id=1)
-        add(path + ".update_settings_on_resume",  "Update Settings on Resume",  group_id=1)
-        add(path + ".enable_savestates",          "Enable Savestates",          group_id=1)
-        add(path + ".savestate_interval",         "Savestate Interval",         group_id=1)
-        add(path + ".delete_outdated_savestates", "Delete Outdated Savestates", group_id=1)
-        add(path + ".delete_outdated_meshes",     "Delete Outdated Meshes",     group_id=1)
+        add(path + ".resolution",                  "Resolution",                    group_id=0)
+        add(path + ".preview_resolution",          "Preview Resolution",            group_id=0)
+        add(path + ".auto_preview_resolution",     "Auto Preview Resolution",       group_id=0)
+        add(path + ".lock_cell_size",              "Lock Cell Size",                group_id=0)
+        add(path + ".frame_rate_mode",             "Frame Rate Mode",               group_id=0)
+        add(path + ".frame_rate_custom",           "Frame Rate",                    group_id=0)
+        add(path + ".time_scale_mode",             "Time Scale Mode",               group_id=0)
+        add(path + ".time_scale",                  "Time Scale",                    group_id=0)
+        add(path + ".fluid_boundary_collisions",   "Boundary Collisions",           group_id=0)
+        add(path + ".fluid_open_boundary_width",   "Open Boundary Width",           group_id=0)
+        add(path + ".frame_range_mode",            "Frame Range Mode",              group_id=1)
+        add(path + ".frame_range_custom",          "Frame Range (Custom)",          group_id=1)
+        add(path + ".update_settings_on_resume",   "Update Settings on Resume",     group_id=1)
+        add(path + ".enable_savestates",           "Enable Savestates",             group_id=1)
+        add(path + ".savestate_interval",          "Savestate Interval",            group_id=1)
+        add(path + ".delete_outdated_savestates",  "Delete Outdated Savestates",    group_id=1)
+        add(path + ".delete_outdated_meshes",      "Delete Outdated Meshes",        group_id=1)
 
 
     def initialize(self):
@@ -405,6 +482,83 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
         elif self.frame_rate_mode == 'FRAME_RATE_MODE_CUSTOM':
             domain_object = bpy.context.scene.flip_fluid.get_domain_object()
             return export_utils.get_property_data_dict(domain_object, self, 'frame_rate_custom')
+
+
+    def get_time_scale_data_dict(self):
+        property_path = bpy.context.scene.flip_fluid.get_domain_object()
+        property_group = self
+        property_name = "time_scale"
+
+        if self.time_scale_mode == 'TIME_SCALE_MODE_CUSTOM':
+            pass # uses default
+
+        elif self.time_scale_mode == 'TIME_SCALE_MODE_RIGID_BODY':
+            if bpy.context.scene.rigidbody_world is not None:
+                property_path = bpy.context.scene
+                property_group = bpy.context.scene.rigidbody_world
+                property_name = "time_scale"
+
+        elif self.time_scale_mode == 'TIME_SCALE_MODE_SOFT_BODY':
+            soft_body_object = self.time_scale_object_soft_body
+            soft_body_modifier = self.get_selected_time_scale_object_soft_body_modifier()
+            if soft_body_object is not None and soft_body_modifier is not None:
+                property_path = soft_body_object
+                property_group = soft_body_modifier.settings
+                property_name = "speed"
+
+        elif self.time_scale_mode == 'TIME_SCALE_MODE_CLOTH':
+            cloth_object = self.time_scale_object_cloth
+            cloth_modifier = self.get_selected_time_scale_object_cloth_modifier()
+            if cloth_object is not None and cloth_modifier is not None:
+                property_path = cloth_object
+                property_group = cloth_modifier.settings
+                property_name = "time_scale"
+
+        elif self.time_scale_mode == 'TIME_SCALE_MODE_FLUID':    
+            fluid_object = self.time_scale_object_fluid
+            fluid_modifier = self.get_selected_time_scale_object_fluid_modifier()
+            if fluid_object is not None and fluid_modifier is not None:
+                property_path = fluid_object
+                property_group = fluid_modifier.domain_settings
+                property_name = "time_scale"
+
+        return export_utils.get_property_data_dict(property_path, property_group, property_name)
+
+
+    def get_current_frame_time_scale(self):
+        property_group = self
+        property_name = "time_scale"
+
+        if self.time_scale_mode == 'TIME_SCALE_MODE_CUSTOM':
+            pass # uses default
+
+        elif self.time_scale_mode == 'TIME_SCALE_MODE_RIGID_BODY':
+            if bpy.context.scene.rigidbody_world is not None:
+                property_group = bpy.context.scene.rigidbody_world
+                property_name = "time_scale"
+
+        elif self.time_scale_mode == 'TIME_SCALE_MODE_SOFT_BODY':
+            soft_body_object = self.time_scale_object_soft_body
+            soft_body_modifier = self.get_selected_time_scale_object_soft_body_modifier()
+            if soft_body_object is not None and soft_body_modifier is not None:
+                property_group = soft_body_modifier.settings
+                property_name = "speed"
+
+        elif self.time_scale_mode == 'TIME_SCALE_MODE_CLOTH':
+            cloth_object = self.time_scale_object_cloth
+            cloth_modifier = self.get_selected_time_scale_object_cloth_modifier()
+            if cloth_object is not None and cloth_modifier is not None:
+                property_group = cloth_modifier.settings
+                property_name = "time_scale"
+
+        elif self.time_scale_mode == 'TIME_SCALE_MODE_FLUID':    
+            fluid_object = self.time_scale_object_fluid
+            fluid_modifier = self.get_selected_time_scale_object_fluid_modifier()
+            if fluid_object is not None and fluid_modifier is not None:
+                property_group = fluid_modifier.domain_settings
+                property_name = "time_scale"
+
+        return getattr(property_group, property_name)
 
 
     def is_current_grid_upscaled(self):

@@ -37,6 +37,7 @@ SOFTWARE.
 #endif
 
 #include <vector>
+#include <functional>
 
 namespace ThreadUtils {
 

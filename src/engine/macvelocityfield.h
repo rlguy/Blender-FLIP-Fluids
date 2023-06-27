@@ -142,6 +142,13 @@ public:
     void extrapolateVelocityField(ValidVelocityComponentGrid &validGrid, int numLayers);
     void generateCurlAtCellCenter(Array3d<vmath::vec3> &grid);
 
+    bool isDimensionsValidForCoarseGridGeneration();
+    void getCoarseGridDimensions(int *i, int *j, int *k);
+    MACVelocityField generateCoarseGrid();
+
+    void getFineGridDimensions(int *i, int *j, int *k);
+    MACVelocityField generateFineGrid();
+
 private:
     void _initializeVelocityGrids();
 

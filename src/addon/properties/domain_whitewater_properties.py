@@ -43,7 +43,7 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
     highlight_advanced_settings = BoolProperty(
             name="Highlight Advanced Settings",
             description="Highlight advanced parameters in red",
-            default=False,
+            default=True,
             ); exec(conv("highlight_advanced_settings"))
     enable_whitewater_simulation = BoolProperty(
             name="Enable Whitewater Simulation",
@@ -505,11 +505,14 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
             precision=2,
             ); exec(conv("obstacle_influence_decay_rate"))
 
+    settings_view_mode_expanded = BoolProperty(default=False); exec(conv("settings_view_mode_expanded"))
+    whitewater_simulation_particles_expanded = BoolProperty(default=False); exec(conv("whitewater_simulation_particles_expanded"))
     emitter_settings_expanded = BoolProperty(default=True); exec(conv("emitter_settings_expanded"))
     particle_settings_expanded = BoolProperty(default=False); exec(conv("particle_settings_expanded"))
     boundary_behaviour_settings_expanded = BoolProperty(default=False); exec(conv("boundary_behaviour_settings_expanded"))
     obstacle_settings_expanded = BoolProperty(default=False); exec(conv("obstacle_settings_expanded"))
     whitewater_display_settings_expanded = BoolProperty(default=False); exec(conv("whitewater_display_settings_expanded"))
+    geometry_attributes_expanded = BoolProperty(default=False); exec(conv("geometry_attributes_expanded"))
 
 
     def register_preset_properties(self, registry, path):

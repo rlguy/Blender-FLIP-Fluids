@@ -718,3 +718,83 @@ void MACVelocityField::generateCurlAtCellCenter(Array3d<vmath::vec3> &grid) {
         }
     }
 }
+
+void MACVelocityField::getCoarseGridDimensions(int *i, int *j, int *k) {
+    *i = _isize / 2;
+    *j = _jsize / 2;
+    *k = _ksize / 2;
+}
+
+void MACVelocityField::getFineGridDimensions(int *i, int *j, int *k) {
+    *i = _isize * 2;
+    *j = _jsize * 2;
+    *k = _ksize * 2;
+}
+
+bool MACVelocityField::isDimensionsValidForCoarseGridGeneration() {
+    return _isize % 2 == 0 || _jsize % 2 == 0 || _ksize % 2 == 0;
+}
+
+MACVelocityField MACVelocityField::generateCoarseGrid() {
+    FLUIDSIM_ASSERT(_u.isDimensionsValidForCoarseFaceGridGenerationU());
+    FLUIDSIM_ASSERT(_v.isDimensionsValidForCoarseFaceGridGenerationV());
+    FLUIDSIM_ASSERT(_w.isDimensionsValidForCoarseFaceGridGenerationW());
+
+    double dxcoarse = _dx * 2.0;
+    int icoarse = 0; int jcoarse = 0; int kcoarse = 0;
+    getCoarseGridDimensions(&icoarse, &jcoarse, &kcoarse);
+    MACVelocityField coarseMAC(icoarse, jcoarse, kcoarse, dxcoarse);
+
+    Array3d<float> *coarseU = coarseMAC.getArray3dU();
+    Array3d<float> *coarseV = coarseMAC.getArray3dV();
+    Array3d<float> *coarseW = coarseMAC.getArray3dW();
+
+    _u.generateCoarseFaceGridU(*coarseU);
+    _v.generateCoarseFaceGridV(*coarseV);
+    _w.generateCoarseFaceGridW(*coarseW);
+
+    return coarseMAC;
+}
+
+MACVelocityField MACVelocityField::generateFineGrid() {
+    double dxfine = _dx / 2.0;
+    int ifine = 0; int jfine = 0; int kfine = 0;
+    getFineGridDimensions(&ifine, &jfine, &kfine);
+    MACVelocityField fineMAC(ifine, jfine, kfine, dxfine);
+
+    Array3d<float> *fineU = fineMAC.getArray3dU();
+    Array3d<float> *fineV = fineMAC.getArray3dV();
+    Array3d<float> *fineW = fineMAC.getArray3dW();
+
+    for (int k = 0; k < fineU->depth; k++) {
+        for (int j = 0; j < fineU->height; j++) {
+            for (int i = 0; i < fineU->width; i++) {
+                vmath::vec3 gp = Grid3d::FaceIndexToPositionU(i, j, k, dxfine);
+                float u = _interpolateLinearU(gp.x, gp.y, gp.z);
+                fineU->set(i, j, k, u);
+            }
+        }
+    }
+
+    for (int k = 0; k < fineV->depth; k++) {
+        for (int j = 0; j < fineV->height; j++) {
+            for (int i = 0; i < fineV->width; i++) {
+                vmath::vec3 gp = Grid3d::FaceIndexToPositionV(i, j, k, dxfine);
+                float v = _interpolateLinearV(gp.x, gp.y, gp.z);
+                fineV->set(i, j, k, v);
+            }
+        }
+    }
+
+    for (int k = 0; k < fineW->depth; k++) {
+        for (int j = 0; j < fineW->height; j++) {
+            for (int i = 0; i < fineW->width; i++) {
+                vmath::vec3 gp = Grid3d::FaceIndexToPositionW(i, j, k, dxfine);
+                float w = _interpolateLinearW(gp.x, gp.y, gp.z);
+                fineW->set(i, j, k, w);
+            }
+        }
+    }
+
+    return fineMAC;
+}

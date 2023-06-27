@@ -17,6 +17,7 @@
 import bpy
 from bpy.props import (
         IntProperty,
+        FloatProperty,
         StringProperty,
         BoolProperty,
         PointerProperty,
@@ -26,6 +27,8 @@ from bpy.props import (
 from . import preset_properties
 from .. import types
 from ..utils import version_compatibility_utils as vcu
+
+DISABLE_FRAME_CHANGE_POST_HANDLER = False
 
 
 class FlipFluidHelperProperties(bpy.types.PropertyGroup):
@@ -104,8 +107,32 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
                 " (disable outliner monitor icon) before proceeding with the remesh process",
             default=True,
             ); exec(conv("flip_fluids_remesh_convert_objects_to_mesh"))
+    update_object_speed_data_on_frame_change = BoolProperty(
+            name="Update on frame change",
+            description="Update the object speed measurement for the active object after changing a frame. Not recommended"
+            " to leave this option enabled when not in use as this could slow down Blender when measuring complex or high poly geometry",
+            default=False,
+            ); exec(conv("update_object_speed_data_on_frame_change"))
+    measure_object_speed_units_mode = EnumProperty(
+            name="Measurement Units",
+            description="Display speed in metric or imperial units",
+            items=types.measurement_units_mode,
+            default='MEASUREMENT_UNITS_MODE_METRIC',
+            options={'HIDDEN'},
+            ); exec(conv("measure_object_speed_units_mode"))
 
     is_auto_frame_load_cmd_operator_running = BoolProperty(default=False); exec(conv("is_auto_frame_load_cmd_operator_running"))
+
+    # Used in Helper Operators > FlipFluidMeasureObjectSpeed operator
+    is_translation_data_available = BoolProperty(default=False); exec(conv("is_translation_data_available"))
+    min_vertex_translation = FloatProperty(default=0.0); exec(conv("min_vertex_translation"))
+    max_vertex_translation = FloatProperty(default=0.0); exec(conv("max_vertex_translation"))
+    avg_vertex_translation = FloatProperty(default=0.0); exec(conv("avg_vertex_translation"))
+    center_translation = FloatProperty(default=0.0); exec(conv("center_translation"))
+    translation_data_object_name = StringProperty(default="Name Not Available"); exec(conv("translation_data_object_name"))
+    translation_data_object_vertices = IntProperty(default=-1); exec(conv("translation_data_object_vertices"))
+    translation_data_object_frame = IntProperty(default=-1); exec(conv("translation_data_object_frame"))
+    translation_data_object_compute_time = IntProperty(default=-1); exec(conv("translation_data_object_compute_time"))
 
     prepare_geometry_tools_expanded = BoolProperty(default=False); exec(conv("prepare_geometry_tools_expanded"))
     bake_simulation_expanded = BoolProperty(default=True); exec(conv("bake_simulation_expanded"))
@@ -114,6 +141,7 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
     quick_select_expanded = BoolProperty(default=False); exec(conv("quick_select_expanded"))
     command_line_tools_expanded = BoolProperty(default=True); exec(conv("command_line_tools_expanded"))
     geometry_node_tools_expanded = BoolProperty(default=False); exec(conv("geometry_node_tools_expanded"))
+    object_speed_measurement_tools_expanded = BoolProperty(default=False); exec(conv("object_speed_measurement_tools_expanded"))
     beginner_tools_expanded = BoolProperty(default=False); exec(conv("beginner_tools_expanded"))
 
     quick_viewport_display_expanded = BoolProperty(default=True); exec(conv("quick_viewport_display_expanded"))
@@ -139,6 +167,17 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
         self.is_auto_frame_load_cmd_operator_running = False
         if self.is_auto_frame_load_cmd_enabled():
             bpy.ops.flip_fluid_operators.auto_load_baked_frames_cmd('INVOKE_DEFAULT')
+
+    def frame_change_post(self, scene, depsgraph=None):
+        if self.update_object_speed_data_on_frame_change:
+            try:
+                if bpy.ops.flip_fluid_operators.measure_object_speed.poll():
+                    print("Measure Object Speed: Update on frame change option is enabled.")
+                    bpy.ops.flip_fluid_operators.measure_object_speed('INVOKE_DEFAULT')
+                else:
+                    bpy.ops.flip_fluid_operators.clear_measure_object_speed('INVOKE_DEFAULT')
+            except:
+                pass
 
 
     def get_addon_preferences(self):
@@ -167,6 +206,13 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
 
 def load_post():
     bpy.context.scene.flip_fluid_helper.load_post()
+
+
+def frame_change_post(scene, depsgraph=None):
+    global DISABLE_FRAME_CHANGE_POST_HANDLER
+    if DISABLE_FRAME_CHANGE_POST_HANDLER:
+        return
+    bpy.context.scene.flip_fluid_helper.frame_change_post(scene, depsgraph)
 
 
 def register():
