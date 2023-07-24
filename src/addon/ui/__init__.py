@@ -25,7 +25,8 @@ if "bpy" in locals():
         'force_field_ui',
         'domain_ui',
         'cache_object_ui',
-        'helper_ui'
+        'helper_ui',
+        'flip_fluids_addon_disabled_ui',
     ]
     for module_name in reloadable_modules:
         if module_name in locals():
@@ -42,7 +43,8 @@ from . import(
         force_field_ui,
         domain_ui,
         cache_object_ui,
-        helper_ui
+        helper_ui,
+        flip_fluids_addon_disabled_ui,
         )
 
 from ..utils import version_compatibility_utils as vcu
@@ -54,6 +56,8 @@ def append_to_PHYSICS_PT_add_panel(self, context):
     obj = vcu.get_active_object(context)
     if not (obj.type == 'MESH' or obj.type == 'EMPTY', obj.type == 'CURVE'):
         return
+
+    is_addon_disabled = context.scene.flip_fluid.is_addon_disabled_in_blend_file()
 
     column = self.layout.column(align=True)
     split = vcu.ui_split(column, factor=0.5)
@@ -69,6 +73,7 @@ def append_to_PHYSICS_PT_add_panel(self, context):
                 )
 
         if obj.flip_fluid.is_domain():
+            row.enabled = not is_addon_disabled
             row.prop(context.scene.flip_fluid, "show_viewport", icon="RESTRICT_VIEW_OFF", text="")
             row.prop(context.scene.flip_fluid, "show_render", icon="RESTRICT_RENDER_OFF", text="")
 
@@ -97,7 +102,7 @@ def append_to_PHYSICS_PT_add_panel(self, context):
                 ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Experimental-Builds"
 
         is_saved = bool(bpy.data.filepath)
-        if not is_saved and obj.flip_fluid.is_domain():
+        if not is_saved and obj.flip_fluid.is_domain() and not is_addon_disabled:
             hprops = context.scene.flip_fluid_helper
             box = self.layout.box()
             row = box.row(align=True)
@@ -173,6 +178,7 @@ def register():
     domain_ui.register()
     cache_object_ui.register()
     helper_ui.register()
+    flip_fluids_addon_disabled_ui.register()
 
     bpy.types.PHYSICS_PT_add.append(append_to_PHYSICS_PT_add_panel)
 
@@ -187,5 +193,6 @@ def unregister():
     domain_ui.unregister()
     cache_object_ui.unregister()
     helper_ui.unregister()
+    flip_fluids_addon_disabled_ui.unregister()
         
     bpy.types.PHYSICS_PT_add.remove(append_to_PHYSICS_PT_add_panel)

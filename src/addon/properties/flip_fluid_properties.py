@@ -63,6 +63,10 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
         self._initialize_custom_icons()
 
 
+    def is_addon_disabled_in_blend_file(self):
+        return bpy.context.scene.flip_fluid_helper.is_addon_disabled_in_blend_file()
+
+
     def is_domain_object_set(self):
         return self.get_domain_object() is not None
 

@@ -922,12 +922,22 @@ def get_system_info_dict():
         from ..third_party import cpuinfo
         cpu_string = cpuinfo.cpu.info[0]['ProcessorNameString']
     except KeyError:
-        # Apple Silicon systems may not contain the ProcessorNameString
-        try:
-            cpu_string = cpuinfo.cpu.info['arch'].decode("utf-8")
-        except Exception as e:
-            print(traceback.format_exc())
-            print(e)
+        if platform.system() == "Darwin":
+            # Apple Silicon systems may not contain the ProcessorNameString
+            try:
+                cpu_string = cpuinfo.cpu.info['arch'].decode("utf-8")
+            except Exception as e:
+                print(traceback.format_exc())
+                print(e)
+
+        if platform.system() == "Linux":
+            try:
+                cpu_string = cpuinfo.cpu.info[0]['model name']
+            except:
+                # May not be able to retrieve processor on some Linux distributions
+                # Currently unknown how to solve this issue. Processor will be marked
+                # as 'Unknown' in this case
+                pass
     except Exception as e:
         print(traceback.format_exc())
         print(e)

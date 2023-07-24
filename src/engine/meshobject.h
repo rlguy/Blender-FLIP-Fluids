@@ -100,6 +100,8 @@ public:
     bool isInversed();
     void setFriction(float f);
     float getFriction();
+    void setVelocityScale(float scale);
+    float getVelocityScale();
     void setWhitewaterInfluence(float value);
     float getWhitewaterInfluence();
     void setDustEmissionStrength(float value);
@@ -188,6 +190,7 @@ private:
     bool _isChangingTopology = false;
     bool _isRigid = true;
     float _friction = 0.0f;
+    float _velocityScale = 1.0f;
     float _whitewaterInfluence = 1.0f;
     float _dustEmissionStrength = 1.0f;
     float _sheetingStrength = 1.0f;

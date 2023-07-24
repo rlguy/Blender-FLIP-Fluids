@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy
+import bpy, os, platform
 from bpy.props import (
         IntProperty,
         FloatProperty,
@@ -22,6 +22,10 @@ from bpy.props import (
         BoolProperty,
         PointerProperty,
         EnumProperty
+        )
+
+from .custom_properties import (
+        NewMinMaxIntProperty,
         )
 
 from . import preset_properties
@@ -79,6 +83,69 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             default=False,
             ); exec(conv("cmd_close_window_after_render"))
 
+    alembic_export_surface = BoolProperty(
+            name="Surface",
+            description="Include fluid surface mesh in the Alembic export",
+            default=True,
+            ); exec(conv("alembic_export_surface"))
+    alembic_export_foam = BoolProperty(
+            name="Foam",
+            description="Include whitewater foam mesh in the Alembic export if applicable. This mesh will be exported as a vertex-only mesh",
+            default=True,
+            ); exec(conv("alembic_export_foam"))
+    alembic_export_bubble = BoolProperty(
+            name="Bubble",
+            description="Include whitewater bubble mesh in the Alembic export if applicable. This mesh will be exported as a vertex-only mesh",
+            default=True,
+            ); exec(conv("alembic_export_bubble"))
+    alembic_export_spray = BoolProperty(
+            name="Spray",
+            description="Include whitewater spray mesh in the Alembic export if applicable. This mesh will be exported as a vertex-only mesh",
+            default=True,
+            ); exec(conv("alembic_export_spray"))
+    alembic_export_dust = BoolProperty(
+            name="Dust",
+            description="Include whitewater dust mesh in the Alembic export if applicable. This mesh will be exported as a vertex-only mesh",
+            default=True,
+            ); exec(conv("alembic_export_dust"))
+    alembic_export_velocity = BoolProperty(
+            name="Export Velocity",
+            description="Include velocity data in the Alembic export. This data will be available"
+                " under the 'velocity' attribute of the Alembic export and can be used for motion"
+                " blur rendering. Velocity attributes for the surface and/or whitewater are required to"
+                " be baked before export",
+            default=False,
+            ); exec(conv("alembic_export_velocity"))
+    alembic_frame_range_mode = EnumProperty(
+            name="Frame Range Mode",
+            description="Frame range to use for Alembic Export",
+            items=types.frame_range_modes,
+            default='FRAME_RANGE_TIMELINE',
+            options={'HIDDEN'},
+            ); exec(conv("alembic_frame_range_mode"))
+    alembic_frame_range_custom = NewMinMaxIntProperty(
+            name_min="Start Frame", 
+            description_min="First frame of the Alembic export", 
+            min_min=0,
+            default_min=1,
+            options_min={'HIDDEN'},
+
+            name_max="End Frame", 
+            description_max="Final frame of the Alembic export", 
+            min_max=0,
+            default_max=250,
+            options_max={'HIDDEN'},
+            ); exec(conv("alembic_frame_range_custom"))
+    alembic_output_filepath = StringProperty(
+            name="",
+            description="Alembic export will be saved to this filepath. Remember to save the Blend file before"
+                " starting the Alembic export",
+            default="//untitled.abc", 
+            subtype='FILE_PATH',
+            update=lambda self, context: self._update_alembic_output_filepath(context),
+            ); exec(conv("alembic_output_filepath"))
+    is_alembic_output_filepath_set = BoolProperty(default=False); exec(conv("is_alembic_output_filepath_set"))
+
     unsaved_blend_file_tooltip = BoolProperty(
             name="Unsaved Blend File Tooltip", 
             description="This is currently an unsaved .blend file. We recommend saving your file before baking a"
@@ -121,6 +188,12 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             options={'HIDDEN'},
             ); exec(conv("measure_object_speed_units_mode"))
 
+    disable_addon_in_blend_file = BoolProperty(
+            name="Disable Addon in Blend File",
+            description="",
+            default=False,
+            ); exec(conv("disable_addon_in_blend_file"))
+
     is_auto_frame_load_cmd_operator_running = BoolProperty(default=False); exec(conv("is_auto_frame_load_cmd_operator_running"))
 
     # Used in Helper Operators > FlipFluidMeasureObjectSpeed operator
@@ -136,13 +209,20 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
 
     prepare_geometry_tools_expanded = BoolProperty(default=False); exec(conv("prepare_geometry_tools_expanded"))
     bake_simulation_expanded = BoolProperty(default=True); exec(conv("bake_simulation_expanded"))
-    add_remove_objects_expanded = BoolProperty(default=True); exec(conv("add_remove_objects_expanded"))
+    add_remove_objects_expanded = BoolProperty(default=False); exec(conv("add_remove_objects_expanded"))
     outliner_organization_expanded = BoolProperty(default=False); exec(conv("outliner_organization_expanded"))
     quick_select_expanded = BoolProperty(default=False); exec(conv("quick_select_expanded"))
+
     command_line_tools_expanded = BoolProperty(default=True); exec(conv("command_line_tools_expanded"))
+    command_line_bake_expanded = BoolProperty(default=False); exec(conv("command_line_bake_expanded"))
+    command_line_render_expanded = BoolProperty(default=False); exec(conv("command_line_render_expanded"))
+    command_line_render_frame_expanded = BoolProperty(default=False); exec(conv("command_line_render_frame_expanded"))
+    command_line_alembic_export_expanded = BoolProperty(default=False); exec(conv("command_line_alembic_export_expanded"))
+
     geometry_node_tools_expanded = BoolProperty(default=False); exec(conv("geometry_node_tools_expanded"))
     object_speed_measurement_tools_expanded = BoolProperty(default=False); exec(conv("object_speed_measurement_tools_expanded"))
     beginner_tools_expanded = BoolProperty(default=False); exec(conv("beginner_tools_expanded"))
+    disable_addon_expanded = BoolProperty(default=False); exec(conv("disable_addon_expanded"))
 
     quick_viewport_display_expanded = BoolProperty(default=True); exec(conv("quick_viewport_display_expanded"))
     simulation_playback_expanded = BoolProperty(default=False); exec(conv("simulation_playback_expanded"))
@@ -168,6 +248,13 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
         if self.is_auto_frame_load_cmd_enabled():
             bpy.ops.flip_fluid_operators.auto_load_baked_frames_cmd('INVOKE_DEFAULT')
 
+        self.check_alembic_output_filepath()
+
+
+    def save_post(self):
+        self.check_alembic_output_filepath()
+
+
     def frame_change_post(self, scene, depsgraph=None):
         if self.update_object_speed_data_on_frame_change:
             try:
@@ -178,6 +265,13 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
                     bpy.ops.flip_fluid_operators.clear_measure_object_speed('INVOKE_DEFAULT')
             except:
                 pass
+
+
+    def is_addon_disabled_in_blend_file(self):
+        is_disabled = False
+        for scene in bpy.data.scenes:
+            is_disabled = is_disabled or scene.flip_fluid_helper.disable_addon_in_blend_file
+        return is_disabled
 
 
     def get_addon_preferences(self):
@@ -204,6 +298,64 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             bpy.ops.flip_fluid_operators.auto_load_baked_frames_cmd('INVOKE_DEFAULT')
 
 
+    def _update_alembic_output_filepath(self, context):
+        self.is_alembic_output_filepath_set = True
+
+        relprefix = "//"
+        if self.alembic_output_filepath == "" or self.alembic_output_filepath == relprefix:
+            # Don't want the user to set an empty path
+            if bpy.data.filepath:
+                base = os.path.basename(bpy.data.filepath)
+                save_file = os.path.splitext(base)[0]
+                output_folder_parent = os.path.dirname(bpy.data.filepath)
+
+                output_filepath = os.path.join(output_folder_parent, save_file + ".abc")
+                relpath = os.path.relpath(output_filepath, output_folder_parent)
+
+                default_cache_directory_str = relprefix + relpath
+            else:
+                temp_directory = vcu.get_blender_preferences_temporary_directory()
+                default_cache_directory_str = os.path.join(temp_directory, "untitled.abc")
+            self["alembic_output_filepath"] = default_cache_directory_str
+
+
+    def check_alembic_output_filepath(self):
+        if self.is_alembic_output_filepath_set:
+            return
+
+        base = os.path.basename(bpy.data.filepath)
+        save_file = os.path.splitext(base)[0]
+        if not save_file:
+            save_file = "untitled"
+            self.alembic_output_filepath = save_file + ".abc"
+            self.is_alembic_output_filepath_set = False
+            return
+
+        alembic_folder_parent = os.path.dirname(bpy.data.filepath)
+        alembic_path = os.path.join(alembic_folder_parent, save_file + ".abc")
+        relpath = os.path.relpath(alembic_path, alembic_folder_parent)
+
+        relprefix = "//"
+        self.alembic_output_filepath = relprefix + relpath
+        self.is_alembic_output_filepath_set = True
+
+
+    def get_alembic_output_abspath(self):
+        relprefix = "//"
+        path_prop = self.alembic_output_filepath
+        path = self.alembic_output_filepath
+        if path_prop.startswith(relprefix):
+            path_prop = path_prop[len(relprefix):]
+            blend_directory = os.path.dirname(bpy.data.filepath)
+            path = os.path.join(blend_directory, path_prop)
+        path = os.path.abspath(os.path.normpath(path))
+        if platform.system() != "Windows":
+            # Blend file may have been saved on windows and opened on macOS/Linux. In this case,
+            # backslash should be converted to forward slash.
+            path = os.path.join(*path.split("\\"))
+        return path
+
+
 def load_post():
     bpy.context.scene.flip_fluid_helper.load_post()
 
@@ -213,6 +365,10 @@ def frame_change_post(scene, depsgraph=None):
     if DISABLE_FRAME_CHANGE_POST_HANDLER:
         return
     bpy.context.scene.flip_fluid_helper.frame_change_post(scene, depsgraph)
+
+
+def save_post():
+    bpy.context.scene.flip_fluid_helper.save_post()
 
 
 def register():

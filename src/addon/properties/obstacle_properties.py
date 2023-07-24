@@ -76,6 +76,17 @@ class FlipFluidObstacleProperties(bpy.types.PropertyGroup):
             default=0.0,
             precision=2,
             ); exec(conv("friction"))
+    velocity_scale = FloatProperty(
+            name="Velocity Scale",
+            description="Scale the object velocity by this amount. Values greater than 1.0"
+                " will exaggerate the velocity and the simulation will behave as if the object"
+                " is moving faster than it actually is. Values between 0.0 and 1.0 will dampen"
+                " the velocity. Negative values will reverse the velocity. This setting is for"
+                " artistic control and any value other than 1.0 will not be physically accurate",
+            soft_min=0.0, soft_max=5.0,
+            default=1.0,
+            precision=2,
+            ); exec(conv("velocity_scale"))
     whitewater_influence = FloatProperty(
             name="Whitewater Influence",
             description="Scale the amount of whitewater generated near this"
@@ -112,7 +123,8 @@ class FlipFluidObstacleProperties(bpy.types.PropertyGroup):
                 " can be used to prevent fluid from slipping through small"
                 " cracks between touching obstacles. This setting is meant only to be"
                 " used to prevent leakage in fractured objects and only small values"
-                " should be used",
+                " should be used. This setting is not applicable for preventing leakage"
+                " in thin-walled obstacles",
             default=0.0,
             soft_min=-0.05, soft_max=0.05,
             step=0.01,
@@ -143,6 +155,7 @@ class FlipFluidObstacleProperties(bpy.types.PropertyGroup):
             add("obstacle.skip_reexport", "")
             add("obstacle.force_reexport_on_next_bake", "")
             add("obstacle.friction", "")
+            add("obstacle.velocity_scale", "")
             add("obstacle.whitewater_influence", "")
             add("obstacle.dust_emission_strength", "")
             add("obstacle.sheeting_strength", "")

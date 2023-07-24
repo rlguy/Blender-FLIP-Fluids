@@ -135,6 +135,7 @@ void ParticleMesher::_initializeComputeChunkDataActiveBlocks(MesherComputeChunkD
 
     int numthreads = ThreadUtils::getMaxThreadCount();
     GridUtils::featherGrid26(&(data.activeBlocks), numthreads);
+    GridUtils::featherGrid26(&(data.activeBlocks), numthreads);
 }
 
 void ParticleMesher::_initializeComputeChunkDataComputeChunks(MesherComputeChunkData &data) {

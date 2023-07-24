@@ -29,7 +29,8 @@ class FlipFluidAdd(bpy.types.Operator):
 
     @classmethod
     def poll(csl, context):
-        return installation_utils.is_installation_complete()
+        is_addon_disabled = context.scene.flip_fluid.is_addon_disabled_in_blend_file()
+        return installation_utils.is_installation_complete() and not is_addon_disabled
 
 
     def execute(self, context):
@@ -49,7 +50,8 @@ class FlipFluidRemove(bpy.types.Operator):
 
     @classmethod
     def poll(csl, context):
-        return installation_utils.is_installation_complete()
+        is_addon_disabled = context.scene.flip_fluid.is_addon_disabled_in_blend_file()
+        return installation_utils.is_installation_complete() and not is_addon_disabled
 
 
     def execute(self, context):

@@ -166,7 +166,7 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
                 " be removed in a future update if not needed",
             min=1,
             soft_max=10,
-            default=2,
+            default=4,
             ); exec(conv("fluid_open_boundary_width"))
     frame_rate_mode = EnumProperty(
             name="Frame Rate Mode",

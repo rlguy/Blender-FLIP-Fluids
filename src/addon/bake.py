@@ -1649,10 +1649,11 @@ def __update_animatable_obstacle_properties(data, frameid):
 
         mesh_object.enable = __get_parameter_data(data.is_enabled, frameid)
         mesh_object.friction = __get_parameter_data(data.friction, frameid, value_min=0.0)
+        mesh_object.velocity_scale = __get_parameter_data(data.velocity_scale, frameid)
         mesh_object.whitewater_influence = __get_parameter_data(data.whitewater_influence, frameid, value_min=0.0)
         mesh_object.dust_emission_strength = __get_parameter_data(data.dust_emission_strength, frameid, value_min=0.0)
         mesh_object.sheeting_strength = __get_parameter_data(data.sheeting_strength, frameid, value_min=0.0)
-        mesh_object.mesh_expansion = __get_parameter_data(data.mesh_expansion, frameid, value_min=0.0)
+        mesh_object.mesh_expansion = __get_parameter_data(data.mesh_expansion, frameid)
 
 
 def __update_animatable_meshing_volume_properties(data, frameid):

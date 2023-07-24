@@ -35,7 +35,8 @@ class FLIPFLUID_PT_CacheObjectTypePanel(bpy.types.Panel):
         if not context.scene.flip_fluid.is_domain_in_active_scene():
             return False
         obj = vcu.get_active_object(context)
-        return dprops.mesh_cache.is_cache_object(obj)
+        is_addon_disabled = context.scene.flip_fluid.is_addon_disabled_in_blend_file()
+        return dprops.mesh_cache.is_cache_object(obj) and not is_addon_disabled
 
 
     def get_domain_properties(self):

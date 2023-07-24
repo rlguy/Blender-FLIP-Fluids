@@ -213,7 +213,7 @@ std::vector<vmath::vec3> MeshObject::getVertexVelocities(double dt, float frameI
 
     double invdt = 1.0 / dt;
     for (size_t i = 0; i < velocities.size(); i++) {
-        velocities[i] *= invdt;
+        velocities[i] = velocities[i] * invdt * _velocityScale;
     }
 
     return velocities;
@@ -305,6 +305,14 @@ void MeshObject::setFriction(float f) {
 
 float MeshObject::getFriction() {
     return _friction;
+}
+
+void MeshObject::setVelocityScale(float scale) {
+    _velocityScale = scale;
+}
+
+float MeshObject::getVelocityScale() {
+    return _velocityScale;
 }
 
 void MeshObject::setWhitewaterInfluence(float value) {

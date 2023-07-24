@@ -1727,6 +1727,18 @@ class FlipFluidCache(bpy.types.PropertyGroup):
         self.obstacle.cache_object_type = "CACHE_OBJECT_TYPE_OBSTACLE"
 
 
+    def is_simulation_mesh_load_enabled(self, mesh_name):
+        return render.is_simulation_mesh_load_enabled(mesh_name)
+
+
+    def enable_simulation_mesh_load(self, mesh_name):
+        return render.enable_simulation_mesh_load(mesh_name)
+
+
+    def disable_simulation_mesh_load(self, mesh_name):
+        return render.disable_simulation_mesh_load(mesh_name)
+
+
     def load_post(self):
         self._update_deprecated_mesh_storage()
 

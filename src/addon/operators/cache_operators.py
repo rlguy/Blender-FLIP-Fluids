@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, os, re
+import bpy, os, re, shutil
 
 from ..filesystem import filesystem_protection_layer as fpl
 from ..utils import version_compatibility_utils as vcu
