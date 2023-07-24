@@ -30,7 +30,8 @@ class FLIPFLUID_PT_ObstacleTypePanel(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         obj_props = vcu.get_active_object(context).flip_fluid
-        return obj_props.is_active and obj_props.object_type == "TYPE_OBSTACLE"
+        is_addon_disabled = context.scene.flip_fluid.is_addon_disabled_in_blend_file()
+        return obj_props.is_active and obj_props.object_type == "TYPE_OBSTACLE" and not is_addon_disabled
 
 
     def draw(self, context):
@@ -100,9 +101,12 @@ class FLIPFLUID_PT_ObstacleTypePanel(bpy.types.Panel):
         box.label(text="Obstacle Properties")
 
         column = box.column()
-        column.prop(obstacle_props, "friction", slider = True)
+        column.prop(obstacle_props, "friction", slider=True)
 
         if show_advanced:
+            column = box.column()
+            column.prop(obstacle_props, "velocity_scale")
+
             column = box.column()
             column.prop(obstacle_props, "whitewater_influence")
 
@@ -113,6 +117,9 @@ class FLIPFLUID_PT_ObstacleTypePanel(bpy.types.Panel):
             column.prop(obstacle_props, "sheeting_strength")
 
             column = box.column()
+            alert_threshold = 0.05 + 1e-5
+            if abs(obstacle_props.mesh_expansion) > alert_threshold:
+                column.alert = True
             column.prop(obstacle_props, "mesh_expansion")
 
         box = self.layout.box()

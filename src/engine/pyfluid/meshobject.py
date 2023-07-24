@@ -108,6 +108,18 @@ class MeshObject():
         pb.execute_lib_func(libfunc, [self(), value])
 
     @property
+    def velocity_scale(self):
+        libfunc = lib.MeshObject_get_velocity_scale
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_float)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @velocity_scale.setter
+    def velocity_scale(self, value):
+        libfunc = lib.MeshObject_set_velocity_scale
+        pb.init_lib_func(libfunc, [c_void_p, c_float, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), value])
+
+    @property
     def whitewater_influence(self):
         libfunc = lib.MeshObject_get_whitewater_influence
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_float)

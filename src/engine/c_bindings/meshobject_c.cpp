@@ -129,6 +129,18 @@ extern "C" {
         );
     }
 
+    EXPORTDLL float MeshObject_get_velocity_scale(MeshObject* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &MeshObject::getVelocityScale, err
+        );
+    }
+
+    EXPORTDLL void MeshObject_set_velocity_scale(MeshObject* obj, float scale, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &MeshObject::setVelocityScale, scale, err
+        );
+    }
+
     EXPORTDLL float MeshObject_get_whitewater_influence(MeshObject* obj, int *err) {
         return CBindings::safe_execute_method_ret_0param(
             obj, &MeshObject::getWhitewaterInfluence, err

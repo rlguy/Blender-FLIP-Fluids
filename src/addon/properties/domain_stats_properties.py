@@ -285,6 +285,18 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         add(path + ".csv_region_format",           "CSV Region Format",      group_id=0)
 
 
+    def repair_corrupt_stats_file(self, stats_filepath):
+        errmsg = "FLIP Fluids Error: Corrupt stats file detected: <" + stats_filepath + ">. "
+        errmsg += "This file may have become corrupted after a Blender crash. Regenerating a new stats file. "
+        errmsg += "Information in the 'Domain > FLIP Fluid Stats' panel may be missing data and may display inaccurate data."
+        print(errmsg)
+        empty_dict = {}
+        empty_json = json.dumps(empty_dict)
+        with open(stats_filepath, 'w', encoding='utf-8') as f:
+            f.write(empty_json)
+        return empty_dict
+
+
     def format_long_time(self, t):
         m, s = divmod(t, 60)
         h, m = divmod(m, 60)
@@ -451,7 +463,13 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             return
 
         with open(statsfile, 'r', encoding='utf-8') as f:
-            statsdata = json.loads(f.read())
+            try:
+                statsdata = json.loads(f.read())
+            except json.decoder.JSONDecodeError:
+                # JSON file may have become corrupted after a crash.
+                # In this case, repair the file by regenerating an
+                # empty JSON file and continue with empty stats.
+                statsdata = self.repair_corrupt_stats_file(statsfile)
 
         framekey = str(self.current_info_frame)
         if not framekey in statsdata:
@@ -708,7 +726,13 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             return
 
         with open(statsfile, 'r', encoding='utf-8') as f:
-            cachedata = json.loads(f.read())
+            try:
+                cachedata = json.loads(f.read())
+            except json.decoder.JSONDecodeError:
+                # JSON file may have become corrupted after a crash.
+                # In this case, repair the file by regenerating an
+                # empty JSON file and continue with empty stats.
+                cachedata = self.repair_corrupt_stats_file(statsfile)
 
         self.is_cache_info_available = True
 
@@ -1149,7 +1173,13 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             return
 
         with open(statsfile, 'r', encoding='utf-8') as f:
-            cachedata = json.loads(f.read())
+            try:
+                cachedata = json.loads(f.read())
+            except json.decoder.JSONDecodeError:
+                # JSON file may have become corrupted after a crash.
+                # In this case, repair the file by regenerating an
+                # empty JSON file and continue with empty stats.
+                cachedata = self.repair_corrupt_stats_file(statsfile)
 
         frame_speed = self._get_estimated_frame_speed(cachedata)
         self.estimated_frame_speed = frame_speed

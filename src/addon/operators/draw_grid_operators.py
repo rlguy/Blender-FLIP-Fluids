@@ -373,25 +373,50 @@ class FlipFluidDrawDebugGrid(bpy.types.Operator):
                 batch = batch_for_shader(shader, 'LINES', {"pos": z_coords})
                 shader.bind()
                 shader.uniform_float("color", (z_color[0], z_color[1], z_color[2], 1.0))
+
+                if vcu.is_blender_35():
+                    # Can be drawn with depth in Blender 3.5 or later
+                    gpu.state.depth_test_set('LESS_EQUAL')
+                    gpu.state.depth_mask_set(True)
                 batch.draw(shader)
+                if vcu.is_blender_35():
+                    gpu.state.depth_mask_set(False)
             if display_grid and dprops.debug.enabled_debug_grids[1]:
                 shader = gpu.shader.from_builtin(line_draw_mode)
                 batch = batch_for_shader(shader, 'LINES', {"pos": y_coords})
                 shader.bind()
                 shader.uniform_float("color", (y_color[0], y_color[1], y_color[2], 1.0))
+                if vcu.is_blender_35():
+                    # Can be drawn with depth in Blender 3.5 or later
+                    gpu.state.depth_test_set('LESS_EQUAL')
+                    gpu.state.depth_mask_set(True)
                 batch.draw(shader)
+                if vcu.is_blender_35():
+                    gpu.state.depth_mask_set(False)
             if display_grid and dprops.debug.enabled_debug_grids[0]:
                 shader = gpu.shader.from_builtin(line_draw_mode)
                 batch = batch_for_shader(shader, 'LINES', {"pos": x_coords})
                 shader.bind()
                 shader.uniform_float("color", (x_color[0], x_color[1], x_color[2], 1.0))
+                if vcu.is_blender_35():
+                    # Can be drawn with depth in Blender 3.5 or later
+                    gpu.state.depth_test_set('LESS_EQUAL')
+                    gpu.state.depth_mask_set(True)
                 batch.draw(shader)
+                if vcu.is_blender_35():
+                    gpu.state.depth_mask_set(False)
             if dprops.debug.display_domain_bounds:
                 shader = gpu.shader.from_builtin(line_draw_mode)
                 batch = batch_for_shader(shader, 'LINES', {"pos": bounds_coords})
                 shader.bind()
                 shader.uniform_float("color", (bounds_color[0], bounds_color[1], bounds_color[2], 1.0))
+                if vcu.is_blender_35():
+                    # Can be drawn with depth in Blender 3.5 or later
+                    gpu.state.depth_test_set('LESS_EQUAL')
+                    gpu.state.depth_mask_set(True)
                 batch.draw(shader)
+                if vcu.is_blender_35():
+                    gpu.state.depth_mask_set(False)
         else:
             import bgl
             bgl.glLineWidth(1)

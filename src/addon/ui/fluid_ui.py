@@ -30,7 +30,8 @@ class FLIPFLUID_PT_FluidTypePanel(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         obj_props = vcu.get_active_object(context).flip_fluid
-        return obj_props.is_active and obj_props.object_type == 'TYPE_FLUID'
+        is_addon_disabled = context.scene.flip_fluid.is_addon_disabled_in_blend_file()
+        return obj_props.is_active and obj_props.object_type == 'TYPE_FLUID' and not is_addon_disabled
 
 
     def draw(self, context):

@@ -24,6 +24,110 @@ IS_FRAME_REQUIRING_RELOAD = False
 RENDER_PRE_FRAME_NUMBER = 0
 IS_KEYFRAMED_HIDE_RENDER_ISSUE_RELEVANT = False
 
+ENABLE_SURFACE_LOAD = True
+ENABLE_FOAM_LOAD = True
+ENABLE_BUBBLE_LOAD = True
+ENABLE_SPRAY_LOAD = True
+ENABLE_DUST_LOAD = True
+ENABLE_OBSTACLE_DEBUG_LOAD = True
+ENABLE_PARTICLE_DEBUG_LOAD = True
+ENABLE_FORCE_FIELD_DEBUG_LOAD = True
+
+
+def is_rendering():
+    global IS_RENDERING
+    return IS_RENDERING
+
+
+def is_simulation_mesh_load_enabled(mesh_name):
+    global ENABLE_SURFACE_LOAD
+    global ENABLE_FOAM_LOAD
+    global ENABLE_BUBBLE_LOAD
+    global ENABLE_SPRAY_LOAD
+    global ENABLE_DUST_LOAD
+    global ENABLE_OBSTACLE_DEBUG_LOAD
+    global ENABLE_PARTICLE_DEBUG_LOAD
+    global ENABLE_FORCE_FIELD_DEBUG_LOAD
+
+    if   mesh_name == 'SURFACE':
+        return ENABLE_SURFACE_LOAD
+    elif mesh_name == 'FOAM':
+        return ENABLE_FOAM_LOAD
+    elif mesh_name == 'BUBBLE':
+        return ENABLE_BUBBLE_LOAD
+    elif mesh_name == 'SPRAY':
+        return ENABLE_SPRAY_LOAD
+    elif mesh_name == 'DUST':
+        return ENABLE_DUST_LOAD
+    elif mesh_name == 'OBSTACLE_DEBUG':
+        return ENABLE_OBSTACLE_DEBUG_LOAD
+    elif mesh_name == 'PARTICLE_DEBUG':
+        return ENABLE_PARTICLE_DEBUG_LOAD
+    elif mesh_name == 'FORCE_FIELD_DEBUG':
+        return ENABLE_FORCE_FIELD_DEBUG_LOAD
+    else:
+        raise Exception("Unknown simulation mesh name: <" + mesh_name + ">")
+
+
+def enable_simulation_mesh_load(mesh_name):
+    global ENABLE_SURFACE_LOAD
+    global ENABLE_FOAM_LOAD
+    global ENABLE_BUBBLE_LOAD
+    global ENABLE_SPRAY_LOAD
+    global ENABLE_DUST_LOAD
+    global ENABLE_OBSTACLE_DEBUG_LOAD
+    global ENABLE_PARTICLE_DEBUG_LOAD
+    global ENABLE_FORCE_FIELD_DEBUG_LOAD
+
+    if   mesh_name == 'SURFACE':
+        ENABLE_SURFACE_LOAD = True
+    elif mesh_name == 'FOAM':
+        ENABLE_FOAM_LOAD = True
+    elif mesh_name == 'BUBBLE':
+        ENABLE_BUBBLE_LOAD = True
+    elif mesh_name == 'SPRAY':
+        ENABLE_SPRAY_LOAD = True
+    elif mesh_name == 'DUST':
+        ENABLE_DUST_LOAD = True
+    elif mesh_name == 'OBSTACLE_DEBUG':
+        ENABLE_OBSTACLE_DEBUG_LOAD = True
+    elif mesh_name == 'PARTICLE_DEBUG':
+        ENABLE_PARTICLE_DEBUG_LOAD = True
+    elif mesh_name == 'FORCE_FIELD_DEBUG':
+        ENABLE_FORCE_FIELD_DEBUG_LOAD = True
+    else:
+        raise Exception("Unknown simulation mesh name: <" + mesh_name + ">")
+
+
+def disable_simulation_mesh_load(mesh_name):
+    global ENABLE_SURFACE_LOAD
+    global ENABLE_FOAM_LOAD
+    global ENABLE_BUBBLE_LOAD
+    global ENABLE_SPRAY_LOAD
+    global ENABLE_DUST_LOAD
+    global ENABLE_OBSTACLE_DEBUG_LOAD
+    global ENABLE_PARTICLE_DEBUG_LOAD
+    global ENABLE_FORCE_FIELD_DEBUG_LOAD
+
+    if   mesh_name == 'SURFACE':
+        ENABLE_SURFACE_LOAD = False
+    elif mesh_name == 'FOAM':
+        ENABLE_FOAM_LOAD = False
+    elif mesh_name == 'BUBBLE':
+        ENABLE_BUBBLE_LOAD = False
+    elif mesh_name == 'SPRAY':
+        ENABLE_SPRAY_LOAD = False
+    elif mesh_name == 'DUST':
+        ENABLE_DUST_LOAD = False
+    elif mesh_name == 'OBSTACLE_DEBUG':
+        ENABLE_OBSTACLE_DEBUG_LOAD = False
+    elif mesh_name == 'PARTICLE_DEBUG':
+        ENABLE_PARTICLE_DEBUG_LOAD = False
+    elif mesh_name == 'FORCE_FIELD_DEBUG':
+        ENABLE_FORCE_FIELD_DEBUG_LOAD = False
+    else:
+        raise Exception("Unknown simulation mesh name: <" + mesh_name + ">")
+
 
 def __update_is_keyframed_hide_render_issue_status(scene):
     global IS_KEYFRAMED_HIDE_RENDER_ISSUE_RELEVANT
@@ -174,7 +278,9 @@ def __load_surface_frame(frameno, force_reload=False, depsgraph=None):
 
     force_load = force_reload or IS_RENDERING
     dprops = __get_domain_properties()
-    dprops.mesh_cache.surface.load_frame(frameno, force_load, depsgraph)
+
+    if is_simulation_mesh_load_enabled('SURFACE'):
+        dprops.mesh_cache.surface.load_frame(frameno, force_load, depsgraph)
 
 
 def __get_whitewater_display_mode():
@@ -398,10 +504,14 @@ def __load_whitewater_particle_frame(frameno, force_reload=False, depsgraph=None
     __update_whitewater_display_mode()
 
     force_load = force_reload or IS_RENDERING
-    dprops.mesh_cache.foam.load_frame(frameno, force_load, depsgraph)
-    dprops.mesh_cache.bubble.load_frame(frameno, force_load, depsgraph)
-    dprops.mesh_cache.spray.load_frame(frameno, force_load, depsgraph)
-    dprops.mesh_cache.dust.load_frame(frameno, force_load, depsgraph)
+    if is_simulation_mesh_load_enabled('FOAM'):
+        dprops.mesh_cache.foam.load_frame(frameno, force_load, depsgraph)
+    if is_simulation_mesh_load_enabled('BUBBLE'):
+        dprops.mesh_cache.bubble.load_frame(frameno, force_load, depsgraph)
+    if is_simulation_mesh_load_enabled('SPRAY'):
+        dprops.mesh_cache.spray.load_frame(frameno, force_load, depsgraph)
+    if is_simulation_mesh_load_enabled('DUST'):
+        dprops.mesh_cache.dust.load_frame(frameno, force_load, depsgraph)
 
 
 def __generate_icosphere_geometry():
@@ -560,7 +670,7 @@ def __load_whitewater_particle_object_frame(frameno, force_reload=False, depsgra
     display_dust_particle =   __get_whitewater_particle_object_display_bool('DUST')
 
     force_load = force_reload or IS_RENDERING
-    if foam_verts and display_foam_particle:
+    if foam_verts and display_foam_particle and is_simulation_mesh_load_enabled('FOAM'):
         dprops.mesh_cache.foam.load_duplivert_object(
                 foam_verts, foam_tris,
                 foam_scale,
@@ -577,7 +687,7 @@ def __load_whitewater_particle_object_frame(frameno, force_reload=False, depsgra
         if vcu.is_blender_279():
             dprops.mesh_cache.foam.set_duplivert_hide_viewport(True)
         
-    if bubble_verts and display_bubble_particle:
+    if bubble_verts and display_bubble_particle and is_simulation_mesh_load_enabled('BUBBLE'):
         dprops.mesh_cache.bubble.load_duplivert_object(
                 bubble_verts, bubble_tris,
                 bubble_scale,
@@ -592,7 +702,7 @@ def __load_whitewater_particle_object_frame(frameno, force_reload=False, depsgra
         if vcu.is_blender_279():
             dprops.mesh_cache.bubble.set_duplivert_hide_viewport(True)
 
-    if spray_verts and display_spray_particle:
+    if spray_verts and display_spray_particle and is_simulation_mesh_load_enabled('SPRAY'):
         dprops.mesh_cache.spray.load_duplivert_object(
                 spray_verts, spray_tris,
                 spray_scale,
@@ -607,7 +717,7 @@ def __load_whitewater_particle_object_frame(frameno, force_reload=False, depsgra
         if vcu.is_blender_279():
             dprops.mesh_cache.spray.set_duplivert_hide_viewport(True)
 
-    if dust_verts and display_dust_particle:
+    if dust_verts and display_dust_particle and is_simulation_mesh_load_enabled('DUST'):
         dprops.mesh_cache.dust.load_duplivert_object(
                 dust_verts, dust_tris,
                 dust_scale,
@@ -638,7 +748,9 @@ def __load_fluid_particle_debug_frame(frameno, force_reload=False):
         return
 
     force_load = force_reload or IS_RENDERING
-    dprops.mesh_cache.gl_particles.load_frame(frameno, force_load)
+
+    if is_simulation_mesh_load_enabled('PARTICLE_DEBUG'):
+        dprops.mesh_cache.gl_particles.load_frame(frameno, force_load)
 
 
 def __load_obstacle_debug_frame(frameno, force_reload=False):
@@ -651,7 +763,8 @@ def __load_obstacle_debug_frame(frameno, force_reload=False):
         return
 
     force_load = force_reload or IS_RENDERING
-    dprops.mesh_cache.obstacle.load_frame(frameno, force_load)
+    if is_simulation_mesh_load_enabled('OBSTACLE_DEBUG'):
+        dprops.mesh_cache.obstacle.load_frame(frameno, force_load)
 
 
 def __load_force_field_debug_frame(frameno, force_reload=False):
@@ -664,7 +777,8 @@ def __load_force_field_debug_frame(frameno, force_reload=False):
         return
 
     force_load = force_reload or IS_RENDERING
-    dprops.mesh_cache.gl_force_field.load_frame(frameno, force_load)
+    if is_simulation_mesh_load_enabled('FORCE_FIELD_DEBUG'):
+        dprops.mesh_cache.gl_force_field.load_frame(frameno, force_load)
 
 
 def __load_frame(frameno, force_reload=False, depsgraph=None):

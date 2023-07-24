@@ -68,6 +68,7 @@ def save_pre():
 
 def save_post():
     object_properties.save_post()
+    helper_properties.save_post()
 
 
 def register():

@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, os, stat, subprocess, platform, math, mathutils, fnmatch, random, mathutils, datetime
+import bpy, os, stat, subprocess, platform, math, mathutils, fnmatch, random, mathutils, datetime, shutil
 from bpy.props import (
         BoolProperty,
         StringProperty
@@ -1467,7 +1467,6 @@ class FlipFluidHelperCommandLineBake(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        system = platform.system()
         return context.scene.flip_fluid.get_domain_object() is not None and bool(bpy.data.filepath)
 
 
@@ -1649,7 +1648,6 @@ class FlipFluidHelperCommandLineRender(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        system = platform.system()
         return bool(bpy.data.filepath)
 
 
@@ -1758,7 +1756,6 @@ class FlipFluidHelperCommandLineRenderFrame(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        system = platform.system()
         return bool(bpy.data.filepath)
 
 
@@ -1885,6 +1882,122 @@ class FlipFluidHelperCmdRenderFrameToClipboard(bpy.types.Operator):
         return {'FINISHED'}
 
 
+
+
+
+
+
+class FlipFluidHelperCommandLineAlembicExport(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_command_line_alembic_export"
+    bl_label = "Launch Alembic Export"
+    bl_description = ("Launch a new command line window and start exporting the simulation meshes to the Alembic (.abc) format." +
+                     " The .blend file will need to be saved before using this operator")
+
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.flip_fluid.get_domain_object() is not None and bool(bpy.data.filepath)
+
+
+    def execute(self, context):
+        script_path = os.path.dirname(os.path.realpath(__file__))
+        script_path = os.path.dirname(script_path)
+        script_path = os.path.join(script_path, "resources", "command_line_scripts", "alembic_export.py")
+
+        system = platform.system()
+        if system == "Windows":
+            restore_blender_original_cwd()
+            if vcu.is_blender_28():
+                blender_exe_path = bpy.app.binary_path
+                if " " in blender_exe_path:
+                    # Some versions of Blender 2.8+ don't support spaces in the executable path
+                    blender_exe_path = "blender.exe"
+            else:
+                # subproccess.call() in Blender 2.79 Python does not seem to support spaces in the 
+                # executable path, so we'll just use blender.exe and hope that no other addon has
+                # changed Blender's working directory
+                blender_exe_path = "blender.exe"
+
+            command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" --python \"" + script_path + "\""
+            command = ["start", "cmd", "/k", blender_exe_path, "--background", bpy.data.filepath, "--python", script_path]
+            subprocess.call(command, shell=True)
+
+        elif system == "Darwin" or system == "Linux":
+            command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" --python \"" + script_path + "\""
+            script_text = "#!/bin/bash\n" + command_text
+            script_name = "ALEMBIC_EXPORT_" + bpy.path.basename(context.blend_data.filepath) + ".sh"
+            script_filepath = os.path.join(os.path.dirname(bpy.data.filepath), script_name)
+            with open(script_filepath, 'w') as f:
+                f.write(script_text)
+
+            st = os.stat(script_filepath)
+            os.chmod(script_filepath, st.st_mode | stat.S_IEXEC)
+            
+            if system == "Darwin":
+                subprocess.call(["open", "-a", "Terminal", script_filepath])
+            else:
+                if shutil.which("gnome-terminal") is not None and shutil.which("bash") is not None:
+                    # Requited to escape spaces for the script_filepath + "; exec bash" command to run
+                    script_filepath = script_filepath.replace(" ", "\\ ")
+                    subprocess.call(["gnome-terminal", "--", "bash", "-c", script_filepath + "; exec bash"])
+                elif shutil.which("xterm") is not None:
+                    subprocess.call(["xterm", "-hold", "-e", script_filepath])
+                else:
+                    errmsg = "This feature requires the Xterm program to be installed and to be accessible on the"
+                    errmsg += " system path. Either install Xterm, restart Blender, and try again or use the"
+                    errmsg += " Copy Command to Clipboard operator and paste into a terminal program of your choice."
+                    bpy.ops.flip_fluid_operators.display_error(
+                        'INVOKE_DEFAULT',
+                        error_message="Linux: Unable to launch new terminal window",
+                        error_description=errmsg,
+                        popup_width=600
+                        )
+
+        else:
+            # Platform not found
+            return {'CANCELLED'}
+
+        info_msg = "Launched command line Alembic export window. If the Alembic export process did not begin,"
+        info_msg += " this may be caused by a conflict with another addon or a security feature of your OS that restricts"
+        info_msg += " automatic command execution. You may try copying the following command manually into a command line window:\n\n"
+        info_msg += command_text + "\n\n"
+        info_msg += "For more information on command line operators, visit our documentation:\n"
+        info_msg += "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Helper-Menu-Settings#command-line-tools"
+        self.report({'INFO'}, info_msg)
+
+        return {'FINISHED'}
+
+
+class FlipFluidHelperCmdAlembicExportToClipboard(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_cmd_alembic_export_to_clipboard"
+    bl_label = "Launch Alembic Export"
+    bl_description = ("Copy command for Alembic export to your system clipboard." +
+                     " The .blend file will need to be saved before using this operator")
+
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.flip_fluid.get_domain_object() is not None and bool(bpy.data.filepath)
+
+
+    def execute(self, context):
+        script_path = os.path.dirname(os.path.realpath(__file__))
+        script_path = os.path.dirname(script_path)
+        script_path = os.path.join(script_path, "resources", "command_line_scripts", "alembic_export.py")
+        frame_string = str(bpy.context.scene.frame_current)
+        
+        command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" --python \"" + script_path + "\""
+        bpy.context.window_manager.clipboard = command_text
+          
+        info_msg = "Copied the following Alembic export command to your clipboard:\n\n"
+        info_msg += command_text + "\n\n"
+        info_msg += "For more information on command line tools, visit our documentation:\n"
+        info_msg += "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Helper-Menu-Settings#command-line-tools"
+        self.report({'INFO'}, info_msg)
+
+        return {'FINISHED'}
+
+
 def is_geometry_node_point_cloud_detected():
     if not vcu.is_blender_31():
         return False
@@ -1938,6 +2051,9 @@ class FlipFluidHelperInitializeMotionBlur(bpy.types.Operator):
     bl_description = ("Initialize all settings and Geometry Node groups required for motion blur rendering." + 
                       " This will be applied to the fluid surface and whitewater particles (if enabled)." + 
                       " Node groups can be customized in the geometry nodes editor and modifier")
+
+    resource_prefix = StringProperty(default="FF_MotionBlur")
+    exec(vcu.convert_attribute_to_28("resource_prefix"))
 
 
     @classmethod
@@ -2012,11 +2128,11 @@ class FlipFluidHelperInitializeMotionBlur(bpy.types.Operator):
             self.report({'INFO'}, "Enabled generation of whitewater velocity vector attributes in FLIP Fluid Whitewater (baking required)")
 
         blend_filename = "geometry_nodes_library.blend"
-        surface_resource = "FF_MotionBlurSurface"
-        whitewater_foam_resource = "FF_MotionBlurWhitewaterFoam"
-        whitewater_bubble_resource = "FF_MotionBlurWhitewaterBubble"
-        whitewater_spray_resource = "FF_MotionBlurWhitewaterSpray"
-        whitewater_dust_resource = "FF_MotionBlurWhitewaterDust"
+        surface_resource = self.resource_prefix + "Surface"
+        whitewater_foam_resource = self.resource_prefix + "WhitewaterFoam"
+        whitewater_bubble_resource = self.resource_prefix + "WhitewaterBubble"
+        whitewater_spray_resource = self.resource_prefix + "WhitewaterSpray"
+        whitewater_dust_resource = self.resource_prefix + "WhitewaterDust"
 
         parent_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         resource_filepath = os.path.join(parent_path, "resources", "geometry_nodes", blend_filename)
@@ -2068,6 +2184,77 @@ class FlipFluidHelperInitializeMotionBlur(bpy.types.Operator):
                 info_msg = "Enabled motion blur rendering on " + target_object.name + " object"
                 self.report({'INFO'}, info_msg)
 
+        return {'FINISHED'}
+
+
+class FlipFluidHelperRemoveMotionBlur(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_remove_motion_blur"
+    bl_label = "Remove Motion Blur"
+    bl_description = ("Remove the motion blur setup from the fluid surface and whitewater" +
+            " particles (if enabled). This will remove the motion blur Geometry Node" +
+            " groups and disable object motion blur for the surface/whitewater. Note: this" +
+            " operator will not disable the Domain surface/whitewater velocity attribute settings")
+
+
+    resource_prefix = StringProperty(default="FF_MotionBlur")
+    exec(vcu.convert_attribute_to_28("resource_prefix"))
+
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.flip_fluid.get_domain_object() is not None
+
+
+    def execute(self, context):
+        if not vcu.is_blender_31():
+            self.report({'INFO'}, "Blender 3.1 or later is required for this feature")
+            return {'CANCELLED'}
+
+        if not context.scene.flip_fluid.is_domain_in_active_scene():
+            self.report({"ERROR"}, 
+                         "Active scene must contain domain object to use this operator. Select the scene that contains the domain object and try again.")
+            return {'CANCELLED'}
+
+        dprops = context.scene.flip_fluid.get_domain_properties()
+
+        surface_mesh_caches = [dprops.mesh_cache.surface]
+        surface_cache_objects = []
+        for m in surface_mesh_caches:
+            bl_object = m.get_cache_object()
+            if bl_object is not None:
+                 surface_cache_objects.append(bl_object)
+
+        whitewater_mesh_caches = [
+                dprops.mesh_cache.foam, 
+                dprops.mesh_cache.bubble, 
+                dprops.mesh_cache.spray, 
+                dprops.mesh_cache.dust
+                ]
+        whitewater_cache_objects = []
+        for m in whitewater_mesh_caches:
+            bl_object = m.get_cache_object()
+            if bl_object is not None:
+                 whitewater_cache_objects.append(bl_object)
+
+        is_setup_modified = False
+        cache_objects = surface_cache_objects + whitewater_cache_objects
+        modifier_name_prefix = self.resource_prefix
+        for bl_object in cache_objects:
+            geometry_node_modifiers = [mod for mod in bl_object.modifiers if mod.type == "NODES"]
+            modifiers_to_remove = [mod for mod in geometry_node_modifiers if mod.node_group.name.startswith(modifier_name_prefix)]
+            for mod in modifiers_to_remove:
+                self.report({'INFO'}, "Removed " + mod.name + " Geometry Node modifier from " + bl_object.name + " object")
+                bl_object.modifiers.remove(mod)
+                is_setup_modified = True
+
+        for bl_object in cache_objects:
+            if bl_object.cycles.use_motion_blur:
+                self.report({'INFO'}, "Disabled motion blur rendering on " + bl_object.name + " object")
+                bl_object.cycles.use_motion_blur = False
+                is_setup_modified = True
+
+        if not is_setup_modified:
+            self.report({'INFO'}, "No motion blur setup detected")
 
         return {'FINISHED'}
 
@@ -2951,6 +3138,69 @@ class FlipFluidClearMeasureObjectSpeed(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class FlipFluidDisableAddonInBlendFile(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.disable_addon_in_blend_file"
+    bl_label = "Disable FLIP Fluids in Blend File"
+    bl_description = ("Disable the FLIP Fluids addon in this Blend file." +
+        " The FLIP Fluids addon can add overhead to the Blend file due to" +
+        " scripts that manage all of the functionality of the addon. This" +
+        " operator can be used to temporarily disable the addon to speed up" +
+        " this Blend file when you are not actively using the addon")
+
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+
+    def execute(self, context):
+        if bake_operators.is_bake_operator_running():
+            err_msg = "Unable to disable addon while simulation is baking. Stop simulation bake or reload the Blend file and try again."
+            self.report({'ERROR'}, err_msg)
+            return {'CANCELLED'}
+
+        if render.is_rendering():
+            err_msg = "Unable to disable addon while rendering. Stop the render or reload the Blend file and try again."
+            self.report({'ERROR'}, err_msg)
+            return {'CANCELLED'}
+
+        for scene in bpy.data.scenes:
+            scene.flip_fluid_helper.disable_addon_in_blend_file = True
+
+        info_msg = "The FLIP Fluids Addon has been disabled in this Blend file. Re-enable to resume using the addon."
+        self.report({'INFO'}, info_msg)
+
+        return {'FINISHED'}
+
+
+class FlipFluidEnableAddonInBlendFile(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.enable_addon_in_blend_file"
+    bl_label = "Enable FLIP Fluids in Blend File"
+    bl_description = ("Re-enable the FLIP Fluids addon in this Blend file." +
+        " This operator will re-activate the addons management scripts. Enabling" +
+        " the addon is required to use the addon. Disabling addon" +
+        " reduces overhead and can speed up Blend file when the addon is not actively used")
+
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+
+    def execute(self, context):
+        for scene in bpy.data.scenes:
+            scene.flip_fluid_helper.disable_addon_in_blend_file = False
+
+        from .. import load_post, load_pre
+        load_pre(None)
+        load_post(None)
+
+        info_msg = "The FLIP Fluids Addon has been re-enabled in this Blend file."
+        self.report({'INFO'}, info_msg)
+
+        return {'FINISHED'}
+
+
 def register():
     classes = [
         FlipFluidHelperRemesh,
@@ -2977,11 +3227,14 @@ def register():
         FlipFluidHelperCommandLineRender,
         FlipFluidHelperCommandLineRenderToClipboard,
         FlipFluidHelperCommandLineRenderFrame,
+        FlipFluidHelperCommandLineAlembicExport,
+        FlipFluidHelperCmdAlembicExportToClipboard,
         FlipFluidHelperCmdRenderFrameToClipboard,
         FlipFluidHelperCommandLineRenderToScriptfile,
         FlipFluidHelperRunScriptfile,
         FlipFluidHelperOpenOutputFolder,
         FlipFluidHelperInitializeMotionBlur,
+        FlipFluidHelperRemoveMotionBlur,
         FlipFluidHelperStableRendering279,
         FlipFluidHelperStableRendering28,
         FlipFluidHelperSetLinearOverrideKeyframes,
@@ -3008,6 +3261,8 @@ def register():
         FlipFluidCopySettingsFromActive,
         FlipFluidMeasureObjectSpeed,
         FlipFluidClearMeasureObjectSpeed,
+        FlipFluidDisableAddonInBlendFile,
+        FlipFluidEnableAddonInBlendFile,
         ]
 
     # Workaround for a bug in FLIP Fluids 1.6.0
@@ -3049,10 +3304,13 @@ def unregister():
     bpy.utils.unregister_class(FlipFluidHelperCommandLineRenderToClipboard)
     bpy.utils.unregister_class(FlipFluidHelperCommandLineRenderFrame)
     bpy.utils.unregister_class(FlipFluidHelperCmdRenderFrameToClipboard)
+    bpy.utils.unregister_class(FlipFluidHelperCommandLineAlembicExport)
+    bpy.utils.unregister_class(FlipFluidHelperCmdAlembicExportToClipboard)
     bpy.utils.unregister_class(FlipFluidHelperCommandLineRenderToScriptfile)
     bpy.utils.unregister_class(FlipFluidHelperRunScriptfile)
     bpy.utils.unregister_class(FlipFluidHelperOpenOutputFolder)
     bpy.utils.unregister_class(FlipFluidHelperInitializeMotionBlur)
+    bpy.utils.unregister_class(FlipFluidHelperRemoveMotionBlur)
     bpy.utils.unregister_class(FlipFluidHelperStableRendering279)
     bpy.utils.unregister_class(FlipFluidHelperStableRendering28)
     bpy.utils.unregister_class(FlipFluidHelperSetLinearOverrideKeyframes)
@@ -3079,3 +3337,5 @@ def unregister():
     bpy.utils.unregister_class(FlipFluidCopySettingsFromActive)
     bpy.utils.unregister_class(FlipFluidMeasureObjectSpeed)
     bpy.utils.unregister_class(FlipFluidClearMeasureObjectSpeed)
+    bpy.utils.unregister_class(FlipFluidDisableAddonInBlendFile)
+    bpy.utils.unregister_class(FlipFluidEnableAddonInBlendFile)

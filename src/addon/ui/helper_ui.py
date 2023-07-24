@@ -22,6 +22,7 @@ from ..utils import api_workaround_utils as api_utils
 from ..utils import version_compatibility_utils as vcu
 from ..utils import installation_utils
 
+
 class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
     bl_label = "Simulation Setup"
     bl_category = "FLIP Fluids"
@@ -37,14 +38,8 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
         return True
 
 
-    def draw(self, context):
-        if not installation_utils.is_installation_complete():
-            box = self.layout.box()
-            box.label(text="IMPORTANT: Please Complete Installation", icon="ERROR")
-            box.label(text="Click here to complete installation of the FLIP Fluids Addon:")
-            box.operator("flip_fluid_operators.complete_installation", icon='MOD_FLUIDSIM')
-            return
-
+    def draw_simulation_setup_panel(self, context):
+        is_addon_disabled = context.scene.flip_fluid.is_addon_disabled_in_blend_file()
         hprops = context.scene.flip_fluid_helper
         preferences = vcu.get_addon_preferences(context)
 
@@ -219,7 +214,7 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
             icon_only=True, 
             emboss=False
         )
-        row.label(text="Add Objects:")
+        row.label(text="Add / Remove Objects:")
 
         if hprops.add_remove_objects_expanded:
             column = box.column()
@@ -374,48 +369,143 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
             row.label(text="Save before running CMD operators:")
             row.operator("flip_fluid_operators.helper_save_blend_file", icon='FILE_TICK', text="Save").save_as_blend_file = False
 
-            subbox = box.box()
-            subbox.label(text="Bake:")
-            column = subbox.column(align=True)
-            row = column.row(align=True)
-            row.operator("flip_fluid_operators.helper_command_line_bake")
-            row.operator("flip_fluid_operators.helper_command_line_bake_to_clipboard", text="", icon='COPYDOWN')
-            row = column.row(align=True)
-            row.prop(hprops, "cmd_launch_render_after_bake")
-
-            system = platform.system()
-            if system == "Windows":
-                row = row.row(align=True)
-                row.enabled = hprops.cmd_launch_render_after_bake
-                row.prop(hprops, "cmd_launch_render_mode", text="")
+            ### Command Line Bake ###
 
             subbox = box.box()
-            subbox.label(text="Render Animation:")
-            column = subbox.column(align=True)
-            row = column.row(align=True)
-            row.operator("flip_fluid_operators.helper_command_line_render")
-            row.operator("flip_fluid_operators.helper_command_line_render_to_clipboard", text="", icon='COPYDOWN')
+            row = subbox.row(align=True)
+            row.prop(hprops, "command_line_bake_expanded",
+                icon="TRIA_DOWN" if hprops.command_line_bake_expanded else "TRIA_RIGHT",
+                icon_only=True, 
+                emboss=False
+            )
+            row.label(text="Bake:")
 
-            system = platform.system()
-            if system == "Windows":
+            if hprops.command_line_bake_expanded:
+                column = subbox.column(align=True)
                 row = column.row(align=True)
-                row.operator("flip_fluid_operators.helper_cmd_render_to_scriptfile")
-                row.operator("flip_fluid_operators.helper_run_scriptfile", text="", icon='PLAY')
-                row.operator("flip_fluid_operators.helper_open_outputfolder", text="", icon='FILE_FOLDER')
+                row.operator("flip_fluid_operators.helper_command_line_bake")
+                row.operator("flip_fluid_operators.helper_command_line_bake_to_clipboard", text="", icon='COPYDOWN')
+                row = column.row(align=True)
+                row.prop(hprops, "cmd_launch_render_after_bake")
+
+                system = platform.system()
+                if system == "Windows":
+                    row = row.row(align=True)
+                    row.enabled = hprops.cmd_launch_render_after_bake
+                    row.prop(hprops, "cmd_launch_render_mode", text="")
+            else:
+                row = row.row(align=True)
+                row.operator("flip_fluid_operators.helper_command_line_bake")
+                row.operator("flip_fluid_operators.helper_command_line_bake_to_clipboard", text="", icon='COPYDOWN')
+
+            ### Command Line Render Animation ###
+
+            subbox = box.box()
+            row = subbox.row(align=True)
+            row.prop(hprops, "command_line_render_expanded",
+                icon="TRIA_DOWN" if hprops.command_line_render_expanded else "TRIA_RIGHT",
+                icon_only=True, 
+                emboss=False
+            )
+            row.label(text="Render Animation:")
+
+            if hprops.command_line_render_expanded:
+                column = subbox.column(align=True)
+                row = column.row(align=True)
+                row.operator("flip_fluid_operators.helper_command_line_render")
+                row.operator("flip_fluid_operators.helper_command_line_render_to_clipboard", text="", icon='COPYDOWN')
+
+                system = platform.system()
+                if system == "Windows":
+                    row = column.row(align=True)
+                    row.operator("flip_fluid_operators.helper_cmd_render_to_scriptfile")
+                    row.operator("flip_fluid_operators.helper_run_scriptfile", text="", icon='PLAY')
+                    row.operator("flip_fluid_operators.helper_open_outputfolder", text="", icon='FILE_FOLDER')
+            else:
+                row = row.row(align=True)
+                row.operator("flip_fluid_operators.helper_command_line_render")
+                row.operator("flip_fluid_operators.helper_command_line_render_to_clipboard", text="", icon='COPYDOWN')
+
+            ### Command Line Render Frame ###
+
+            subbox = box.box()
+            row = subbox.row(align=True)
+            row.prop(hprops, "command_line_render_frame_expanded",
+                icon="TRIA_DOWN" if hprops.command_line_render_frame_expanded else "TRIA_RIGHT",
+                icon_only=True, 
+                emboss=False
+            )
+            row.label(text="Render Frame:")
+
+            if hprops.command_line_render_frame_expanded:
+                column = subbox.column(align=True)
+                row = column.row(align=True)
+                row.operator("flip_fluid_operators.helper_command_line_render_frame")
+                row.operator("flip_fluid_operators.helper_cmd_render_frame_to_clipboard", text="", icon='COPYDOWN')
+                row = column.row(align=True)
+                row.prop(hprops, "cmd_open_image_after_render")
+
+                system = platform.system()
+                if system == "Windows":
+                    row = column.row(align=True)
+                    row.prop(hprops, "cmd_close_window_after_render")
+            else:
+                row = row.row(align=True)
+                row.operator("flip_fluid_operators.helper_command_line_render_frame")
+                row.operator("flip_fluid_operators.helper_cmd_render_frame_to_clipboard", text="", icon='COPYDOWN')
+
+            ### Command Line Alembic Export ###
+
+            subbox = box.box()
+            row = subbox.row(align=True)
+            row.prop(hprops, "command_line_alembic_export_expanded",
+                icon="TRIA_DOWN" if hprops.command_line_alembic_export_expanded else "TRIA_RIGHT",
+                icon_only=True, 
+                emboss=False
+            )
+            row.label(text="Alembic Export:")
+
+            if hprops.command_line_alembic_export_expanded:
+                column = subbox.column(align=True)
+                row = column.row(align=True)
+                row.operator("flip_fluid_operators.helper_command_line_alembic_export")
+                row.operator("flip_fluid_operators.helper_cmd_alembic_export_to_clipboard", text="", icon='COPYDOWN')
                 column.separator()
 
-            subbox = box.box()
-            subbox.label(text="Render Frame:")
-            column = subbox.column(align=True)
-            row = column.row(align=True)
-            row.operator("flip_fluid_operators.helper_command_line_render_frame")
-            row.operator("flip_fluid_operators.helper_cmd_render_frame_to_clipboard", text="", icon='COPYDOWN')
-            row = column.row(align=True)
-            row.prop(hprops, "cmd_open_image_after_render")
-
-            if system == "Windows":
+                column.label(text="Mesh and Data Export:")
                 row = column.row(align=True)
-                row.prop(hprops, "cmd_close_window_after_render")
+                row.prop(hprops, "alembic_export_surface")
+                row.prop(hprops, "alembic_export_foam")
+                row.prop(hprops, "alembic_export_bubble")
+                row.prop(hprops, "alembic_export_spray")
+                row.prop(hprops, "alembic_export_dust")
+                row = column.row(align=True)
+                row.prop(hprops, "alembic_export_velocity")
+                column.separator()
+
+                column.label(text="Frame Range:")
+                row = column.row()
+                row.prop(hprops, "alembic_frame_range_mode", expand=True)
+                row = column.row(align=True)
+                if hprops.alembic_frame_range_mode == 'FRAME_RANGE_TIMELINE':
+                    row_left = row.row(align=True)
+                    row_right = row.row(align=True)
+                    row_left.prop(context.scene, "frame_start")
+                    row_right.prop(context.scene, "frame_end")
+                else:
+                    row_left = row.row(align=True)
+                    row_right = row.row(align=True)
+                    row_left.prop(hprops.alembic_frame_range_custom, "value_min")
+                    row_right.prop(hprops.alembic_frame_range_custom, "value_max")
+
+                column.separator()
+                column.label(text="Alembic Output:")
+                column.prop(hprops, "alembic_output_filepath")
+
+            else:
+                row = row.row(align=True)
+                row.operator("flip_fluid_operators.helper_command_line_alembic_export")
+                row.operator("flip_fluid_operators.helper_cmd_alembic_export_to_clipboard", text="", icon='COPYDOWN')
 
         #
         # Geometry Node Tools
@@ -453,9 +543,10 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                     icon="WORLD"
                 ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Preferences-Menu-Settings#developer-tools"
 
-            column = box.column(align=True)
+            column = box.column(align=False)
             column.enabled = vcu.is_blender_31() and is_developer_mode
-            column.operator("flip_fluid_operators.helper_initialize_motion_blur")
+            column.operator("flip_fluid_operators.helper_initialize_motion_blur", icon='ADD')
+            column.operator("flip_fluid_operators.helper_remove_motion_blur", icon='REMOVE')
 
 
         #
@@ -636,6 +727,66 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
             ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Scene-Troubleshooting"
 
 
+    def draw_disable_addon_submenu(self, context):
+        #
+        # Disable Addon in Blend File
+        #
+
+        is_addon_disabled = context.scene.flip_fluid.is_addon_disabled_in_blend_file()
+        hprops = context.scene.flip_fluid_helper
+        preferences = vcu.get_addon_preferences(context)
+
+        box = self.layout.box()
+        row = box.row(align=True)
+        row.alignment = 'LEFT'
+        row.prop(hprops, "disable_addon_expanded",
+            icon="TRIA_DOWN" if hprops.disable_addon_expanded else "TRIA_RIGHT",
+            icon_only=True, 
+            emboss=False
+        )
+        if is_addon_disabled:
+            row.label(text="Enable Addon:")
+            row.alert = True
+            row.label(text="FLIP Fluids is disabled")
+            row.label(text="", icon='X')
+        else:
+            row.label(text="Disable Addon:")
+            row.label(text="FLIP Fluids is enabled")
+            row.label(text="", icon='CHECKMARK')
+
+        if hprops.disable_addon_expanded:
+            if is_addon_disabled:
+                operator_name = "flip_fluid_operators.enable_addon_in_blend_file"
+            else:
+                operator_name = "flip_fluid_operators.disable_addon_in_blend_file"
+
+            icon = context.scene.flip_fluid.get_logo_icon()
+            column = box.column(align=True)
+            if icon is not None:
+                column.operator(operator_name, icon_value=icon.icon_id)
+            else:
+                column.operator(operator_name, icon='X')
+
+
+    def draw(self, context):
+        if not installation_utils.is_installation_complete():
+            box = self.layout.box()
+            box.label(text="IMPORTANT: Please Complete Installation", icon="ERROR")
+            box.label(text="Click here to complete installation of the FLIP Fluids Addon:")
+            box.operator("flip_fluid_operators.complete_installation", icon='MOD_FLUIDSIM')
+            return
+
+        is_addon_disabled = context.scene.flip_fluid.is_addon_disabled_in_blend_file()
+        hprops = context.scene.flip_fluid_helper
+        preferences = vcu.get_addon_preferences(context)
+
+        if not is_addon_disabled:
+            self.draw_simulation_setup_panel(context)
+
+        self.draw_disable_addon_submenu(context)
+        
+
+
 class FLIPFLUID_PT_HelperPanelDisplay(bpy.types.Panel):
     bl_label = "Display and Playback"
     bl_category = "FLIP Fluids"
@@ -648,7 +799,7 @@ class FLIPFLUID_PT_HelperPanelDisplay(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return True
+        return not context.scene.flip_fluid.is_addon_disabled_in_blend_file()
 
 
     def draw(self, context):
@@ -774,7 +925,8 @@ class FLIPFLUID_PT_HelperTechnicalSupport(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         prefs = vcu.get_addon_preferences()
-        return prefs.enable_support_tools
+        is_addon_disabled = context.scene.flip_fluid.is_addon_disabled_in_blend_file()
+        return prefs.enable_support_tools and not is_addon_disabled
 
 
     def draw(self, context):

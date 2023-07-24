@@ -324,7 +324,7 @@ class BakeFluidSimulation(bpy.types.Operator):
                 os.makedirs(cache_directory)
             except:
                 msg = "Unable to create cache directory: <" + cache_directory + "> "
-                msg += "Set the FLIP Fluid Cache directory to a location with write permissions."
+                msg += "Set the cache directory in the 'Domain > FLIP Fluid Cache panel' to a location on your system with write permissions."
                 self.report({"ERROR_INVALID_INPUT"}, msg)
                 return {'CANCELLED'}
 

@@ -74,6 +74,9 @@ from .utils import version_compatibility_utils as vcu
 
 @bpy.app.handlers.persistent
 def scene_update_post(scene):
+    if scene.flip_fluid.is_addon_disabled_in_blend_file():
+        return
+
     installation_utils.scene_update_post(scene)
     if installation_utils.is_addon_active():
         if not render.is_rendering():
@@ -86,42 +89,64 @@ def scene_update_post(scene):
 
 @bpy.app.handlers.persistent
 def render_init(scene):
+    if scene.flip_fluid.is_addon_disabled_in_blend_file():
+        return
+
     render.render_init(scene)
 
 
 @bpy.app.handlers.persistent
 def render_complete(scene):
+    if scene.flip_fluid.is_addon_disabled_in_blend_file():
+        return
+
     render.render_complete(scene)
 
 
 @bpy.app.handlers.persistent
 def render_cancel(scene):
+    if scene.flip_fluid.is_addon_disabled_in_blend_file():
+        return
+
     render.render_cancel(scene)
 
 
 @bpy.app.handlers.persistent
 def frame_change_pre(scene, depsgraph=None):
-    pass
+    if scene.flip_fluid.is_addon_disabled_in_blend_file():
+        return
 
 
 @bpy.app.handlers.persistent
 def frame_change_post(scene, depsgraph=None):
+    if scene.flip_fluid.is_addon_disabled_in_blend_file():
+        return
+
     properties.frame_change_post(scene, depsgraph)
     render.frame_change_post(scene, depsgraph)
 
 
 @bpy.app.handlers.persistent
 def render_pre(scene, depsgraph=None):
+    if scene.flip_fluid.is_addon_disabled_in_blend_file():
+        return
+
     render.render_pre(scene)
 
 
 @bpy.app.handlers.persistent
 def load_pre(nonedata):
+    if bpy.context.scene.flip_fluid.is_addon_disabled_in_blend_file():
+        return
+
     properties.load_pre()
 
 
 @bpy.app.handlers.persistent
 def load_post(nonedata):
+    if bpy.context.scene.flip_fluid.is_addon_disabled_in_blend_file():
+        return
+
     if vcu.is_blender_28() and not vcu.is_blender_281():
         print("FLIP FLUIDS WARNING: Blender 2.80 contains bugs that can cause frequent crashes during render, Alembic export, and rigid/cloth simulation baking. Blender version 2.81 or higher is recommended.")
 
@@ -134,11 +159,17 @@ def load_post(nonedata):
 
 @bpy.app.handlers.persistent
 def save_pre(nonedata):
+    if bpy.context.scene.flip_fluid.is_addon_disabled_in_blend_file():
+        return
+
     properties.save_pre()
 
 
 @bpy.app.handlers.persistent
 def save_post(nonedata):
+    if bpy.context.scene.flip_fluid.is_addon_disabled_in_blend_file():
+        return
+        
     properties.save_post()
     exit_handler.save_post()
 

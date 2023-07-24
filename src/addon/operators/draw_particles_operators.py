@@ -116,7 +116,18 @@ def update_debug_particle_geometry(context):
             }
         """
 
-        particle_shader = gpu.types.GPUShader(vertex_shader, fragment_shader)
+        if vcu.is_blender_35():
+            # Needed for support on MacOS Apple Silicon systems in Blender 3.5 or later
+            # Could possibly be a Blender regression bug why the below method no longer
+            # works in Blender 3.5 or later for MacOS. Should file a report.
+            shader_name = '3D_SMOOTH_COLOR'
+            if vcu.is_blender_40():
+                shader_name = 'SMOOTH_COLOR'
+
+            particle_shader = gpu.shader.from_builtin(shader_name)
+        else:
+            particle_shader = gpu.types.GPUShader(vertex_shader, fragment_shader)
+
         particle_batch_draw = batch_for_shader(
             particle_shader, 'POINTS',
             {"pos": particle_vertices, "color": particle_vertex_colors},
@@ -231,7 +242,15 @@ class FlipFluidDrawGLParticles(bpy.types.Operator):
                 # importing bgl generates a warning, and possibly an error in Blender >= 4.0.
                 import bgl
                 bgl.glPointSize(dprops.debug.particle_size)
+
+            if vcu.is_blender_35():
+                # Can be drawn with depth in Blender 3.5 or later
+                gpu.state.depth_test_set('LESS_EQUAL')
+                gpu.state.depth_mask_set(True)
             particle_batch_draw.draw(particle_shader)
+            if vcu.is_blender_35():
+                gpu.state.depth_mask_set(False)
+
         else:
             # only attempt to import bgl when necessary (older versions of Blender). In Blender >= 3.5,
             # importing bgl generates a warning, and possibly an error in Blender >= 4.0.
