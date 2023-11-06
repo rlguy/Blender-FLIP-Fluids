@@ -26,21 +26,140 @@ SOFTWARE.
 #define FLUIDENGINE_GRIDUTILS_H
 
 #include "array3d.h"
+#include "grid3d.h"
+#include "threadutils.h"
 
 namespace GridUtils {
-    void extrapolateGrid(Array3d<float> *grid, Array3d<bool> *valid, int numLayers);
+
     void _initializeStatusGridThread(int startidx, int endidx, Array3d<bool> *valid, Array3d<char> *status);
     void _findExtrapolationCells(int startidx, int endidx, Array3d<char> *status, std::vector<GridIndex> *cells);
-    void _extrapolateCellsThread(int startidx, int endidx, 
-                                 std::vector<GridIndex> *cells, 
-                                 Array3d<char> *status, 
-                                 Array3d<float> *grid);
 
     void featherGrid6(Array3d<bool> *grid, int numthreads);
     void _featherGrid6Thread(Array3d<bool> *grid, Array3d<bool> *valid, int startidx, int endidx);
 
     void featherGrid26(Array3d<bool> *grid, int numthreads);
     void _featherGrid26Thread(Array3d<bool> *grid, Array3d<bool> *valid, int startidx, int endidx);
+
+    template <class T>
+    void _extrapolateCellsThread(int startidx, int endidx, 
+                                 std::vector<GridIndex> *cells, 
+                                 Array3d<char> *status, 
+                                 Array3d<T> *grid) {
+        char DONE = 0x03;
+
+        for (int idx = startidx; idx < endidx; idx++) {
+            GridIndex g = cells->at(idx);
+            T sum = T();
+            int count = 0;
+
+            GridIndex n(g.i + 1, g.j, g.k);
+            if (status->get(n) == DONE) {
+                sum += grid->get(n);
+                count++;
+            }
+
+            n = GridIndex(g.i - 1, g.j, g.k);
+            if (status->get(n) == DONE) {
+                sum += grid->get(n);
+                count++;
+            }
+
+            n = GridIndex(g.i, g.j + 1, g.k);
+            if (status->get(n) == DONE) {
+                sum += grid->get(n);
+                count++;
+            }
+
+            n = GridIndex(g.i, g.j - 1, g.k);
+            if (status->get(n) == DONE) {
+                sum += grid->get(n);
+                count++;
+            }
+
+            n = GridIndex(g.i, g.j, g.k + 1);
+            if (status->get(n) == DONE) {
+                sum += grid->get(n);
+                count++;
+            }
+
+            n = GridIndex(g.i, g.j, g.k - 1);
+            if (status->get(n) == DONE) {
+                sum += grid->get(n);
+                count++;
+            }
+
+            grid->set(g, sum /(float)count);
+        }
+    }
+
+    template <class T>
+    void extrapolateGrid(Array3d<T> *grid, Array3d<bool> *valid, int numLayers) {
+        // char UNKNOWN = 0x00;
+        // char WAITING = 0x01;
+        // char KNOWN = 0x02;
+        // char DONE = 0x03;
+
+        char UNKNOWN = 0x00;
+        char KNOWN = 0x02;
+        Array3d<char> status(grid->width, grid->height, grid->depth, UNKNOWN);
+
+        size_t gridsize = grid->width * grid->height * grid->depth;
+        size_t numCPU = ThreadUtils::getMaxThreadCount();
+        int numthreads = (int)fmin(numCPU, gridsize);
+        std::vector<std::thread> threads(numthreads);
+        std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
+        for (int i = 0; i < numthreads; i++) {
+            threads[i] = std::thread(&_initializeStatusGridThread,
+                                     intervals[i], intervals[i + 1], valid, &status);
+        }
+
+        for (int i = 0; i < numthreads; i++) {
+            threads[i].join();
+        }
+
+        std::vector<std::vector<GridIndex> > threadResults(numthreads);
+        std::vector<GridIndex> extrapolationCells;
+        for (int layers = 0; layers < numLayers; layers++) {
+            extrapolationCells.clear();
+            for (size_t i = 0; i < threadResults.size(); i++) {
+                threadResults[i].clear();
+            }
+
+            threads = std::vector<std::thread>(numthreads);
+            for (int i = 0; i < numthreads; i++) {
+                threads[i] = std::thread(&_findExtrapolationCells,
+                                         intervals[i], intervals[i + 1], &status, &(threadResults[i]));
+            }
+
+            int cellcount = 0;
+            for (int i = 0; i < numthreads; i++) {
+                threads[i].join();
+                cellcount += threadResults[i].size();
+            }
+            
+            extrapolationCells.reserve(cellcount);
+            for (size_t i = 0; i < threadResults.size(); i++) {
+                extrapolationCells.insert(extrapolationCells.end(), threadResults[i].begin(), threadResults[i].end());
+            }
+
+            int extrapolationThreads = (int)fmin(numCPU, extrapolationCells.size());
+            threads = std::vector<std::thread>(extrapolationThreads);
+            std::vector<int> extrapolationIntervals = ThreadUtils::splitRangeIntoIntervals(0, extrapolationCells.size(), extrapolationThreads);
+            for (int i = 0; i < extrapolationThreads; i++) {
+                threads[i] = std::thread(&_extrapolateCellsThread<T>,
+                                         extrapolationIntervals[i], extrapolationIntervals[i + 1], 
+                                         &extrapolationCells, &status, grid);
+            }
+
+            for (int i = 0; i < extrapolationThreads; i++) {
+                threads[i].join();
+            }
+
+            if (layers != numLayers - 1) {
+                status.set(extrapolationCells, KNOWN);
+            }
+        }
+    }
 }
 
 #endif

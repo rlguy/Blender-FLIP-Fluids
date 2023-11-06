@@ -116,10 +116,6 @@ def draw_more_bake_settings(self, context, box):
     obj = vcu.get_active_object(context)
     dprops = obj.flip_fluid.domain
     sprops = dprops.simulation
-    show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
-
-    if not show_advanced:
-        return
 
     row = box.row(align=True)
     row.prop(sprops, "more_bake_settings_expanded",
@@ -245,9 +241,19 @@ def draw_more_bake_settings(self, context, box):
             row.operator("flip_fluid_operators.helper_batch_force_reexport", icon='CHECKBOX_DEHLT', text="").enable_state = False
             row.label(text="All")
 
+            is_export_hint_enabled = not vcu.get_addon_preferences().dismiss_export_animated_mesh_parented_relation_hint
             for ob in filtered_objects:
                 pgroup = ob.flip_fluid.get_property_group()
-                column_left.label(text=ob.name, icon="OBJECT_DATA")
+                column_left_row = column_left.row(align=True)
+                column_left_row.alignment = 'LEFT'
+                column_left_row.label(text=ob.name, icon="OBJECT_DATA")
+
+                is_child_object = ob.parent is not None
+                if is_export_hint_enabled and not pgroup.export_animated_mesh and is_child_object:
+                    column_left_row.prop(context.scene.flip_fluid_helper, "export_animated_mesh_parent_tooltip", 
+                        icon="INFO", emboss=False, text=""
+                        )
+
                 if is_all_filter_selected:
                     column_animated.prop(pgroup, "export_animated_mesh", text="animated", toggle=True)
                 column_middle.prop(pgroup, "skip_reexport", text="skip", toggle=True)
@@ -282,7 +288,6 @@ def draw_resolution_settings(self, context, master_column):
     sprops = dprops.simulation
     wprops = dprops.world
     aprops = dprops.advanced
-    show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
     show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
 
     box = master_column.box()
@@ -317,8 +322,7 @@ def draw_resolution_settings(self, context, master_column):
         split = vcu.ui_split(column, factor=0.5)
         column_left = split.column(align=True)
         column_right = split.column(align=True)
-        if show_advanced:
-            column_left.prop(sprops, "lock_cell_size")
+        column_left.prop(sprops, "lock_cell_size")
 
         column_right.prop(sprops, "auto_preview_resolution", text="Use Recommended")
 
@@ -550,7 +554,6 @@ def _get_object_motion_type(self, obj):
 def draw_time_settings(self, context, box):
     obj = vcu.get_active_object(context)
     sprops = obj.flip_fluid.domain.simulation
-    show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
 
     row = box.row(align=True)
     row.prop(sprops, "frame_rate_and_time_scale_expanded",

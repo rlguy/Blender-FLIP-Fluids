@@ -39,7 +39,6 @@ class FLIPFLUID_PT_ObstacleTypePanel(bpy.types.Panel):
         obj_props = obj.flip_fluid
         obstacle_props = obj_props.obstacle
         preferences = vcu.get_addon_preferences(context)
-        show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
         show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
 
         column = self.layout.column()
@@ -103,35 +102,45 @@ class FLIPFLUID_PT_ObstacleTypePanel(bpy.types.Panel):
         column = box.column()
         column.prop(obstacle_props, "friction", slider=True)
 
-        if show_advanced:
-            column = box.column()
-            column.prop(obstacle_props, "velocity_scale")
+        column = box.column()
+        column.prop(obstacle_props, "velocity_scale")
 
-            column = box.column()
-            column.prop(obstacle_props, "whitewater_influence")
+        column = box.column()
+        column.prop(obstacle_props, "whitewater_influence")
 
-            column = box.column()
-            column.prop(obstacle_props, "dust_emission_strength")
+        column = box.column()
+        column.prop(obstacle_props, "dust_emission_strength")
 
-            column = box.column()
-            column.prop(obstacle_props, "sheeting_strength")
+        column = box.column()
+        column.prop(obstacle_props, "sheeting_strength")
 
-            column = box.column()
-            alert_threshold = 0.05 + 1e-5
-            if abs(obstacle_props.mesh_expansion) > alert_threshold:
-                column.alert = True
-            column.prop(obstacle_props, "mesh_expansion")
+        column = box.column()
+        alert_threshold = 0.05 + 1e-5
+        if abs(obstacle_props.mesh_expansion) > alert_threshold:
+            column.alert = True
+        column.prop(obstacle_props, "mesh_expansion")
 
         box = self.layout.box()
         box.label(text="Mesh Data Export:")
         column = box.column(align=True)
-        column.prop(obstacle_props, "export_animated_mesh")
-        if show_advanced:
-            column.prop(obstacle_props, "skip_reexport")
-            column.separator()
-            column = box.column(align=True)
-            column.enabled = obstacle_props.skip_reexport
-            column.prop(obstacle_props, "force_reexport_on_next_bake", toggle=True)
+        
+        row = column.row(align=True)
+        row.alignment = 'LEFT'
+        row.prop(obstacle_props, "export_animated_mesh")
+
+        is_child_object = obj.parent is not None
+        is_hint_enabled = not vcu.get_addon_preferences().dismiss_export_animated_mesh_parented_relation_hint
+        if is_hint_enabled and not obstacle_props.export_animated_mesh and is_child_object:
+            row.prop(context.scene.flip_fluid_helper, "export_animated_mesh_parent_tooltip", 
+                    icon="QUESTION", emboss=False, text=""
+                    )
+            row.label(text="←Hint: export option may be required")
+
+        column.prop(obstacle_props, "skip_reexport")
+        column.separator()
+        column = box.column(align=True)
+        column.enabled = obstacle_props.skip_reexport
+        column.prop(obstacle_props, "force_reexport_on_next_bake", toggle=True)
 
         column = self.layout.column(align=True)
         column.separator()

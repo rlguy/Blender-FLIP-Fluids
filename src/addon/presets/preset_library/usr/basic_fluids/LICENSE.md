@@ -1,5 +1,5 @@
-Data for running example scenes in this directory and subdirectories are licensed 
-under the MIT License:
+The preset data files in this directory and subdirectories are licensed under 
+the MIT License:
 
 --------------------------------------------------------------------------------
 

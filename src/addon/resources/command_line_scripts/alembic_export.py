@@ -1,4 +1,4 @@
-import bpy, os, time
+import bpy, os, time, sys
 
 
 def check_cache_exists():
@@ -37,6 +37,19 @@ def initialize_simulation_mesh_selection():
     else:
         dprops.mesh_cache.disable_simulation_mesh_load('SURFACE')
         print("Fluid surface export disabled, skipping...")
+
+    if hprops.alembic_export_fluid_particles:
+        print("Searching for fluid particles mesh...", end="")
+        bl_fluid_particles = dprops.mesh_cache.particles.get_cache_object()
+        if bl_fluid_particles is not None:
+            bl_fluid_particles.select_set(True)
+            num_export_meshes += 1
+            print(" FOUND <" + bl_fluid_particles.name + ">")
+        else:
+            print(" NOT FOUND")
+    else:
+        dprops.mesh_cache.disable_simulation_mesh_load('FLUID_PARTICLES')
+        print("Fluid particles export disabled, skipping...")
 
     if hprops.alembic_export_foam:
         print("Searching for whitewater foam mesh...", end="")
@@ -142,6 +155,7 @@ def initialize_velocity_export_and_attributes():
     hprops = bpy.context.scene.flip_fluid_helper
 
     surface_motion_blur_scale = 1.0
+    fluid_particles_motion_blur_scale = 1.0
     foam_motion_blur_scale = 1.0
     bubble_motion_blur_scale = 1.0
     spray_motion_blur_scale = 1.0
@@ -150,6 +164,9 @@ def initialize_velocity_export_and_attributes():
     bl_surface = dprops.mesh_cache.surface.get_cache_object()
     if bl_surface is not None:
         surface_motion_blur_scale = get_geomety_nodes_motion_blur_scale(bl_surface)
+    bl_fluid_particles = dprops.mesh_cache.particles.get_cache_object()
+    if bl_fluid_particles is not None:
+        fluid_particles_motion_blur_scale = get_geomety_nodes_motion_blur_scale(bl_fluid_particles)
     bl_foam = dprops.mesh_cache.foam.get_cache_object()
     if bl_foam is not None:
         foam_motion_blur_scale = get_geomety_nodes_motion_blur_scale(bl_foam)
@@ -175,6 +192,12 @@ def initialize_velocity_export_and_attributes():
         if bl_surface is not None:
             value = set_geometry_nodes_alembic_velocity_export_motion_blur_scale(bl_surface, surface_motion_blur_scale)
             print("Info: Set fluid surface Alembic velocity scale to " + '{0:.2f}'.format(value))
+
+        bl_fluid_particles = dprops.mesh_cache.particles.get_cache_object()
+        if bl_fluid_particles is not None:
+            value = set_geometry_nodes_alembic_velocity_export_motion_blur_scale(bl_fluid_particles, fluid_particles_motion_blur_scale)
+            print("Info: Set fluid particles Alembic velocity scale to " + '{0:.2f}'.format(value))
+
         bl_foam = dprops.mesh_cache.foam.get_cache_object()
         if bl_foam is not None:
             value = set_geometry_nodes_alembic_velocity_export_motion_blur_scale(bl_foam, foam_motion_blur_scale)
@@ -198,16 +221,22 @@ def initialize_velocity_export_and_attributes():
         if not dprops.surface.enable_velocity_vector_attribute:
             dprops.surface.enable_velocity_vector_attribute = True
             print("Enabled fluid surface velocity attribute loading")
+        if not dprops.particles.enable_fluid_particle_velocity_vector_attribute:
+            dprops.particles.enable_fluid_particle_velocity_vector_attribute = True
+            print("Enabled fluid particles velocity attribute loading")
         if not dprops.whitewater.enable_velocity_vector_attribute:
             dprops.whitewater.enable_velocity_vector_attribute = True
-            print("Enabled fluid surface velocity attribute loading")
+            print("Enabled whitewater velocity attribute loading")
     else:
         if dprops.surface.enable_velocity_vector_attribute:
             dprops.surface.enable_velocity_vector_attribute = False
             print("Disabled fluid surface velocity attribute from loading")
+        if dprops.particles.enable_fluid_particle_velocity_vector_attribute:
+            dprops.particles.enable_fluid_particle_velocity_vector_attribute = False
+            print("Disabled fluid particles velocity attribute from loading")
         if dprops.whitewater.enable_velocity_vector_attribute:
             dprops.whitewater.enable_velocity_vector_attribute = False
-            print("Disabled fluid surface velocity attribute from loading")
+            print("Disabled fluid whitewater velocity attribute from loading")
 
     if dprops.surface.enable_speed_attribute:
         dprops.surface.enable_speed_attribute = False
@@ -224,9 +253,43 @@ def initialize_velocity_export_and_attributes():
     if dprops.surface.enable_age_attribute:
         dprops.surface.enable_age_attribute = False
         print("Disabled fluid surface Age attribute from loading")
+    if dprops.surface.enable_lifetime_attribute:
+        dprops.surface.enable_lifetime_attribute = False
+        print("Disabled fluid surface Lifetime attribute from loading")
+    if dprops.surface.enable_whitewater_proximity_attribute:
+        dprops.surface.enable_whitewater_proximity_attribute = False
+        print("Disabled fluid surface Whitewater Proximity attribute from loading")
+    # User may want source ID attribute for geoemtry nodes post processing
+    """
     if dprops.surface.enable_source_id_attribute:
         dprops.surface.enable_source_id_attribute = False
         print("Disabled fluid surface Source ID attribute from loading")
+    """
+
+    if dprops.particles.enable_fluid_particle_speed_attribute:
+        dprops.particles.enable_fluid_particle_speed_attribute = False
+        print("Disabled fluid particles Speed attribute from loading")
+    if dprops.particles.enable_fluid_particle_vorticity_vector_attribute:
+        dprops.particles.enable_fluid_particle_vorticity_vector_attribute = False
+        print("Disabled fluid particles Vorticity attribute from loading")
+    if dprops.particles.enable_fluid_particle_color_attribute:
+        dprops.particles.enable_fluid_particle_color_attribute = False
+        print("Disabled fluid particles Color attribute from loading")
+    if dprops.particles.enable_fluid_particle_age_attribute:
+        dprops.particles.enable_fluid_particle_age_attribute = False
+        print("Disabled fluid particles Age attribute from loading")
+    if dprops.particles.enable_fluid_particle_lifetime_attribute:
+        dprops.particles.enable_fluid_particle_lifetime_attribute = False
+        print("Disabled fluid particles Lifetime attribute from loading")
+    if dprops.particles.enable_fluid_particle_whitewater_proximity_attribute:
+        dprops.particles.enable_fluid_particle_whitewater_proximity_attribute = False
+        print("Disabled fluid particles Whitewater Proximity attribute from loading")
+    # User may want source ID attribute for geoemtry nodes post processing
+    """
+    if dprops.particles.enable_fluid_particle_source_id_attribute:
+        dprops.particles.enable_fluid_particle_source_id_attribute = False
+        print("Disabled fluid particles Source ID attribute from loading")
+    """
 
     if dprops.whitewater.enable_id_attribute:
         dprops.whitewater.enable_id_attribute = False
@@ -262,12 +325,13 @@ def check_cache_velocity_data():
     if os.path.isdir(bakefiles_directory):
         file_list = os.listdir(bakefiles_directory)
 
-    surface_velocity_filecount = len([f for f in file_list if f.startswith("velocity")])
-    foam_velocity_filecount    = len([f for f in file_list if f.startswith("velocityfoam")])
-    bubble_velocity_filecount  = len([f for f in file_list if f.startswith("velocitybubble")])
-    spray_velocity_filecount   = len([f for f in file_list if f.startswith("velocityspray")])
-    dust_velocity_filecount    = len([f for f in file_list if f.startswith("velocitydust")])
-    surface_velocity_filecount = (surface_velocity_filecount 
+    surface_velocity_filecount         = len([f for f in file_list if f.startswith("velocity")])
+    fluid_particles_velocity_filecount = len([f for f in file_list if f.startswith("fluidparticlesvelocity")])
+    foam_velocity_filecount            = len([f for f in file_list if f.startswith("velocityfoam")])
+    bubble_velocity_filecount          = len([f for f in file_list if f.startswith("velocitybubble")])
+    spray_velocity_filecount           = len([f for f in file_list if f.startswith("velocityspray")])
+    dust_velocity_filecount            = len([f for f in file_list if f.startswith("velocitydust")])
+    surface_velocity_filecount = (surface_velocity_filecount
                                   - foam_velocity_filecount 
                                   - bubble_velocity_filecount 
                                   - spray_velocity_filecount 
@@ -280,6 +344,13 @@ def check_cache_velocity_data():
             print("Searching for fluid surface velocity data...", end="")
             print(" FOUND " + str(surface_velocity_filecount) + " cache files.")
             if surface_velocity_filecount == 0:
+                display_warning = True
+    if hprops.alembic_export_fluid_particles:
+        bl_fluid_particles = dprops.mesh_cache.particles.get_cache_object()
+        if bl_fluid_particles is not None:
+            print("Searching for fluid particles velocity data...", end="")
+            print(" FOUND " + str(fluid_particles_velocity_filecount) + " cache files.")
+            if fluid_particles_velocity_filecount == 0:
                 display_warning = True
     if hprops.alembic_export_foam:
         bl_foam = dprops.mesh_cache.foam.get_cache_object()
@@ -312,14 +383,41 @@ def check_cache_velocity_data():
 
     if display_warning:
         warning_msg = "WARNING: One or more meshes contain no velocity data in the simulation"
-        warning_msg += " cache files. Baking the surface and/or whitewater velocity attribute"
+        warning_msg += " cache files. Baking the surface, fluid particles, and/or whitewater velocity attribute"
         warning_msg += " is required for exporting velocity data to Alembic."
         print(warning_msg)
 
     print("Finished searching for velocity attribute cache data.")
 
 
+def get_alembic_output_filepath():
+    hprops = bpy.context.scene.flip_fluid_helper
+
+    script_arguments = None
+    if "--" in sys.argv:
+        script_arguments = sys.argv[sys.argv.index("--") + 1:]
+
+    # If an argument has been passed in, override the 'alembic_output_filepath' property
+    if script_arguments is not None and len(script_arguments) >= 1:
+        override_filepath = script_arguments[0]
+        hprops.alembic_output_filepath = override_filepath
+        print("Overriding Alembic output filepath to script argument at position 0: <" + override_filepath + ">")
+
+    alembic_filepath = hprops.get_alembic_output_abspath()
+    if not alembic_filepath.endswith(".abc"):
+        if alembic_filepath.endswith("."):
+            alembic_filepath += "abc"
+        else:
+            alembic_filepath += ".abc"
+
+    return alembic_filepath
+
+
 dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+if dprops is None:
+    print("\nError: No domain found in Blend file. Hint: Did you remember to save the Blend file before running this operator? Exiting.")
+    exit()
+
 hprops = bpy.context.scene.flip_fluid_helper
 
 print("\n*** Preparing Alembic Export ***\n")
@@ -338,12 +436,7 @@ check_cache_velocity_data()
 print("\n*** Starting Alembic Export ***\n")
 
 frame_start, frame_end = get_export_frame_range()
-alembic_filepath = hprops.get_alembic_output_abspath()
-if not alembic_filepath.endswith(".abc"):
-    if alembic_filepath.endswith("."):
-        alembic_filepath += "abc"
-    else:
-        alembic_filepath += ".abc"
+alembic_filepath = get_alembic_output_filepath()
 
 print("Exporting Alembic to: <" + alembic_filepath + ">")
 print("Frame Range: " + str(frame_start) + " to " + str(frame_end))
@@ -353,6 +446,9 @@ mesh_export_str = ""
 bl_surface = dprops.mesh_cache.surface.get_cache_object()
 if hprops.alembic_export_surface and bl_surface is not None:
     mesh_export_str += "Surface"
+bl_fluid_particles = dprops.mesh_cache.particles.get_cache_object()
+if hprops.alembic_export_fluid_particles and bl_fluid_particles is not None:
+    mesh_export_str += "/FluidParticles"
 bl_foam = dprops.mesh_cache.foam.get_cache_object()
 if hprops.alembic_export_foam and bl_foam is not None:
     mesh_export_str += "/Foam"

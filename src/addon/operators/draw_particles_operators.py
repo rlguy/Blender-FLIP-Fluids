@@ -44,7 +44,7 @@ def update_debug_particle_geometry(context):
     global particle_vertex_colors
 
     dprops = context.scene.flip_fluid.get_domain_properties()
-    if dprops is None or not dprops.debug.export_fluid_particles:
+    if dprops is None or not dprops.debug.enable_fluid_particle_debug_output:
         return
 
     if not dprops.debug.fluid_particles_visibility:
@@ -274,7 +274,7 @@ class FlipFluidDrawGLParticles(bpy.types.Operator):
         if not event.type == 'TIMER':
             return {'PASS_THROUGH'}
         dprops = bpy.context.scene.flip_fluid.get_domain_properties()
-        if dprops is None or not dprops.debug.export_fluid_particles:
+        if dprops is None or not dprops.debug.enable_fluid_particle_debug_output:
             self.cancel(context)
             return {'CANCELLED'}
         return {'PASS_THROUGH'}

@@ -77,18 +77,8 @@ def append_to_PHYSICS_PT_add_panel(self, context):
             row.prop(context.scene.flip_fluid, "show_viewport", icon="RESTRICT_VIEW_OFF", text="")
             row.prop(context.scene.flip_fluid, "show_render", icon="RESTRICT_RENDER_OFF", text="")
 
-        addon_prefs = vcu.get_addon_preferences(context)
-        if addon_prefs.beginner_friendly_mode:
-            tooltip_column = self.layout.column(align=True)
-            row = tooltip_column.row(align=True)
-            row.alignment = 'LEFT'
-            row.prop(addon_prefs, "beginner_friendly_mode_tooltip", icon='QUESTION', emboss=False, text="")
-            row.label(text="FLIP Fluids Beginner Friendly Mode is enabled")
-            row = tooltip_column.row(align=True)
-            row.label(text="       Some options will be hidden")
-
-        
         # Experimental Build Warning
+        addon_prefs = vcu.get_addon_preferences(context)
         if installation_utils.is_experimental_build() and addon_prefs.enable_experimental_build_warning:
             box = self.layout.box()
             column = box.column(align=True)

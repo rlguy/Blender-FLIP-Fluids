@@ -262,14 +262,11 @@ class FLIPFLUID_PT_DomainTypePresetsPanel(bpy.types.Panel):
             self.layout.label(text="Please contact the developers if you think this is an error.")
             return
 
-        show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
-
         self.draw_preset_selector(context)
         self.draw_preset_stack(context)
 
-        if show_advanced:
-            self.draw_preset_manager(context)
-            self.draw_default_settings_operators(context)
+        self.draw_preset_manager(context)
+        self.draw_default_settings_operators(context)
 
 
 def register():

@@ -148,7 +148,7 @@ void ForceFieldVolume::_clearSubclassState() {
 void ForceFieldVolume::_addForceFieldToGridMT(MACVelocityField &fieldGrid, int dir) {
     int U = 0; int V = 1; int W = 2;
 
-    int gridsize = 0;
+    size_t gridsize = 0;
     if (dir == U) {
         gridsize = (_isize + 1) * _jsize * _ksize;
     } else if (dir == V) {
@@ -157,7 +157,7 @@ void ForceFieldVolume::_addForceFieldToGridMT(MACVelocityField &fieldGrid, int d
         gridsize = _isize * _jsize * (_ksize + 1);
     }
 
-    int numCPU = ThreadUtils::getMaxThreadCount();
+    size_t numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
     std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);

@@ -29,6 +29,7 @@ from .custom_properties import (
         )
 from .. import types
 from ..utils import version_compatibility_utils as vcu
+from ..objects import flip_fluid_cache
 
 
 class DomainWhitewaterProperties(bpy.types.PropertyGroup):
@@ -576,12 +577,19 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
             return
 
         if self.enable_whitewater_simulation:
-            dprops.mesh_cache.initialize_cache_objects()
+            objects_to_initialize = flip_fluid_cache.EnabledMeshCacheObjects()
+            objects_to_initialize.whitewater_particles = True
+
+            dprops.mesh_cache.initialize_cache_objects(objects_to_initialize)
             dprops.materials.whitewater_foam_material = dprops.materials.whitewater_foam_material
             dprops.materials.whitewater_bubble_material = dprops.materials.whitewater_bubble_material
             dprops.materials.whitewater_spray_material = dprops.materials.whitewater_spray_material
+            dprops.materials.whitewater_dust_material = dprops.materials.whitewater_dust_material
         else:
-            dprops.mesh_cache.delete_whitewater_cache_objects()
+            dprops.mesh_cache.foam.reset_cache_object()
+            dprops.mesh_cache.bubble.reset_cache_object()
+            dprops.mesh_cache.spray.reset_cache_object()
+            dprops.mesh_cache.dust.reset_cache_object()
 
 
 def register():

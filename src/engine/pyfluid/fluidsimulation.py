@@ -346,6 +346,79 @@ class FluidSimulation(object):
         pb.execute_lib_func(libfunc, [self(), int(n)])
 
     @property
+    def enable_fluid_particle_output(self):
+        libfunc = lib.FluidSimulation_is_fluid_particle_output_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_fluid_particle_output.setter
+    def enable_fluid_particle_output(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_fluid_particle_output
+        else:
+            libfunc = lib.FluidSimulation_disable_fluid_particle_output
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def fluid_particle_output_amount(self):
+        libfunc = lib.FluidSimulation_get_fluid_particle_output_amount
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @density.setter
+    @decorators.check_ge_zero
+    def fluid_particle_output_amount(self, value):
+        libfunc = lib.FluidSimulation_set_fluid_particle_output_amount
+        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), value])
+
+    @property
+    def enable_fluid_particle_surface_output(self):
+        libfunc = lib.FluidSimulation_is_fluid_particle_surface_output_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_fluid_particle_surface_output.setter
+    def enable_fluid_particle_surface_output(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_fluid_particle_surface_output
+        else:
+            libfunc = lib.FluidSimulation_disable_fluid_particle_surface_output
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_fluid_particle_boundary_output(self):
+        libfunc = lib.FluidSimulation_is_fluid_particle_boundary_output_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_fluid_particle_boundary_output.setter
+    def enable_fluid_particle_boundary_output(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_fluid_particle_boundary_output
+        else:
+            libfunc = lib.FluidSimulation_disable_fluid_particle_boundary_output
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_fluid_particle_interior_output(self):
+        libfunc = lib.FluidSimulation_is_fluid_particle_interior_output_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_fluid_particle_interior_output.setter
+    def enable_fluid_particle_interior_output(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_fluid_particle_interior_output
+        else:
+            libfunc = lib.FluidSimulation_disable_fluid_particle_interior_output
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
     def surface_subdivision_level(self):
         libfunc = lib.FluidSimulation_get_surface_subdivision_level
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
@@ -585,6 +658,21 @@ class FluidSimulation(object):
         pb.execute_lib_func(libfunc, [self()])
 
     @property
+    def enable_whitewater_velocity_attribute(self):
+        libfunc = lib.FluidSimulation_is_whitewater_velocity_attribute_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_whitewater_velocity_attribute.setter
+    def enable_whitewater_velocity_attribute(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_whitewater_velocity_attribute
+        else:
+            libfunc = lib.FluidSimulation_disable_whitewater_velocity_attribute
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
     def enable_whitewater_id_attribute(self):
         libfunc = lib.FluidSimulation_is_whitewater_id_attribute_enabled
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
@@ -611,6 +699,126 @@ class FluidSimulation(object):
             libfunc = lib.FluidSimulation_enable_whitewater_lifetime_attribute
         else:
             libfunc = lib.FluidSimulation_disable_whitewater_lifetime_attribute
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_fluid_particle_velocity_attribute(self):
+        libfunc = lib.FluidSimulation_is_fluid_particle_velocity_attribute_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_fluid_particle_velocity_attribute.setter
+    def enable_fluid_particle_velocity_attribute(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_fluid_particle_velocity_attribute
+        else:
+            libfunc = lib.FluidSimulation_disable_fluid_particle_velocity_attribute
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_fluid_particle_speed_attribute(self):
+        libfunc = lib.FluidSimulation_is_fluid_particle_speed_attribute_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_fluid_particle_speed_attribute.setter
+    def enable_fluid_particle_speed_attribute(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_fluid_particle_speed_attribute
+        else:
+            libfunc = lib.FluidSimulation_disable_fluid_particle_speed_attribute
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_fluid_particle_vorticity_attribute(self):
+        libfunc = lib.FluidSimulation_is_fluid_particle_vorticity_attribute_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_fluid_particle_vorticity_attribute.setter
+    def enable_fluid_particle_vorticity_attribute(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_fluid_particle_vorticity_attribute
+        else:
+            libfunc = lib.FluidSimulation_disable_fluid_particle_vorticity_attribute
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_fluid_particle_color_attribute(self):
+        libfunc = lib.FluidSimulation_is_fluid_particle_color_attribute_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_fluid_particle_color_attribute.setter
+    def enable_fluid_particle_color_attribute(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_fluid_particle_color_attribute
+        else:
+            libfunc = lib.FluidSimulation_disable_fluid_particle_color_attribute
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_fluid_particle_age_attribute(self):
+        libfunc = lib.FluidSimulation_is_fluid_particle_age_attribute_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_fluid_particle_age_attribute.setter
+    def enable_fluid_particle_age_attribute(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_fluid_particle_age_attribute
+        else:
+            libfunc = lib.FluidSimulation_disable_fluid_particle_age_attribute
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_fluid_particle_lifetime_attribute(self):
+        libfunc = lib.FluidSimulation_is_fluid_particle_lifetime_attribute_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_fluid_particle_lifetime_attribute.setter
+    def enable_fluid_particle_lifetime_attribute(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_fluid_particle_lifetime_attribute
+        else:
+            libfunc = lib.FluidSimulation_disable_fluid_particle_lifetime_attribute
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_fluid_particle_whitewater_proximity_attribute(self):
+        libfunc = lib.FluidSimulation_is_fluid_particle_whitewater_proximity_attribute_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_fluid_particle_whitewater_proximity_attribute.setter
+    def enable_fluid_particle_whitewater_proximity_attribute(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_fluid_particle_whitewater_proximity_attribute
+        else:
+            libfunc = lib.FluidSimulation_disable_fluid_particle_whitewater_proximity_attribute
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_fluid_particle_source_id_attribute(self):
+        libfunc = lib.FluidSimulation_is_fluid_particle_source_id_attribute_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_fluid_particle_source_id_attribute.setter
+    def enable_fluid_particle_source_id_attribute(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_fluid_particle_source_id_attribute
+        else:
+            libfunc = lib.FluidSimulation_disable_fluid_particle_source_id_attribute
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self()])
 
@@ -645,17 +853,17 @@ class FluidSimulation(object):
         pb.execute_lib_func(libfunc, [self()])
 
     @property
-    def enable_whitewater_velocity_attribute(self):
-        libfunc = lib.FluidSimulation_is_whitewater_velocity_attribute_enabled
+    def enable_surface_speed_attribute(self):
+        libfunc = lib.FluidSimulation_is_surface_speed_attribute_enabled
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
         return bool(pb.execute_lib_func(libfunc, [self()]))
 
-    @enable_whitewater_velocity_attribute.setter
-    def enable_whitewater_velocity_attribute(self, boolval):
+    @enable_surface_speed_attribute.setter
+    def enable_surface_speed_attribute(self, boolval):
         if boolval:
-            libfunc = lib.FluidSimulation_enable_whitewater_velocity_attribute
+            libfunc = lib.FluidSimulation_enable_surface_speed_attribute
         else:
-            libfunc = lib.FluidSimulation_disable_whitewater_velocity_attribute
+            libfunc = lib.FluidSimulation_disable_surface_speed_attribute
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self()])
 
@@ -671,21 +879,6 @@ class FluidSimulation(object):
             libfunc = lib.FluidSimulation_enable_surface_vorticity_attribute
         else:
             libfunc = lib.FluidSimulation_disable_surface_vorticity_attribute
-        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
-        pb.execute_lib_func(libfunc, [self()])
-
-    @property
-    def enable_surface_speed_attribute(self):
-        libfunc = lib.FluidSimulation_is_surface_speed_attribute_enabled
-        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
-        return bool(pb.execute_lib_func(libfunc, [self()]))
-
-    @enable_surface_speed_attribute.setter
-    def enable_surface_speed_attribute(self, boolval):
-        if boolval:
-            libfunc = lib.FluidSimulation_enable_surface_speed_attribute
-        else:
-            libfunc = lib.FluidSimulation_disable_surface_speed_attribute
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self()])
 
@@ -714,6 +907,74 @@ class FluidSimulation(object):
     @decorators.check_ge_zero
     def surface_age_attribute_radius(self, radius):
         libfunc = lib.FluidSimulation_set_surface_age_attribute_radius
+        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), radius])
+
+    @property
+    def enable_surface_lifetime_attribute(self):
+        libfunc = lib.FluidSimulation_is_surface_lifetime_attribute_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_surface_lifetime_attribute.setter
+    def enable_surface_lifetime_attribute(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_surface_lifetime_attribute
+        else:
+            libfunc = lib.FluidSimulation_disable_surface_lifetime_attribute
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def surface_lifetime_attribute_radius(self):
+        libfunc = lib.FluidSimulation_get_surface_lifetime_attribute_radius
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @surface_lifetime_attribute_radius.setter
+    @decorators.check_ge_zero
+    def surface_lifetime_attribute_radius(self, radius):
+        libfunc = lib.FluidSimulation_set_surface_lifetime_attribute_radius
+        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), radius])
+
+    @property
+    def surface_lifetime_attribute_death_time(self):
+        libfunc = lib.FluidSimulation_get_surface_lifetime_attribute_death_time
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @surface_lifetime_attribute_death_time.setter
+    def surface_lifetime_attribute_death_time(self, t):
+        libfunc = lib.FluidSimulation_set_surface_lifetime_attribute_death_time
+        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), t])
+
+    @property
+    def enable_surface_whitewater_proximity_attribute(self):
+        libfunc = lib.FluidSimulation_is_surface_whitewater_proximity_attribute_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_surface_whitewater_proximity_attribute.setter
+    def enable_surface_whitewater_proximity_attribute(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_surface_whitewater_proximity_attribute
+        else:
+            libfunc = lib.FluidSimulation_disable_surface_whitewater_proximity_attribute
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def surface_whitewater_proximity_attribute_radius(self):
+        libfunc = lib.FluidSimulation_get_surface_whitewater_proximity_attribute_radius
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @surface_whitewater_proximity_attribute_radius.setter
+    @decorators.check_ge_zero
+    def surface_whitewater_proximity_attribute_radius(self, radius):
+        libfunc = lib.FluidSimulation_set_surface_whitewater_proximity_attribute_radius
         pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), radius])
 
@@ -860,17 +1121,17 @@ class FluidSimulation(object):
         pb.execute_lib_func(libfunc, [self(), int(n)])
 
     @property
-    def enable_fluid_particle_output(self):
-        libfunc = lib.FluidSimulation_is_fluid_particle_output_enabled
+    def enable_fluid_particle_debug_output(self):
+        libfunc = lib.FluidSimulation_is_fluid_particle_debug_output_enabled
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
         return bool(pb.execute_lib_func(libfunc, [self()]))
 
-    @enable_fluid_particle_output.setter
-    def enable_fluid_particle_output(self, boolval):
+    @enable_fluid_particle_debug_output.setter
+    def enable_fluid_particle_debug_output(self, boolval):
         if boolval:
-            libfunc = lib.FluidSimulation_enable_fluid_particle_output
+            libfunc = lib.FluidSimulation_enable_fluid_particle_debug_output
         else:
-            libfunc = lib.FluidSimulation_disable_fluid_particle_output
+            libfunc = lib.FluidSimulation_disable_fluid_particle_debug_output
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self()])
 
@@ -2363,6 +2624,14 @@ class FluidSimulation(object):
         return self._get_output_data(lib.FluidSimulation_get_surface_age_attribute_data_size,
                                      lib.FluidSimulation_get_surface_age_attribute_data)
 
+    def get_surface_lifetime_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_surface_lifetime_attribute_data_size,
+                                     lib.FluidSimulation_get_surface_lifetime_attribute_data)
+
+    def get_surface_whitewater_proximity_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_surface_whitewater_proximity_attribute_data_size,
+                                     lib.FluidSimulation_get_surface_whitewater_proximity_attribute_data)
+
     def get_surface_color_attribute_data(self):
         return self._get_output_data(lib.FluidSimulation_get_surface_color_attribute_data_size,
                                      lib.FluidSimulation_get_surface_color_attribute_data)
@@ -2446,6 +2715,50 @@ class FluidSimulation(object):
     def get_fluid_particle_data(self):
         return self._get_output_data(lib.FluidSimulation_get_fluid_particle_data_size,
                                      lib.FluidSimulation_get_fluid_particle_data)
+
+    def get_fluid_particle_id_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_fluid_particle_id_attribute_data_size,
+                                     lib.FluidSimulation_get_fluid_particle_id_attribute_data)
+
+    def get_fluid_particle_velocity_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_fluid_particle_velocity_attribute_data_size,
+                                     lib.FluidSimulation_get_fluid_particle_velocity_attribute_data)
+
+    def get_fluid_particle_speed_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_fluid_particle_speed_attribute_data_size,
+                                     lib.FluidSimulation_get_fluid_particle_speed_attribute_data)
+
+    def get_fluid_particle_vorticity_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_fluid_particle_vorticity_attribute_data_size,
+                                     lib.FluidSimulation_get_fluid_particle_vorticity_attribute_data)
+
+    def get_fluid_particle_color_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_fluid_particle_color_attribute_data_size,
+                                     lib.FluidSimulation_get_fluid_particle_color_attribute_data)
+
+    def get_fluid_particle_age_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_fluid_particle_age_attribute_data_size,
+                                     lib.FluidSimulation_get_fluid_particle_age_attribute_data)
+
+    def get_fluid_particle_lifetime_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_fluid_particle_lifetime_attribute_data_size,
+                                     lib.FluidSimulation_get_fluid_particle_lifetime_attribute_data)
+
+    def get_fluid_particle_viscosity_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_fluid_particle_viscosity_attribute_data_size,
+                                     lib.FluidSimulation_get_fluid_particle_viscosity_attribute_data)
+
+    def get_fluid_particle_whitewater_proximity_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_fluid_particle_whitewater_proximity_attribute_data_size,
+                                     lib.FluidSimulation_get_fluid_particle_whitewater_proximity_attribute_data)
+
+    def get_fluid_particle_source_id_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_fluid_particle_source_id_attribute_data_size,
+                                     lib.FluidSimulation_get_fluid_particle_source_id_attribute_data)
+
+    def get_fluid_particle_debug_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_fluid_particle_debug_data_size,
+                                     lib.FluidSimulation_get_fluid_particle_debug_data)
 
     def get_internal_obstacle_mesh_data(self):
         return self._get_output_data(lib.FluidSimulation_get_internal_obstacle_mesh_data_size,
@@ -2537,6 +2850,11 @@ class FluidSimulation(object):
         return self._get_output_data_range(lib.FluidSimulation_get_marker_particle_age_data_range,
                                            start_idx, end_idx, size_of_float)
 
+    def get_marker_particle_lifetime_data_range(self, start_idx, end_idx):
+        size_of_float = 4
+        return self._get_output_data_range(lib.FluidSimulation_get_marker_particle_lifetime_data_range,
+                                           start_idx, end_idx, size_of_float)
+
     def get_marker_particle_color_data_range(self, start_idx, end_idx):
         size_of_vector = 12
         return self._get_output_data_range(lib.FluidSimulation_get_marker_particle_color_data_range,
@@ -2551,6 +2869,11 @@ class FluidSimulation(object):
         size_of_float = 4
         return self._get_output_data_range(lib.FluidSimulation_get_marker_particle_viscosity_data_range,
                                            start_idx, end_idx, size_of_float)
+
+    def get_marker_particle_id_data_range(self, start_idx, end_idx):
+        size_of_short = 2
+        return self._get_output_data_range(lib.FluidSimulation_get_marker_particle_id_data_range,
+                                           start_idx, end_idx, size_of_short)
 
     def get_diffuse_particle_position_data_range(self, start_idx, end_idx):
         size_of_vector = 12
@@ -2643,6 +2966,17 @@ class FluidSimulation(object):
         pb.init_lib_func(libfunc, [c_void_p, FluidSimulationMarkerParticleAgeData_t, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), pdata])
 
+    def load_marker_particle_lifetime_data(self, num_particles, lifetime_data):
+        c_lifetime_data = (c_char * len(lifetime_data)).from_buffer_copy(lifetime_data)
+
+        pdata = FluidSimulationMarkerParticleLifetimeData_t()
+        pdata.size = c_int(num_particles)
+        pdata.lifetime = ctypes.cast(c_lifetime_data, c_char_p)
+
+        libfunc = lib.FluidSimulation_load_marker_particle_lifetime_data
+        pb.init_lib_func(libfunc, [c_void_p, FluidSimulationMarkerParticleLifetimeData_t, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), pdata])
+
     def load_marker_particle_color_data(self, num_particles, color_data):
         c_color_data = (c_char * len(color_data)).from_buffer_copy(color_data)
 
@@ -2674,6 +3008,17 @@ class FluidSimulation(object):
 
         libfunc = lib.FluidSimulation_load_marker_particle_viscosity_data
         pb.init_lib_func(libfunc, [c_void_p, FluidSimulationMarkerParticleViscosityData_t, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), pdata])
+
+    def load_marker_particle_id_data(self, num_particles, id_data):
+        c_id_data = (c_char * len(id_data)).from_buffer_copy(id_data)
+
+        pdata = FluidSimulationMarkerParticleIDData_t()
+        pdata.size = c_int(num_particles)
+        pdata.id = ctypes.cast(c_id_data, c_char_p)
+
+        libfunc = lib.FluidSimulation_load_marker_particle_id_data
+        pb.init_lib_func(libfunc, [c_void_p, FluidSimulationMarkerParticleIDData_t, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), pdata])
 
     def load_diffuse_particle_data(self, num_particles, position_data, velocity_data,
@@ -2748,6 +3093,8 @@ class FluidSimulationFrameStats_t(ctypes.Structure):
                 ("surfacevorticity", FluidSimulationMeshStats_t),
                 ("surfacespeed", FluidSimulationMeshStats_t),
                 ("surfaceage", FluidSimulationMeshStats_t),
+                ("surfacelifetime", FluidSimulationMeshStats_t),
+                ("surfacewhitewaterproximity", FluidSimulationMeshStats_t),
                 ("surfacecolor", FluidSimulationMeshStats_t),
                 ("surfacesourceid", FluidSimulationMeshStats_t),
                 ("surfaceviscosity", FluidSimulationMeshStats_t),
@@ -2771,6 +3118,17 @@ class FluidSimulationFrameStats_t(ctypes.Structure):
                 ("bubblelifetime", FluidSimulationMeshStats_t),
                 ("spraylifetime", FluidSimulationMeshStats_t),
                 ("dustlifetime", FluidSimulationMeshStats_t),
+                ("fluidparticles", FluidSimulationMeshStats_t),
+                ("fluidparticlesid", FluidSimulationMeshStats_t),
+                ("fluidparticlesvelocity", FluidSimulationMeshStats_t),
+                ("fluidparticlesspeed", FluidSimulationMeshStats_t),
+                ("fluidparticlesvorticity", FluidSimulationMeshStats_t),
+                ("fluidparticlescolor", FluidSimulationMeshStats_t),
+                ("fluidparticlesage", FluidSimulationMeshStats_t),
+                ("fluidparticleslifetime", FluidSimulationMeshStats_t),
+                ("fluidparticlesviscosity", FluidSimulationMeshStats_t),
+                ("fluidparticleswhitewaterproximity", FluidSimulationMeshStats_t),
+                ("fluidparticlessourceid", FluidSimulationMeshStats_t),
                 ("particles", FluidSimulationMeshStats_t),
                 ("obstacle", FluidSimulationMeshStats_t),
                 ("forcefield", FluidSimulationMeshStats_t),
@@ -2791,6 +3149,10 @@ class FluidSimulationMarkerParticleAgeData_t(ctypes.Structure):
     _fields_ = [("size", c_int),
                 ("age", c_char_p)]
 
+class FluidSimulationMarkerParticleLifetimeData_t(ctypes.Structure):
+    _fields_ = [("size", c_int),
+                ("lifetime", c_char_p)]
+
 class FluidSimulationMarkerParticleColorData_t(ctypes.Structure):
     _fields_ = [("size", c_int),
                 ("color", c_char_p)]
@@ -2802,6 +3164,10 @@ class FluidSimulationMarkerParticleSourceIDData_t(ctypes.Structure):
 class FluidSimulationMarkerParticleViscosityData_t(ctypes.Structure):
     _fields_ = [("size", c_int),
                 ("viscosity", c_char_p)]
+
+class FluidSimulationMarkerParticleIDData_t(ctypes.Structure):
+    _fields_ = [("size", c_int),
+                ("id", c_char_p)]
 
 class FluidSimulationDiffuseParticleData_t(ctypes.Structure):
     _fields_ = [("size", c_int),

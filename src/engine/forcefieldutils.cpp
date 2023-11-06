@@ -173,8 +173,8 @@ void _initializeNarrowBandClosestPoint(MeshLevelSet &sdf, TriangleMesh &mesh,
     int jsize = data.phi.height;
     int ksize = data.phi.depth;
 
-    int gridsize = isize * jsize * ksize;
-    int numCPU = ThreadUtils::getMaxThreadCount();
+    size_t gridsize = isize * jsize * ksize;
+    size_t numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
     std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);

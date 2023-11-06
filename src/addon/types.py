@@ -251,6 +251,7 @@ domain_settings_panel = (
     ('DOMAIN_SETTINGS_PANEL_SIMULATION', "Simulation", "Grid resolution, simulation method, world scale, frame rate, and time scale settings"),
     ('DOMAIN_SETTINGS_PANEL_CACHE',      "Cache",      "Cache directory location settings"),
     ('DOMAIN_SETTINGS_PANEL_DISPLAY',    "Display",    "Viewport display and render display settings"),
+    ('DOMAIN_SETTINGS_PANEL_PARTICLES',  "Particles",  "Fluid particle export and particle attribute settings"),
     ('DOMAIN_SETTINGS_PANEL_SURFACE',    "Surface",    "Surface mesh generation and surface attribute settings"),
     ('DOMAIN_SETTINGS_PANEL_WHITEWATER', "Whitewater", "Whitewater simulation and whitewater attribute settings"),
     ('DOMAIN_SETTINGS_PANEL_WORLD',      "World",      "World scale, gravity and forcefield, viscosity, surface tension, sheeting effects, and friction settings"),

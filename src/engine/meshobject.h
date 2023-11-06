@@ -125,6 +125,10 @@ public:
     int getSourceID();
     void setViscosity(float v);
     float getViscosity();
+    void setLifetime(float v);
+    float getLifetime();
+    void setLifetimeVariance(float v);
+    float getLifetimeVariance();
     void setSourceColor(vmath::vec3 c);
     vmath::vec3 getSourceColor();
 
@@ -201,6 +205,8 @@ private:
     bool _isDomainObject = false;
     int _sourceID = 0;
     float _viscosity = 0.0f;
+    float _lifetime = 0.0f;
+    float _lifetimeVariance = 0.0f;
     vmath::vec3 _sourceColor;
 
 

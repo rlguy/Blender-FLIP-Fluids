@@ -42,6 +42,7 @@ from ..operators import draw_force_field_operators
 from ..operators import preferences_operators
 from ..utils import version_compatibility_utils as vcu
 from ..utils import installation_utils
+from ..objects import flip_fluid_cache
 
 _LOGGING_DISABLED_MESSAGE = "(Blend file logging disabled in host preferences)"
 
@@ -149,19 +150,19 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
            update=lambda self, context: self._update_debug_grid_geometry(context),
            ); exec(conv("domain_bounds_color"))
 
-    export_fluid_particles = BoolProperty(
+    enable_fluid_particle_debug_output = BoolProperty(
             name="Enable Fluid Particle Debugging",
             description="Enable to export simulator fluid particle data and to"
                 " visualize and debug problems with fluid behaviour. Enable"
                 " this option before baking a simulation to use this feature",
             default=False,
-            update=lambda self, context: self._update_export_fluid_particles(context),
-            ); exec(conv("export_fluid_particles"))
+            update=lambda self, context: self._update_enable_fluid_particle_debug_output(context),
+            ); exec(conv("enable_fluid_particle_debug_output"))
     fluid_particles_visibility = BoolProperty(
             name="Fluid Particle Visibility",
             description="Show fluid particles in the viewport",
             default=True,
-            update=lambda self, context: self._update_export_fluid_particles(context),
+            update=lambda self, context: self._update_enable_fluid_particle_debug_output(context),
             ); exec(conv("fluid_particles_visibility"))
     low_speed_particle_color = FloatVectorProperty(  
            name="Low Speed Color",
@@ -326,34 +327,34 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
 
     def register_preset_properties(self, registry, path):
         add = registry.add_property
-        add(path + ".display_simulation_grid",           "Display Domain Grid",             group_id=0)
-        add(path + ".grid_display_mode",                 "Grid Display Mode",               group_id=0)
-        add(path + ".grid_display_scale",                "Grid Scale",                      group_id=0)
-        add(path + ".enabled_debug_grids",               "Draw Grids",                      group_id=0)
-        add(path + ".x_grid_color",                      "X Grid Color",                    group_id=0)
-        add(path + ".y_grid_color",                      "Y Grid Color",                    group_id=0)
-        add(path + ".z_grid_color",                      "Z Grid Color",                    group_id=0)
-        add(path + ".debug_grid_offsets",                "Grid Offsets",                    group_id=0)
-        add(path + ".snap_offsets_to_grid",              "Snap Offsets to Grid",            group_id=0)
-        add(path + ".export_fluid_particles",            "Enable Fluid Particle Debugging", group_id=1)
-        add(path + ".fluid_particles_visibility",        "Fluid Particle Visibility",       group_id=1)
-        add(path + ".low_speed_particle_color",          "Low Velocity Particle Color",     group_id=1)
-        add(path + ".high_speed_particle_color",         "High Velocity Particle Color",    group_id=1)
-        add(path + ".min_gradient_speed",                "Low-High Particle Velocities",    group_id=1)
-        add(path + ".max_gradient_speed",                "Low-High Particle Velocities",    group_id=1)
-        add(path + ".fluid_particle_gradient_mode",      "Fluid Speed Gradient Mode",       group_id=1)
-        add(path + ".particle_size",                     "Particle Size",                   group_id=1)
-        add(path + ".low_force_field_color",             "Low Force Field Color",           group_id=2)
-        add(path + ".high_force_field_color",            "High Force Field Color",          group_id=2)
-        add(path + ".min_gradient_force",                "Low-High Force Strength",         group_id=2)
-        add(path + ".max_gradient_force",                "Low-High Force Strength",         group_id=2)
-        add(path + ".force_field_gradient_mode",         "Fluid Speed Gradient Mode",       group_id=2)
-        add(path + ".export_force_field",                "Enable Force Field Debugging",    group_id=2)
-        add(path + ".force_field_visibility",            "Force Field Visibility",          group_id=2)
-        add(path + ".force_field_line_size",             "Line Size",                       group_id=2)
-        add(path + ".export_internal_obstacle_mesh",     "Enable Obstacle Debugging",       group_id=3)
-        add(path + ".internal_obstacle_mesh_visibility", "Obstacle Debugging Visibility", group_id=3)
-        add(path + ".display_console_output",            "Display Console Output",        group_id=3)
+        add(path + ".display_simulation_grid",            "Display Domain Grid",             group_id=0)
+        add(path + ".grid_display_mode",                  "Grid Display Mode",               group_id=0)
+        add(path + ".grid_display_scale",                 "Grid Scale",                      group_id=0)
+        add(path + ".enabled_debug_grids",                "Draw Grids",                      group_id=0)
+        add(path + ".x_grid_color",                       "X Grid Color",                    group_id=0)
+        add(path + ".y_grid_color",                       "Y Grid Color",                    group_id=0)
+        add(path + ".z_grid_color",                       "Z Grid Color",                    group_id=0)
+        add(path + ".debug_grid_offsets",                 "Grid Offsets",                    group_id=0)
+        add(path + ".snap_offsets_to_grid",               "Snap Offsets to Grid",            group_id=0)
+        add(path + ".enable_fluid_particle_debug_output", "Enable Fluid Particle Debugging", group_id=1)
+        add(path + ".fluid_particles_visibility",         "Fluid Particle Visibility",       group_id=1)
+        add(path + ".low_speed_particle_color",           "Low Velocity Particle Color",     group_id=1)
+        add(path + ".high_speed_particle_color",          "High Velocity Particle Color",    group_id=1)
+        add(path + ".min_gradient_speed",                 "Low-High Particle Velocities",    group_id=1)
+        add(path + ".max_gradient_speed",                 "Low-High Particle Velocities",    group_id=1)
+        add(path + ".fluid_particle_gradient_mode",       "Fluid Speed Gradient Mode",       group_id=1)
+        add(path + ".particle_size",                      "Particle Size",                   group_id=1)
+        add(path + ".low_force_field_color",              "Low Force Field Color",           group_id=2)
+        add(path + ".high_force_field_color",             "High Force Field Color",          group_id=2)
+        add(path + ".min_gradient_force",                 "Low-High Force Strength",         group_id=2)
+        add(path + ".max_gradient_force",                 "Low-High Force Strength",         group_id=2)
+        add(path + ".force_field_gradient_mode",          "Fluid Speed Gradient Mode",       group_id=2)
+        add(path + ".export_force_field",                 "Enable Force Field Debugging",    group_id=2)
+        add(path + ".force_field_visibility",             "Force Field Visibility",          group_id=2)
+        add(path + ".force_field_line_size",              "Line Size",                       group_id=2)
+        add(path + ".export_internal_obstacle_mesh",      "Enable Obstacle Debugging",       group_id=3)
+        add(path + ".internal_obstacle_mesh_visibility",  "Obstacle Debugging Visibility", group_id=3)
+        add(path + ".display_console_output",             "Display Console Output",        group_id=3)
 
 
     def load_post(self):
@@ -362,7 +363,7 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
         self.is_draw_debug_grid_operator_running = False
         is_draw_gl_particles_operator_running = False
 
-        if self.export_fluid_particles:
+        if self.enable_fluid_particle_debug_output:
             self._update_debug_particle_geometry(bpy.context)
             bpy.ops.flip_fluid_operators.draw_gl_particles('INVOKE_DEFAULT')
         if self.is_simulation_grid_debugging_enabled():
@@ -477,12 +478,12 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
         return self.display_simulation_grid or self.display_domain_bounds
 
 
-    def _update_export_fluid_particles(self, context):
+    def _update_enable_fluid_particle_debug_output(self, context):
         dprops = context.scene.flip_fluid.get_domain_properties()
         if dprops is None:
             return
 
-        if self.export_fluid_particles:
+        if self.enable_fluid_particle_debug_output:
             self._update_debug_particle_geometry(context)
             dprops.mesh_cache.gl_particles.enable()
             if not self.is_draw_gl_particles_operator_running:
@@ -497,7 +498,9 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
             return
 
         if self.export_internal_obstacle_mesh and self.internal_obstacle_mesh_visibility:
-            dprops.mesh_cache.initialize_cache_objects()
+            objects_to_initialize = flip_fluid_cache.EnabledMeshCacheObjects()
+            objects_to_initialize.debug_obstacle = True
+            dprops.mesh_cache.initialize_cache_objects(objects_to_initialize)
         elif self.export_internal_obstacle_mesh and not self.internal_obstacle_mesh_visibility:
             dprops.mesh_cache.obstacle.reset_cache_object()
         else: 

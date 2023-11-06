@@ -66,10 +66,21 @@ def frame_change_post_apply_T71908_workaround(context, depsgraph=None):
         for i in range(len(obj.modifiers)):
             if obj.modifiers[i].type == 'OCEAN':
                 obj.modifiers[i].time = obj_eval.modifiers[i].time
-                print("updated", obj.modifiers[i])
+
+    # Apply to any FF_MotionBlur geometry node 'Motion Blur Scale' value on the mesh objects, another issue 
+    # for this bug when adjusting motion blur for slow motion simulations
+
+    for obj in cache_objects:
+        obj_eval = obj.evaluated_get(depsgraph)
+        for i in range(len(obj.modifiers)):
+            if obj.modifiers[i].type == 'NODES' and obj.modifiers[i].name.startswith("FF_MotionBlur"):
+                if obj.modifiers[i].name.startswith("FF_MotionBlurSurface"):
+                    obj.modifiers[i]["Input_4"] = obj_eval.modifiers[i]["Input_4"]
+                elif obj.modifiers[i].name.startswith("FF_MotionBlurWhitewater"):
+                    obj.modifiers[i]["Input_4"] = obj_eval.modifiers[i]["Input_4"]
 
 
-# In some versions of Blender the viewport rendered view is
+# In some versions of Blender the viewport rendered view is 
 # not updated to display and object if the object's 'hide_render' 
 # property has changed or ray visibility has changed via Python. 
 # Toggling the object's hide_viewport option on and off
@@ -149,6 +160,7 @@ def get_enabled_features_affected_by_T88811(domain_properties=None):
     data_dict["attributes"] = {}
     data_dict["attributes"]["surface"] = []
     data_dict["attributes"]["whitewater"] = []
+    data_dict["fluidparticles"] = []
     data_dict["viscosity"] = []
 
     if dprops.surface.enable_velocity_vector_attribute:
@@ -161,6 +173,10 @@ def get_enabled_features_affected_by_T88811(domain_properties=None):
         data_dict["attributes"]["surface"].append("Color")
     if dprops.surface.enable_age_attribute:
         data_dict["attributes"]["surface"].append("Age")
+    if dprops.surface.enable_lifetime_attribute:
+        data_dict["attributes"]["surface"].append("Lifetime")
+    if dprops.surface.enable_whitewater_proximity_attribute:
+        data_dict["attributes"]["surface"].append("Whitewater Proximity")
     if dprops.surface.enable_source_id_attribute:
         data_dict["attributes"]["surface"].append("Source ID")
 
@@ -171,10 +187,19 @@ def get_enabled_features_affected_by_T88811(domain_properties=None):
     if dprops.whitewater.enable_lifetime_attribute:
         data_dict["attributes"]["whitewater"].append("Lifetime")
 
+    if dprops.particles.enable_fluid_particle_output:
+        data_dict["fluidparticles"].append("Fluid particle export and particle attributes")
+
     if dprops.world.enable_viscosity and dprops.surface.enable_viscosity_attribute:
         data_dict["viscosity"].append("Variable Viscosity")
 
-    if not data_dict["attributes"]["surface"] and not data_dict["attributes"]["whitewater"] and not data_dict["viscosity"]:
+    contains_info = (
+            data_dict["attributes"]["surface"] or 
+            data_dict["attributes"]["whitewater"] or 
+            data_dict["fluidparticles"] or 
+            data_dict["viscosity"]
+            )
+    if not contains_info:
         return None
 
     return data_dict
@@ -205,6 +230,9 @@ def draw_T88811_ui_warning(ui_box, preferences, feature_dict):
     if feature_dict["attributes"]["whitewater"]:
         column.label(text="Whitewater Attributes:", icon="ERROR")
         column.label(text=get_enabled_features_string_T88811(feature_dict["attributes"]["whitewater"]), icon="DOT")
+    if feature_dict["fluidparticles"]:
+        column.label(text="Fluid Particle Features:", icon="ERROR")
+        column.label(text=get_enabled_features_string_T88811(feature_dict["fluidparticles"]), icon="DOT")
     if feature_dict["viscosity"]:
         column.label(text="Viscosity Features:", icon="ERROR")
         column.label(text=get_enabled_features_string_T88811(feature_dict["viscosity"]), icon="DOT")

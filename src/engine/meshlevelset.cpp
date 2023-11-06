@@ -291,8 +291,8 @@ void MeshLevelSet::_trilinearInterpolatePointsThread(int startidx, int endidx,
 void MeshLevelSet::trilinearInterpolateSolidGridPoints(vmath::vec3 offset, double dx, 
                                                        Array3d<bool> &grid) {
 
-    int gridsize = grid.width * grid.height * grid.depth;
-    int numCPU = ThreadUtils::getMaxThreadCount();
+    size_t gridsize = grid.width * grid.height * grid.depth;
+    size_t numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
     std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
@@ -620,8 +620,8 @@ void MeshLevelSet::calculateUnion(MeshLevelSet &levelset) {
     int isizeOther, jsizeOther, ksizeOther;
     levelset.getGridDimensions(&isizeOther, &jsizeOther, &ksizeOther);
 
-    int gridsize = (isizeOther + 1) * (jsizeOther + 1) * (ksizeOther + 1);
-    int numCPU = ThreadUtils::getMaxThreadCount();
+    size_t gridsize = (isizeOther + 1) * (jsizeOther + 1) * (ksizeOther + 1);
+    size_t numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
     std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
@@ -642,9 +642,9 @@ void MeshLevelSet::normalizeVelocityGrid() {
 
     ValidVelocityComponentGrid validVelocities(_isize, _jsize, _ksize);
 
-    int gridsize = (_isize + 1) * _jsize * _ksize;
-    int numCPU = ThreadUtils::getMaxThreadCount();
-    int numthreads = (int)fmin(numCPU, gridsize);
+    size_t gridsize = (_isize + 1) * _jsize * _ksize;
+    size_t numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)std::min(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
     std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {
@@ -661,7 +661,7 @@ void MeshLevelSet::normalizeVelocityGrid() {
     }
 
     gridsize = _isize * (_jsize + 1) * _ksize;
-    numthreads = (int)fmin(numCPU, gridsize);
+    numthreads = (int)std::min(numCPU, gridsize);
     threads = std::vector<std::thread>(numthreads);
     intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {
@@ -678,7 +678,7 @@ void MeshLevelSet::normalizeVelocityGrid() {
     }
 
     gridsize = _isize * _jsize * (_ksize + 1);
-    numthreads = (int)fmin(numCPU, gridsize);
+    numthreads = (int)std::min(numCPU, gridsize);
     threads = std::vector<std::thread>(numthreads);
     intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {
@@ -1375,7 +1375,7 @@ void MeshLevelSet::_computeVelocityGridThread(int startidx, int endidx,
 
 void MeshLevelSet::_computeVelocityGridMT(bool isStatic, int dir) {
     int U = 0; int V = 1; int W = 2;
-    int gridsize = 0;
+    size_t gridsize = 0;
     if (dir == U) {
         gridsize = (_isize + 1) * _jsize * _ksize;
     } else if (dir == V) {
@@ -1384,8 +1384,8 @@ void MeshLevelSet::_computeVelocityGridMT(bool isStatic, int dir) {
         gridsize = _isize * _jsize * (_ksize + 1);
     }
 
-    int numCPU = ThreadUtils::getMaxThreadCount();
-    int numthreads = (int)fmin(numCPU, gridsize);
+    size_t numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)std::min(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
     std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {

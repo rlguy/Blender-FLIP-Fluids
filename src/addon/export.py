@@ -419,11 +419,23 @@ def add_objects_to_geometry_exporter(geometry_exporter):
         props = obj.flip_fluid.get_property_group()
         export_object = __generate_export_object(obj)
 
+        is_dynamic_topology_exception = False
+        if obj.flip_fluid.is_force_field():
+            is_dynamic_topology_exception = True
+        elif obj.flip_fluid.is_inflow():
+            if not obj.flip_fluid.inflow.append_object_velocity:
+                is_dynamic_topology_exception = True
+        elif obj.flip_fluid.is_fluid():
+            if not obj.flip_fluid.fluid.append_object_velocity:
+                is_dynamic_topology_exception = True
+        elif obj.flip_fluid.is_outflow():
+            is_dynamic_topology_exception = True
+
         skip_reexport = hasattr(props, "skip_reexport") and props.skip_reexport
         force_reexport = hasattr(props, "force_reexport_on_next_bake") and props.force_reexport_on_next_bake
         skip_reexport = skip_reexport and not force_reexport
         export_object.skip_reexport = skip_reexport and not force_reexport
-        export_object.disable_changing_topology_warning = disable_topology_warning or obj.flip_fluid.is_force_field()        
+        export_object.disable_changing_topology_warning = disable_topology_warning or is_dynamic_topology_exception        
         geometry_exporter.add_geometry_export_object(export_object)
 
     # Add Fluid/Inflow target objects

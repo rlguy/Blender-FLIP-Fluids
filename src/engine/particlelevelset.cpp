@@ -666,9 +666,9 @@ void ParticleLevelSet::_computeExactBandProducerThread(BoundedBuffer<ComputeBloc
 }
 
 void ParticleLevelSet::_initializeCurvatureGridScalarField(ScalarField &field) {
-    int gridsize = (_isize + 1) * (_jsize + 1) * (_ksize + 1);
-    int numCPU = ThreadUtils::getMaxThreadCount();
-    int numthreads = (int)fmin(numCPU, gridsize);
+    size_t gridsize = (_isize + 1) * (_jsize + 1) * (_ksize + 1);
+    size_t numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)std::min(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
     std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {

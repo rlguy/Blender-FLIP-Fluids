@@ -27,6 +27,7 @@ if "bpy" in locals():
         'material_operators',
         'preset_operators',
         'bake_operators',
+        'stats_operators',
         'draw_grid_operators',
         'draw_particles_operators',
         'draw_force_field_operators',
@@ -50,6 +51,7 @@ from . import (
         material_operators,
         preset_operators,
         bake_operators,
+        stats_operators,
         draw_grid_operators,
         draw_particles_operators,
         draw_force_field_operators,
@@ -69,6 +71,7 @@ def register():
     material_operators.register()
     preset_operators.register()
     bake_operators.register()
+    stats_operators.register()
     draw_grid_operators.register()
     draw_particles_operators.register()
     draw_force_field_operators.register()
@@ -87,6 +90,7 @@ def unregister():
     material_operators.unregister()
     preset_operators.unregister()
     bake_operators.unregister()
+    stats_operators.unregister()
     draw_grid_operators.unregister()
     draw_particles_operators.unregister()
     draw_force_field_operators.unregister()

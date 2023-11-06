@@ -212,7 +212,7 @@ class FlipFluidHelperSelectDomain(bpy.types.Operator):
                 if obj.flip_fluid.is_domain():
                     num_domains += 1
                     found_domains += obj.name + " <scene: " + scene.name + ">, "
-        found_domains.removesuffix(", ")
+        found_domains = vcu.str_removesuffix(found_domains, ", ")
         if num_domains > 1:
             self.report({'ERROR'}, "Error: multiple domain objects found. Only one domain per Blend file is supported. Please remove other domains. Found domain objects: " + found_domains)
             return {'CANCELLED'}
@@ -265,11 +265,44 @@ class FlipFluidHelperSelectSurface(bpy.types.Operator):
             self.report({'ERROR'}, "Unable to select Surface object: Domain object is not located in the active scene>")
             return {'CANCELLED'}
 
-        dprops.mesh_cache.initialize_cache_objects()
+        objects_to_initialize = flip_fluid_cache.EnabledMeshCacheObjects()
+        objects_to_initialize.fluid_surface = True
+        dprops.mesh_cache.initialize_cache_objects(objects_to_initialize)
         surface_object = dprops.mesh_cache.surface.get_cache_object()
         if surface_object is None:
+            self.report({'INFO'}, "Fluid Surface object not found in scene")
             return {'CANCELLED'}
         _select_make_active(context, surface_object)
+        return {'FINISHED'}
+
+
+class FlipFluidHelperSelectFluidParticles(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_select_fluid_particles"
+    bl_label = "Select Fluid Particles"
+    bl_description = "Select the fluid particles object"
+
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.flip_fluid.get_domain_object() is not None
+
+
+    def execute(self, context):
+        dprops = context.scene.flip_fluid.get_domain_properties()
+        if dprops is None:
+            return {'CANCELLED'}
+        if not context.scene.flip_fluid.is_domain_in_active_scene():
+            self.report({'ERROR'}, "Unable to select Surface object: Domain object is not located in the active scene>")
+            return {'CANCELLED'}
+
+        objects_to_initialize = flip_fluid_cache.EnabledMeshCacheObjects()
+        objects_to_initialize.fluid_particles = True
+        dprops.mesh_cache.initialize_cache_objects(objects_to_initialize)
+        fluid_particles_object = dprops.mesh_cache.particles.get_cache_object()
+        if fluid_particles_object is None:
+            self.report({'INFO'}, "Fluid Particles object not found in scene")
+            return {'CANCELLED'}
+        _select_make_active(context, fluid_particles_object)
         return {'FINISHED'}
 
 
@@ -282,7 +315,7 @@ class FlipFluidHelperSelectFoam(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         dprops = context.scene.flip_fluid.get_domain_properties()
-        return dprops is not None and dprops.whitewater.enable_whitewater_simulation
+        return dprops is not None
 
 
     def execute(self, context):
@@ -293,9 +326,12 @@ class FlipFluidHelperSelectFoam(bpy.types.Operator):
             self.report({'ERROR'}, "Unable to select Whitewater Foam object: Domain object is not located in the active scene>")
             return {'CANCELLED'}
 
-        dprops.mesh_cache.initialize_cache_objects()
+        objects_to_initialize = flip_fluid_cache.EnabledMeshCacheObjects()
+        objects_to_initialize.whitewater_particles = True
+        dprops.mesh_cache.initialize_cache_objects(objects_to_initialize)
         foam_object = dprops.mesh_cache.foam.get_cache_object()
         if foam_object is None:
+            self.report({'INFO'}, "Whitewater Foam object not found in scene")
             return {'CANCELLED'}
         _select_make_active(context, foam_object)
         return {'FINISHED'}
@@ -311,7 +347,7 @@ class FlipFluidHelperSelectBubble(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         dprops = context.scene.flip_fluid.get_domain_properties()
-        return dprops is not None and dprops.whitewater.enable_whitewater_simulation
+        return dprops is not None
 
 
     def execute(self, context):
@@ -322,9 +358,12 @@ class FlipFluidHelperSelectBubble(bpy.types.Operator):
             self.report({'ERROR'}, "Unable to select Whitewater Bubble object: Domain object is not located in the active scene>")
             return {'CANCELLED'}
 
-        dprops.mesh_cache.initialize_cache_objects()
+        objects_to_initialize = flip_fluid_cache.EnabledMeshCacheObjects()
+        objects_to_initialize.whitewater_particles = True
+        dprops.mesh_cache.initialize_cache_objects(objects_to_initialize)
         bubble_object = dprops.mesh_cache.bubble.get_cache_object()
         if bubble_object is None:
+            self.report({'INFO'}, "Whitewater Bubble object not found in scene")
             return {'CANCELLED'}
         _select_make_active(context, bubble_object)
         return {'FINISHED'}
@@ -339,7 +378,7 @@ class FlipFluidHelperSelectSpray(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         dprops = context.scene.flip_fluid.get_domain_properties()
-        return dprops is not None and dprops.whitewater.enable_whitewater_simulation
+        return dprops is not None
 
 
     def execute(self, context):
@@ -350,9 +389,12 @@ class FlipFluidHelperSelectSpray(bpy.types.Operator):
             self.report({'ERROR'}, "Unable to select Whitewater Spray object: Domain object is not located in the active scene>")
             return {'CANCELLED'}
 
-        dprops.mesh_cache.initialize_cache_objects()
+        objects_to_initialize = flip_fluid_cache.EnabledMeshCacheObjects()
+        objects_to_initialize.whitewater_particles = True
+        dprops.mesh_cache.initialize_cache_objects(objects_to_initialize)
         spray_object = dprops.mesh_cache.spray.get_cache_object()
         if spray_object is None:
+            self.report({'INFO'}, "Whitewater Spray object not found in scene")
             return {'CANCELLED'}
         _select_make_active(context, spray_object)
         return {'FINISHED'}
@@ -367,7 +409,7 @@ class FlipFluidHelperSelectDust(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         dprops = context.scene.flip_fluid.get_domain_properties()
-        return dprops is not None and dprops.whitewater.enable_whitewater_simulation
+        return dprops is not None
 
 
     def execute(self, context):
@@ -378,9 +420,12 @@ class FlipFluidHelperSelectDust(bpy.types.Operator):
             self.report({'ERROR'}, "Unable to select Whitewater Dust object: Domain object is not located in the active scene>")
             return {'CANCELLED'}
 
-        dprops.mesh_cache.initialize_cache_objects()
+        objects_to_initialize = flip_fluid_cache.EnabledMeshCacheObjects()
+        objects_to_initialize.whitewater_particles = True
+        dprops.mesh_cache.initialize_cache_objects(objects_to_initialize)
         dust_object = dprops.mesh_cache.dust.get_cache_object()
         if dust_object is None:
+            self.report({'INFO'}, "Whitewater Dust object not found in scene")
             return {'CANCELLED'}
         _select_make_active(context, dust_object)
         return {'FINISHED'}
@@ -856,6 +901,96 @@ class FlipFluidHelperDeleteDomain(bpy.types.Operator):
         return context.window_manager.invoke_confirm(self, event)
 
 
+class FlipFluidHelperDeleteSurfaceObjects(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_delete_surface_objects"
+    bl_label = "Delete Fluid Surface Mesh Objects"
+    bl_description = ("Delete fluid surface mesh object." + 
+                      " This object can be re-initialized by toggling the 'Enable Surface Mesh Generation'" + 
+                      " feature off/on. This operator will not delete any data from the simulation cache." + 
+                      " Warning: deleting this object will also remove any modifications such as added" + 
+                      " modifiers and materials")
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.flip_fluid.get_domain_properties() is not None
+
+
+    def execute(self, context):
+        dprops = context.scene.flip_fluid.get_domain_properties()
+        dprops.mesh_cache.delete_surface_cache_objects()
+        self.report({'INFO'}, "Deleted fluid surface mesh object")
+        return {'FINISHED'}
+
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_confirm(self, event)
+
+
+class FlipFluidHelperDeleteParticleObjects(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_delete_particle_objects"
+    bl_label = "Delete Fluid Particle Mesh Objects"
+    bl_description = ("Delete fluid particle mesh object." + 
+                      " This object can be re-initialized by toggling the 'Enable Fluid Particle Export'" + 
+                      " feature off/on. This operator will not delete any data from the simulation cache." + 
+                      " Warning: deleting this object will also remove any modifications such as added" + 
+                      " modifiers and materials")
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.flip_fluid.get_domain_properties() is not None
+
+
+    def execute(self, context):
+        dprops = context.scene.flip_fluid.get_domain_properties()
+        dprops.mesh_cache.delete_particle_cache_objects()
+        self.report({'INFO'}, "Deleted fluid particle mesh object")
+        return {'FINISHED'}
+
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_confirm(self, event)
+
+
+class FlipFluidHelperDeleteWhitewaterObjects(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_delete_whitewater_objects"
+    bl_label = "Delete Whitewater Mesh Objects"
+    bl_description = ("Delete any foam/bubble/spray/dust whitewater mesh objects." + 
+                      " These objects can be re-initialized by toggling the 'Enable Whitewater Simulation'" + 
+                      " feature off/on. This operator will not delete any data from the simulation cache." + 
+                      " Warning: deleting these objects will also remove any modifications such as added" + 
+                      " modifiers and materials")
+
+    whitewater_type = StringProperty("TYPE_ALL")
+    exec(vcu.convert_attribute_to_28("whitewater_type"))
+
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.flip_fluid.get_domain_properties() is not None
+
+
+    def execute(self, context):
+        dprops = context.scene.flip_fluid.get_domain_properties()
+        dprops.mesh_cache.delete_whitewater_cache_objects(whitewater_type=self.whitewater_type)
+
+        if self.whitewater_type == "TYPE_ALL":
+            self.report({'INFO'}, "Deleted foam, bubble, spray, and dust whitewater mesh objects")
+        elif self.whitewater_type == "TYPE_FOAM":
+            self.report({'INFO'}, "Deleted foam whitewater mesh objects")
+        elif self.whitewater_type == "TYPE_BUBBLE":
+            self.report({'INFO'}, "Deleted bubble whitewater mesh objects")
+        elif self.whitewater_type == "TYPE_SPRAY":
+            self.report({'INFO'}, "Deleted spray whitewater mesh objects")
+        elif self.whitewater_type == "TYPE_DUST":
+            self.report({'INFO'}, "Deleted dust whitewater mesh objects")
+
+        return {'FINISHED'}
+
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_confirm(self, event)
+
+
 class FlipFluidHelperOrganizeOutliner(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.helper_organize_outliner"
     bl_label = "Organize Outliner"
@@ -995,6 +1130,14 @@ class FlipFluidHelperSeparateFLIPMeshes(bpy.types.Operator):
                 collection.objects.link(surface_object)
             if surface_object.name in mesh_collection.objects:
                 mesh_collection.objects.unlink(surface_object)
+
+        fluid_particle_object = dprops.mesh_cache.particles.get_cache_object()
+        if fluid_particle_object is not None:
+            collection = self.initialize_child_collection(context, "FLUID_PARTICLES", mesh_collection)
+            if not fluid_particle_object.name in collection.objects:
+                collection.objects.link(fluid_particle_object)
+            if fluid_particle_object.name in mesh_collection.objects:
+                mesh_collection.objects.unlink(fluid_particle_object)
 
         foam_object = dprops.mesh_cache.foam.get_cache_object()
         if foam_object is not None:
@@ -1147,6 +1290,7 @@ class FlipFluidHelperUndoSeparateFLIPMeshes(bpy.types.Operator):
     def execute(self, context):
         collection_names = [
             "SURFACE",
+            "FLUID_PARTICLES",
             "WHITEWATER",
             "FOAM",
             "BUBBLE",
@@ -1246,9 +1390,55 @@ class FlipFluidHelperLoadLastFrame(bpy.types.Operator):
         max_frameno = -1
         for f in bakefiles:
             base = f.split(".")[0]
-            frameno = int(base[-6:])
+            try:
+                frameno = int(base[-6:])
+            except ValueError:
+                continue
             max_frameno = max(frameno, max_frameno)
-        context.scene.frame_set(max_frameno)
+
+        if max_frameno != -1:
+            context.scene.frame_set(max_frameno)
+
+        return {'FINISHED'}
+
+
+class FlipFluidEnableFluidParticleMenu(bpy.types.Menu):
+    bl_label = ""
+    bl_idname = "FLIP_FLUID_MENUS_MT_enable_fluid_particle_menu"
+
+    def draw(self, context):
+        self.layout.operator("flip_fluid_operators.enable_fluid_particle_output")
+
+
+class FlipFluidEnableFluidParticleOutput(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.enable_fluid_particle_output"
+    bl_label = "Enable Fluid Particle Output"
+    bl_description = "Enable Fluid Particle Output"
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.flip_fluid.get_domain_object() is not None
+
+
+    def execute(self, context):
+        dprops = context.scene.flip_fluid.get_domain_properties()
+        dprops.particles.enable_fluid_particle_output = True
+        return {'FINISHED'}
+
+
+class FlipFluidDisplayEnableFluidParticlesTooltip(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.display_enable_fluid_particles_tooltip"
+    bl_label = "Enable Fluid Particles Tooltip"
+    bl_description = "Enable Fluid Particle Output"
+
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.flip_fluid.get_domain_object() is not None
+
+
+    def execute(self, context):
+        bpy.ops.wm.call_menu(name="FLIP_FLUID_MENUS_MT_enable_fluid_particle_menu")
         return {'FINISHED'}
 
 
@@ -1273,8 +1463,6 @@ class FlipFluidEnableWhitewaterSimulation(bpy.types.Operator):
     def execute(self, context):
         dprops = context.scene.flip_fluid.get_domain_properties()
         dprops.whitewater.enable_whitewater_simulation = True
-        if not dprops.render.whitewater_display_settings_expanded:
-            dprops.render.whitewater_display_settings_expanded = True
         return {'FINISHED'}
 
 
@@ -1297,7 +1485,7 @@ class FlipFluidDisplayEnableWhitewaterTooltip(bpy.types.Operator):
 class FlipFluidEnableColorAttribute(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.enable_color_attribute"
     bl_label = "Enable Color Attribute"
-    bl_description = "Enable color attribute in the Domain FLIP Fluid Surface panel"
+    bl_description = "Enable color attribute in the Domain FLIP Fluid Surface and FLIP Fluid Particles panel"
 
     @classmethod
     def poll(cls, context):
@@ -1307,13 +1495,14 @@ class FlipFluidEnableColorAttribute(bpy.types.Operator):
     def execute(self, context):
         dprops = context.scene.flip_fluid.get_domain_properties()
         dprops.surface.enable_color_attribute = True
+        dprops.particles.enable_fluid_particle_color_attribute = True
         return {'FINISHED'}
 
 
 class FlipFluidEnableColorMixAttribute(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.enable_color_mix_attribute"
     bl_label = "Enable Color Attribute + Mixing"
-    bl_description = "Enable color attribute and color mixing in the Domain FLIP Fluid Surface panel"
+    bl_description = "Enable color attribute and color mixing in the Domain FLIP Fluid Surface and FLIP Fluid Particles panel"
 
     @classmethod
     def poll(cls, context):
@@ -1324,6 +1513,7 @@ class FlipFluidEnableColorMixAttribute(bpy.types.Operator):
         dprops = context.scene.flip_fluid.get_domain_properties()
         dprops.surface.enable_color_attribute = True
         dprops.surface.enable_color_attribute_mixing = True
+        dprops.particles.enable_fluid_particle_color_attribute = True
         return {'FINISHED'}
 
 
@@ -1339,7 +1529,7 @@ class FlipFluidEnableColorAttributeMenu(bpy.types.Menu):
 class FlipFluidEnableColorAttributeTooltip(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.enable_color_attribute_tooltip"
     bl_label = "Enable Color Attribute"
-    bl_description = "Click to enable the color attribute in the Domain FLIP Fluid Surface panel"
+    bl_description = "Click to enable the color attribute in the Domain FLIP Fluid Surface and FLIP Fluid Particles panel"
 
 
     @classmethod
@@ -1393,10 +1583,51 @@ class FlipFluidEnableViscosityAttributeTooltip(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class FlipFluidEnableLifetimeAttribute(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.enable_lifetime_attribute"
+    bl_label = "Enable Lifetime Attribute"
+    bl_description = "Enable lifetime attribute in the Domain FLIP Fluid Surface and Domain FLIP Fluid Particles panel"
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.flip_fluid.get_domain_object() is not None
+
+
+    def execute(self, context):
+        dprops = context.scene.flip_fluid.get_domain_properties()
+        dprops.surface.enable_lifetime_attribute = True
+        dprops.particles.enable_lifetime_attribute = True
+        return {'FINISHED'}
+
+
+class FlipFluidEnableLifetimeAttributeMenu(bpy.types.Menu):
+    bl_label = ""
+    bl_idname = "FLIP_FLUID_MENUS_MT_enable_lifetime_attribute_menu"
+
+    def draw(self, context):
+        self.layout.operator("flip_fluid_operators.enable_lifetime_attribute")
+
+
+class FlipFluidEnableLifetimeAttributeTooltip(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.enable_lifetime_attribute_tooltip"
+    bl_label = "Enable Lifetime Attribute"
+    bl_description = "Click to enable the lifetime attribute in the Domain FLIP Fluid Surface and Domain FLIP Fluid Particles panel"
+
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.flip_fluid.get_domain_object() is not None
+
+
+    def execute(self, context):
+        bpy.ops.wm.call_menu(name="FLIP_FLUID_MENUS_MT_enable_lifetime_attribute_menu")
+        return {'FINISHED'}
+
+
 class FlipFluidEnableSourceIDAttribute(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.enable_source_id_attribute"
     bl_label = "Enable Source ID Attribute"
-    bl_description = "Enable source ID attribute in the Domain FLIP Fluid Surface panel"
+    bl_description = "Enable source ID attribute in the Domain FLIP Fluid Surface and FLIP Fluid Particles panel"
 
     @classmethod
     def poll(cls, context):
@@ -1406,6 +1637,7 @@ class FlipFluidEnableSourceIDAttribute(bpy.types.Operator):
     def execute(self, context):
         dprops = context.scene.flip_fluid.get_domain_properties()
         dprops.surface.enable_source_id_attribute = True
+        dprops.particles.enable_fluid_particle_source_id_attribute = True
         return {'FINISHED'}
 
 
@@ -1420,7 +1652,7 @@ class FlipFluidEnableSourceIDAttributeMenu(bpy.types.Menu):
 class FlipFluidEnableSourceIDAttributeTooltip(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.enable_source_id_attribute_tooltip"
     bl_label = "Enable Source ID Attribute"
-    bl_description = "Click to enable the source ID attribute in the Domain FLIP Fluid Surface panel"
+    bl_description = "Click to enable the source ID attribute in the Domain FLIP Fluid Surface and FLIP Fluid Particles panel"
 
 
     @classmethod
@@ -1998,24 +2230,30 @@ class FlipFluidHelperCmdAlembicExportToClipboard(bpy.types.Operator):
         return {'FINISHED'}
 
 
-def is_geometry_node_point_cloud_detected():
+def is_geometry_node_point_cloud_detected(bl_mesh_cache_object=None):
     if not vcu.is_blender_31():
         return False
 
     try:
         dprops = bpy.context.scene.flip_fluid.get_domain_properties()
-        cache_objects = [
+        if bl_mesh_cache_object is None:
+            cache_objects = [
                 dprops.mesh_cache.foam.get_cache_object(),
                 dprops.mesh_cache.bubble.get_cache_object(),
                 dprops.mesh_cache.spray.get_cache_object(),
                 dprops.mesh_cache.dust.get_cache_object(),
                 ]
+        else:
+            cache_objects = [bl_mesh_cache_object]
+
         cache_objects = [c for c in cache_objects if c is not None]
 
-        search_string_start = "FF_MotionBlurWhitewater"
+        search_string_start1 = "FF_MotionBlurWhitewater"
+        search_string_start2 = "FF_MotionBlurFluidParticles"
         for cobj in cache_objects:
             for mod in cobj.modifiers:
-                if mod.type == 'NODES' and str(mod.name).startswith(search_string_start):
+                is_name_correct = str(mod.name).startswith(search_string_start1) or str(mod.name).startswith(search_string_start2)
+                if mod.type == 'NODES' and is_name_correct:
                     return True
     except:
         # Blender may be in the incorrect context for this operation
@@ -2045,11 +2283,39 @@ def update_geometry_node_material(bl_object, resource_name):
             pass
 
 
+def add_geometry_node_modifier(target_object, resource_filepath, resource_name):
+    for mod in target_object.modifiers:
+        if mod.type == 'NODES' and mod.name == resource_name:
+            # Already added
+            return mod
+        
+    node_group = bpy.data.node_groups.get(resource_name)
+    if node_group is None:
+        is_resource_found = False
+        with bpy.data.libraries.load(resource_filepath) as (data_from, data_to):
+            resource = [name for name in data_from.node_groups if name == resource_name]
+            if resource:
+                is_resource_found = True
+                data_to.node_groups = resource
+                
+        if not is_resource_found:
+            return None
+        
+        imported_resource_name = data_to.node_groups[0].name
+    else:
+        # already imported
+        imported_resource_name = node_group.name
+        
+    gn_modifier = target_object.modifiers.new(resource_name, type="NODES")
+    gn_modifier.node_group = bpy.data.node_groups.get(imported_resource_name)
+    return gn_modifier
+
+
 class FlipFluidHelperInitializeMotionBlur(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.helper_initialize_motion_blur"
     bl_label = "Initialize Motion Blur"
     bl_description = ("Initialize all settings and Geometry Node groups required for motion blur rendering." + 
-                      " This will be applied to the fluid surface and whitewater particles (if enabled)." + 
+                      " This will be applied to the fluid surface, fluid particles, and whitewater particles if enabled." + 
                       " Node groups can be customized in the geometry nodes editor and modifier")
 
     resource_prefix = StringProperty(default="FF_MotionBlur")
@@ -2061,44 +2327,41 @@ class FlipFluidHelperInitializeMotionBlur(bpy.types.Operator):
         return context.scene.flip_fluid.get_domain_object() is not None
 
 
-    def add_geometry_node_modifier(self, target_object, resource_filepath, resource_name):
-        for mod in target_object.modifiers:
-            if mod.type == 'NODES' and mod.name == resource_name:
-                # Already added
-                return mod
-            
-        node_group = bpy.data.node_groups.get(resource_name)
-        if node_group is None:
-            is_resource_found = False
-            with bpy.data.libraries.load(resource_filepath) as (data_from, data_to):
-                resource = [name for name in data_from.node_groups if name == resource_name]
-                if resource:
-                    is_resource_found = True
-                    data_to.node_groups = resource
-                    
-            if not is_resource_found:
-                return None
-            
-            imported_resource_name = data_to.node_groups[0].name
-        else:
-            # already imported
-            imported_resource_name = node_group.name
-            
-        gn_modifier = target_object.modifiers.new(resource_name, type="NODES")
-        gn_modifier.node_group = bpy.data.node_groups.get(imported_resource_name)
-        return gn_modifier
-
-
     def apply_modifier_settings(self, target_object, gn_modifier):
-        try:
-            # Depending on FLIP Fluids version, the GN set up may not
-            # have an Input_5
-            gn_modifier["Input_5"] = target_object.active_material
-        except:
-            pass
         gn_modifier["Input_2_use_attribute"] = 1
         gn_modifier["Input_2_attribute_name"] = 'flip_velocity'
         gn_modifier["Output_3_attribute_name"] = 'velocity'
+
+        gn_name = gn_modifier.name
+        if gn_name.startswith("FF_MotionBlurSurface"):
+            # Depending on FLIP Fluids version, the GN set up may not
+            # have these inputs. Available in FLIP Fluids 1.7.2 or later.
+            try:
+                # Enable Motion Blur
+                gn_modifier["Input_6"] = True
+            except:
+                pass
+
+        if gn_name.startswith("FF_MotionBlurWhitewater") or gn_name.startswith("FF_MotionBlurFluidParticles"):
+            # Depending on FLIP Fluids version, the GN set up may not
+            # have these inputs. Available in FLIP Fluids 1.7.2 or later.
+            try:
+                # Material
+                gn_modifier["Input_5"] = target_object.active_material
+            except:
+                pass
+
+            try:
+                # Enable Motion Blur
+                gn_modifier["Input_8"] = True
+            except:
+                pass
+
+            try:
+                # Enable Point Cloud
+                gn_modifier["Input_9"] = True
+            except:
+                pass
 
 
     def execute(self, context):
@@ -2123,12 +2386,17 @@ class FlipFluidHelperInitializeMotionBlur(bpy.types.Operator):
             dprops.surface.enable_velocity_vector_attribute = True
             self.report({'INFO'}, "Enabled generation of fluid surface velocity vector attributes in FLIP Fluid Surface panel (baking required)")
 
+        if not dprops.particles.enable_fluid_particle_velocity_vector_attribute:
+            dprops.particles.enable_fluid_particle_velocity_vector_attribute = True
+            self.report({'INFO'}, "Enabled generation of fluid particle velocity vector attributes in FLIP Fluid Particles panel (baking required)")
+
         if not dprops.whitewater.enable_velocity_vector_attribute:
             dprops.whitewater.enable_velocity_vector_attribute = True
             self.report({'INFO'}, "Enabled generation of whitewater velocity vector attributes in FLIP Fluid Whitewater (baking required)")
 
         blend_filename = "geometry_nodes_library.blend"
         surface_resource = self.resource_prefix + "Surface"
+        fluid_particle_resource = self.resource_prefix + "FluidParticles"
         whitewater_foam_resource = self.resource_prefix + "WhitewaterFoam"
         whitewater_bubble_resource = self.resource_prefix + "WhitewaterBubble"
         whitewater_spray_resource = self.resource_prefix + "WhitewaterSpray"
@@ -2144,6 +2412,13 @@ class FlipFluidHelperInitializeMotionBlur(bpy.types.Operator):
             if bl_object is not None:
                  surface_cache_objects.append(bl_object)
 
+        fluid_particle_mesh_caches = [dprops.mesh_cache.particles]
+        fluid_particle_cache_objects = []
+        for m in fluid_particle_mesh_caches:
+            bl_object = m.get_cache_object()
+            if bl_object is not None:
+                 fluid_particle_cache_objects.append(bl_object)
+
         whitewater_mesh_caches = [
                 dprops.mesh_cache.foam, 
                 dprops.mesh_cache.bubble, 
@@ -2157,7 +2432,13 @@ class FlipFluidHelperInitializeMotionBlur(bpy.types.Operator):
                  whitewater_cache_objects.append(bl_object)
 
         for target_object in surface_cache_objects:
-            gn_modifier = self.add_geometry_node_modifier(target_object, resource_filepath, surface_resource)
+            gn_modifier = add_geometry_node_modifier(target_object, resource_filepath, surface_resource)
+            self.apply_modifier_settings(target_object, gn_modifier)
+            info_msg = "Initialized " + gn_modifier.name + " Geometry Node modifier on " + target_object.name + " object"
+            self.report({'INFO'}, info_msg)
+
+        for target_object in fluid_particle_cache_objects:
+            gn_modifier = add_geometry_node_modifier(target_object, resource_filepath, fluid_particle_resource)
             self.apply_modifier_settings(target_object, gn_modifier)
             info_msg = "Initialized " + gn_modifier.name + " Geometry Node modifier on " + target_object.name + " object"
             self.report({'INFO'}, info_msg)
@@ -2173,12 +2454,12 @@ class FlipFluidHelperInitializeMotionBlur(bpy.types.Operator):
             elif target_object == dprops.mesh_cache.dust.get_cache_object():
                 whitewater_resource = whitewater_dust_resource
 
-            gn_modifier = self.add_geometry_node_modifier(target_object, resource_filepath, whitewater_resource)
+            gn_modifier = add_geometry_node_modifier(target_object, resource_filepath, whitewater_resource)
             self.apply_modifier_settings(target_object, gn_modifier)
             info_msg = "Initialized " + gn_modifier.name + " Geometry Node modifier on " + target_object.name + " object"
             self.report({'INFO'}, info_msg)
 
-        for target_object in surface_cache_objects + whitewater_cache_objects:
+        for target_object in surface_cache_objects + fluid_particle_cache_objects + whitewater_cache_objects:
             if not target_object.cycles.use_motion_blur:
                 target_object.cycles.use_motion_blur = True
                 info_msg = "Enabled motion blur rendering on " + target_object.name + " object"
@@ -2190,10 +2471,10 @@ class FlipFluidHelperInitializeMotionBlur(bpy.types.Operator):
 class FlipFluidHelperRemoveMotionBlur(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.helper_remove_motion_blur"
     bl_label = "Remove Motion Blur"
-    bl_description = ("Remove the motion blur setup from the fluid surface and whitewater" +
+    bl_description = ("Remove the motion blur setup from the fluid surface, fluid particles, and whitewater" +
             " particles (if enabled). This will remove the motion blur Geometry Node" +
             " groups and disable object motion blur for the surface/whitewater. Note: this" +
-            " operator will not disable the Domain surface/whitewater velocity attribute settings")
+            " operator will not disable the Domain surface/particles/whitewater velocity attribute settings")
 
 
     resource_prefix = StringProperty(default="FF_MotionBlur")
@@ -2224,6 +2505,13 @@ class FlipFluidHelperRemoveMotionBlur(bpy.types.Operator):
             if bl_object is not None:
                  surface_cache_objects.append(bl_object)
 
+        fluid_particle_mesh_caches = [dprops.mesh_cache.particles]
+        fluid_particle_cache_objects = []
+        for m in fluid_particle_mesh_caches:
+            bl_object = m.get_cache_object()
+            if bl_object is not None:
+                 fluid_particle_cache_objects.append(bl_object)
+
         whitewater_mesh_caches = [
                 dprops.mesh_cache.foam, 
                 dprops.mesh_cache.bubble, 
@@ -2237,7 +2525,7 @@ class FlipFluidHelperRemoveMotionBlur(bpy.types.Operator):
                  whitewater_cache_objects.append(bl_object)
 
         is_setup_modified = False
-        cache_objects = surface_cache_objects + whitewater_cache_objects
+        cache_objects = surface_cache_objects + fluid_particle_cache_objects + whitewater_cache_objects
         modifier_name_prefix = self.resource_prefix
         for bl_object in cache_objects:
             geometry_node_modifiers = [mod for mod in bl_object.modifiers if mod.type == "NODES"]
@@ -2768,7 +3056,7 @@ class FlipFluidAutoLoadBakedFramesCMD(bpy.types.Operator):
             try:
                 frameno = int(base[-6:])
                 max_frameno = max(frameno, max_frameno)
-            except:
+            except ValueError:
                 # In the case that there is a bakefile without a number
                 pass
         return max_frameno
@@ -2791,8 +3079,6 @@ class FlipFluidAutoLoadBakedFramesCMD(bpy.types.Operator):
         dprops = context.scene.flip_fluid.get_domain_properties()
         if dprops is None:
             return
-
-        print("Update Modal")
 
         if dprops.bake.is_simulation_running:
             # Don't update if a simulation bake is already running in the UI
@@ -3206,6 +3492,7 @@ def register():
         FlipFluidHelperRemesh,
         FlipFluidHelperSelectDomain,
         FlipFluidHelperSelectSurface,
+        FlipFluidHelperSelectFluidParticles,
         FlipFluidHelperSelectFoam,
         FlipFluidHelperSelectBubble,
         FlipFluidHelperSelectSpray,
@@ -3215,6 +3502,9 @@ def register():
         FlipFluidHelperAddObjects,
         FlipFluidHelperRemoveObjects,
         FlipFluidHelperDeleteDomain,
+        FlipFluidHelperDeleteSurfaceObjects,
+        FlipFluidHelperDeleteParticleObjects,
+        FlipFluidHelperDeleteWhitewaterObjects,
         FlipFluidHelperOrganizeOutliner,
         FlipFluidHelperSeparateFLIPMeshes,
         FlipFluidHelperUndoOrganizeOutliner,
@@ -3242,6 +3532,9 @@ def register():
         FlipFluidHelperBatchExportAnimatedMesh,
         FlipFluidHelperBatchSkipReexport,
         FlipFluidHelperBatchForceReexport,
+        FlipFluidEnableFluidParticleMenu,
+        FlipFluidEnableFluidParticleOutput,
+        FlipFluidDisplayEnableFluidParticlesTooltip,
         FlipFluidEnableWhitewaterSimulation,
         FlipFluidEnableWhitewaterMenu,
         FlipFluidDisplayEnableWhitewaterTooltip,
@@ -3252,6 +3545,9 @@ def register():
         FlipFluidEnableViscosityAttribute,
         FlipFluidEnableViscosityAttributeMenu,
         FlipFluidEnableViscosityAttributeTooltip,
+        FlipFluidEnableLifetimeAttribute,
+        FlipFluidEnableLifetimeAttributeMenu,
+        FlipFluidEnableLifetimeAttributeTooltip,
         FlipFluidEnableSourceIDAttribute,
         FlipFluidEnableSourceIDAttributeMenu,
         FlipFluidEnableSourceIDAttributeTooltip,
@@ -3282,6 +3578,7 @@ def unregister():
     bpy.utils.unregister_class(FlipFluidHelperRemesh)
     bpy.utils.unregister_class(FlipFluidHelperSelectDomain)
     bpy.utils.unregister_class(FlipFluidHelperSelectSurface)
+    bpy.utils.unregister_class(FlipFluidHelperSelectFluidParticles)
     bpy.utils.unregister_class(FlipFluidHelperSelectFoam)
     bpy.utils.unregister_class(FlipFluidHelperSelectBubble)
     bpy.utils.unregister_class(FlipFluidHelperSelectSpray)
@@ -3291,6 +3588,9 @@ def unregister():
     bpy.utils.unregister_class(FlipFluidHelperAddObjects)
     bpy.utils.unregister_class(FlipFluidHelperRemoveObjects)
     bpy.utils.unregister_class(FlipFluidHelperDeleteDomain)
+    bpy.utils.unregister_class(FlipFluidHelperDeleteSurfaceObjects)
+    bpy.utils.unregister_class(FlipFluidHelperDeleteParticleObjects)
+    bpy.utils.unregister_class(FlipFluidHelperDeleteWhitewaterObjects)
     bpy.utils.unregister_class(FlipFluidHelperOrganizeOutliner)
     bpy.utils.unregister_class(FlipFluidHelperSeparateFLIPMeshes)
     bpy.utils.unregister_class(FlipFluidHelperUndoOrganizeOutliner)
@@ -3318,6 +3618,9 @@ def unregister():
     bpy.utils.unregister_class(FlipFluidHelperBatchExportAnimatedMesh)
     bpy.utils.unregister_class(FlipFluidHelperBatchSkipReexport)
     bpy.utils.unregister_class(FlipFluidHelperBatchForceReexport)
+    bpy.utils.unregister_class(FlipFluidEnableFluidParticleMenu)
+    bpy.utils.unregister_class(FlipFluidEnableFluidParticleOutput)
+    bpy.utils.unregister_class(FlipFluidDisplayEnableFluidParticlesTooltip)
     bpy.utils.unregister_class(FlipFluidEnableWhitewaterSimulation)
     bpy.utils.unregister_class(FlipFluidEnableWhitewaterMenu)
     bpy.utils.unregister_class(FlipFluidDisplayEnableWhitewaterTooltip)
@@ -3328,6 +3631,9 @@ def unregister():
     bpy.utils.unregister_class(FlipFluidEnableViscosityAttribute)
     bpy.utils.unregister_class(FlipFluidEnableViscosityAttributeMenu)
     bpy.utils.unregister_class(FlipFluidEnableViscosityAttributeTooltip)
+    bpy.utils.unregister_class(FlipFluidEnableLifetimeAttribute)
+    bpy.utils.unregister_class(FlipFluidEnableLifetimeAttributeMenu)
+    bpy.utils.unregister_class(FlipFluidEnableLifetimeAttributeTooltip)
     bpy.utils.unregister_class(FlipFluidEnableSourceIDAttribute)
     bpy.utils.unregister_class(FlipFluidEnableSourceIDAttributeMenu)
     bpy.utils.unregister_class(FlipFluidEnableSourceIDAttributeTooltip)

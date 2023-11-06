@@ -291,6 +291,30 @@ extern "C" {
         );
     }
 
+    EXPORTDLL int MeshFluidSource_get_lifetime(MeshFluidSource* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &MeshFluidSource::getLifetime, err
+        );
+    }
+
+    EXPORTDLL void MeshFluidSource_set_lifetime(MeshFluidSource* obj, float v, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &MeshFluidSource::setLifetime, v, err
+        );
+    }
+
+    EXPORTDLL int MeshFluidSource_get_lifetime_variance(MeshFluidSource* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &MeshFluidSource::getLifetimeVariance, err
+        );
+    }
+
+    EXPORTDLL void MeshFluidSource_set_lifetime_variance(MeshFluidSource* obj, float v, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &MeshFluidSource::setLifetimeVariance, v, err
+        );
+    }
+
     EXPORTDLL Vector3_t MeshFluidSource_get_source_color(MeshFluidSource* obj, int *err) {
         vmath::vec3 color = CBindings::safe_execute_method_ret_0param(
             obj, &MeshFluidSource::getSourceColor, err

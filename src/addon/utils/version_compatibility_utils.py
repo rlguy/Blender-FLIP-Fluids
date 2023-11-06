@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, array, os
+import bpy, array, os, numpy
 
 from ..pyfluid import TriangleMesh
 
@@ -435,8 +435,16 @@ def swap_object_mesh_data_geometry(bl_object, vertices=[], triangles=[],
             is_vc_layer_active = [vc.active for vc in bl_object.data.vertex_colors]
             is_vc_layer_active_render = [vc.active_render for vc in bl_object.data.vertex_colors]
 
+        vertices = numpy.array(vertices, dtype=numpy.float32)
+        num_vertices = vertices.shape[0] // 3
+        vertex_index = numpy.array(triangles, dtype=numpy.int32)
+        loop_start = numpy.array(list(range(0, len(triangles), 3)), dtype=numpy.int32)
+        num_loops = loop_start.shape[0]
+        loop_total = numpy.array([3] * (len(triangles) // 3), dtype=numpy.int32)
+
         bl_object.data.clear_geometry()
         bl_object.data.from_pydata(vertices, [], triangles)
+
         _set_mesh_smoothness(bl_object.data, smooth_mesh)
         _set_octane_mesh_type(bl_object, octane_mesh_type)
 
@@ -549,14 +557,22 @@ def get_file_folder_icon():
     else:
         return "FILESEL"
 
+
 def get_hide_off_icon():
     if is_blender_28():
         return "HIDE_OFF"
     else:
         return "RESTRICT_VIEW_OFF"
 
+
 def get_hide_on_icon():
     if is_blender_28():
         return "HIDE_ON"
     else:
         return "RESTRICT_VIEW_ON"
+
+
+def str_removesuffix(input_string, suffix):
+    if suffix and input_string.endswith(suffix):
+        return input_string[:-len(suffix)]
+    return input_string

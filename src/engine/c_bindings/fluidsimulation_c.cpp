@@ -345,6 +345,102 @@ extern "C" {
         );
     }
 
+    EXPORTDLL void FluidSimulation_enable_fluid_particle_output(FluidSimulation* obj,
+                                                                int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableFluidParticleOutput, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_fluid_particle_output(FluidSimulation* obj,
+                                                                 int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableFluidParticleOutput, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_fluid_particle_output_enabled(FluidSimulation* obj,
+                                                                   int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isFluidParticleOutputEnabled, err
+        );
+    }
+
+    EXPORTDLL double FluidSimulation_get_fluid_particle_output_amount(FluidSimulation* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getFluidParticleOutputAmount, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_set_fluid_particle_output_amount(FluidSimulation* obj, double value, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setFluidParticleOutputAmount, value, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_enable_fluid_particle_surface_output(FluidSimulation* obj,
+                                                                        int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableFluidParticleSurfaceOutput, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_fluid_particle_surface_output(FluidSimulation* obj,
+                                                                         int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableFluidParticleSurfaceOutput, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_fluid_particle_surface_output_enabled(FluidSimulation* obj,
+                                                                           int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isFluidParticleSurfaceOutputEnabled, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_enable_fluid_particle_boundary_output(FluidSimulation* obj,
+                                                                         int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableFluidParticleBoundaryOutput, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_fluid_particle_boundary_output(FluidSimulation* obj,
+                                                                          int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableFluidParticleBoundaryOutput, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_fluid_particle_boundary_output_enabled(FluidSimulation* obj,
+                                                                            int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isFluidParticleBoundaryOutputEnabled, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_enable_fluid_particle_interior_output(FluidSimulation* obj,
+                                                                         int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableFluidParticleInteriorOutput, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_fluid_particle_interior_output(FluidSimulation* obj,
+                                                                          int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableFluidParticleInteriorOutput, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_fluid_particle_interior_output_enabled(FluidSimulation* obj,
+                                                                            int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isFluidParticleInteriorOutputEnabled, err
+        );
+    }
+
     EXPORTDLL int FluidSimulation_get_surface_subdivision_level(FluidSimulation* obj, 
                                                                 int *err) {
         return CBindings::safe_execute_method_ret_0param(
@@ -656,6 +752,27 @@ extern "C" {
         );
     }
 
+    EXPORTDLL void FluidSimulation_enable_whitewater_velocity_attribute(FluidSimulation* obj,
+                                                                        int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableWhitewaterVelocityAttribute, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_whitewater_velocity_attribute(FluidSimulation* obj,
+                                                                         int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableWhitewaterVelocityAttribute, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_whitewater_velocity_attribute_enabled(FluidSimulation* obj,
+                                                                           int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isWhitewaterVelocityAttributeEnabled, err
+        );
+    }
+
     EXPORTDLL void FluidSimulation_enable_whitewater_id_attribute(FluidSimulation* obj,
                                                                   int *err) {
         CBindings::safe_execute_method_void_0param(
@@ -695,6 +812,174 @@ extern "C" {
                                                                            int *err) {
         return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::isWhitewaterLifetimeAttributeEnabled, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_enable_fluid_particle_velocity_attribute(FluidSimulation* obj,
+                                                                     int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableFluidParticleVelocityAttribute, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_fluid_particle_velocity_attribute(FluidSimulation* obj,
+                                                                      int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableFluidParticleVelocityAttribute, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_fluid_particle_velocity_attribute_enabled(FluidSimulation* obj,
+                                                                       int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isFluidParticleVelocityAttributeEnabled, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_enable_fluid_particle_speed_attribute(FluidSimulation* obj,
+                                                                  int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableFluidParticleSpeedAttribute, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_fluid_particle_speed_attribute(FluidSimulation* obj,
+                                                                   int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableFluidParticleSpeedAttribute, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_fluid_particle_speed_attribute_enabled(FluidSimulation* obj,
+                                                                     int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isFluidParticleSpeedAttributeEnabled, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_enable_fluid_particle_vorticity_attribute(FluidSimulation* obj,
+                                                                      int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableFluidParticleVorticityAttribute, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_fluid_particle_vorticity_attribute(FluidSimulation* obj,
+                                                                       int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableFluidParticleVorticityAttribute, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_fluid_particle_vorticity_attribute_enabled(FluidSimulation* obj,
+                                                                         int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isFluidParticleVorticityAttributeEnabled, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_enable_fluid_particle_color_attribute(FluidSimulation* obj,
+                                                                         int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableFluidParticleColorAttribute, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_fluid_particle_color_attribute(FluidSimulation* obj,
+                                                                          int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableFluidParticleColorAttribute, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_fluid_particle_color_attribute_enabled(FluidSimulation* obj,
+                                                                            int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isFluidParticleColorAttributeEnabled, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_enable_fluid_particle_age_attribute(FluidSimulation* obj,
+                                                                       int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableFluidParticleAgeAttribute, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_fluid_particle_age_attribute(FluidSimulation* obj,
+                                                                        int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableFluidParticleAgeAttribute, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_fluid_particle_age_attribute_enabled(FluidSimulation* obj,
+                                                                          int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isFluidParticleAgeAttributeEnabled, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_enable_fluid_particle_lifetime_attribute(FluidSimulation* obj,
+                                                                            int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableFluidParticleLifetimeAttribute, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_fluid_particle_lifetime_attribute(FluidSimulation* obj,
+                                                                             int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableFluidParticleLifetimeAttribute, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_fluid_particle_lifetime_attribute_enabled(FluidSimulation* obj,
+                                                                               int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isFluidParticleLifetimeAttributeEnabled, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_enable_fluid_particle_whitewater_proximity_attribute(FluidSimulation* obj,
+                                                                                        int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableFluidParticleWhitewaterProximityAttribute, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_fluid_particle_whitewater_proximity_attribute(FluidSimulation* obj,
+                                                                                         int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableFluidParticleWhitewaterProximityAttribute, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_fluid_particle_whitewater_proximity_attribute_enabled(FluidSimulation* obj,
+                                                                                           int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isFluidParticleWhitewaterProximityAttributeEnabled, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_enable_fluid_particle_source_id_attribute(FluidSimulation* obj,
+                                                                                        int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableFluidParticleSourceIDAttribute, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_fluid_particle_source_id_attribute(FluidSimulation* obj,
+                                                                                         int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableFluidParticleSourceIDAttribute, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_fluid_particle_source_id_attribute_enabled(FluidSimulation* obj,
+                                                                                           int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isFluidParticleSourceIDAttributeEnabled, err
         );
     }
 
@@ -740,24 +1025,24 @@ extern "C" {
         );
     }
 
-    EXPORTDLL void FluidSimulation_enable_whitewater_velocity_attribute(FluidSimulation* obj,
-                                                                        int *err) {
+    EXPORTDLL void FluidSimulation_enable_surface_speed_attribute(FluidSimulation* obj,
+                                                                  int *err) {
         CBindings::safe_execute_method_void_0param(
-            obj, &FluidSimulation::enableWhitewaterVelocityAttribute, err
+            obj, &FluidSimulation::enableSurfaceSpeedAttribute, err
         );
     }
 
-    EXPORTDLL void FluidSimulation_disable_whitewater_velocity_attribute(FluidSimulation* obj,
-                                                                         int *err) {
+    EXPORTDLL void FluidSimulation_disable_surface_speed_attribute(FluidSimulation* obj,
+                                                                   int *err) {
         CBindings::safe_execute_method_void_0param(
-            obj, &FluidSimulation::disableWhitewaterVelocityAttribute, err
+            obj, &FluidSimulation::disableSurfaceSpeedAttribute, err
         );
     }
 
-    EXPORTDLL int FluidSimulation_is_whitewater_velocity_attribute_enabled(FluidSimulation* obj,
-                                                                           int *err) {
+    EXPORTDLL int FluidSimulation_is_surface_speed_attribute_enabled(FluidSimulation* obj,
+                                                                     int *err) {
         return CBindings::safe_execute_method_ret_0param(
-            obj, &FluidSimulation::isWhitewaterVelocityAttributeEnabled, err
+            obj, &FluidSimulation::isSurfaceSpeedAttributeEnabled, err
         );
     }
 
@@ -779,27 +1064,6 @@ extern "C" {
                                                                          int *err) {
         return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::isSurfaceVorticityAttributeEnabled, err
-        );
-    }
-
-    EXPORTDLL void FluidSimulation_enable_surface_speed_attribute(FluidSimulation* obj,
-                                                                  int *err) {
-        CBindings::safe_execute_method_void_0param(
-            obj, &FluidSimulation::enableSurfaceSpeedAttribute, err
-        );
-    }
-
-    EXPORTDLL void FluidSimulation_disable_surface_speed_attribute(FluidSimulation* obj,
-                                                                   int *err) {
-        CBindings::safe_execute_method_void_0param(
-            obj, &FluidSimulation::disableSurfaceSpeedAttribute, err
-        );
-    }
-
-    EXPORTDLL int FluidSimulation_is_surface_speed_attribute_enabled(FluidSimulation* obj,
-                                                                     int *err) {
-        return CBindings::safe_execute_method_ret_0param(
-            obj, &FluidSimulation::isSurfaceSpeedAttributeEnabled, err
         );
     }
 
@@ -834,6 +1098,87 @@ extern "C" {
                                                                     double radius, int *err) {
         CBindings::safe_execute_method_void_1param(
             obj, &FluidSimulation::setSurfaceAgeAttributeRadius, radius, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_enable_surface_lifetime_attribute(FluidSimulation* obj,
+                                                                int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableSurfaceLifetimeAttribute, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_surface_lifetime_attribute(FluidSimulation* obj,
+                                                                 int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableSurfaceLifetimeAttribute, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_surface_lifetime_attribute_enabled(FluidSimulation* obj,
+                                                                   int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isSurfaceLifetimeAttributeEnabled, err
+        );
+    }
+
+    EXPORTDLL double FluidSimulation_get_surface_lifetime_attribute_radius(FluidSimulation* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getSurfaceLifetimeAttributeRadius, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_set_surface_lifetime_attribute_radius(FluidSimulation* obj, 
+                                                                    double radius, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setSurfaceLifetimeAttributeRadius, radius, err
+        );
+    }
+
+    EXPORTDLL double FluidSimulation_get_surface_lifetime_attribute_death_time(FluidSimulation* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getSurfaceLifetimeAttributeDeathTime, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_set_surface_lifetime_attribute_death_time(FluidSimulation* obj, 
+                                                                             double time, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setSurfaceLifetimeAttributeDeathTime, time, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_enable_surface_whitewater_proximity_attribute(FluidSimulation* obj,
+                                                                                 int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableSurfaceWhitewaterProximityAttribute, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_surface_whitewater_proximity_attribute(FluidSimulation* obj,
+                                                                                  int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableSurfaceWhitewaterProximityAttribute, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_surface_whitewater_proximity_attribute_enabled(FluidSimulation* obj,
+                                                                                    int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isSurfaceWhitewaterProximityAttributeEnabled, err
+        );
+    }
+
+    EXPORTDLL double FluidSimulation_get_surface_whitewater_proximity_attribute_radius(FluidSimulation* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getSurfaceWhitewaterProximityAttributeRadius, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_set_surface_whitewater_proximity_attribute_radius(FluidSimulation* obj, 
+                                                                                     double radius, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setSurfaceWhitewaterProximityAttributeRadius, radius, err
         );
     }
 
@@ -1014,24 +1359,24 @@ extern "C" {
         );
     }
 
-    EXPORTDLL void FluidSimulation_enable_fluid_particle_output(FluidSimulation* obj,
+    EXPORTDLL void FluidSimulation_enable_fluid_particle_debug_output(FluidSimulation* obj,
                                                                 int *err) {
         CBindings::safe_execute_method_void_0param(
-            obj, &FluidSimulation::enableFluidParticleOutput, err
+            obj, &FluidSimulation::enableFluidParticleDebugOutput, err
         );
     }
 
-    EXPORTDLL void FluidSimulation_disable_fluid_particle_output(FluidSimulation* obj,
-                                                                 int *err) {
+    EXPORTDLL void FluidSimulation_disable_fluid_particle_debug_output(FluidSimulation* obj,
+                                                                       int *err) {
         CBindings::safe_execute_method_void_0param(
-            obj, &FluidSimulation::disableFluidParticleOutput, err
+            obj, &FluidSimulation::disableFluidParticleDebugOutput, err
         );
     }
 
-    EXPORTDLL int FluidSimulation_is_fluid_particle_output_enabled(FluidSimulation* obj,
-                                                                   int *err) {
+    EXPORTDLL int FluidSimulation_is_fluid_particle_debug_output_enabled(FluidSimulation* obj,
+                                                                         int *err) {
         return CBindings::safe_execute_method_ret_0param(
-            obj, &FluidSimulation::isFluidParticleOutputEnabled, err
+            obj, &FluidSimulation::isFluidParticleDebugOutputEnabled, err
         );
     }
 
@@ -2945,6 +3290,32 @@ extern "C" {
         return 0;
     }
 
+    EXPORTDLL int FluidSimulation_get_surface_lifetime_attribute_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getSurfaceLifetimeAttributeData();
+            return (int)data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
+    EXPORTDLL int FluidSimulation_get_surface_whitewater_proximity_attribute_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getSurfaceWhitewaterProximityAttributeData();
+            return (int)data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
     EXPORTDLL int FluidSimulation_get_surface_color_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
@@ -3218,6 +3589,149 @@ extern "C" {
         return 0;
     }
 
+    EXPORTDLL int FluidSimulation_get_fluid_particle_id_attribute_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getFluidParticleIDAttributeData();
+            return (int)data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
+    EXPORTDLL int FluidSimulation_get_fluid_particle_velocity_attribute_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getFluidParticleVelocityAttributeData();
+            return (int)data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
+    EXPORTDLL int FluidSimulation_get_fluid_particle_speed_attribute_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getFluidParticleSpeedAttributeData();
+            return (int)data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
+    EXPORTDLL int FluidSimulation_get_fluid_particle_vorticity_attribute_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getFluidParticleVorticityAttributeData();
+            return (int)data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
+    EXPORTDLL int FluidSimulation_get_fluid_particle_color_attribute_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getFluidParticleColorAttributeData();
+            return (int)data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
+    EXPORTDLL int FluidSimulation_get_fluid_particle_age_attribute_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getFluidParticleAgeAttributeData();
+            return (int)data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
+    EXPORTDLL int FluidSimulation_get_fluid_particle_lifetime_attribute_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getFluidParticleLifetimeAttributeData();
+            return (int)data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
+    EXPORTDLL int FluidSimulation_get_fluid_particle_viscosity_attribute_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getFluidParticleViscosityAttributeData();
+            return (int)data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
+    EXPORTDLL int FluidSimulation_get_fluid_particle_whitewater_proximity_attribute_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getFluidParticleWhitewaterProximityAttributeData();
+            return (int)data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
+    EXPORTDLL int FluidSimulation_get_fluid_particle_source_id_attribute_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getFluidParticleSourceIDAttributeData();
+            return (int)data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
+    EXPORTDLL int FluidSimulation_get_fluid_particle_debug_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getFluidParticleDebugData();
+            return (int)data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
     EXPORTDLL int FluidSimulation_get_internal_obstacle_mesh_data_size(FluidSimulation* obj, 
                                                                        int *err) {
         *err = CBindings::SUCCESS;
@@ -3426,6 +3940,30 @@ extern "C" {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getSurfaceAgeAttributeData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_surface_lifetime_attribute_data(FluidSimulation* obj, 
+                                                                       char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getSurfaceLifetimeAttributeData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_surface_whitewater_proximity_attribute_data(FluidSimulation* obj, 
+                                                                                   char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getSurfaceWhitewaterProximityAttributeData();
             std::memcpy(c_data, data->data(), data->size());
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
@@ -3685,6 +4223,138 @@ extern "C" {
         }
     }
 
+    EXPORTDLL void FluidSimulation_get_fluid_particle_id_attribute_data(FluidSimulation* obj, 
+                                                                        char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getFluidParticleIDAttributeData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_fluid_particle_velocity_attribute_data(FluidSimulation* obj, 
+                                                                        char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getFluidParticleVelocityAttributeData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_fluid_particle_speed_attribute_data(FluidSimulation* obj, 
+                                                                        char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getFluidParticleSpeedAttributeData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_fluid_particle_vorticity_attribute_data(FluidSimulation* obj, 
+                                                                        char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getFluidParticleVorticityAttributeData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_fluid_particle_color_attribute_data(FluidSimulation* obj, 
+                                                                           char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getFluidParticleColorAttributeData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_fluid_particle_age_attribute_data(FluidSimulation* obj, 
+                                                                           char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getFluidParticleAgeAttributeData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_fluid_particle_lifetime_attribute_data(FluidSimulation* obj, 
+                                                                           char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getFluidParticleLifetimeAttributeData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_fluid_particle_viscosity_attribute_data(FluidSimulation* obj, 
+                                                                           char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getFluidParticleViscosityAttributeData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_fluid_particle_whitewater_proximity_attribute_data(FluidSimulation* obj, 
+                                                                           char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getFluidParticleWhitewaterProximityAttributeData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_fluid_particle_source_id_attribute_data(FluidSimulation* obj, 
+                                                                           char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getFluidParticleSourceIDAttributeData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_fluid_particle_debug_data(FluidSimulation* obj, 
+                                                                 char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getFluidParticleDebugData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
     EXPORTDLL void FluidSimulation_get_internal_obstacle_mesh_data(FluidSimulation* obj, 
                                                                    char *c_data, int *err) {
         *err = CBindings::SUCCESS;
@@ -3794,6 +4464,17 @@ extern "C" {
         }
     }
 
+    EXPORTDLL void FluidSimulation_get_marker_particle_lifetime_data_range(FluidSimulation* obj, 
+                                                                      int start_idx, int end_idx, char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            obj->getMarkerParticleLifetimeDataRange(start_idx, end_idx, c_data);
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
     EXPORTDLL void FluidSimulation_get_marker_particle_color_data_range(FluidSimulation* obj, 
                                                                       int start_idx, int end_idx, char *c_data, int *err) {
         *err = CBindings::SUCCESS;
@@ -3821,6 +4502,17 @@ extern "C" {
         *err = CBindings::SUCCESS;
         try {
             obj->getMarkerParticleViscosityDataRange(start_idx, end_idx, c_data);
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_marker_particle_id_data_range(FluidSimulation* obj, 
+                                                                     int start_idx, int end_idx, char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            obj->getMarkerParticleIDDataRange(start_idx, end_idx, c_data);
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3955,6 +4647,14 @@ extern "C" {
         );
     }
 
+    EXPORTDLL void FluidSimulation_load_marker_particle_lifetime_data(FluidSimulation* obj, 
+                                                                 FluidSimulationMarkerParticleLifetimeData data, 
+                                                                 int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::loadMarkerParticleLifetimeData, data, err
+        );
+    }
+
     EXPORTDLL void FluidSimulation_load_marker_particle_color_data(FluidSimulation* obj, 
                                                                    FluidSimulationMarkerParticleColorData data, 
                                                                    int *err) {
@@ -3976,6 +4676,14 @@ extern "C" {
                                                                        int *err) {
         CBindings::safe_execute_method_void_1param(
             obj, &FluidSimulation::loadMarkerParticleViscosityData, data, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_load_marker_particle_id_data(FluidSimulation* obj, 
+                                                                FluidSimulationMarkerParticleIDData data, 
+                                                                int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::loadMarkerParticleIDData, data, err
         );
     }
 

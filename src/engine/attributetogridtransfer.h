@@ -65,6 +65,7 @@ struct AttributeTransferParameters {
     Array3d<bool> *validGrid;
     double particleRadius = 1.0;
     double dx = 1.0;
+    bool normalize = true;
 };
 
 
@@ -210,6 +211,7 @@ private:
         _particleRadius = params.particleRadius;
         _dx = params.dx;
         _chunkdx = _dx * _chunkWidth;
+        _normalize = params.normalize;
     }
 
 
@@ -484,10 +486,12 @@ private:
                     }
                 }
 
-                int numVals = _chunkWidth * _chunkWidth * _chunkWidth;
-                for (int i = 0; i < numVals; i++) {
-                    if (block.gridBlock.data[i].weight > eps) {
-                        block.gridBlock.data[i].value /= block.gridBlock.data[i].weight;
+                if (_normalize) {
+                    int numVals = _chunkWidth * _chunkWidth * _chunkWidth;
+                    for (int i = 0; i < numVals; i++) {
+                        if (block.gridBlock.data[i].weight > eps) {
+                            block.gridBlock.data[i].value /= block.gridBlock.data[i].weight;
+                        }
                     }
                 }
 
@@ -509,6 +513,7 @@ private:
     Array3d<bool> *_validGrid;
     double _particleRadius = 1.0;
     double _dx = 0.0;
+    bool _normalize = true;
 
     double _chunkdx = 0.0;
 

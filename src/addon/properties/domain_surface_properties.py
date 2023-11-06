@@ -25,11 +25,20 @@ from bpy.props import (
 
 from .. import types
 from ..objects.flip_fluid_aabb import AABB
+from ..objects import flip_fluid_cache
 from ..utils import version_compatibility_utils as vcu
 
 class DomainSurfaceProperties(bpy.types.PropertyGroup):
     conv = vcu.convert_attribute_to_28
     
+    enable_surface_mesh_generation = BoolProperty(
+            name="Enable Surface Mesh Generation",
+            description="Enable the generation of the liquid surface mesh. If disabled, "
+                "the surface mesh and any surface attributes will not be generated or exported"
+                " to the simulation cache",
+            default=True,
+            update=lambda self, context: self._update_enable_surface_mesh_generation(context),
+            ); exec(conv("enable_surface_mesh_generation"))
     subdivisions = IntProperty(
             name="Subdivisions",
             description="The level of detail of the generated surface mesh."
@@ -194,8 +203,9 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
             ); exec(conv("enable_vorticity_vector_attribute"))
     enable_age_attribute = BoolProperty(
             name="Generate Age Attributes",
-            description="Generate fluid age attributes for the fluid surface. After"
-                " baking, the age values (in seconds) can be accessed in a Cycles Attribute"
+            description="Generate fluid age attributes for the fluid surface."
+                " The age attribute starts at 0.0 when the liquid is spawned and counts up in"
+                " seconds. After baking, the age values can be accessed in a Cycles Attribute"
                 " Node or in Geometry Nodes with the name 'flip_age' from the Fac output",
             default=False,
             options={'HIDDEN'},
@@ -210,11 +220,61 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
             default=3.0,
             precision=1,
             ); exec(conv("age_attribute_radius"))
+    enable_lifetime_attribute = BoolProperty(
+            name="Generate Lifetime Attributes",
+            description="Generate fluid lifetime attributes for the fluid surface. This attribute allows the"
+                " fluid to start with a lifetime value that counts down in seconds and once the lifetime reaches 0,"
+                " the fluid is removed from the simulation. Each Inflow/Fluid object can be set to assign a"
+                " starting lifetime to the generated fluid. After baking, the lifetime remaining values"
+                " can be accessed in a Cycles Attribute Node or in Geometry Nodes with the name 'flip_lifetime' from"
+                " the Fac output",
+            default=False,
+            options={'HIDDEN'},
+            ); exec(conv("enable_lifetime_attribute"))
+    lifetime_attribute_radius = FloatProperty(
+            name="Smoothing Radius", 
+            description = "Amount of smoothing when transferring the lifetime attribute to the surface mesh."
+                " Higher values result in smoother attribute transitions at the cost of simulation"
+                " performance. Value is the search radius in number of voxels for nearby particles", 
+            soft_min=1.0, soft_max=4.0,
+            min=0.0,
+            default=3.0,
+            precision=1,
+            ); exec(conv("lifetime_attribute_radius"))
+    lifetime_attribute_death_time = FloatProperty(
+            name="Base Death Time", 
+            description = "Base time in seconds at which fluid is removed from the simulation. At the default of 0.0,"
+                " fluid will be removed when their lifetime attribute counts down to 0.0. Increase or decrease this"
+                " value to offset the base time of death. Increasing will result in fluid dying earlier."
+                " Decreasing will result in fluid dying later", 
+            default=0.0,
+            precision=2,
+            ); exec(conv("lifetime_attribute_death_time"))
+    enable_whitewater_proximity_attribute = BoolProperty(
+            name="Whitewater Proximity Attributes",
+            description="Generate whitewater proximity attributes for the fluid surface. The attribute values represent"
+                " how many foam, bubble, or spray particles are near the surface mesh and can be used in a material to shade"
+                " parts of the surface that are near whitewater particles. After baking, the proximity attribute can be accessed"
+                " in a Cycles Attribute Node or in Geometry Nodes with the names 'flip_foam_proximity', 'flip_bubble_proximity',"
+                " and 'flip_spray_proximity' from the Fac output",
+            default=False,
+            options={'HIDDEN'},
+            ); exec(conv("enable_whitewater_proximity_attribute"))
+    whitewater_proximity_attribute_radius = FloatProperty(
+            name="Smoothing Radius", 
+            description = "Amount of smoothing when transferring the whitewater proximity attribute to the surface mesh."
+                " Higher values result in smoother attribute transitions at the cost of simulation"
+                " performance. Value is the search radius in number of voxels for nearby particles", 
+            soft_min=1.0, soft_max=4.0,
+            min=0.0,
+            default=2.0,
+            precision=1,
+            ); exec(conv("whitewater_proximity_attribute_radius"))
     enable_color_attribute = BoolProperty(
             name="Generate Color Attributes",
             description="Generate fluid color attributes for the fluid surface. Each"
                 " Inflow/Fluid object can set to assign color to the generated fluid. After"
-                " baking, the ID values can be accessed in a Cycles Attribute Node or in Geometry Nodes"
+                " baking, the color values can be accessed in a Cycles Attribute Node or in Geometry Nodes"
                 " with the name 'flip_color' from the Color output. This can be used to create varying color"
                 " liquid effects",
             default=False,
@@ -267,10 +327,10 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
             name="Generate Source ID Attributes",
             description="Generate fluid source identifiers for the fluid surface. Each"
                 " Inflow/Fluid object can set to assign a source ID to the generated fluid. After"
-                " baking, the ID values can be accessed in a Cycles Attribute Node with the name"
-                " 'flip_source_id' from the Fac output. This can be used to create basic multiple"
-                " material liquid effects. This attribute is deprecated and will be removed/replaced"
-                " in future versions",
+                " baking, the ID values can be accessed in a Cycles Attribute Node or in Geometry Nodes with the name"
+                " 'flip_source_id' from the Fac output. This can be used to identifty fluid from"
+                " different sources in a material or geometry node group. Warning: this attribute is"
+                " not supported with sheeting effects or resolution upscaling features",
             default=False,
             options={'HIDDEN'},
             ); exec(conv("enable_source_id_attribute"))
@@ -294,10 +354,17 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
     meshing_against_boundary_expanded = BoolProperty(default=False); exec(conv("meshing_against_boundary_expanded"))
     meshing_against_obstacles_expanded = BoolProperty(default=False); exec(conv("meshing_against_obstacles_expanded"))
     geometry_attributes_expanded = BoolProperty(default=False); exec(conv("geometry_attributes_expanded"))
+    velocity_attributes_expanded = BoolProperty(default=False); exec(conv("velocity_attributes_expanded"))
+    color_attributes_expanded = BoolProperty(default=False); exec(conv("color_attributes_expanded"))
+    other_attributes_expanded = BoolProperty(default=False); exec(conv("other_attributes_expanded"))
+
+    show_smoothing_radius_in_ui = BoolProperty(default=False); exec(conv("show_smoothing_radius_in_ui"))
+    is_smoothing_radius_updated_to_default = BoolProperty(default=False); exec(conv("is_smoothing_radius_updated_to_default"))
 
 
     def register_preset_properties(self, registry, path):
         add = registry.add_property
+        add(path + ".enable_surface_mesh_generation",                     "Enable Surface Mesh",                            group_id=0)
         add(path + ".subdivisions",                                       "Subdivisions",                                   group_id=0)
         add(path + ".particle_scale",                                     "Particle Scale",                                 group_id=0)
         add(path + ".compute_chunk_mode",                                 "Compute Chunk Mode",                             group_id=0)
@@ -318,6 +385,11 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
         add(path + ".enable_vorticity_vector_attribute",                  "Generate Vorticity Attributes",                  group_id=0)
         add(path + ".enable_age_attribute",                               "Generate Age Attributes",                        group_id=0)
         add(path + ".age_attribute_radius",                               "Age Attribute Smoothing",                        group_id=0)
+        add(path + ".enable_lifetime_attribute",                          "Generate Lifetime Attributes",                   group_id=0)
+        add(path + ".lifetime_attribute_radius",                          "Lifetime Attribute Smoothing",                   group_id=0)
+        add(path + ".lifetime_attribute_death_time",                      "Death Time",                                     group_id=0)
+        add(path + ".enable_whitewater_proximity_attribute",              "Whitewater Proximity",                           group_id=0)
+        add(path + ".whitewater_proximity_attribute_radius",              "Whitewater Proximity Attribute Smoothing",       group_id=0)
         add(path + ".enable_color_attribute",                             "Generate Color Attributes",                      group_id=0)
         add(path + ".color_attribute_radius",                             "Color Attribute Smoothing",                      group_id=0)
         add(path + ".enable_color_attribute_mixing",                      "Enable Color Attribute Mixing",                  group_id=0)
@@ -330,6 +402,22 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
 
     def scene_update_post(self, scene):
         self._update_auto_compute_chunks()
+
+
+    def load_post(self):
+        # In earlier addons versions, the attribute smoothing radius could be set by the user.
+        # Now that Blender >= 3.5 has a blur attribute node, this should be used instead for
+        # further smoothing.
+        #
+        # Update Blend files upon the first load by setting the attribute smoothing radii back to
+        # the default value of 3.0
+        if self.is_smoothing_radius_updated_to_default:
+            return
+        default_smoothing_radius = 3.0
+        self.color_attribute_radius = default_smoothing_radius
+        self.age_attribute_radius = default_smoothing_radius
+        self.lifetime_attribute_radius = default_smoothing_radius
+        self.is_smoothing_radius_updated_to_default = True
 
 
     def get_meshing_volume_object(self):
@@ -346,6 +434,21 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
     def is_meshing_volume_object_valid(self):
         return (self.meshing_volume_mode == 'MESHING_VOLUME_MODE_OBJECT' and 
                 self.get_meshing_volume_object() is not None)
+
+
+    def _update_enable_surface_mesh_generation(self, context):
+        dprops = context.scene.flip_fluid.get_domain_properties()
+        if dprops is None:
+            return
+
+        if self.enable_surface_mesh_generation:
+            objects_to_initialize = flip_fluid_cache.EnabledMeshCacheObjects()
+            objects_to_initialize.fluid_surface = True
+
+            dprops.mesh_cache.initialize_cache_objects(objects_to_initialize)
+            dprops.materials.surface_material = dprops.materials.surface_material
+        else:
+            dprops.mesh_cache.surface.reset_cache_object()
 
 
     def _update_auto_compute_chunks(self):

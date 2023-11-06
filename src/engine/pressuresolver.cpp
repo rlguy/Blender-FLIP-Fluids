@@ -162,9 +162,9 @@ void PressureSolver::_conditionSolidVelocityField() {
     // sets the surrounding solid velocities to 0 in order to remove 
     // inconsistencies from the linear system.
 
-    int gridsize = _isize * _jsize * _ksize;
-    int numCPU = ThreadUtils::getMaxThreadCount();
-    int numthreads = (int)fmin(numCPU, gridsize);
+    size_t gridsize = _isize * _jsize * _ksize;
+    size_t numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)std::min(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
     std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
 
@@ -325,9 +325,9 @@ void PressureSolver::_initializeSurfaceTensionClusterData() {
     */
     Array3d<char> blockstatus(bisize, bjsize, bksize, 0x00);
 
-    int gridsize = bisize * bjsize * bksize;
-    int numCPU = ThreadUtils::getMaxThreadCount();
-    int numthreads = (int)fmin(numCPU, gridsize);
+    size_t gridsize = bisize * bjsize * bksize;
+    size_t numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)std::min(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
     std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {
@@ -349,7 +349,7 @@ void PressureSolver::_initializeSurfaceTensionClusterData() {
     _surfaceTensionClusterStatus = Array3d<char>(_isize, _jsize, _ksize, 0x00);
 
     gridsize = _isize * _jsize * _ksize;
-    numthreads = (int)fmin(numCPU, gridsize);
+    numthreads = (int)std::min(numCPU, gridsize);
     threads = std::vector<std::thread>(numthreads);
     intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {
@@ -362,7 +362,7 @@ void PressureSolver::_initializeSurfaceTensionClusterData() {
     }
 
     gridsize = _isize * _jsize * _ksize;
-    numthreads = (int)fmin(numCPU, gridsize);
+    numthreads = (int)std::min(numCPU, gridsize);
     threads = std::vector<std::thread>(numthreads);
     intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
     std::vector<std::vector<GridIndex> > threadResults(numthreads);
@@ -1005,7 +1005,7 @@ bool PressureSolver::_solveLinearSystemJacobi(SparseMatrixd &matrix, std::vector
 void PressureSolver::_applyPressureToVelocityFieldMT(FluidMaterialGrid &mgrid, int dir) {
     int U = 0; int V = 1; int W = 2;
 
-    int gridsize = 0;
+    size_t gridsize = 0;
     if (dir == U) {
         gridsize = (_isize + 1) * _jsize * _ksize;
     } else if (dir == V) {
@@ -1014,8 +1014,8 @@ void PressureSolver::_applyPressureToVelocityFieldMT(FluidMaterialGrid &mgrid, i
         gridsize = _isize * _jsize * (_ksize + 1);
     }
 
-    int numCPU = ThreadUtils::getMaxThreadCount();
-    int numthreads = (int)fmin(numCPU, gridsize);
+    size_t numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)std::min(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
     std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {

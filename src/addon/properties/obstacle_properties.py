@@ -44,9 +44,11 @@ class FlipFluidObstacleProperties(bpy.types.PropertyGroup):
             ); exec(conv("is_inversed"))
     export_animated_mesh = BoolProperty(
             name="Export Animated Mesh",
-            description="Export this mesh as an animated one (slower, only"
-                " use if really necessary [e.g. armatures or parented objects],"
-                " animated pos/rot/scale F-curves do not require it",
+            description="Export this object as an animated mesh. Exporting animated meshes are"
+                " slower, only use when necessary. This option is required for any animation that"
+                " is more complex than just keyframed loc/rot/scale or F-Curves, such as parented"
+                " relations, armatures, animated modifiers, deformable meshes, etc. This option is"
+                " not needed for static objects",
             default=False,
             options={'HIDDEN'},
             ); exec(conv("export_animated_mesh"))

@@ -1,3 +1,5 @@
+![image](https://github.com/rlguy/Blender-FLIP-Fluids/assets/4285191/53714857-6f04-45c8-8c97-694e37cfb6b9)
+
 # FLIP Fluids
 
 The **[FLIP Fluids addon](https://blendermarket.com/products/flipfluids)** is a tool that helps you set up, run, and render liquid simulation effects. Our custom built fluid engine is based around the popular FLIP simulation technique that is also found in many other professional liquid simulation tools. The FLIP Fluids engine has been in constant development for over four years with a large focus on tightly integrating the simulator into Blender as an addon. It just feels like a native Blender tool!
@@ -27,7 +29,7 @@ See any of our [market place product pages](https://github.com/rlguy/Blender-FLI
 ## System Requirements
 
 - Windows, MacOS, or Linux operating system
-- Blender 2.8 to 3.6 compatible
+- Blender 2.8 to 4.0 compatible
 - CPU 64-bit Intel® or AMD® or Apple Silicon multi-core processor
 - 8 GB RAM minimum, 16 GB of RAM or more is highly recommended
 
@@ -107,3 +109,4 @@ Once successfully built, the FLIP Fluids addon will be located in the ```build/b
 - [Bug/Issue Tracker](https://github.com/rlguy/Blender-FLIP-Fluids/issues)
 - [FLIP Fluids Homepage](http://flipfluids.com)
 - [Twitter](https://twitter.com/flipfluids) | [Instagram](https://www.instagram.com/flip.fluids/) | [Facebook](https://www.facebook.com/FLIPFluids/) | [FLIP Fluids YouTube](https://www.youtube.com/flipfluids) | [BlenderPhysics YouTube](https://www.youtube.com/blenderphysicsvideos)
+- Discord Server: [https://discord.gg/FLIPFluids](Discord Server: https://discord.gg/FLIPFluids)

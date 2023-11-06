@@ -280,6 +280,22 @@ float MeshFluidSource::getViscosity() {
     return _meshObject.getViscosity();
 }
 
+void MeshFluidSource::setLifetime(float v) {
+    _meshObject.setLifetime(v);
+}
+
+float MeshFluidSource::getLifetime() {
+    return _meshObject.getLifetime();
+}
+
+void MeshFluidSource::setLifetimeVariance(float v) {
+    _meshObject.setLifetimeVariance(v);
+}
+
+float MeshFluidSource::getLifetimeVariance() {
+    return _meshObject.getLifetimeVariance();
+}
+
 void MeshFluidSource::setSourceColor(vmath::vec3 c) {
     _meshObject.setSourceColor(c);
 }
