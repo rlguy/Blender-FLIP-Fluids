@@ -58,7 +58,6 @@ class FLIPFLUID_PT_DomainTypeCachePanel(bpy.types.Panel):
         domain_object = vcu.get_active_object(context)
         dprops = domain_object.flip_fluid.domain
         cprops = dprops.cache
-        show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
         show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
 
         if show_documentation:
@@ -101,9 +100,6 @@ class FLIPFLUID_PT_DomainTypeCachePanel(bpy.types.Panel):
             row.operator("flip_fluid_operators.relative_cache_directory")
             row.operator("flip_fluid_operators.absolute_cache_directory")
             row.operator("flip_fluid_operators.match_filename_cache_directory")
-
-        if not show_advanced:
-            return
 
         box = self.layout.box()
         row = box.row(align=True)

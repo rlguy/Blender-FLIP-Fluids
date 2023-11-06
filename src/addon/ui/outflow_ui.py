@@ -36,7 +36,6 @@ class FLIPFLUID_PT_OutflowTypePanel(bpy.types.Panel):
         obj = vcu.get_active_object(context)
         obj_props = obj.flip_fluid
         outflow_props = obj_props.outflow
-        show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
         show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
 
         column = self.layout.column()
@@ -58,28 +57,38 @@ class FLIPFLUID_PT_OutflowTypePanel(bpy.types.Panel):
         column = self.layout.column()
         column.prop(outflow_props, "is_enabled")
 
-        if show_advanced:
-            column = self.layout.column()
-            split = column.split()
-            column = split.column()
-            column.prop(outflow_props, "remove_fluid")
-            column = split.column()
-            column.prop(outflow_props, "remove_whitewater")
+        column = self.layout.column()
+        split = column.split()
+        column = split.column()
+        column.prop(outflow_props, "remove_fluid")
+        column = split.column()
+        column.prop(outflow_props, "remove_whitewater")
 
-            self.layout.separator()
-            column = self.layout.column()
-            column.prop(outflow_props, "is_inversed")
+        self.layout.separator()
+        column = self.layout.column()
+        column.prop(outflow_props, "is_inversed")
         
         box = self.layout.box()
         box.label(text="Mesh Data Export:")
         column = box.column(align=True)
-        column.prop(outflow_props, "export_animated_mesh")
-        if show_advanced:
-            column.prop(outflow_props, "skip_reexport")
-            column.separator()
-            column = box.column(align=True)
-            column.enabled = outflow_props.skip_reexport
-            column.prop(outflow_props, "force_reexport_on_next_bake", toggle=True)
+
+        row = column.row(align=True)
+        row.alignment = 'LEFT'
+        row.prop(outflow_props, "export_animated_mesh")
+
+        is_child_object = obj.parent is not None
+        is_hint_enabled = not vcu.get_addon_preferences().dismiss_export_animated_mesh_parented_relation_hint
+        if is_hint_enabled and not outflow_props.export_animated_mesh and is_child_object:
+            row.prop(context.scene.flip_fluid_helper, "export_animated_mesh_parent_tooltip", 
+                    icon="QUESTION", emboss=False, text=""
+                    )
+            row.label(text="←Hint: export option may be required")
+
+        column.prop(outflow_props, "skip_reexport")
+        column.separator()
+        column = box.column(align=True)
+        column.enabled = outflow_props.skip_reexport
+        column.prop(outflow_props, "force_reexport_on_next_bake", toggle=True)
 
         column = self.layout.column(align=True)
         column.separator()

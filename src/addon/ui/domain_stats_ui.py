@@ -83,7 +83,7 @@ def draw_frame_info_simulation_stats(self, context, box):
 
         column = split.column()
         column.label(text=str(sprops.frame_info_id))
-        column.label(text=str(simprops.frame_start + sprops.frame_info_id))
+        column.label(text=str(sprops.frame_start + sprops.frame_info_id))
         column.label(text=format_time(sprops.frame_delta_time))
         column.label(text=str(sprops.frame_substeps))
         column.label(text=format_number(sprops.frame_fluid_particles).lstrip())
@@ -332,6 +332,20 @@ def draw_frame_info_mesh_stats(self, context, box):
             column4.label(text=format_bytes(sprops.surfaceage_mesh.bytes.get()))
             total_bytes += sprops.surfaceage_mesh.bytes.get()
 
+        if sprops.surfacelifetime_mesh.enabled:
+            column1.label(text="Lifetime")
+            column2.label(text=format_number(sprops.surfacelifetime_mesh.verts))
+            column3.label(text="")
+            column4.label(text=format_bytes(sprops.surfacelifetime_mesh.bytes.get()))
+            total_bytes += sprops.surfacelifetime_mesh.bytes.get()
+
+        if sprops.surfacewhitewaterproximity_mesh.enabled:
+            column1.label(text="Whitewater Proximity")
+            column2.label(text=format_number(sprops.surfacewhitewaterproximity_mesh.verts))
+            column3.label(text="")
+            column4.label(text=format_bytes(sprops.surfacewhitewaterproximity_mesh.bytes.get()))
+            total_bytes += sprops.surfacewhitewaterproximity_mesh.bytes.get()
+
         if sprops.surfacecolor_mesh.enabled:
             column1.label(text="Color")
             column2.label(text=format_number(sprops.surfacecolor_mesh.verts))
@@ -493,12 +507,89 @@ def draw_frame_info_mesh_stats(self, context, box):
             column4.label(text=format_bytes(sprops.dustlifetime_mesh.bytes.get()))
             total_bytes += sprops.dustlifetime_mesh.bytes.get()
 
-        if sprops.particle_mesh.enabled:
-            column1.label(text="Particles")
-            column2.label(text=format_number(sprops.particle_mesh.verts))
+        if sprops.fluid_particle_mesh.enabled:
+            column1.label(text="Fluid Particles")
+            column2.label(text=format_number(sprops.fluid_particle_mesh.verts))
             column3.label(text="")
-            column4.label(text=format_bytes(sprops.particle_mesh.bytes.get()))
-            total_bytes += sprops.particle_mesh.bytes.get()
+            column4.label(text=format_bytes(sprops.fluid_particle_mesh.bytes.get()))
+            total_bytes += sprops.fluid_particle_mesh.bytes.get()
+
+        if sprops.fluid_particle_id_mesh.enabled:
+            column1.label(text="Fluid Particles ID")
+            column2.label(text=format_number(sprops.fluid_particle_id_mesh.verts))
+            column3.label(text="")
+            column4.label(text=format_bytes(sprops.fluid_particle_id_mesh.bytes.get()))
+            total_bytes += sprops.fluid_particle_id_mesh.bytes.get()
+
+        if sprops.fluid_particle_velocity_mesh.enabled:
+            column1.label(text="Fluid Particles Velocity")
+            column2.label(text=format_number(sprops.fluid_particle_velocity_mesh.verts))
+            column3.label(text="")
+            column4.label(text=format_bytes(sprops.fluid_particle_velocity_mesh.bytes.get()))
+            total_bytes += sprops.fluid_particle_velocity_mesh.bytes.get()
+
+        if sprops.fluid_particle_speed_mesh.enabled:
+            column1.label(text="Fluid Particles Speed")
+            column2.label(text=format_number(sprops.fluid_particle_speed_mesh.verts))
+            column3.label(text="")
+            column4.label(text=format_bytes(sprops.fluid_particle_speed_mesh.bytes.get()))
+            total_bytes += sprops.fluid_particle_speed_mesh.bytes.get()
+
+        if sprops.fluid_particle_vorticity_mesh.enabled:
+            column1.label(text="Fluid Particles Vorticity")
+            column2.label(text=format_number(sprops.fluid_particle_vorticity_mesh.verts))
+            column3.label(text="")
+            column4.label(text=format_bytes(sprops.fluid_particle_vorticity_mesh.bytes.get()))
+            total_bytes += sprops.fluid_particle_vorticity_mesh.bytes.get()
+
+        if sprops.fluid_particle_color_mesh.enabled:
+            column1.label(text="Fluid Particles Color")
+            column2.label(text=format_number(sprops.fluid_particle_color_mesh.verts))
+            column3.label(text="")
+            column4.label(text=format_bytes(sprops.fluid_particle_color_mesh.bytes.get()))
+            total_bytes += sprops.fluid_particle_color_mesh.bytes.get()
+
+        if sprops.fluid_particle_age_mesh.enabled:
+            column1.label(text="Fluid Particles Age")
+            column2.label(text=format_number(sprops.fluid_particle_age_mesh.verts))
+            column3.label(text="")
+            column4.label(text=format_bytes(sprops.fluid_particle_age_mesh.bytes.get()))
+            total_bytes += sprops.fluid_particle_age_mesh.bytes.get()
+
+        if sprops.fluid_particle_lifetime_mesh.enabled:
+            column1.label(text="Fluid Particles Lifetime")
+            column2.label(text=format_number(sprops.fluid_particle_lifetime_mesh.verts))
+            column3.label(text="")
+            column4.label(text=format_bytes(sprops.fluid_particle_lifetime_mesh.bytes.get()))
+            total_bytes += sprops.fluid_particle_lifetime_mesh.bytes.get()
+
+        if sprops.fluid_particle_viscosity_mesh.enabled:
+            column1.label(text="Fluid Particles Viscosity")
+            column2.label(text=format_number(sprops.fluid_particle_viscosity_mesh.verts))
+            column3.label(text="")
+            column4.label(text=format_bytes(sprops.fluid_particle_viscosity_mesh.bytes.get()))
+            total_bytes += sprops.fluid_particle_viscosity_mesh.bytes.get()
+
+        if sprops.fluid_particle_whitewater_proximity_mesh.enabled:
+            column1.label(text="Fluid Particles Whitewater Proximity")
+            column2.label(text=format_number(sprops.fluid_particle_whitewater_proximity_mesh.verts))
+            column3.label(text="")
+            column4.label(text=format_bytes(sprops.fluid_particle_whitewater_proximity_mesh.bytes.get()))
+            total_bytes += sprops.fluid_particle_whitewater_proximity_mesh.bytes.get()
+
+        if sprops.fluid_particle_source_id_mesh.enabled:
+            column1.label(text="Fluid Particles Source ID")
+            column2.label(text=format_number(sprops.fluid_particle_source_id_mesh.verts))
+            column3.label(text="")
+            column4.label(text=format_bytes(sprops.fluid_particle_source_id_mesh.bytes.get()))
+            total_bytes += sprops.fluid_particle_source_id_mesh.bytes.get()
+
+        if sprops.debug_particle_mesh.enabled:
+            column1.label(text="Debug Particles")
+            column2.label(text=format_number(sprops.debug_particle_mesh.verts))
+            column3.label(text="")
+            column4.label(text=format_bytes(sprops.debug_particle_mesh.bytes.get()))
+            total_bytes += sprops.debug_particle_mesh.bytes.get()
 
         if sprops.obstacle_mesh.enabled:
             column1.label(text="Obstacle")
@@ -550,7 +641,7 @@ def draw_cache_info_simulation_stats(self, context, box):
     row.label(text="Simulation Stats")
 
     if sprops.cache_info_simulation_stats_expanded:
-        num_frames = dprops.simulation.frame_end - dprops.simulation.frame_start + 1
+        num_frames = dprops.simulation.frame_end - sprops.frame_start + 1
         num_baked_frames = sprops.num_cache_frames
 
         column = subbox.column()
@@ -569,9 +660,9 @@ def draw_cache_info_simulation_stats(self, context, box):
         else:
             column.label(text=str(num_baked_frames) + "  /  " + str(num_frames))
 
-        column.label(text=str(simprops.frame_start))
+        column.label(text=str(sprops.frame_start))
         #column.label(text=str(simprops.frame_end))
-        column.label(text=str(simprops.frame_start + num_baked_frames - 1))
+        column.label(text=str(sprops.frame_start + num_baked_frames - 1))
 
         if sprops.is_average_performance_score_enabled:
             column.label(text=str(sprops.average_performance_score))
@@ -764,7 +855,7 @@ def draw_cache_info_mesh_stats(self, context, box):
 
     if sprops.cache_info_mesh_stats_expanded:
         column = subbox.column()
-        split = vcu.ui_split(column, factor=0.25)
+        split = vcu.ui_split(column, factor=0.5)
         column1 = split.column()
         column2 = split.column()
 
@@ -775,6 +866,8 @@ def draw_cache_info_mesh_stats(self, context, box):
                        sprops.surfacespeed_mesh.enabled or 
                        sprops.surfacevorticity_mesh.enabled or 
                        sprops.surfaceage_mesh.enabled or 
+                       sprops.surfacelifetime_mesh.enabled or 
+                       sprops.surfacewhitewaterproximity_mesh.enabled or 
                        sprops.surfacecolor_mesh.enabled or 
                        sprops.surfacesourceid_mesh.enabled or 
                        sprops.surfaceviscosity_mesh.enabled or 
@@ -798,7 +891,18 @@ def draw_cache_info_mesh_stats(self, context, box):
                        sprops.bubblelifetime_mesh.enabled or 
                        sprops.spraylifetime_mesh.enabled or 
                        sprops.dustlifetime_mesh.enabled or 
-                       sprops.particle_mesh.enabled or
+                       sprops.fluid_particle_mesh.enabled or
+                       sprops.fluid_particle_id_mesh.enabled or
+                       sprops.fluid_particle_velocity_mesh.enabled or
+                       sprops.fluid_particle_speed_mesh.enabled or
+                       sprops.fluid_particle_vorticity_mesh.enabled or
+                       sprops.fluid_particle_color_mesh.enabled or
+                       sprops.fluid_particle_age_mesh.enabled or
+                       sprops.fluid_particle_lifetime_mesh.enabled or
+                       sprops.fluid_particle_viscosity_mesh.enabled or
+                       sprops.fluid_particle_whitewater_proximity_mesh.enabled or
+                       sprops.fluid_particle_source_id_mesh.enabled or
+                       sprops.debug_particle_mesh.enabled or
                        sprops.obstacle_mesh.enabled)
 
         if stats_exist:
@@ -848,6 +952,18 @@ def draw_cache_info_mesh_stats(self, context, box):
             column2.label(text=format_bytes(sprops.surfaceage_mesh.bytes.get()))
             row_count += 1
             total_size += sprops.surfaceage_mesh.bytes.get()
+
+        if sprops.surfacelifetime_mesh.enabled:
+            column1.label(text="Lifetime")
+            column2.label(text=format_bytes(sprops.surfacelifetime_mesh.bytes.get()))
+            row_count += 1
+            total_size += sprops.surfacelifetime_mesh.bytes.get()
+
+        if sprops.surfacewhitewaterproximity_mesh.enabled:
+            column1.label(text="Whitewater Proximity")
+            column2.label(text=format_bytes(sprops.surfacewhitewaterproximity_mesh.bytes.get()))
+            row_count += 1
+            total_size += sprops.surfacewhitewaterproximity_mesh.bytes.get()
 
         if sprops.surfacecolor_mesh.enabled:
             column1.label(text="Color")
@@ -987,11 +1103,77 @@ def draw_cache_info_mesh_stats(self, context, box):
             row_count += 1
             total_size += sprops.dustlifetime_mesh.bytes.get()
 
-        if sprops.particle_mesh.enabled:
-            column1.label(text="Particles")
-            column2.label(text=format_bytes(sprops.particle_mesh.bytes.get()))
+        if sprops.fluid_particle_mesh.enabled:
+            column1.label(text="Fluid Particles")
+            column2.label(text=format_bytes(sprops.fluid_particle_mesh.bytes.get()))
             row_count += 1
-            total_size += sprops.particle_mesh.bytes.get()
+            total_size += sprops.fluid_particle_mesh.bytes.get()
+
+        if sprops.fluid_particle_id_mesh.enabled:
+            column1.label(text="Fluid Particles ID")
+            column2.label(text=format_bytes(sprops.fluid_particle_id_mesh.bytes.get()))
+            row_count += 1
+            total_size += sprops.fluid_particle_id_mesh.bytes.get()
+
+        if sprops.fluid_particle_velocity_mesh.enabled:
+            column1.label(text="Fluid Particles Velocity")
+            column2.label(text=format_bytes(sprops.fluid_particle_velocity_mesh.bytes.get()))
+            row_count += 1
+            total_size += sprops.fluid_particle_velocity_mesh.bytes.get()
+
+        if sprops.fluid_particle_speed_mesh.enabled:
+            column1.label(text="Fluid Particles Speed")
+            column2.label(text=format_bytes(sprops.fluid_particle_speed_mesh.bytes.get()))
+            row_count += 1
+            total_size += sprops.fluid_particle_speed_mesh.bytes.get()
+
+        if sprops.fluid_particle_vorticity_mesh.enabled:
+            column1.label(text="Fluid Particles Vorticity")
+            column2.label(text=format_bytes(sprops.fluid_particle_vorticity_mesh.bytes.get()))
+            row_count += 1
+            total_size += sprops.fluid_particle_vorticity_mesh.bytes.get()
+
+        if sprops.fluid_particle_color_mesh.enabled:
+            column1.label(text="Fluid Particles Color")
+            column2.label(text=format_bytes(sprops.fluid_particle_color_mesh.bytes.get()))
+            row_count += 1
+            total_size += sprops.fluid_particle_color_mesh.bytes.get()
+
+        if sprops.fluid_particle_age_mesh.enabled:
+            column1.label(text="Fluid Particles Age")
+            column2.label(text=format_bytes(sprops.fluid_particle_age_mesh.bytes.get()))
+            row_count += 1
+            total_size += sprops.fluid_particle_age_mesh.bytes.get()
+
+        if sprops.fluid_particle_lifetime_mesh.enabled:
+            column1.label(text="Fluid Particles Lifetime")
+            column2.label(text=format_bytes(sprops.fluid_particle_lifetime_mesh.bytes.get()))
+            row_count += 1
+            total_size += sprops.fluid_particle_lifetime_mesh.bytes.get()
+
+        if sprops.fluid_particle_viscosity_mesh.enabled:
+            column1.label(text="Fluid Particles Viscosity")
+            column2.label(text=format_bytes(sprops.fluid_particle_viscosity_mesh.bytes.get()))
+            row_count += 1
+            total_size += sprops.fluid_particle_viscosity_mesh.bytes.get()
+
+        if sprops.fluid_particle_whitewater_proximity_mesh.enabled:
+            column1.label(text="Fluid Particles Whitewater Proximity")
+            column2.label(text=format_bytes(sprops.fluid_particle_whitewater_proximity_mesh.bytes.get()))
+            row_count += 1
+            total_size += sprops.fluid_particle_whitewater_proximity_mesh.bytes.get()
+
+        if sprops.fluid_particle_source_id_mesh.enabled:
+            column1.label(text="Fluid Particles Source ID")
+            column2.label(text=format_bytes(sprops.fluid_particle_source_id_mesh.bytes.get()))
+            row_count += 1
+            total_size += sprops.fluid_particle_source_id_mesh.bytes.get()
+
+        if sprops.debug_particle_mesh.enabled:
+            column1.label(text="Debug Particles")
+            column2.label(text=format_bytes(sprops.debug_particle_mesh.bytes.get()))
+            row_count += 1
+            total_size += sprops.debug_particle_mesh.bytes.get()
 
         if sprops.obstacle_mesh.enabled:
             column1.label(text="Obstacle")
@@ -1042,10 +1224,11 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
 
     def draw(self, context):
         sprops = vcu.get_active_object(context).flip_fluid.domain.stats
-        show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
 
         row = self.layout.row()
         row.prop(sprops, "cache_info_type", expand=True)
+        row = self.layout.row()
+        row.operator("flip_fluid_operators.refresh_stats", icon='FILE_REFRESH')
 
         column = self.layout.column()
         if sprops.cache_info_type == "CACHE_INFO":
@@ -1053,28 +1236,27 @@ class FLIPFLUID_PT_DomainTypeStatsPanel(bpy.types.Panel):
         elif sprops.cache_info_type == "FRAME_INFO":
             draw_frame_info(self, context, column)
 
-        if show_advanced:
-            self.layout.separator()
-            column = self.layout.column(align=True)
-            split = vcu.ui_split(column, align=True, factor=0.33)
-            column = split.column(align=True)
-            column.enabled = sprops.is_cache_info_available
-            column.operator("flip_fluid_operators.export_stats_csv", 
-                            text="Export to CSV", 
-                            icon='FILE')
+        self.layout.separator()
+        column = self.layout.column(align=True)
+        split = vcu.ui_split(column, align=True, factor=0.33)
+        column = split.column(align=True)
+        column.enabled = sprops.is_cache_info_available
+        column.operator("flip_fluid_operators.export_stats_csv", 
+                        text="Export to CSV", 
+                        icon='FILE')
 
-            column = split.column(align=True)
-            split = vcu.ui_split(column, align=True, factor=0.66)
-            column = split.column(align=True)
-            column.prop(sprops, "csv_save_filepath")
+        column = split.column(align=True)
+        split = vcu.ui_split(column, align=True, factor=0.66)
+        column = split.column(align=True)
+        column.prop(sprops, "csv_save_filepath")
 
-            column = split.column(align=True)
-            row = column.row(align=True)
-            row.prop(sprops, "csv_region_format", expand=True)
+        column = split.column(align=True)
+        row = column.row(align=True)
+        row.prop(sprops, "csv_region_format", expand=True)
 
-            self.layout.separator()
-            self.layout.separator()
-            self.layout.separator()
+        self.layout.separator()
+        self.layout.separator()
+        self.layout.separator()
         
     
 def register():

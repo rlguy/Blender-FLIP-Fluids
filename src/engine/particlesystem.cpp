@@ -35,6 +35,7 @@ void ParticleSystem::update() {
     _expandVectors(_boolAttributes, _boolDefaults, size);
     _expandVectors(_intAttributes, _intDefaults, size);
     _expandVectors(_idAttributes, _idDefaults, size);
+    _expandVectors(_uint16Attributes, _uint16Defaults, size);
     _expandVectors(_floatAttributes, _floatDefaults, size);
     _expandVectors(_vector3Attributes, _vector3Defaults, size);
     _size = size;
@@ -47,6 +48,7 @@ size_t ParticleSystem::evaluateSize() {
     size = std::max(size, _getMaxVectorSize(_boolAttributes));
     size = std::max(size, _getMaxVectorSize(_intAttributes));
     size = std::max(size, _getMaxVectorSize(_idAttributes));
+    size = std::max(size, _getMaxVectorSize(_uint16Attributes));
     size = std::max(size, _getMaxVectorSize(_floatAttributes));
     size = std::max(size, _getMaxVectorSize(_vector3Attributes));
     return size;
@@ -62,6 +64,7 @@ void ParticleSystem::resize(size_t n) {
     _resizeVectors(_boolAttributes, n);
     _resizeVectors(_intAttributes, n);
     _resizeVectors(_idAttributes, n);
+    _resizeVectors(_uint16Attributes, n);
     _resizeVectors(_floatAttributes, n);
     _resizeVectors(_vector3Attributes, n);
     update();
@@ -73,6 +76,7 @@ void ParticleSystem::reserve(size_t n) {
     _reserveVectors(_boolAttributes, n);
     _reserveVectors(_intAttributes, n);
     _reserveVectors(_idAttributes, n);
+    _reserveVectors(_uint16Attributes, n);
     _reserveVectors(_floatAttributes, n);
     _reserveVectors(_vector3Attributes, n);
 }
@@ -83,6 +87,7 @@ void ParticleSystem::removeParticles(std::vector<bool> &toRemove) {
     _removeParticlesFromVectorList(_boolAttributes, toRemove);
     _removeParticlesFromVectorList(_intAttributes, toRemove);
     _removeParticlesFromVectorList(_idAttributes, toRemove);
+    _removeParticlesFromVectorList(_uint16Attributes, toRemove);
     _removeParticlesFromVectorList(_floatAttributes, toRemove);
     _removeParticlesFromVectorList(_vector3Attributes, toRemove);
     update();
@@ -120,6 +125,12 @@ void ParticleSystem::printParticle(size_t index) {
             case AttributeDataType::ID:
                 {
                     size_t value = _idAttributes[att.id][index];
+                    std::cout << att.name << " \t" << value << std::endl;
+                    break;
+                }
+            case AttributeDataType::UINT16:
+                {
+                    size_t value = _uint16Attributes[att.id][index];
                     std::cout << att.name << " \t" << value << std::endl;
                     break;
                 }
@@ -218,6 +229,16 @@ bool ParticleSystem::isSchemaEqual(ParticleSystem &other, bool strict) {
                     }
                     break;
                 }
+            case AttributeDataType::UINT16:
+                {
+                    uint16_t *thisDefault, *otherDefault;
+                    getAttributeDefault(thisAtt, thisDefault);
+                    other.getAttributeDefault(otherAtt, otherDefault);
+                    if (*thisDefault != *otherDefault) {
+                        return false;
+                    }
+                    break;
+                }
             case AttributeDataType::FLOAT:
                 {
                     float *thisDefault, *otherDefault;
@@ -291,6 +312,13 @@ ParticleSystem ParticleSystem::generateEmptyCopy() {
                     newSystem.addAttributeID(att.name, *def);
                     break;
                 }
+            case AttributeDataType::UINT16:
+                {
+                    uint16_t *def;
+                    getAttributeDefault(att, def);
+                    newSystem.addAttributeUInt16(att.name, *def);
+                    break;
+                }
             case AttributeDataType::FLOAT:
                 {
                     float *def;
@@ -330,6 +358,7 @@ void ParticleSystem::merge(ParticleSystem &other) {
     _mergeVectors(_boolAttributes, other._boolAttributes);
     _mergeVectors(_intAttributes, other._intAttributes);
     _mergeVectors(_idAttributes, other._idAttributes);
+    _mergeVectors(_uint16Attributes, other._uint16Attributes);
     _mergeVectors(_floatAttributes, other._floatAttributes);
     _mergeVectors(_vector3Attributes, other._vector3Attributes);
     update();
@@ -396,6 +425,19 @@ ParticleSystemAttribute ParticleSystem::addAttributeID(std::string name, size_t 
     _attributes.push_back(att);
     _idAttributes.push_back(std::vector<size_t>());
     _idDefaults.push_back(defaultValue);
+
+    return att;
+}
+
+ParticleSystemAttribute ParticleSystem::addAttributeUInt16(std::string name, uint16_t defaultValue) {
+    ParticleSystemAttribute att;
+    att.id = _uint16Attributes.size();
+    att.name = name;
+    att.type = AttributeDataType::UINT16;
+
+    _attributes.push_back(att);
+    _uint16Attributes.push_back(std::vector<uint16_t>());
+    _uint16Defaults.push_back(defaultValue);
 
     return att;
 }
@@ -474,6 +516,16 @@ std::vector<size_t> *ParticleSystem::getAttributeValuesID(ParticleSystemAttribut
 std::vector<size_t> *ParticleSystem::getAttributeValuesID(std::string name) {
     ParticleSystemAttribute att = _getAttributeByName(name);
     return getAttributeValuesID(att);
+}
+
+std::vector<uint16_t> *ParticleSystem::getAttributeValuesUInt16(ParticleSystemAttribute &att) {
+    _validateAttribute(att);
+    return &(_uint16Attributes[att.id]);
+}
+
+std::vector<uint16_t> *ParticleSystem::getAttributeValuesUInt16(std::string name) {
+    ParticleSystemAttribute att = _getAttributeByName(name);
+    return getAttributeValuesUInt16(att);
 }
 
 std::vector<float> *ParticleSystem::getAttributeValuesFloat(ParticleSystemAttribute &att) {

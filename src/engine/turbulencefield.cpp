@@ -51,9 +51,9 @@ float TurbulenceField::operator()(GridIndex g) {
 void TurbulenceField::_getVelocityGrid(MACVelocityField *macfield, 
                                        Array3d<vmath::vec3> &vgrid) {
 
-    int gridsize = vgrid.width * vgrid.height * vgrid.depth;
-    int numCPU = ThreadUtils::getMaxThreadCount();
-    int numthreads = (int)fmin(numCPU, gridsize);
+    size_t gridsize = vgrid.width * vgrid.height * vgrid.depth;
+    size_t numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)std::min(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
     std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {

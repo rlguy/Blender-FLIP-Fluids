@@ -110,9 +110,13 @@ class FlipFluidFreeUnheldCacheFiles(bpy.types.Operator):
         bakefiles_dir = os.path.join(cache_dir, "bakefiles")
         self.delete_unheld_cache_directory(bakefiles_dir, ".bbox")
         self.delete_unheld_cache_directory(bakefiles_dir, ".bobj")
+        self.delete_unheld_cache_directory(bakefiles_dir, ".data")
         self.delete_unheld_cache_directory(bakefiles_dir, ".wwp")
+        self.delete_unheld_cache_directory(bakefiles_dir, ".wwf")
+        self.delete_unheld_cache_directory(bakefiles_dir, ".wwi")
         self.delete_unheld_cache_directory(bakefiles_dir, ".fpd")
         self.delete_unheld_cache_directory(bakefiles_dir, ".ffd")
+        self.delete_unheld_cache_directory(bakefiles_dir, ".ffp3")
 
 
     def count_directory_bytes(self, dirpath):
@@ -341,8 +345,17 @@ class FlipFluidRelativeCacheDirectory(bpy.types.Operator):
         try:
             relpath = os.path.relpath(cache_directory, blend_filepath)
         except ValueError:
-            self.report({"ERROR"}, "Relative path requires Blend file and cache directory to be on the same drive")
-            return {'CANCELLED'}
+            base = os.path.basename(bpy.data.filepath)
+            save_file = os.path.splitext(base)[0]
+            cache_folder_parent = os.path.dirname(bpy.data.filepath)
+
+            cache_folder = save_file + "_flip_fluid_cache"
+            cache_path = os.path.join(cache_folder_parent, cache_folder)
+            relpath = os.path.relpath(cache_path, cache_folder_parent)
+
+            info_msg =  "Relative path requires Blend file and cache directory to be on the same drive."
+            info_msg += " Resetting cache to default relative path."
+            self.report({"INFO"}, info_msg)
 
         relprefix = "//"
         dprops.cache.cache_directory = relprefix + relpath

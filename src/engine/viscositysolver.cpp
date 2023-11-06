@@ -114,7 +114,7 @@ void ViscositySolver::_computeFaceStateGrid() {
 void ViscositySolver::_computeFaceStateGridMT(Array3d<float> &solidCenterPhi, int dir) {
     int U = 0; int V = 1; int W = 2;
 
-    int gridsize = 0;
+    size_t gridsize = 0;
     if (dir == U) {
         gridsize = _state.U.width * _state.U.height * _state.U.depth;
     } else if (dir == V) {
@@ -123,8 +123,8 @@ void ViscositySolver::_computeFaceStateGridMT(Array3d<float> &solidCenterPhi, in
         gridsize = _state.W.width * _state.W.height * _state.W.depth;
     }
 
-    int numCPU = ThreadUtils::getMaxThreadCount();
-    int numthreads = (int)fmin(numCPU, gridsize);
+    size_t numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)std::min(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
     std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {
@@ -181,9 +181,9 @@ void ViscositySolver::_computeFaceStateGridThread(int startidx, int endidx,
 }
 
 void ViscositySolver::_computeSolidCenterPhi(Array3d<float> &solidCenterPhi) {
-    int gridsize = solidCenterPhi.width * solidCenterPhi.height * solidCenterPhi.depth;
-    int numCPU = ThreadUtils::getMaxThreadCount();
-    int numthreads = (int)fmin(numCPU, gridsize);
+    size_t gridsize = solidCenterPhi.width * solidCenterPhi.height * solidCenterPhi.depth;
+    size_t numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)std::min(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
     std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {
@@ -294,9 +294,9 @@ void ViscositySolver::_estimateVolumeFractions(Array3d<float> *volumes,
                                                vmath::vec3 centerStart, 
                                                float dx) {
 
-    int gridsize = volumes->width * volumes->height * volumes->depth;
-    int numCPU = ThreadUtils::getMaxThreadCount();
-    int numthreads = (int)fmin(numCPU, gridsize);
+    size_t gridsize = volumes->width * volumes->height * volumes->depth;
+    size_t numCPU = ThreadUtils::getMaxThreadCount();
+    int numthreads = (int)std::min(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
     std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {

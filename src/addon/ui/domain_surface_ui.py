@@ -19,6 +19,195 @@ import bpy
 from ..utils import version_compatibility_utils as vcu
 from ..utils import installation_utils
 
+
+def _draw_geometry_attributes_menu(self, context):
+    obj = vcu.get_active_object(context)
+    sprops = obj.flip_fluid.domain.surface
+    show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
+
+    #
+    # Geometry Attributes
+    #
+    box = self.layout.box()
+    row = box.row(align=True)
+    row.alert = not sprops.enable_surface_mesh_generation
+    row.prop(sprops, "geometry_attributes_expanded",
+        icon="TRIA_DOWN" if sprops.geometry_attributes_expanded else "TRIA_RIGHT",
+        icon_only=True, 
+        emboss=False
+    )
+    row.label(text="Surface Attributes:")
+
+    if sprops.geometry_attributes_expanded:
+        prefs = vcu.get_addon_preferences()
+        if not prefs.is_developer_tools_enabled():
+            warn_box = box.box()
+            warn_column = warn_box.column(align=True)
+            warn_column.enabled = True
+            warn_column.label(text="     This feature is affected by a current bug in Blender.", icon='ERROR')
+            warn_column.label(text="     The Developer Tools option must be enabled in preferences")
+            warn_column.label(text="     to use this feature.")
+            warn_column.separator()
+            warn_column.prop(prefs, "enable_developer_tools", text="Enable Developer Tools in Preferences")
+            warn_column.separator()
+            warn_column.operator(
+                "wm.url_open", 
+                text="Important Info and Limitations", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Preferences-Menu-Settings#developer-tools"
+            return
+
+        if not vcu.is_blender_293():
+            column = box.column(align=True)
+            column.enabled = False
+            column.label(text="Geometry attribute features for the fluid surface are only available in", icon='ERROR')
+            column.label(text="Blender 2.93 or later. Blender 3.1 or later recommended.", icon='ERROR')
+            return
+
+        #
+        # Velocity Attributes
+        #
+        subbox = box.box()
+        row = subbox.row(align=True)
+        row.prop(sprops, "velocity_attributes_expanded",
+            icon="TRIA_DOWN" if sprops.velocity_attributes_expanded else "TRIA_RIGHT",
+            icon_only=True, 
+            emboss=False
+        )
+        row.label(text="Velocity Based Attributes:")
+
+        if sprops.velocity_attributes_expanded:
+            column = subbox.column(align=True)
+            split = column.split(align=True)
+            column_left = split.column(align=True)
+            column_right = split.column(align=True)
+            column_right.enabled = sprops.enable_velocity_vector_attribute or sprops.enable_speed_attribute or sprops.enable_vorticity_vector_attribute
+            column_left.prop(sprops, "enable_velocity_vector_attribute", text="Velocity Attributes")
+            
+            # This option should always be on. Hiding option from UI, and always enabling this in the simulator.
+            #column_right.prop(sprops, "enable_velocity_vector_attribute_against_obstacles", text="Generate Against Obstacles")
+            
+            column.prop(sprops, "enable_speed_attribute", text="Speed Attributes")
+            column.prop(sprops, "enable_vorticity_vector_attribute", text="Vorticity Attributes")
+            column.separator()
+            column.operator("flip_fluid_operators.helper_initialize_motion_blur")
+        else:
+            row = row.row(align=True)
+            row.alignment = 'RIGHT'
+            row.prop(sprops, "enable_velocity_vector_attribute", text="Velocity")
+            row.prop(sprops, "enable_speed_attribute", text="Speed")
+            row.prop(sprops, "enable_vorticity_vector_attribute", text="Vorticity")
+        
+        #
+        # Color Attributes
+        #
+        subbox = box.box()
+        row = subbox.row(align=True)
+        row.prop(sprops, "color_attributes_expanded",
+            icon="TRIA_DOWN" if sprops.color_attributes_expanded else "TRIA_RIGHT",
+            icon_only=True, 
+            emboss=False
+        )
+        row.label(text="Color and Mixing Attributes:")
+
+        if sprops.color_attributes_expanded:
+            column = subbox.column(align=True)
+            split = column.split(align=True)
+            column_left = split.column(align=True)
+            column_right = split.column(align=True)
+            column_left.prop(sprops, "enable_color_attribute", text="Color Attributes")
+            if sprops.show_smoothing_radius_in_ui:
+                column_right.prop(sprops, "color_attribute_radius", text="Smoothing", slider=True)
+
+            column = subbox.column(align=True)
+            split = column.split(align=True)
+            column_left = split.column(align=True)
+            column_right = split.column(align=True)
+            column_left.enabled = sprops.enable_color_attribute
+            column_left.prop(sprops, "enable_color_attribute_mixing", text="Enable Mixing")
+            column_right.enabled = sprops.enable_color_attribute and sprops.enable_color_attribute_mixing
+            column_right.prop(sprops, "color_attribute_mixing_rate", text="Mix Rate", slider=True)
+            column_right.prop(sprops, "color_attribute_mixing_radius", text="Mix Radius", slider=True)
+
+            column = subbox.column(align=True)
+            column.enabled = sprops.enable_color_attribute and sprops.enable_color_attribute_mixing
+            column.label(text="Mixing Mode:")
+            row = column.row(align=True)
+            row.enabled = sprops.enable_color_attribute
+            row.prop(sprops, "color_attribute_mixing_mode", expand=True)
+
+            if sprops.color_attribute_mixing_mode == 'COLOR_MIXING_MODE_MIXBOX':
+                if not installation_utils.is_mixbox_supported():
+                    column.label(text="Mixbox feature is not supported", icon="ERROR")
+                    column.label(text="in this version of the FLIP Fluids Addon", icon="ERROR")
+
+                if installation_utils.is_mixbox_supported():
+                    if installation_utils.is_mixbox_installation_complete():
+                        column.label(text="Mixbox Plugin Status: Installed", icon="CHECKMARK")
+                    else:
+                        column.label(text="Install the Mixbox plugin in the", icon="INFO")
+                        column.label(text="FLIP Fluids Addon preferences", icon="INFO")
+                        column.operator("flip_fluid_operators.open_preferences", text="Open Preferences", icon="PREFERENCES")
+        else:
+            row = row.row(align=True)
+            row.alignment = 'RIGHT'
+            row.prop(sprops, "enable_color_attribute", text="Color")
+            row = row.row(align=True)
+            row.alignment = 'RIGHT'
+            row.enabled = sprops.enable_color_attribute
+            row.prop(sprops, "enable_color_attribute_mixing", text="Mixing")
+
+        #
+        # Other Attributes
+        #
+        subbox = box.box()
+        row = subbox.row(align=True)
+        row.prop(sprops, "other_attributes_expanded",
+            icon="TRIA_DOWN" if sprops.other_attributes_expanded else "TRIA_RIGHT",
+            icon_only=True, 
+            emboss=False
+        )
+        row.label(text="Other Attributes:")
+
+        if sprops.other_attributes_expanded:
+            column = subbox.column(align=True)
+            row = column.row(align=True)
+            row.prop(sprops, "enable_age_attribute", text="Age Attributes")
+            if sprops.show_smoothing_radius_in_ui:
+                row.prop(sprops, "age_attribute_radius", text="Smoothing", slider=True)
+            else:
+                row.label(text="")
+            row = column.row(align=True)
+            row.prop(sprops, "enable_lifetime_attribute", text="Lifetime Attributes")
+            row.prop(sprops, "lifetime_attribute_death_time")
+            if sprops.show_smoothing_radius_in_ui:
+                row.prop(sprops, "lifetime_attribute_radius", text="Smoothing", slider=True)
+            row = column.row(align=True)
+            row.prop(sprops, "enable_whitewater_proximity_attribute", text="Whitewater Proximity Attributes")
+            if sprops.show_smoothing_radius_in_ui:
+                row.prop(sprops, "whitewater_proximity_attribute_radius", text="Smoothing", slider=True)
+            column.prop(sprops, "enable_source_id_attribute", text="Source ID Attributes")
+        else:
+            row = row.row(align=True)
+            row.alignment = 'RIGHT'
+            row.prop(sprops, "enable_age_attribute", text="Age")
+            row.prop(sprops, "enable_lifetime_attribute", text="Life")
+            row.prop(sprops, "enable_whitewater_proximity_attribute", text="WW Prox.")
+            row.prop(sprops, "enable_source_id_attribute", text="Source ID")
+
+        if show_documentation:
+            column = box.column(align=True)
+            column.operator(
+                "wm.url_open", 
+                text="Domain Attributes Documentation", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Attributes-and-Data-Settings"
+            column.operator(
+                "wm.url_open", 
+                text="Attributes and Motion Blur Example Scenes", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Example-Scene-Descriptions#attribute-and-motion-blur-examples"
+
     
 class FLIPFLUID_PT_DomainTypeFluidSurfacePanel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
@@ -36,10 +225,10 @@ class FLIPFLUID_PT_DomainTypeFluidSurfacePanel(bpy.types.Panel):
         is_addon_disabled = context.scene.flip_fluid.is_addon_disabled_in_blend_file()
         return obj_props.is_active and obj_props.object_type == "TYPE_DOMAIN" and not is_addon_disabled
 
+
     def draw(self, context):
         obj = vcu.get_active_object(context)
         sprops = obj.flip_fluid.domain.surface
-        show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
         show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
 
         if show_documentation:
@@ -60,8 +249,12 @@ class FLIPFLUID_PT_DomainTypeFluidSurfacePanel(bpy.types.Panel):
                 icon="WORLD"
             ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Scene-Troubleshooting#mesh-banding-artifacts-against-curved-obstacles"
 
+        column = self.layout.column(align=True)
+        column.prop(sprops, "enable_surface_mesh_generation")
+
         box = self.layout.box()
         row = box.row(align=True)
+        row.alert = not sprops.enable_surface_mesh_generation
         row.prop(sprops, "surface_mesh_expanded",
             icon="TRIA_DOWN" if sprops.surface_mesh_expanded else "TRIA_RIGHT",
             icon_only=True, 
@@ -86,9 +279,6 @@ class FLIPFLUID_PT_DomainTypeFluidSurfacePanel(bpy.types.Panel):
                 row.alert = True
             row.prop(sprops, "particle_scale")
 
-        if not show_advanced:
-            return
-
         object_collection = vcu.get_scene_collection()
         if vcu.is_blender_28():
             search_group = "all_objects"
@@ -97,6 +287,7 @@ class FLIPFLUID_PT_DomainTypeFluidSurfacePanel(bpy.types.Panel):
 
         box = self.layout.box()
         row = box.row(align=True)
+        row.alert = not sprops.enable_surface_mesh_generation
         row.prop(sprops, "meshing_volume_expanded",
             icon="TRIA_DOWN" if sprops.meshing_volume_expanded else "TRIA_RIGHT",
             icon_only=True, 
@@ -127,6 +318,7 @@ class FLIPFLUID_PT_DomainTypeFluidSurfacePanel(bpy.types.Panel):
 
         box = self.layout.box()
         row = box.row(align=True)
+        row.alert = not sprops.enable_surface_mesh_generation
         row.prop(sprops, "meshing_against_boundary_expanded",
             icon="TRIA_DOWN" if sprops.meshing_against_boundary_expanded else "TRIA_RIGHT",
             icon_only=True, 
@@ -150,6 +342,7 @@ class FLIPFLUID_PT_DomainTypeFluidSurfacePanel(bpy.types.Panel):
 
         box = self.layout.box()
         row = box.row(align=True)
+        row.alert = not sprops.enable_surface_mesh_generation
         row.prop(sprops, "meshing_against_obstacles_expanded",
             icon="TRIA_DOWN" if sprops.meshing_against_obstacles_expanded else "TRIA_RIGHT",
             icon_only=True, 
@@ -192,120 +385,11 @@ class FLIPFLUID_PT_DomainTypeFluidSurfacePanel(bpy.types.Panel):
         #column.separator()
         #column.prop(sprops, "generate_motion_blur_data")
 
-        box = self.layout.box()
-        row = box.row(align=True)
-        row.prop(sprops, "geometry_attributes_expanded",
-            icon="TRIA_DOWN" if sprops.geometry_attributes_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
-        row.label(text="Geometry Attributes:")
+        _draw_geometry_attributes_menu(self, context)
 
-        if sprops.geometry_attributes_expanded:
-            prefs = vcu.get_addon_preferences()
-            if not prefs.is_developer_tools_enabled():
-                warn_box = box.box()
-                warn_column = warn_box.column(align=True)
-                warn_column.enabled = True
-                warn_column.label(text="     Experimental Developer Tools must be")
-                warn_column.label(text="     enabled in preferences to use this feature")
-                warn_column.separator()
-                warn_column.prop(prefs, "enable_developer_tools", text="Enable Developer Tools in Preferences")
-                warn_column.separator()
-                warn_column.operator(
-                    "wm.url_open", 
-                    text="Important Info and Limitations", 
-                    icon="WORLD"
-                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Preferences-Menu-Settings#developer-tools"
-            else:
-                if vcu.is_blender_293():
-                    subbox = box.box()
-                    subbox.label(text="Velocity Based Attributes:")
-                    column = subbox.column(align=True)
-                    split = column.split(align=True)
-                    column_left = split.column(align=True)
-                    column_right = split.column(align=True)
-                    column_right.enabled = sprops.enable_velocity_vector_attribute or sprops.enable_speed_attribute or sprops.enable_vorticity_vector_attribute
-                    column_left.prop(sprops, "enable_velocity_vector_attribute", text="Velocity Attributes")
-                    
-                    # This option should always be on. Hiding option from UI, and always enabling this in the simulator.
-                    #column_right.prop(sprops, "enable_velocity_vector_attribute_against_obstacles", text="Generate Against Obstacles")
-                    
-                    column.prop(sprops, "enable_speed_attribute", text="Speed Attributes")
-                    column.prop(sprops, "enable_vorticity_vector_attribute", text="Vorticity Attributes")
-                    column.separator()
-                    column.operator("flip_fluid_operators.helper_initialize_motion_blur")
-                    
-
-                    subbox = box.box()
-                    subbox.label(text="Color and Mixing Attributes:")
-                    column = subbox.column(align=True)
-                    split = column.split(align=True)
-                    column_left = split.column(align=True)
-                    column_right = split.column(align=True)
-                    column_left.prop(sprops, "enable_color_attribute", text="Color Attributes")
-                    column_right.prop(sprops, "color_attribute_radius", text="Smoothing", slider=True)
-
-                    column = subbox.column(align=True)
-                    split = column.split(align=True)
-                    column_left = split.column(align=True)
-                    column_right = split.column(align=True)
-                    column_left.enabled = sprops.enable_color_attribute
-                    column_left.prop(sprops, "enable_color_attribute_mixing", text="Enable Mixing")
-                    column_right.enabled = sprops.enable_color_attribute and sprops.enable_color_attribute_mixing
-                    column_right.prop(sprops, "color_attribute_mixing_rate", text="Mix Rate", slider=True)
-                    column_right.prop(sprops, "color_attribute_mixing_radius", text="Mix Radius", slider=True)
-
-                    column = subbox.column(align=True)
-                    column.enabled = sprops.enable_color_attribute and sprops.enable_color_attribute_mixing
-                    column.label(text="Mixing Mode:")
-                    row = column.row(align=True)
-                    row.enabled = sprops.enable_color_attribute
-                    row.prop(sprops, "color_attribute_mixing_mode", expand=True)
-
-                    if sprops.color_attribute_mixing_mode == 'COLOR_MIXING_MODE_MIXBOX':
-                        if not installation_utils.is_mixbox_supported():
-                            column.label(text="Mixbox feature is not supported", icon="ERROR")
-                            column.label(text="in this version of the FLIP Fluids Addon", icon="ERROR")
-
-                        if installation_utils.is_mixbox_supported():
-                            if installation_utils.is_mixbox_installation_complete():
-                                column.label(text="Mixbox Plugin Status: Installed", icon="CHECKMARK")
-                            else:
-                                column.label(text="Install the Mixbox plugin in the", icon="INFO")
-                                column.label(text="FLIP Fluids Addon preferences", icon="INFO")
-                                column.operator("flip_fluid_operators.open_preferences", text="Open Preferences", icon="PREFERENCES")
-                    else:
-                        pass
-
-                    subbox = box.box()
-                    subbox.label(text="Other Attributes:")
-                    column = subbox.column(align=True)
-                    row = column.row(align=True)
-                    row.prop(sprops, "enable_age_attribute", text="Age Attributes")
-                    row.prop(sprops, "age_attribute_radius", text="Smoothing", slider=True)
-                    column.prop(sprops, "enable_source_id_attribute", text="Source ID Attributes")
-
-                    # Viscosity attribute is enabled in the FLIP Fluid World panel as 'Variable Viscosity'
-                    #column.prop(sprops, "enable_viscosity_attribute", text="Viscosity Attributes")
-                else:
-                    column = box.column(align=True)
-                    column.enabled = False
-                    column.label(text="Geometry attribute features are only available in", icon='ERROR')
-                    column.label(text="Blender 2.93 or later", icon='ERROR')
-
-                if show_documentation:
-                    column = box.column(align=True)
-                    column.operator(
-                        "wm.url_open", 
-                        text="Domain Attributes Documentation", 
-                        icon="WORLD"
-                    ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Attributes-and-Data-Settings"
-                    column.operator(
-                        "wm.url_open", 
-                        text="Attributes and Motion Blur Example Scenes", 
-                        icon="WORLD"
-                    ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Example-Scene-Descriptions#attribute-and-motion-blur-examples"
+        self.layout.separator()
+        column = self.layout.column(align=True)
+        column.operator("flip_fluid_operators.helper_delete_surface_objects", icon="X")
 
 
 def register():

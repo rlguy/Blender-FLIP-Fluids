@@ -66,6 +66,74 @@ class DomainRenderProperties(bpy.types.PropertyGroup):
             step=0.1,
             precision=3,
             ); exec(conv("surface_motion_blur_scale"))
+
+
+    fluid_particle_render_display = EnumProperty(
+            name="Fluid Particle Render Display Mode",
+            description="How to display the fluid particles for rendering",
+            items=types.display_modes,
+            default='DISPLAY_FINAL',
+            ); exec(conv("fluid_particle_render_display"))
+    fluid_particle_viewport_display = EnumProperty(
+            name="Whitewater Viewport Display Mode",
+            description="How to display the fluid particles in the viewport",
+            items=types.display_modes,
+            default='DISPLAY_PREVIEW',
+            ); exec(conv("fluid_particle_viewport_display"))
+    render_fluid_particle_surface_pct = FloatProperty(
+            name="Surface", 
+            description="Amount of total surface fluid particles to display during render. Surface"
+                " particles are near the fluid surface and border empty air, but are not near"
+                " the domain boundary", 
+            min=0.0, max=1.0,
+            default=1.0,
+            precision=5,
+            ); exec(conv("render_fluid_particle_surface_pct"))
+    render_fluid_particle_boundary_pct = FloatProperty(
+            name="Boundary", 
+            description="Amount of total boundary fluid particles to display during render. Boundary"
+            " particles are located near the domain boundary", 
+            min=0.0, max=1.0,
+            default=1.0,
+            precision=5,
+            ); exec(conv("render_fluid_particle_boundary_pct"))
+    render_fluid_particle_interior_pct = FloatProperty(
+            name="Interior", 
+            description="Amount of total interior fluid particles to display during render. Interior"
+            " particles are within the fluid and are particles that have not been classified"
+            " as either surface or boundary particles", 
+            min=0.0, max=1.0,
+            default=1.0,
+            precision=5,
+            ); exec(conv("render_fluid_particle_interior_pct"))
+    viewport_fluid_particle_surface_pct = FloatProperty(
+            name="Surface", 
+            description="Amount of total surface fluid particles to display in the viewport. Surface"
+                " particles are near the fluid surface or obstacles, but are not near"
+                " the domain boundary", 
+            min=0.0, max=1.0,
+            default=0.5,
+            precision=5,
+            ); exec(conv("viewport_fluid_particle_surface_pct"))
+    viewport_fluid_particle_boundary_pct = FloatProperty(
+            name="Boundary", 
+            description="Amount of total boundary fluid particles to display in the viewport. Boundary"
+            " particles are located near the domain boundary", 
+            min=0.0, max=1.0,
+            default=0.25,
+            precision=5,
+            ); exec(conv("viewport_fluid_particle_boundary_pct"))
+    viewport_fluid_particle_interior_pct = FloatProperty(
+            name="Interior", 
+            description="Amount of total interior fluid particles to display in the viewport. Interior"
+            " particles are within the fluid and are particles that have not been classified"
+            " as either surface or boundary particles ", 
+            min=0.0, max=1.0,
+            default=0.05,
+            precision=5,
+            ); exec(conv("viewport_fluid_particle_interior_pct"))
+
+
     whitewater_render_display = EnumProperty(
             name="Whitewater Render Display Mode",
             description="How to display the whitewater particles for rendering",
@@ -167,6 +235,7 @@ class DomainRenderProperties(bpy.types.PropertyGroup):
             default=5,
             subtype='PERCENTAGE',
             ); exec(conv("viewport_dust_pct"))
+
     whitewater_view_settings_mode = EnumProperty(
             name="View Settings Mode",
             description="How display settings will be applied to whitewater particles",
@@ -273,6 +342,7 @@ class DomainRenderProperties(bpy.types.PropertyGroup):
                 " viewport performance",
             default=True,
             ); exec(conv("only_display_dust_in_render"))
+
     whitewater_particle_scale = FloatProperty(
             name="Scale",
             description="Scale of the whitewater particle object",
@@ -313,12 +383,14 @@ class DomainRenderProperties(bpy.types.PropertyGroup):
             step=0.01,
             precision=4,
             ); exec(conv("dust_particle_scale"))
+
     whitewater_particle_object_settings_mode = EnumProperty(
             name="Particle Object Settings Mode",
             description="How particle object settings will be applied to whitewater particles",
             items=types.whitewater_object_settings_modes,
             default='WHITEWATER_OBJECT_SETTINGS_WHITEWATER',
             ); exec(conv("whitewater_particle_object_settings_mode"))
+
     simulation_playback_mode = EnumProperty(
             name="Simulation Playback Mode",
             description="How to playback the simulation animation",
@@ -342,6 +414,7 @@ class DomainRenderProperties(bpy.types.PropertyGroup):
 
 
     whitewater_display_settings_expanded = BoolProperty(default=False); exec(conv("whitewater_display_settings_expanded"))
+    fluid_particle_display_settings_expanded = BoolProperty(default=False); exec(conv("fluid_particle_display_settings_expanded"))
     surface_display_settings_expanded = BoolProperty(default=True); exec(conv("surface_display_settings_expanded"))
     simulation_display_settings_expanded = BoolProperty(default=False); exec(conv("simulation_display_settings_expanded"))
     current_frame = IntProperty(default=-1); exec(conv("current_frame"))
@@ -352,6 +425,8 @@ class DomainRenderProperties(bpy.types.PropertyGroup):
         add = registry.add_property
         add(path + ".render_display",                             "Surface Render",            group_id=0)
         add(path + ".viewport_display",                           "Surface Viewport",          group_id=0)
+        add(path + ".fluid_particle_render_display",              "Particle Render",            group_id=0)
+        add(path + ".fluid_particle_viewport_display",            "Particle Viewport",          group_id=0)
         add(path + ".whitewater_render_display",                  "Whitewater Render",         group_id=0)
         add(path + ".whitewater_viewport_display",                "Whitewater Viewport",       group_id=0)
         add(path + ".render_surface_motion_blur",                 "Render Motion Blur",        group_id=0)

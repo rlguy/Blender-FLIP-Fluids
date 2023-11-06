@@ -88,6 +88,11 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             description="Include fluid surface mesh in the Alembic export",
             default=True,
             ); exec(conv("alembic_export_surface"))
+    alembic_export_fluid_particles = BoolProperty(
+            name="Fluid Particles",
+            description="Include fluid particles in the Alembic export",
+            default=False,
+            ); exec(conv("alembic_export_fluid_particles"))
     alembic_export_foam = BoolProperty(
             name="Foam",
             description="Include whitewater foam mesh in the Alembic export if applicable. This mesh will be exported as a vertex-only mesh",
@@ -112,7 +117,7 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             name="Export Velocity",
             description="Include velocity data in the Alembic export. This data will be available"
                 " under the 'velocity' attribute of the Alembic export and can be used for motion"
-                " blur rendering. Velocity attributes for the surface and/or whitewater are required to"
+                " blur rendering. Velocity attributes for the surface, fluid particles, and/or whitewater are required to"
                 " be baked before export",
             default=False,
             ); exec(conv("alembic_export_velocity"))
@@ -195,6 +200,16 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             ); exec(conv("disable_addon_in_blend_file"))
 
     is_auto_frame_load_cmd_operator_running = BoolProperty(default=False); exec(conv("is_auto_frame_load_cmd_operator_running"))
+
+    export_animated_mesh_parent_tooltip = BoolProperty(
+            name="Hint: Export Animated Mesh", 
+            description="A parented relation has been detected on this object. If this object"
+                " is moving, enabling the 'Export Animated Mesh' option is required to evaluate"
+                " parented relationships for the simulator. This option is needed for any object"
+                " animation that is more complex than keyframed loc/rot/scale such as parented objects."
+                " If the object is static, keep this option disabled", 
+            default=True,
+            ); exec(conv("export_animated_mesh_parent_tooltip"))
 
     # Used in Helper Operators > FlipFluidMeasureObjectSpeed operator
     is_translation_data_available = BoolProperty(default=False); exec(conv("is_translation_data_available"))

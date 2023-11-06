@@ -249,13 +249,37 @@ extern "C" {
 
     EXPORTDLL int MeshObject_get_viscosity(MeshObject* obj, int *err) {
         return CBindings::safe_execute_method_ret_0param(
-            obj, &MeshObject::getSourceID, err
+            obj, &MeshObject::getViscosity, err
         );
     }
 
     EXPORTDLL void MeshObject_set_viscosity(MeshObject* obj, float v, int *err) {
         CBindings::safe_execute_method_void_1param(
             obj, &MeshObject::setViscosity, v, err
+        );
+    }
+
+    EXPORTDLL int MeshObject_get_lifetime(MeshObject* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &MeshObject::getLifetime, err
+        );
+    }
+
+    EXPORTDLL void MeshObject_set_lifetime(MeshObject* obj, float v, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &MeshObject::setLifetime, v, err
+        );
+    }
+
+    EXPORTDLL int MeshObject_get_lifetime_variance(MeshObject* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &MeshObject::getLifetimeVariance, err
+        );
+    }
+
+    EXPORTDLL void MeshObject_set_lifetime_variance(MeshObject* obj, float v, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &MeshObject::setLifetimeVariance, v, err
         );
     }
 

@@ -25,6 +25,7 @@ RENDER_PRE_FRAME_NUMBER = 0
 IS_KEYFRAMED_HIDE_RENDER_ISSUE_RELEVANT = False
 
 ENABLE_SURFACE_LOAD = True
+ENABLE_FLUID_PARTICLE_LOAD = True
 ENABLE_FOAM_LOAD = True
 ENABLE_BUBBLE_LOAD = True
 ENABLE_SPRAY_LOAD = True
@@ -41,6 +42,7 @@ def is_rendering():
 
 def is_simulation_mesh_load_enabled(mesh_name):
     global ENABLE_SURFACE_LOAD
+    global ENABLE_FLUID_PARTICLE_LOAD
     global ENABLE_FOAM_LOAD
     global ENABLE_BUBBLE_LOAD
     global ENABLE_SPRAY_LOAD
@@ -51,6 +53,8 @@ def is_simulation_mesh_load_enabled(mesh_name):
 
     if   mesh_name == 'SURFACE':
         return ENABLE_SURFACE_LOAD
+    if   mesh_name == 'FLUID_PARTICLES':
+        return ENABLE_FLUID_PARTICLE_LOAD
     elif mesh_name == 'FOAM':
         return ENABLE_FOAM_LOAD
     elif mesh_name == 'BUBBLE':
@@ -71,6 +75,7 @@ def is_simulation_mesh_load_enabled(mesh_name):
 
 def enable_simulation_mesh_load(mesh_name):
     global ENABLE_SURFACE_LOAD
+    global ENABLE_FLUID_PARTICLE_LOAD
     global ENABLE_FOAM_LOAD
     global ENABLE_BUBBLE_LOAD
     global ENABLE_SPRAY_LOAD
@@ -81,6 +86,8 @@ def enable_simulation_mesh_load(mesh_name):
 
     if   mesh_name == 'SURFACE':
         ENABLE_SURFACE_LOAD = True
+    elif mesh_name == 'FLUID_PARTICLES':
+        ENABLE_FLUID_PARTICLE_LOAD = True
     elif mesh_name == 'FOAM':
         ENABLE_FOAM_LOAD = True
     elif mesh_name == 'BUBBLE':
@@ -101,6 +108,7 @@ def enable_simulation_mesh_load(mesh_name):
 
 def disable_simulation_mesh_load(mesh_name):
     global ENABLE_SURFACE_LOAD
+    global ENABLE_FLUID_PARTICLE_LOAD
     global ENABLE_FOAM_LOAD
     global ENABLE_BUBBLE_LOAD
     global ENABLE_SPRAY_LOAD
@@ -111,6 +119,8 @@ def disable_simulation_mesh_load(mesh_name):
 
     if   mesh_name == 'SURFACE':
         ENABLE_SURFACE_LOAD = False
+    elif mesh_name == 'FLUID_PARTICLES':
+        ENABLE_FLUID_PARTICLE_LOAD = False
     elif mesh_name == 'FOAM':
         ENABLE_FOAM_LOAD = False
     elif mesh_name == 'BUBBLE':
@@ -236,11 +246,12 @@ def __update_surface_display_mode():
         surface_cache.enable_vorticity_attribute = dprops.surface.enable_vorticity_vector_attribute
         surface_cache.enable_speed_attribute = dprops.surface.enable_speed_attribute
         surface_cache.enable_age_attribute = dprops.surface.enable_age_attribute
+        surface_cache.enable_lifetime_attribute = dprops.surface.enable_lifetime_attribute
+        surface_cache.enable_whitewater_proximity_attribute = dprops.surface.enable_whitewater_proximity_attribute
         surface_cache.enable_color_attribute = dprops.surface.enable_color_attribute
         surface_cache.enable_source_id_attribute = dprops.surface.enable_source_id_attribute
         surface_cache.enable_viscosity_attribute = dprops.surface.enable_viscosity_attribute
         surface_cache.enable_id_attribute = False
-        surface_cache.enable_lifetime_attribute = False
     elif display_mode == 'DISPLAY_PREVIEW':
         surface_cache.mesh_prefix = "preview"
         surface_cache.mesh_display_name_prefix = "preview_"
@@ -249,11 +260,12 @@ def __update_surface_display_mode():
         surface_cache.enable_vorticity_attribute = False
         surface_cache.enable_speed_attribute = False
         surface_cache.enable_age_attribute = False
+        surface_cache.enable_lifetime_attribute = False
+        surface_cache.enable_whitewater_proximity_attribute = False
         surface_cache.enable_color_attribute = False
         surface_cache.enable_source_id_attribute = False
         surface_cache.enable_viscosity_attribute = False
         surface_cache.enable_id_attribute = False
-        surface_cache.enable_lifetime_attribute = False
     elif display_mode == 'DISPLAY_NONE':
         surface_cache.mesh_prefix = "none"
         surface_cache.mesh_display_name_prefix = "none_"
@@ -262,16 +274,21 @@ def __update_surface_display_mode():
         surface_cache.enable_vorticity_attribute = False
         surface_cache.enable_speed_attribute = False
         surface_cache.enable_age_attribute = False
+        surface_cache.enable_lifetime_attribute = False
+        surface_cache.enable_whitewater_proximity_attribute = False
         surface_cache.enable_color_attribute = False
         surface_cache.enable_source_id_attribute = False
         surface_cache.enable_viscosity_attribute = False
         surface_cache.enable_id_attribute = False
-        surface_cache.enable_lifetime_attribute = False
 
 
 def __load_surface_frame(frameno, force_reload=False, depsgraph=None):
     global IS_RENDERING
     if not __is_domain_set():
+        return
+
+    dprops = __get_domain_properties()
+    if not dprops.surface.enable_surface_mesh_generation:
         return
 
     __update_surface_display_mode()
@@ -281,6 +298,108 @@ def __load_surface_frame(frameno, force_reload=False, depsgraph=None):
 
     if is_simulation_mesh_load_enabled('SURFACE'):
         dprops.mesh_cache.surface.load_frame(frameno, force_load, depsgraph)
+
+
+def __get_fluid_particle_display_mode():
+    if not __is_domain_set():
+        return
+
+    dprops = __get_domain_properties()
+    if IS_RENDERING:
+        mode = dprops.render.fluid_particle_render_display
+    else:
+        mode = dprops.render.fluid_particle_viewport_display
+    return mode
+
+
+def __get_fluid_particle_display_percentages():
+    dprops = __get_domain_properties()
+    rprops = dprops.render
+
+    display_mode = __get_fluid_particle_display_mode()
+    if display_mode == 'DISPLAY_FINAL':
+        surface_pct = rprops.render_fluid_particle_surface_pct
+        boundary_pct = rprops.render_fluid_particle_boundary_pct
+        interior_pct = rprops.render_fluid_particle_interior_pct
+    elif display_mode == 'DISPLAY_PREVIEW':
+        surface_pct = rprops.viewport_fluid_particle_surface_pct
+        boundary_pct = rprops.viewport_fluid_particle_boundary_pct
+        interior_pct = rprops.viewport_fluid_particle_interior_pct
+    elif display_mode == 'DISPLAY_NONE':
+        surface_pct = boundary_pct = interior_pct = 0.0
+
+    return surface_pct, boundary_pct, interior_pct
+
+
+def __update_fluid_particle_display_mode():
+    dprops = __get_domain_properties()
+    particle_cache = dprops.mesh_cache.particles
+    particle_props = dprops.particles
+
+    display_mode = __get_fluid_particle_display_mode()
+
+    if display_mode == 'DISPLAY_FINAL':
+        particle_cache.mesh_prefix = "fluidparticles"
+        particle_cache.mesh_display_name_prefix = "final_"
+        particle_cache.enable_velocity_attribute = particle_props.enable_fluid_particle_velocity_vector_attribute
+        particle_cache.enable_vorticity_attribute = particle_props.enable_fluid_particle_speed_attribute
+        particle_cache.enable_speed_attribute = particle_props.enable_fluid_particle_vorticity_vector_attribute
+        particle_cache.enable_age_attribute = particle_props.enable_fluid_particle_age_attribute
+        particle_cache.enable_lifetime_attribute = particle_props.enable_fluid_particle_lifetime_attribute
+        particle_cache.enable_whitewater_proximity_attribute = particle_props.enable_fluid_particle_whitewater_proximity_attribute
+        particle_cache.enable_color_attribute = particle_props.enable_fluid_particle_color_attribute
+        particle_cache.enable_source_id_attribute = particle_props.enable_fluid_particle_source_id_attribute
+        particle_cache.enable_viscosity_attribute =  dprops.surface.enable_viscosity_attribute
+        particle_cache.enable_id_attribute = particle_props.enable_fluid_particle_output
+    elif display_mode == 'DISPLAY_PREVIEW':
+        particle_cache.mesh_prefix = "fluidparticles"
+        particle_cache.mesh_display_name_prefix = "preview_"
+        particle_cache.enable_velocity_attribute = particle_props.enable_fluid_particle_velocity_vector_attribute
+        particle_cache.enable_vorticity_attribute = particle_props.enable_fluid_particle_speed_attribute
+        particle_cache.enable_speed_attribute = particle_props.enable_fluid_particle_vorticity_vector_attribute
+        particle_cache.enable_age_attribute = particle_props.enable_fluid_particle_age_attribute
+        particle_cache.enable_lifetime_attribute = particle_props.enable_fluid_particle_lifetime_attribute
+        particle_cache.enable_whitewater_proximity_attribute = particle_props.enable_fluid_particle_whitewater_proximity_attribute
+        particle_cache.enable_color_attribute = particle_props.enable_fluid_particle_color_attribute
+        particle_cache.enable_source_id_attribute = particle_props.enable_fluid_particle_source_id_attribute
+        particle_cache.enable_viscosity_attribute = dprops.surface.enable_viscosity_attribute
+        particle_cache.enable_id_attribute = particle_props.enable_fluid_particle_output
+    elif display_mode == 'DISPLAY_NONE':
+        particle_cache.mesh_prefix = "none"
+        particle_cache.mesh_display_name_prefix = "none_"
+        particle_cache.enable_velocity_attribute = False
+        particle_cache.enable_vorticity_attribute = False
+        particle_cache.enable_speed_attribute = False
+        particle_cache.enable_age_attribute = False
+        particle_cache.enable_lifetime_attribute = False
+        particle_cache.enable_whitewater_proximity_attribute = False
+        particle_cache.enable_color_attribute = False
+        particle_cache.enable_source_id_attribute = False
+        particle_cache.enable_viscosity_attribute = False
+        particle_cache.enable_id_attribute = False
+
+    surface_pct, boundary_pct, bubble_pct = __get_fluid_particle_display_percentages()
+    particle_cache.ffp3_surface_import_percentage = surface_pct
+    particle_cache.ffp3_boundary_import_percentage = boundary_pct
+    particle_cache.ffp3_interior_import_percentage = bubble_pct
+
+
+def __load_fluid_particle_frame(frameno, force_reload=False, depsgraph=None):
+    global IS_RENDERING
+    if not __is_domain_set():
+        return
+
+    dprops = __get_domain_properties()
+    if not dprops.particles.enable_fluid_particle_output:
+        return
+
+    __update_fluid_particle_display_mode()
+
+    force_load = force_reload or IS_RENDERING
+    dprops = __get_domain_properties()
+
+    if is_simulation_mesh_load_enabled('FLUID_PARTICLES'):
+        dprops.mesh_cache.particles.load_frame(frameno, force_load, depsgraph)
 
 
 def __get_whitewater_display_mode():
@@ -361,10 +480,14 @@ def __update_whitewater_display_mode():
         cache.bubble.enable_lifetime_attribute = dprops.whitewater.enable_lifetime_attribute
         cache.spray.enable_lifetime_attribute = dprops.whitewater.enable_lifetime_attribute
         cache.dust.enable_lifetime_attribute = dprops.whitewater.enable_lifetime_attribute
+        cache.foam.enable_whitewater_proximity_attribute = False
+        cache.bubble.enable_whitewater_proximity_attribute = False
+        cache.spray.enable_whitewater_proximity_attribute = False
+        cache.dust.enable_whitewater_proximity_attribute = False
         cache.foam.enable_vorticity_attribute = False
         cache.bubble.enable_vorticity_attribute = False
         cache.spray.enable_vorticity_attribute = False
-        cache.dust.enable_vorticityy_attribute = False
+        cache.dust.enable_vorticity_attribute = False
         cache.foam.enable_speed_attribute = False
         cache.bubble.enable_speed_attribute = False
         cache.spray.enable_speed_attribute = False
@@ -410,6 +533,10 @@ def __update_whitewater_display_mode():
         cache.bubble.enable_lifetime_attribute = dprops.whitewater.enable_lifetime_attribute
         cache.spray.enable_lifetime_attribute = dprops.whitewater.enable_lifetime_attribute
         cache.dust.enable_lifetime_attribute = dprops.whitewater.enable_lifetime_attribute
+        cache.foam.enable_whitewater_proximity_attribute = False
+        cache.bubble.enable_whitewater_proximity_attribute = False
+        cache.spray.enable_whitewater_proximity_attribute = False
+        cache.dust.enable_whitewater_proximity_attribute = False
         cache.foam.enable_vorticity_attribute = False
         cache.bubble.enable_vorticity_attribute = False
         cache.spray.enable_vorticity_attribute = False
@@ -459,6 +586,10 @@ def __update_whitewater_display_mode():
         cache.bubble.enable_lifetime_attribute = False
         cache.spray.enable_lifetime_attribute = False
         cache.dust.enable_lifetime_attribute = False
+        cache.foam.enable_whitewater_proximity_attribute = False
+        cache.bubble.enable_whitewater_proximity_attribute = False
+        cache.spray.enable_whitewater_proximity_attribute = False
+        cache.dust.enable_whitewater_proximity_attribute = False
         cache.foam.enable_vorticity_attribute = False
         cache.bubble.enable_vorticity_attribute = False
         cache.spray.enable_vorticity_attribute = False
@@ -744,7 +875,7 @@ def __load_fluid_particle_debug_frame(frameno, force_reload=False):
         return
 
     dprops = __get_domain_properties()
-    if not dprops.debug.export_fluid_particles:
+    if not dprops.debug.enable_fluid_particle_debug_output:
         return
 
     force_load = force_reload or IS_RENDERING
@@ -794,6 +925,7 @@ def __load_frame(frameno, force_reload=False, depsgraph=None):
     dprops.mesh_cache.initialize_cache_objects()
 
     __load_surface_frame(frameno, force_reload, depsgraph)
+    __load_fluid_particle_frame(frameno, force_reload, depsgraph)
     __load_whitewater_frame(frameno, force_reload, depsgraph)
     __load_fluid_particle_debug_frame(frameno, force_reload)
     __load_force_field_debug_frame(frameno, force_reload)

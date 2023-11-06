@@ -47,7 +47,6 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
         attrprops = obj.flip_fluid.domain.surface
         wprops = obj.flip_fluid.domain.world
         aprops = obj.flip_fluid.domain.advanced
-        show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
         show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
 
         if show_documentation:
@@ -58,176 +57,175 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
                 icon="WORLD"
             ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-World-Settings"
 
-        if show_advanced:
-            box = self.layout.box()
+        box = self.layout.box()
 
+        row = box.row(align=True)
+        row.prop(wprops, "world_scale_settings_expanded",
+            icon="TRIA_DOWN" if wprops.world_scale_settings_expanded else "TRIA_RIGHT",
+            icon_only=True, 
+            emboss=False
+        )
+        row.label(text="World Scale:")
+
+        if not wprops.world_scale_settings_expanded:
+            xdims, ydims, zdims = wprops.get_simulation_dimensions(context)
+            xdims_str = '{:.2f}'.format(round(xdims, 2)) + " m"
+            ydims_str = '{:.2f}'.format(round(ydims, 2)) + " m"
+            zdims_str = '{:.2f}'.format(round(zdims, 2)) + " m"
+
+            info_text = xdims_str + " x " + ydims_str + " x " + zdims_str
+            row = row.row(align=True)
+            row.alignment = 'RIGHT'
+            row.label(text=info_text)
+
+        if wprops.world_scale_settings_expanded:
             row = box.row(align=True)
-            row.prop(wprops, "world_scale_settings_expanded",
-                icon="TRIA_DOWN" if wprops.world_scale_settings_expanded else "TRIA_RIGHT",
-                icon_only=True, 
-                emboss=False
-            )
-            row.label(text="World Scale:")
+            row.prop(wprops, "world_scale_mode", expand=True)
 
-            if not wprops.world_scale_settings_expanded:
-                xdims, ydims, zdims = wprops.get_simulation_dimensions(context)
-                xdims_str = '{:.2f}'.format(round(xdims, 2)) + " m"
-                ydims_str = '{:.2f}'.format(round(ydims, 2)) + " m"
-                zdims_str = '{:.2f}'.format(round(zdims, 2)) + " m"
+            column = box.column(align=True)
+            split = column.split(align=True)
+            column_left = split.column()
+            column_right = split.column()
 
-                info_text = xdims_str + " x " + ydims_str + " x " + zdims_str
-                row = row.row(align=True)
-                row.alignment = 'RIGHT'
-                row.label(text=info_text)
-
-            if wprops.world_scale_settings_expanded:
-                row = box.row(align=True)
-                row.prop(wprops, "world_scale_mode", expand=True)
-
-                column = box.column(align=True)
-                split = column.split(align=True)
-                column_left = split.column()
-                column_right = split.column()
-
-                if wprops.world_scale_mode == 'WORLD_SCALE_MODE_RELATIVE':
-                    row = column_left.row(align=True)
-                    row.alignment = 'RIGHT'
-                    row.label(text="1 Blender Unit = ")
-                    column_right.prop(wprops, "world_scale_relative")
-                else:
-                    row = column_left.row(align=True)
-                    row.alignment = 'RIGHT'
-                    row.label(text="Domain Length = ")
-                    column_right.prop(wprops, "world_scale_absolute")
-
+            if wprops.world_scale_mode == 'WORLD_SCALE_MODE_RELATIVE':
                 row = column_left.row(align=True)
                 row.alignment = 'RIGHT'
-                row.label(text="Simulation dimensions:  X = ")
+                row.label(text="1 Blender Unit = ")
+                column_right.prop(wprops, "world_scale_relative")
+            else:
                 row = column_left.row(align=True)
                 row.alignment = 'RIGHT'
-                row.label(text="Y = ")
-                row = column_left.row(align=True)
-                row.alignment = 'RIGHT'
-                row.label(text="Z = ")
+                row.label(text="Domain Length = ")
+                column_right.prop(wprops, "world_scale_absolute")
 
-                xdims, ydims, zdims = wprops.get_simulation_dimensions(context)
-                xdims_str = '{:.2f}'.format(round(xdims, 2)) + " m"
-                ydims_str = '{:.2f}'.format(round(ydims, 2)) + " m"
-                zdims_str = '{:.2f}'.format(round(zdims, 2)) + " m"
+            row = column_left.row(align=True)
+            row.alignment = 'RIGHT'
+            row.label(text="Simulation dimensions:  X = ")
+            row = column_left.row(align=True)
+            row.alignment = 'RIGHT'
+            row.label(text="Y = ")
+            row = column_left.row(align=True)
+            row.alignment = 'RIGHT'
+            row.label(text="Z = ")
 
-                column_right.label(text=xdims_str)
-                column_right.label(text=ydims_str)
-                column_right.label(text=zdims_str)
+            xdims, ydims, zdims = wprops.get_simulation_dimensions(context)
+            xdims_str = '{:.2f}'.format(round(xdims, 2)) + " m"
+            ydims_str = '{:.2f}'.format(round(ydims, 2)) + " m"
+            zdims_str = '{:.2f}'.format(round(zdims, 2)) + " m"
 
-            if show_documentation:
-                column = box.column(align=True)
-                column.operator(
-                    "wm.url_open", 
-                    text="World Scaling Documentation", 
-                    icon="WORLD"
-                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-World-Settings#world-size"
-                column.operator(
-                    "wm.url_open", 
-                    text="How to use relative and absolute scaling modes", 
-                    icon="WORLD"
-                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-World-Settings#how-to-use-relative-and-absolute-world-scaling-in-your-workflow"
-                column.operator(
-                    "wm.url_open", 
-                    text="The Importance of Scale", 
-                    icon="WORLD"
-                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-World-Settings#the-importance-of-scale"
-                column.operator(
-                    "wm.url_open", 
-                    text="Tips on simulating small scale fluids", 
-                    icon="WORLD"
-                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-World-Settings#tips-on-simulating-small-world-sizes"
+            column_right.label(text=xdims_str)
+            column_right.label(text=ydims_str)
+            column_right.label(text=zdims_str)
 
-            box = self.layout.box()
+        if show_documentation:
+            column = box.column(align=True)
+            column.operator(
+                "wm.url_open", 
+                text="World Scaling Documentation", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-World-Settings#world-size"
+            column.operator(
+                "wm.url_open", 
+                text="How to use relative and absolute scaling modes", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-World-Settings#how-to-use-relative-and-absolute-world-scaling-in-your-workflow"
+            column.operator(
+                "wm.url_open", 
+                text="The Importance of Scale", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-World-Settings#the-importance-of-scale"
+            column.operator(
+                "wm.url_open", 
+                text="Tips on simulating small scale fluids", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-World-Settings#tips-on-simulating-small-world-sizes"
+
+        box = self.layout.box()
+        row = box.row(align=True)
+        row.prop(wprops, "force_field_settings_expanded",
+            icon="TRIA_DOWN" if wprops.force_field_settings_expanded else "TRIA_RIGHT",
+            icon_only=True, 
+            emboss=False
+        )
+        row.label(text="Gravity and Force Fields:")
+
+        if wprops.force_field_settings_expanded:
+            box.label(text="Gravity:")
             row = box.row(align=True)
-            row.prop(wprops, "force_field_settings_expanded",
-                icon="TRIA_DOWN" if wprops.force_field_settings_expanded else "TRIA_RIGHT",
-                icon_only=True, 
-                emboss=False
-            )
-            row.label(text="Gravity and Force Fields:")
+            row.prop(wprops, "gravity_type", expand=True)
 
-            if wprops.force_field_settings_expanded:
-                box.label(text="Gravity:")
-                row = box.row(align=True)
-                row.prop(wprops, "gravity_type", expand=True)
+            column = box.column(align=True)
+            split = column.split(align=True)
+            column_left = split.column()
+            column_right = split.column()
 
-                column = box.column(align=True)
-                split = column.split(align=True)
-                column_left = split.column()
-                column_right = split.column()
+            gvector = wprops.get_gravity_vector()
+            magnitude = (gvector[0] * gvector[0] + gvector[1] * gvector[1] + gvector[2] * gvector[2])**(1.0/2.0)
+            gforce = magnitude / 9.81
+            mag_str = '{:.2f}'.format(round(magnitude, 2))
+            gforce_str = '{:.2f}'.format(round(gforce, 2))
 
-                gvector = wprops.get_gravity_vector()
-                magnitude = (gvector[0] * gvector[0] + gvector[1] * gvector[1] + gvector[2] * gvector[2])**(1.0/2.0)
-                gforce = magnitude / 9.81
-                mag_str = '{:.2f}'.format(round(magnitude, 2))
-                gforce_str = '{:.2f}'.format(round(gforce, 2))
+            if wprops.gravity_type == 'GRAVITY_TYPE_SCENE':
+                column_left.label(text="")
+            row = column_left.row(align=True)
+            row.alignment = 'RIGHT'
+            row.label(text="magnitude = " + mag_str)
+            row = column_left.row(align=True)
+            row.alignment = 'RIGHT'
+            row.label(text="g-force = " + gforce_str)
 
-                if wprops.gravity_type == 'GRAVITY_TYPE_SCENE':
-                    column_left.label(text="")
-                row = column_left.row(align=True)
-                row.alignment = 'RIGHT'
-                row.label(text="magnitude = " + mag_str)
-                row = column_left.row(align=True)
-                row.alignment = 'RIGHT'
-                row.label(text="g-force = " + gforce_str)
+            column_right.enabled = not (wprops.gravity_type == 'GRAVITY_TYPE_SCENE')
 
-                column_right.enabled = not (wprops.gravity_type == 'GRAVITY_TYPE_SCENE')
+            if wprops.gravity_type == 'GRAVITY_TYPE_SCENE':
+                column_right.prop(context.scene, "use_gravity", text="Gravity Enabled")
+                column_right.prop(context.scene, "gravity", text="")
+            elif wprops.gravity_type == 'GRAVITY_TYPE_CUSTOM':
+                column_right.prop(wprops, "gravity", text="")
 
-                if wprops.gravity_type == 'GRAVITY_TYPE_SCENE':
-                    column_right.prop(context.scene, "use_gravity", text="Gravity Enabled")
-                    column_right.prop(context.scene, "gravity", text="")
-                elif wprops.gravity_type == 'GRAVITY_TYPE_CUSTOM':
-                    column_right.prop(wprops, "gravity", text="")
+            column = box.column(align=True)
+            column.operator("flip_fluid_operators.make_zero_gravity")
 
-                column = box.column(align=True)
-                column.operator("flip_fluid_operators.make_zero_gravity")
+            
+            box.label(text="Force Field Resolution:")
+            column = box.column(align=True)
+            row = column.row(align=True)
+            row.prop(wprops, "force_field_resolution", expand=True)
 
-                
-                box.label(text="Force Field Resolution:")
-                column = box.column(align=True)
-                row = column.row(align=True)
-                row.prop(wprops, "force_field_resolution", expand=True)
+            column = box.column(align=True)
+            split = column.split(align=True)
+            column_left = split.column(align=True)
+            column_right = split.column(align=True)
 
-                column = box.column(align=True)
-                split = column.split(align=True)
-                column_left = split.column(align=True)
-                column_right = split.column(align=True)
+            field_resolution = sprops.resolution
+            if wprops.force_field_resolution == 'FORCE_FIELD_RESOLUTION_LOW':
+                field_resolution = int(math.ceil(field_resolution / 4))
+            elif wprops.force_field_resolution == 'FORCE_FIELD_RESOLUTION_NORMAL':
+                field_resolution = int(math.ceil(field_resolution / 3))
+            elif wprops.force_field_resolution == 'FORCE_FIELD_RESOLUTION_HIGH':
+                field_resolution = int(math.ceil(field_resolution / 2))
 
-                field_resolution = sprops.resolution
-                if wprops.force_field_resolution == 'FORCE_FIELD_RESOLUTION_LOW':
-                    field_resolution = int(math.ceil(field_resolution / 4))
-                elif wprops.force_field_resolution == 'FORCE_FIELD_RESOLUTION_NORMAL':
-                    field_resolution = int(math.ceil(field_resolution / 3))
-                elif wprops.force_field_resolution == 'FORCE_FIELD_RESOLUTION_HIGH':
-                    field_resolution = int(math.ceil(field_resolution / 2))
+            row = column_left.row()
+            row.prop(wprops, "force_field_resolution_tooltip", icon="QUESTION", emboss=False, text="")
+            row.label(text="Grid resolution: ")
+            column_right.label(text=str(field_resolution))
 
-                row = column_left.row()
-                row.prop(wprops, "force_field_resolution_tooltip", icon="QUESTION", emboss=False, text="")
-                row.label(text="Grid resolution: ")
-                column_right.label(text=str(field_resolution))
-
-            if show_documentation:
-                column = box.column(align=True)
-                column.operator(
-                    "wm.url_open", 
-                    text="Force Field Resolution", 
-                    icon="WORLD"
-                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-World-Settings#force-field-resolution"
-                column.operator(
-                    "wm.url_open", 
-                    text="Force Fields Example Scenes", 
-                    icon="WORLD"
-                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Example-Scene-Descriptions#force-field-examples"
-                column.operator(
-                    "wm.url_open", 
-                    text="Force Fields Video Tutorial", 
-                    icon="WORLD"
-                ).url = "https://youtu.be/bXhMpzERHpk"
+        if show_documentation:
+            column = box.column(align=True)
+            column.operator(
+                "wm.url_open", 
+                text="Force Field Resolution", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-World-Settings#force-field-resolution"
+            column.operator(
+                "wm.url_open", 
+                text="Force Fields Example Scenes", 
+                icon="WORLD"
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Example-Scene-Descriptions#force-field-examples"
+            column.operator(
+                "wm.url_open", 
+                text="Force Fields Video Tutorial", 
+                icon="WORLD"
+            ).url = "https://youtu.be/bXhMpzERHpk"
                 
         box = self.layout.box()
         row = box.row(align=True)
@@ -372,21 +370,20 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
             column_right.enabled = wprops.enable_sheet_seeding
             column_right.prop(wprops, "sheet_fill_rate")
             column_right.prop(wprops, "sheet_fill_threshold")
-
-            if show_advanced:
-                obstacle_objects = context.scene.flip_fluid.get_obstacle_objects()
-                indent_str = 5 * " "
-                column.label(text="Obstacle Sheeting:")
-                if len(obstacle_objects) == 0:
-                    column.label(text=indent_str + "No obstacle objects found...")
-                else:
-                    split = column.split(align=True)
-                    column_left = split.column(align=True)
-                    column_right = split.column(align=True)
-                    for ob in obstacle_objects:
-                        pgroup = ob.flip_fluid.get_property_group()
-                        column_left.label(text=ob.name, icon="OBJECT_DATA")
-                        column_right.prop(pgroup, "sheeting_strength", text="Strength Scale")
+            
+            obstacle_objects = context.scene.flip_fluid.get_obstacle_objects()
+            indent_str = 5 * " "
+            column.label(text="Obstacle Sheeting:")
+            if len(obstacle_objects) == 0:
+                column.label(text=indent_str + "No obstacle objects found...")
+            else:
+                split = column.split(align=True)
+                column_left = split.column(align=True)
+                column_right = split.column(align=True)
+                for ob in obstacle_objects:
+                    pgroup = ob.flip_fluid.get_property_group()
+                    column_left.label(text=ob.name, icon="OBJECT_DATA")
+                    column_right.prop(pgroup, "sheeting_strength", text="Strength Scale")
 
         if show_documentation:
             column = box.column(align=True)

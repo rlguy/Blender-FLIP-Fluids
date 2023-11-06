@@ -96,7 +96,6 @@ def draw_surface_display_settings(self, context):
     domain_object = vcu.get_active_object(context)
     rprops = domain_object.flip_fluid.domain.render
     mprops = domain_object.flip_fluid.domain.materials
-    show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
 
     box = self.layout.box()
     column = box.column()
@@ -138,24 +137,151 @@ def draw_surface_display_settings(self, context):
     column_right.label(text="Surface Viewport Display:")
     column_right.prop(rprops, "viewport_display", expand=True)
 
-    column_left.label(text="Surface Material")
+    column_left.label(text="Surface Material:")
     column_right.prop(mprops, "surface_material", text="")
 
-    # Motion blur rendering is currently not supported due
-    # to limitations in Blender
-    """
-    if show_advanced:
-        column = box.column()
-        column.label(text="Motion Blur:")
 
+def draw_fluid_particle_display_settings(self, context):
+    domain_object = vcu.get_active_object(context)
+    dprops = domain_object.flip_fluid.domain
+    rprops = domain_object.flip_fluid.domain.render
+    mprops = domain_object.flip_fluid.domain.materials
+    is_fluid_particles_enabled = domain_object.flip_fluid.domain.particles.enable_fluid_particle_output
+
+    box = self.layout.box()
+    column = box.column()
+
+    if is_fluid_particles_enabled:
+        row = column.row(align=True)
+        row.prop(rprops, "fluid_particle_display_settings_expanded",
+            icon="TRIA_DOWN" if rprops.fluid_particle_display_settings_expanded else "TRIA_RIGHT",
+            icon_only=True, 
+            emboss=False
+        )
+        row.label(text="Fluid Particle Display:")
+    else:
+        split = column.split()
+        left_column = split.column()
+        row = left_column.row(align=True)
+        row.prop(rprops, "fluid_particle_display_settings_expanded",
+            icon="TRIA_DOWN" if rprops.fluid_particle_display_settings_expanded else "TRIA_RIGHT",
+            icon_only=True, 
+            emboss=False
+        )
+        row.label(text="Fluid Particle Display:")
+
+        right_column = split.column()
+        row = right_column.row()
+        row.alignment = 'RIGHT'
+        c = row.row(align=True)
+        c.alignment = 'RIGHT'
+        c.enabled = False
+        c.label(text="Enable in 'Particles' panel")
+        row.operator("flip_fluid_operators.display_enable_fluid_particles_tooltip", 
+                     text="", icon="QUESTION", emboss=False)
+
+    if not rprops.fluid_particle_display_settings_expanded:
+        if is_fluid_particles_enabled:
+            info_text = ""
+            if rprops.fluid_particle_render_display == 'DISPLAY_FINAL':
+                info_text += "Render Final"
+            elif rprops.fluid_particle_render_display == 'DISPLAY_PREVIEW':
+                info_text += "Render Preview"
+            elif rprops.fluid_particle_render_display == 'DISPLAY_NONE':
+                info_text += "Render None"
+            info_text += " / "
+            if rprops.fluid_particle_viewport_display == 'DISPLAY_FINAL':
+                info_text += "View Final"
+            elif rprops.fluid_particle_viewport_display == 'DISPLAY_PREVIEW':
+                info_text += "View Preview"
+            elif rprops.fluid_particle_viewport_display == 'DISPLAY_NONE':
+                info_text += "View None"
+            row = row.row(align=True)
+            row.alignment='RIGHT'
+            row.label(text=info_text)
+            return
+
+    if rprops.fluid_particle_display_settings_expanded:
+        subbox = box.box()
+        column = subbox.column(align=True)
+        column.enabled = is_fluid_particles_enabled
         split = vcu.ui_split(column, factor=0.5)
         column_left = split.column()
-        column_left.prop(rprops, "render_surface_motion_blur")
+        column_left.label(text="Particle Render Display:")
+        column_left.prop(rprops, "fluid_particle_render_display", expand=True)
 
         column_right = split.column()
-        column_right.prop(rprops, "surface_motion_blur_scale")
-    """
+        column_right.label(text="Particle Viewport Display:")
+        column_right.prop(rprops, "fluid_particle_viewport_display", expand=True)
 
+        subbox = box.box()
+        column = subbox.column(align=True)
+        column.enabled = is_fluid_particles_enabled
+        split = vcu.ui_split(column, factor=0.5)
+        column_left = split.column(align=True)
+        column_left.label(text="Final Display Settings:")
+        column_left.prop(rprops, "render_fluid_particle_surface_pct", slider=True)
+        column_left.prop(rprops, "render_fluid_particle_boundary_pct", slider=True)
+        column_left.prop(rprops, "render_fluid_particle_interior_pct", slider=True)
+
+        column_right = split.column(align=True)
+        column_right.label(text="Preview Display Settings:")
+        column_right.prop(rprops, "viewport_fluid_particle_surface_pct", slider=True)
+        column_right.prop(rprops, "viewport_fluid_particle_boundary_pct", slider=True)
+        column_right.prop(rprops, "viewport_fluid_particle_interior_pct", slider=True)
+
+        bl_fluid_particles_mesh_cache = dprops.mesh_cache.particles.get_cache_object()
+        point_cloud_detected = helper_operators.is_geometry_node_point_cloud_detected(bl_fluid_particles_mesh_cache)
+
+        subbox = box.box()
+        subbox.enabled = is_fluid_particles_enabled
+        column = subbox.column(align=True)
+        column.label(text="Particle Object Settings:")
+
+        if point_cloud_detected:
+            column.label(text="Point cloud geometry nodes setup detected", icon="INFO")
+            column.label(text="More settings can be found in the fluid particles object geometry nodes modifier", icon="INFO")
+            column.separator()
+
+            bl_mod = get_motion_blur_geometry_node_modifier(bl_fluid_particles_mesh_cache)
+            row = column.row(align=True)
+            row.alignment = 'LEFT'
+            row.label(text="Fluid Particles:")
+            draw_whitewater_motion_blur_geometry_node_properties(row, bl_mod)
+        else:
+            column.label(text="FLIP Fluids Geometry Nodes Modifier not found on fluid particles object.", icon="INFO")
+            column.label(text="Fluid particle settings will be unavailable in this menu.", icon="INFO")
+
+        subbox = box.box()
+        column = subbox.column(align=True)
+        column.enabled = is_fluid_particles_enabled
+        split = vcu.ui_split(column, factor=0.5)
+        column_left = split.column()
+        column_right = split.column()
+        column_left.label(text="Fluid Particle Material:")
+        column_right.prop(mprops, "fluid_particles_material", text="")
+
+
+def get_motion_blur_geometry_node_modifier(bl_object):
+    if bl_object is None:
+        return None
+    for mod in bl_object.modifiers:
+        if mod.type == "NODES" and mod.node_group.name.startswith("FF_MotionBlur"):
+            return mod
+
+
+def draw_whitewater_motion_blur_geometry_node_properties(ui_row, bl_mod):
+    if bl_mod is None:
+        ui_row.label(text="Missing FF_MotionBlur modifier")
+        return
+
+    ui_row.alignment = 'LEFT'
+    if "Input_6" in bl_mod:
+        ui_row.prop(bl_mod, '["Input_6"]',  text="Particle Scale")
+    if "Input_4" in bl_mod:
+        ui_row.prop(bl_mod, '["Input_4"]',  text="Motion Blur Scale")
+    if "Input_8" in bl_mod:
+        ui_row.prop(bl_mod, '["Input_8"]',  text="Motion Blur")
 
 
 def draw_whitewater_display_settings(self, context):
@@ -163,7 +289,6 @@ def draw_whitewater_display_settings(self, context):
     dprops = obj.flip_fluid.domain
     rprops = dprops.render
     is_whitewater_enabled = dprops.whitewater.enable_whitewater_simulation
-    show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
 
     master_box = self.layout.box()
     column = master_box.column()
@@ -189,8 +314,9 @@ def draw_whitewater_display_settings(self, context):
 
         right_column = split.column()
         row = right_column.row()
-        row.alignment = 'LEFT'
-        c = row.column()
+        row.alignment = 'RIGHT'
+        c = row.row(align=True)
+        c.alignment = 'RIGHT'
         c.enabled = False
         c.label(text="Enable in 'Whitewater' panel")
         row.operator("flip_fluid_operators.display_enable_whitewater_tooltip", 
@@ -230,7 +356,6 @@ def draw_whitewater_display_settings(self, context):
         column = split.column(align=True)
         column.label(text="Whitewater Viewport Display:")
         column.prop(rprops, "whitewater_viewport_display", expand=True)
-        master_box.separator()
 
         # Whitewater motion blur rendering is currently too resource intensive
         # for Blender Cycles
@@ -249,11 +374,10 @@ def draw_whitewater_display_settings(self, context):
         box = master_box.box()
         box.enabled = is_whitewater_enabled
 
-        if show_advanced:
-            column = box.column(align=True)
-            column.label(text="Display Settings Mode:")
-            row = column.row()
-            row.prop(rprops, "whitewater_view_settings_mode", expand=True)
+        column = box.column(align=True)
+        column.label(text="Display Settings Mode:")
+        row = column.row()
+        row.prop(rprops, "whitewater_view_settings_mode", expand=True)
 
         column = box.column(align=True)
         split = column.split()
@@ -276,37 +400,39 @@ def draw_whitewater_display_settings(self, context):
             column.prop(rprops, "viewport_bubble_pct", slider=True)
             column.prop(rprops, "viewport_spray_pct", slider=True)
             column.prop(rprops, "viewport_dust_pct", slider=True)
-        master_box.separator()
 
         point_cloud_detected = False
         if is_whitewater_enabled:
             point_cloud_detected = helper_operators.is_geometry_node_point_cloud_detected()
 
-        if not show_advanced:
-            box = master_box.box()
-            box.enabled = is_whitewater_enabled
-            box.label(text="Particle Object Settings:")
-            if point_cloud_detected:
-                column = box.column(align=True)
-                column.label(text="Point cloud geometry nodes setup detected", icon="INFO")
-                column.label(text="Particle scale can be set in the whitewater mesh object", icon="INFO")
-                column.label(text="geometry nodes modifier", icon="INFO")
-            else:
-                row = box.row(align=True)
-                row.prop(rprops, "whitewater_particle_scale", text="Particle Scale")
-                row.prop(rprops, "only_display_whitewater_in_render")
-            return
-
         box = master_box.box()
         box.enabled = is_whitewater_enabled
 
         column = box.column(align=True)
-        column.label(text="Particle Object Settings Mode:")
+        column.label(text="Particle Object Settings:")
 
         if point_cloud_detected:
             column.label(text="Point cloud geometry nodes setup detected", icon="INFO")
-            column.label(text="Particle scale can be set in the whitewater mesh object", icon="INFO")
-            column.label(text="geometry nodes modifier", icon="INFO")
+            column.label(text="More settings can be found in the whitewater object geometry nodes modifier", icon="INFO")
+            column.separator()
+            split = vcu.ui_split(column, factor=0.1)
+            column1 = split.column(align=True)
+            column2 = split.column(align=True)
+
+            whitewater_labels = ["Foam:", "Bubble:", "Spray:", "Dust:"]
+            mesh_cache_objects = [
+                    dprops.mesh_cache.foam.get_cache_object(),
+                    dprops.mesh_cache.bubble.get_cache_object(),
+                    dprops.mesh_cache.spray.get_cache_object(),
+                    dprops.mesh_cache.dust.get_cache_object()
+                ]
+
+            for idx, bl_object in enumerate(mesh_cache_objects):
+                bl_mod = get_motion_blur_geometry_node_modifier(bl_object)
+                row = column1.row(align=True)
+                row.label(text=whitewater_labels[idx])
+                row = column2.row(align=True)
+                draw_whitewater_motion_blur_geometry_node_properties(row, bl_mod)
         else:
             row = column.row()
             row.prop(rprops, "whitewater_particle_object_settings_mode", expand=True)
@@ -388,7 +514,6 @@ def draw_whitewater_display_settings(self, context):
                 row.prop(rprops, "dust_particle_scale", text="Particle Scale")
                 row.prop(rprops, "only_display_dust_in_render", text="Hide particles in viewport")
 
-        master_box.separator()
         box = master_box.box()
         box.enabled = is_whitewater_enabled
 
@@ -454,6 +579,7 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
 
         draw_simulation_display_settings(self, context)
         draw_surface_display_settings(self, context)
+        draw_fluid_particle_display_settings(self, context)
         draw_whitewater_display_settings(self, context)
         draw_render_settings(self, context)
     

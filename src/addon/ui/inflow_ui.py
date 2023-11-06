@@ -38,7 +38,6 @@ class FLIPFLUID_PT_InflowTypePanel(bpy.types.Panel):
         obj_props = obj.flip_fluid
         inflow_props = obj_props.inflow
         dprops = context.scene.flip_fluid.get_domain_properties()
-        show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
         show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
 
         column = self.layout.column()
@@ -76,10 +75,8 @@ class FLIPFLUID_PT_InflowTypePanel(bpy.types.Panel):
 
         column = self.layout.column()
         column.prop(inflow_props, "is_enabled")
-
-        if show_advanced:
-            column.prop(inflow_props, "substep_emissions")
-            column.prop(inflow_props, "priority", text="Priority Level")
+        column.prop(inflow_props, "substep_emissions")
+        column.prop(inflow_props, "priority", text="Priority Level")
 
         column.separator()
         box = self.layout.box()
@@ -129,24 +126,25 @@ class FLIPFLUID_PT_InflowTypePanel(bpy.types.Panel):
             column_right.prop_search(inflow_props, "target_object", target_collection, search_group, text="")
             column_right.prop(inflow_props, "export_animated_target")
 
-        if show_advanced:
-            box.separator()
-            column = box.column(align=True)
-            split = vcu.ui_split(column, factor=0.60)
-            column = split.column()
-            column.prop(inflow_props, "append_object_velocity")
-            column = split.column(align=True)
-            column.enabled = inflow_props.append_object_velocity
-            column.prop(inflow_props, "append_object_velocity_influence")
-            column = box.column(align=True)
-            column.prop(inflow_props, "constrain_fluid_velocity")
+        box.separator()
+        column = box.column(align=True)
+        split = vcu.ui_split(column, factor=0.60)
+        column = split.column()
+        column.prop(inflow_props, "append_object_velocity")
+        column = split.column(align=True)
+        column.enabled = inflow_props.append_object_velocity
+        column.prop(inflow_props, "append_object_velocity_influence")
+        column = box.column(align=True)
+        column.prop(inflow_props, "constrain_fluid_velocity")
 
         if vcu.get_addon_preferences().is_developer_tools_enabled():
             box = self.layout.box()
             box.label(text="Geometry Attributes:")
             column = box.column(align=True)
             if vcu.is_blender_293():
-                show_color = dprops is not None and dprops.surface.enable_color_attribute
+                is_color_attribute_enabled = (dprops.surface.enable_color_attribute or 
+                                              dprops.particles.enable_fluid_particle_color_attribute)
+                show_color = dprops is not None and is_color_attribute_enabled
                 split = column.split(align=True)
                 column_left = split.column(align=True)
                 column_left.enabled = show_color
@@ -177,7 +175,29 @@ class FLIPFLUID_PT_InflowTypePanel(bpy.types.Panel):
                     row.label(text="Domain required for this option")
                 column.separator()
 
-                show_source_id = dprops is not None and dprops.surface.enable_source_id_attribute
+                is_lifetime_attribute_enabled = (dprops.surface.enable_lifetime_attribute or 
+                                                 dprops.particles.enable_fluid_particle_lifetime_attribute)
+                show_lifetime = dprops is not None and is_lifetime_attribute_enabled
+                split = column.split(align=True)
+                column_left = split.column(align=True)
+                column_left.enabled = show_lifetime
+                column_left.prop(inflow_props, "lifetime")
+                column_right = split.column(align=True)
+                row = column_right.row(align=True)
+                row.alignment = 'LEFT'
+                if dprops is not None and not show_lifetime:
+                    row.operator("flip_fluid_operators.enable_lifetime_attribute_tooltip", 
+                                 text="Enable Lifetime Attribute", icon="PLUS", emboss=False)
+                elif dprops is not None:
+                    row.alignment = 'EXPAND'
+                    row.prop(inflow_props, "lifetime_variance", text="Variance")
+                if dprops is None:
+                    row.label(text="Domain required for this option")
+                column.separator()
+
+                is_source_id_attribute_enabled = (dprops.surface.enable_source_id_attribute or 
+                                                  dprops.particles.enable_fluid_particle_source_id_attribute)
+                show_source_id = dprops is not None and is_source_id_attribute_enabled
                 split = column.split(align=True)
                 column_left = split.column(align=True)
                 column_left.enabled = show_source_id
@@ -199,13 +219,24 @@ class FLIPFLUID_PT_InflowTypePanel(bpy.types.Panel):
         box = self.layout.box()
         box.label(text="Mesh Data Export:")
         column = box.column(align=True)
-        column.prop(inflow_props, "export_animated_mesh")
-        if show_advanced:
-            column.prop(inflow_props, "skip_reexport")
-            column.separator()
-            column = box.column(align=True)
-            column.enabled = inflow_props.skip_reexport
-            column.prop(inflow_props, "force_reexport_on_next_bake", toggle=True)
+        
+        row = column.row(align=True)
+        row.alignment = 'LEFT'
+        row.prop(inflow_props, "export_animated_mesh")
+
+        is_child_object = obj.parent is not None
+        is_hint_enabled = not vcu.get_addon_preferences().dismiss_export_animated_mesh_parented_relation_hint
+        if is_hint_enabled and not inflow_props.export_animated_mesh and is_child_object:
+            row.prop(context.scene.flip_fluid_helper, "export_animated_mesh_parent_tooltip", 
+                    icon="QUESTION", emboss=False, text=""
+                    )
+            row.label(text="←Hint: export option may be required")
+        
+        column.prop(inflow_props, "skip_reexport")
+        column.separator()
+        column = box.column(align=True)
+        column.enabled = inflow_props.skip_reexport
+        column.prop(inflow_props, "force_reexport_on_next_bake", toggle=True)
 
         column = self.layout.column(align=True)
         column.separator()

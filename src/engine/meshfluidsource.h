@@ -116,6 +116,11 @@ public:
     void setViscosity(float v);
     float getViscosity();
 
+    void setLifetime(float v);
+    float getLifetime();
+    void setLifetimeVariance(float v);
+    float getLifetimeVariance();
+
     void setSourceColor(vmath::vec3 c);
     vmath::vec3 getSourceColor();
 

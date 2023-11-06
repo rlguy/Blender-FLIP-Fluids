@@ -30,18 +30,26 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
     conv = vcu.convert_attribute_to_28
     
     surface_material = EnumProperty(
-            name="Surface",
+            name="Fluid Surface",
             description="Select a material for the fluid surface. Tip: materials can also be"
                 " created and assigned to the fluid_surface object in Blender's Material"
                 " Properties panel",
             items=material_library.get_surface_material_enums_ui,
             update=lambda self, context: self._update_surface_material(context),
             ); exec(conv("surface_material"))
+    fluid_particles_material = EnumProperty(
+            name="Fluid Particles",
+            description="Select a material for the fluid particles. Tip: If the object contains"
+                " a Point Cloud geometry node modifier, the material can be set in the modifier settings",
+            items=material_library.get_fluid_particles_material_enums_ui,
+            update=lambda self, context: self._update_fluid_particles_material(context),
+            ); exec(conv("fluid_particles_material"))
     whitewater_foam_material = EnumProperty(
             name="Whitewater Foam",
             description="Select a material for the foam particles. Tip: materials can also be"
                 " created and assigned to the whitewater_foam object in Blender's Material"
-                " Properties panel",
+                " Properties panel. If the object contains a Point Cloud geometry node modifier,"
+                " the material can be set in the modifier settings",
             items=material_library.get_whitewater_material_enums_ui,
             update=lambda self, context: self._update_whitewater_foam_material(context),
             ); exec(conv("whitewater_foam_material"))
@@ -49,7 +57,8 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
             name="Whitewater Bubble",
             description="Select a material for the bubble particles. Tip: materials can also be"
                 " created and assigned to the whitewater_bubble object in Blender's Material"
-                " Properties panel",
+                " Properties panel. If the object contains a Point Cloud geometry node modifier,"
+                " the material can be set in the modifier settings",
             items=material_library.get_whitewater_material_enums_ui,
             update=lambda self, context: self._update_whitewater_bubble_material(context),
             ); exec(conv("whitewater_bubble_material"))
@@ -57,7 +66,8 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
             name="Whitewater Spray",
             description="Select a material for the spray particles. Tip: materials can also be"
                 " created and assigned to the whitewater_spray object in Blender's Material"
-                " Properties panel",
+                " Properties panel. If the object contains a Point Cloud geometry node modifier,"
+                " the material can be set in the modifier settings",
             items=material_library.get_whitewater_material_enums_ui,
             update=lambda self, context: self._update_whitewater_spray_material(context),
             ); exec(conv("whitewater_spray_material"))
@@ -65,7 +75,8 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
             name="Whitewater Dust",
             description="Select a material for the dust particles. Tip: materials can also be"
                 " created and assigned to the whitewater_dust object in Blender's Material"
-                " Properties panel",
+                " Properties panel. If the object contains a Point Cloud geometry node modifier,"
+                " the material can be set in the modifier settings",
             items=material_library.get_whitewater_material_enums_ui,
             update=lambda self, context: self._update_whitewater_dust_material(context),
             ); exec(conv("whitewater_dust_material"))
@@ -76,6 +87,7 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
             ); exec(conv("material_import"))
 
     last_surface_material = StringProperty(default=""); exec(conv("last_surface_material"))
+    last_fluid_particles_material = StringProperty(default=""); exec(conv("last_fluid_particles_material"))
     last_whitewater_foam_material = StringProperty(default=""); exec(conv("last_whitewater_foam_material"))
     last_whitewater_bubble_material = StringProperty(default=""); exec(conv("last_whitewater_bubble_material"))
     last_whitewater_spray_material = StringProperty(default=""); exec(conv("last_whitewater_spray_material"))
@@ -83,20 +95,23 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
 
 
     def load_post(self):
-        self._check_material_properties_valid()
+        #self._check_material_properties_valid()
+        pass
 
 
     def register_preset_properties(self, registry, path):
         add = registry.add_property
-        add(path + ".surface_material",           "Surface Material", group_id=0)
-        add(path + ".whitewater_foam_material",   "Foam Material",    group_id=0)
-        add(path + ".whitewater_bubble_material", "Bubble Material",  group_id=0)
-        add(path + ".whitewater_spray_material",  "Spray Material",   group_id=0)
-        add(path + ".whitewater_dust_material",   "Dust Material",   group_id=0)
+        add(path + ".surface_material",           "Surface Material",         group_id=0)
+        add(path + ".fluid_particles_material",   "Fluid Particles Material", group_id=0)
+        add(path + ".whitewater_foam_material",   "Foam Material",            group_id=0)
+        add(path + ".whitewater_bubble_material", "Bubble Material",          group_id=0)
+        add(path + ".whitewater_spray_material",  "Spray Material",           group_id=0)
+        add(path + ".whitewater_dust_material",   "Dust Material",            group_id=0)
 
 
     def initialize(self):
         self.surface_material = 'MATERIAL_NONE'
+        self.fluid_particles_material = 'MATERIAL_NONE'
         self.whitewater_foam_material = 'MATERIAL_NONE'
         self.whitewater_bubble_material = 'MATERIAL_NONE'
         self.whitewater_spray_material = 'MATERIAL_NONE'
@@ -136,7 +151,20 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
             'surface_material', 'last_surface_material'
         )
 
-        #helper_operators.update_geometry_node_material(surface_object, "FF_MotionBlurSurface")
+
+    def _update_fluid_particles_material(self, context):
+        if not self._is_domain_set():
+            return
+        if not context.scene.flip_fluid.is_domain_in_active_scene():
+            return
+        dprops = self._get_domain_properties()
+        particles_object = dprops.mesh_cache.particles.get_cache_object()
+        self._update_cache_object_material(
+            particles_object,
+            'fluid_particles_material', 'last_fluid_particles_material'
+        )
+
+        helper_operators.update_geometry_node_material(particles_object, "FF_MotionBlurFluidParticles")
 
 
     def _update_whitewater_foam_material(self, context):
@@ -152,7 +180,7 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
         )
         dprops.mesh_cache.foam.apply_duplivert_object_material()
 
-        #helper_operators.update_geometry_node_material(foam_object, "FF_MotionBlurWhitewater")
+        helper_operators.update_geometry_node_material(foam_object, "FF_MotionBlurWhitewaterFoam")
 
 
     def _update_whitewater_bubble_material(self, context):
@@ -168,7 +196,7 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
         )
         dprops.mesh_cache.bubble.apply_duplivert_object_material()
 
-        #helper_operators.update_geometry_node_material(bubble_object, "FF_MotionBlurWhitewater")
+        helper_operators.update_geometry_node_material(bubble_object, "FF_MotionBlurWhitewaterBubble")
 
 
     def _update_whitewater_spray_material(self, context):
@@ -184,7 +212,7 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
         )
         dprops.mesh_cache.spray.apply_duplivert_object_material()
 
-        #helper_operators.update_geometry_node_material(spray_object, "FF_MotionBlurWhitewater")
+        helper_operators.update_geometry_node_material(spray_object, "FF_MotionBlurWhitewaterSpray")
 
 
     def _update_whitewater_dust_material(self, context):
@@ -200,7 +228,7 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
         )
         dprops.mesh_cache.dust.apply_duplivert_object_material()
 
-        helper_operators.update_geometry_node_material(dust_object, "FF_MotionBlurWhitewater")
+        helper_operators.update_geometry_node_material(dust_object, "FF_MotionBlurWhitewaterDust")
 
 
     def _remove_cache_object_material(self, cache_object, enum_ident):
@@ -258,6 +286,11 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
             self.surface_material = 'MATERIAL_NONE'
 
         try:
+            self.fluid_particles_material = self.fluid_particles_material
+        except:
+            self.fluid_particles_material = 'MATERIAL_NONE'
+
+        try:
             self.whitewater_foam_material = self.whitewater_foam_material
         except:
             self.whitewater_foam_material = 'MATERIAL_NONE'
@@ -287,6 +320,7 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
         if not self._is_domain_set():
             return
         self._check_surface_material()
+        self._check_fluid_particles_material()
         self._check_foam_material()
         self._check_bubble_material()
         self._check_spray_material()
@@ -314,6 +348,29 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
         material_id = self._get_material_identifier_from_name(material.name, material_enums)
         if material_id is not None and self.surface_material != material_id:
             self.surface_material = material_id
+
+
+    def _check_fluid_particles_material(self):
+        dprops = self._get_domain_properties()
+        particles_object = dprops.mesh_cache.particles.get_cache_object()
+        if particles_object is None:
+            return
+
+        if len(particles_object.data.materials) == 0:
+            if self.fluid_particles_material != 'MATERIAL_NONE':
+                self.fluid_particles_material = 'MATERIAL_NONE'
+            return
+
+        material_idx = particles_object.active_material_index
+        material = particles_object.data.materials[material_idx]
+        if material is None:
+            self.fluid_particles_material = 'MATERIAL_NONE'
+            return
+
+        material_enums = material_library.get_fluid_particles_material_enums_ui()
+        material_id = self._get_material_identifier_from_name(material.name, material_enums)
+        if material_id is not None and self.fluid_particles_material != material_id:
+            self.fluid_particles_material = material_id
 
 
     def _check_foam_material(self):

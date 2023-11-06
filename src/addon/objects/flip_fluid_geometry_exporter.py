@@ -401,10 +401,21 @@ class GeometryExportManager():
                     current_vcount, current_tcount = work_item.geometry_export_object.get_bobj_vertex_triangle_count(current_bobj_data)
                     previous_vcount, previous_tcount = work_item.geometry_export_object.get_bobj_vertex_triangle_count(previous_bobj_data)
 
+                    bl_object = bpy.data.objects.get(work_item.geometry_export_object.name)
+                    error_reason = "Unknown"
+                    if bl_object is not None:
+                        if bl_object.flip_fluid.is_obstacle():
+                            error_reason = "Obstacle object require mesh velocities to be computed for fluid interaction."
+                        elif bl_object.flip_fluid.is_inflow():
+                            error_reason = "Inflow object 'Add Object Velocity to Inflow' option require mesh velocities to be computed for this feature."
+                        elif bl_object.flip_fluid.is_fluid():
+                            error_reason = "Fluid object 'Add Object Velocity to Fluid' option require mesh velocities to be computed for this feature."
+
                     errmsg = ("Warning: unable to export animated mesh '" + work_item.geometry_export_object.name +
                              "'. Animated meshes must have the same number of " +
-                             "vertices/triangles for each frame and must not change topology.\n\nFrame " + 
-                             str(frame_id - 1) + ": " + str(previous_vcount) + " vertices, " + str(previous_tcount) + " triangles"
+                             "vertices/triangles for each frame and must not change topology\nif the mesh velocity is required to be computed correctly." + 
+                             "\nError Reason: " + error_reason +
+                             "\n\nFrame " + str(frame_id - 1) + ": " + str(previous_vcount) + " vertices, " + str(previous_tcount) + " triangles"
                              "\nFrame " + str(frame_id) + ": " + str(current_vcount)) + " vertices, " + str(current_tcount) + " triangles"
 
                     errmsg += ("\n\nDisable this warning in the Advanced Settings panel. Warning: " +

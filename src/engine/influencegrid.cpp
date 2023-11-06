@@ -121,8 +121,8 @@ void InfluenceGrid::_updateSpread(double dt) {
         _tempinfluence = Array3d<float>(_influence.width, _influence.height, _influence.depth);
     }
 
-    int gridsize = _isize * _jsize * _ksize;
-    int numCPU = ThreadUtils::getMaxThreadCount();
+    size_t gridsize = _isize * _jsize * _ksize;
+    size_t numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
     std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);

@@ -21,6 +21,7 @@ if "bpy" in locals():
         'domain_cache_ui',
         'domain_display_ui',
         'domain_surface_ui',
+        'domain_particles_ui',
         'domain_whitewater_ui',
         'domain_world_ui',
         'domain_presets_ui',
@@ -41,6 +42,7 @@ from . import(
         domain_cache_ui,
         domain_display_ui,
         domain_surface_ui,
+        domain_particles_ui,
         domain_whitewater_ui,
         domain_world_ui,
         domain_presets_ui,
@@ -57,6 +59,7 @@ def register():
     domain_cache_ui.register()
     domain_display_ui.register()
     domain_surface_ui.register()
+    domain_particles_ui.register()
     domain_whitewater_ui.register()
     domain_world_ui.register()
     domain_presets_ui.register()
@@ -72,6 +75,7 @@ def unregister():
     domain_cache_ui.unregister()
     domain_display_ui.unregister()
     domain_surface_ui.unregister()
+    domain_particles_ui.unregister()
     domain_whitewater_ui.unregister()
     domain_world_ui.unregister()
     domain_materials_ui.unregister()

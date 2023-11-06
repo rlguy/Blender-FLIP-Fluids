@@ -62,6 +62,8 @@ def update_stats(context=None):
     if context is None:
         context = bpy.context
 
+    num_updated_frames = 0
+
     dprops = bpy.context.scene.flip_fluid.get_domain_properties()
     cache_dir = dprops.cache.get_cache_abspath()
     statsfilepath = os.path.join(cache_dir, dprops.stats.stats_filename)
@@ -71,11 +73,11 @@ def update_stats(context=None):
             with open(statsfilepath, 'w', encoding='utf-8') as f:
                 f.write(json.dumps({}, sort_keys=True, indent=4))
         except:
-            return
+            return num_updated_frames
 
     temp_dir = os.path.join(cache_dir, "temp")
     if not os.path.isdir(temp_dir):
-        return
+        return num_updated_frames
 
     stat_prefix = "framestats"
     stat_extension = ".data"
@@ -85,7 +87,7 @@ def update_stats(context=None):
     stat_files = [os.path.join(temp_dir, f) for f in stat_files if f.endswith(stat_extension)]
     
     if not stat_files:
-        return
+        return num_updated_frames
 
     with open(statsfilepath, 'r', encoding='utf-8') as f:
         stats_dict = json.loads(f.read())
@@ -103,6 +105,7 @@ def update_stats(context=None):
                 continue
             stats_dict[str(frameno)] = frame_stats_dict
         fpl.delete_file(statpath, error_ok=True)
+        num_updated_frames += 1
 
     with open(statsfilepath, 'w', encoding='utf-8') as f:
             f.write(json.dumps(stats_dict, sort_keys=True, indent=4))
@@ -110,6 +113,8 @@ def update_stats(context=None):
     dprops.stats.is_stats_current = False
     context.scene.flip_fluid_helper.frame_complete_callback()
     dprops.bake.frame_complete_callback()
+
+    return num_updated_frames
 
 
 
@@ -196,7 +201,7 @@ class BakeFluidSimulation(bpy.types.Operator):
         self.thread.start()
 
 
-    def _update_stats(self, context):
+    def _update_stats(self, context=None):
         update_stats(context)
 
 

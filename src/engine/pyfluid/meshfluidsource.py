@@ -258,6 +258,30 @@ class MeshFluidSource():
         pb.init_lib_func(libfunc, [c_void_p, c_float, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), float(v)])
 
+    @property
+    def lifetime(self):
+        libfunc = lib.MeshFluidSource_get_lifetime
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @lifetime.setter
+    def lifetime(self, v):
+        libfunc = lib.MeshFluidSource_set_lifetime
+        pb.init_lib_func(libfunc, [c_void_p, c_float, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), float(v)])
+
+    @property
+    def lifetime_variance(self):
+        libfunc = lib.MeshFluidSource_get_lifetime_variance
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @lifetime_variance.setter
+    def lifetime_variance(self, v):
+        libfunc = lib.MeshFluidSource_set_lifetime_variance
+        pb.init_lib_func(libfunc, [c_void_p, c_float, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), float(v)])
+
     def get_source_color(self):
         libfunc = lib.MeshFluidSource_get_source_color
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], Vector3_t)

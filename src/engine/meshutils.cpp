@@ -113,12 +113,12 @@ void _getCollisionGridZ(TriangleMesh &m, double dx, Array3d<std::vector<float> >
                        _randomDouble(jit, -jit), 
                        _randomDouble(jit, -jit));
 
-    int gridsize = ztrigrid.width * ztrigrid.height;
-    int numCPU = ThreadUtils::getMaxThreadCount();
+    size_t gridsize = ztrigrid.width * ztrigrid.height;
+    size_t numCPU = ThreadUtils::getMaxThreadCount();
     if (computeSingleThreaded) {
         numCPU = 1;
     }
-    int numthreads = (int)fmin(numCPU, gridsize);
+    int numthreads = (int)std::min(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
     std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {
@@ -166,8 +166,8 @@ void getCellsInsideTriangleMesh(
     Array3d<std::vector<float> > zcollisions(isize, jsize, 1);
     _getCollisionGridZ(m, dx, zcollisions, computeSingleThreaded);
 
-    int gridsize = isize * jsize * ksize;
-    int numCPU = ThreadUtils::getMaxThreadCount();
+    size_t gridsize = isize * jsize * ksize;
+    size_t numCPU = ThreadUtils::getMaxThreadCount();
     if (computeSingleThreaded) {
         numCPU = 1;
     }

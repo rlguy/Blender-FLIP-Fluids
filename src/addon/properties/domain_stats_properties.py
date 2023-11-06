@@ -28,6 +28,7 @@ from .. import types
 from ..utils import version_compatibility_utils as vcu
 from ..operators import bake_operators
 
+
 # ##############################################################################
 #   STATS PROPERTIES
 # ##############################################################################
@@ -172,6 +173,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
     cache_info_pressure_solver_stats_expanded = BoolProperty(default=True); exec(conv("cache_info_pressure_solver_stats_expanded"))
     cache_info_viscosity_solver_stats_expanded = BoolProperty(default=True); exec(conv("cache_info_viscosity_solver_stats_expanded"))
     is_cache_info_available = BoolProperty(default=False); exec(conv("is_cache_info_available"))
+    frame_start = IntProperty(default=-1); exec(conv("frame_start"))
     num_cache_frames = IntProperty(default=-1); exec(conv("num_cache_frames"))
     is_average_performance_score_enabled = BoolProperty(default=False); exec(conv("is_average_performance_score_enabled"))
     average_performance_score = IntProperty(default=-1); exec(conv("average_performance_score"))
@@ -241,6 +243,8 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
     surfacespeed_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surfacespeed_mesh"))
     surfacevorticity_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surfacevorticity_mesh"))
     surfaceage_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surfaceage_mesh"))
+    surfacelifetime_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surfacelifetime_mesh"))
+    surfacewhitewaterproximity_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surfacewhitewaterproximity_mesh"))
     surfacecolor_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surfacecolor_mesh"))
     surfacesourceid_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surfacesourceid_mesh"))
     surfaceviscosity_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surfaceviscosity_mesh"))
@@ -264,7 +268,18 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
     bubblelifetime_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("bubblelifetime_mesh"))
     spraylifetime_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("spraylifetime_mesh"))
     dustlifetime_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("dustlifetime_mesh"))
-    particle_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("particle_mesh"))
+    fluid_particle_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("fluid_particle_mesh"))
+    fluid_particle_id_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("fluid_particle_id_mesh"))
+    fluid_particle_velocity_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("fluid_particle_velocity_mesh"))
+    fluid_particle_speed_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("fluid_particle_speed_mesh"))
+    fluid_particle_vorticity_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("fluid_particle_vorticity_mesh"))
+    fluid_particle_color_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("fluid_particle_color_mesh"))
+    fluid_particle_age_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("fluid_particle_age_mesh"))
+    fluid_particle_lifetime_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("fluid_particle_lifetime_mesh"))
+    fluid_particle_viscosity_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("fluid_particle_viscosity_mesh"))
+    fluid_particle_whitewater_proximity_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("fluid_particle_whitewater_proximity_mesh"))
+    fluid_particle_source_id_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("fluid_particle_source_id_mesh"))
+    debug_particle_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("debug_particle_mesh"))
     obstacle_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("obstacle_mesh"))
 
     # Time Info
@@ -338,6 +353,8 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             "surfacespeed_mesh",
             "surfacevorticity_mesh",
             "surfaceage_mesh",
+            "surfacelifetime_mesh",
+            "surfacewhitewaterproximity_mesh",
             "surfacecolor_mesh",
             "surfacesourceid_mesh",
             "surfaceviscosity_mesh",
@@ -361,7 +378,18 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             "bubblelifetime_mesh",
             "spraylifetime_mesh",
             "dustlifetime_mesh",
-            "particle_mesh",
+            "fluid_particle_mesh",
+            "fluid_particle_id_mesh",
+            "fluid_particle_velocity_mesh",
+            "fluid_particle_speed_mesh",
+            "fluid_particle_vorticity_mesh",
+            "fluid_particle_color_mesh",
+            "fluid_particle_age_mesh",
+            "fluid_particle_lifetime_mesh",
+            "fluid_particle_viscosity_mesh",
+            "fluid_particle_whitewater_proximity_mesh",
+            "fluid_particle_source_id_mesh",
+            "debug_particle_mesh",
             "obstacle_mesh",
             "time_mesh",
             "time_advection",
@@ -525,6 +553,14 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             # If statement to support older caches that do not have a surfaceage entry
             self._set_mesh_stats_data(self.surfaceage_mesh, data['surfaceage'])
 
+        if 'surfacelifetime' in data:
+            # If statement to support older caches that do not have a surfacelifetime entry
+            self._set_mesh_stats_data(self.surfacelifetime_mesh, data['surfacelifetime'])
+
+        if 'surfacewhitewaterproximity' in data:
+            # If statement to support older caches that do not have a surfacewhitewaterproximity entry
+            self._set_mesh_stats_data(self.surfacewhitewaterproximity_mesh, data['surfacewhitewaterproximity'])
+
         if 'surfacecolor' in data:
             # If statement to support older caches that do not have a surfacecolor entry
             self._set_mesh_stats_data(self.surfacecolor_mesh, data['surfacecolor'])
@@ -580,8 +616,52 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         if 'dustlifetime' in data:
             self._set_mesh_stats_data(self.dustlifetime_mesh,   data['dustlifetime'])
 
-        self._set_mesh_stats_data(self.particle_mesh,   data['particles'])
-        self._set_mesh_stats_data(self.obstacle_mesh,   data['obstacle'])
+        if 'fluidparticles' in data:
+            # If statement to support older caches that do not have a fluidparticles entry
+            self._set_mesh_stats_data(self.fluid_particle_mesh, data['fluidparticles'])
+
+        if 'fluidparticlesid' in data:
+            # If statement to support older caches that do not have a fluidparticlesid entry
+            self._set_mesh_stats_data(self.fluid_particle_id_mesh, data['fluidparticlesid'])
+
+        if 'fluidparticlesvelocity' in data:
+            # If statement to support older caches that do not have a fluidparticlesvelocity entry
+            self._set_mesh_stats_data(self.fluid_particle_velocity_mesh, data['fluidparticlesvelocity'])
+
+        if 'fluidparticlesspeed' in data:
+            # If statement to support older caches that do not have a fluidparticlesspeed entry
+            self._set_mesh_stats_data(self.fluid_particle_speed_mesh, data['fluidparticlesspeed'])
+
+        if 'fluidparticlesvorticity' in data:
+            # If statement to support older caches that do not have a fluidparticlesvorticity entry
+            self._set_mesh_stats_data(self.fluid_particle_vorticity_mesh, data['fluidparticlesvorticity'])
+
+        if 'fluidparticlescolor' in data:
+            # If statement to support older caches that do not have a fluidparticlescolor entry
+            self._set_mesh_stats_data(self.fluid_particle_color_mesh, data['fluidparticlescolor'])
+
+        if 'fluidparticlesage' in data:
+            # If statement to support older caches that do not have a fluidparticlesage entry
+            self._set_mesh_stats_data(self.fluid_particle_age_mesh, data['fluidparticlesage'])
+
+        if 'fluidparticleslifetime' in data:
+            # If statement to support older caches that do not have a fluidparticleslifetime entry
+            self._set_mesh_stats_data(self.fluid_particle_lifetime_mesh, data['fluidparticleslifetime'])
+
+        if 'fluidparticlesviscosity' in data:
+            # If statement to support older caches that do not have a fluidparticlesviscosity entry
+            self._set_mesh_stats_data(self.fluid_particle_viscosity_mesh, data['fluidparticlesviscosity'])
+
+        if 'fluidparticleswhitewaterproximity' in data:
+            # If statement to support older caches that do not have a fluidparticleswhitewaterproximity entry
+            self._set_mesh_stats_data(self.fluid_particle_whitewater_proximity_mesh, data['fluidparticleswhitewaterproximity'])
+
+        if 'fluidparticlessourceid' in data:
+            # If statement to support older caches that do not have a fluidparticlessourceid entry
+            self._set_mesh_stats_data(self.fluid_particle_source_id_mesh, data['fluidparticlessourceid'])
+
+        self._set_mesh_stats_data(self.debug_particle_mesh, data['particles'])
+        self._set_mesh_stats_data(self.obstacle_mesh, data['obstacle'])
 
         total_time = max(data['timing']['total'], 1e-6)
         time_other = (total_time - data['timing']['mesh']
@@ -661,6 +741,10 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
                 cache_size += fdata['surfacevorticity']['bytes']
             if 'surfaceage' in fdata and fdata['surfaceage']['enabled']: # If statement to support caches without a surfaceage entry
                 cache_size += fdata['surfaceage']['bytes']
+            if 'surfacelifetime' in fdata and fdata['surfacelifetime']['enabled']: # If statement to support caches without a surfacelifetime entry
+                cache_size += fdata['surfacelifetime']['bytes']
+            if 'surfacewhitewaterproximity' in fdata and fdata['surfacewhitewaterproximity']['enabled']: # If statement to support caches without a surfacewhitewaterproximity entry
+                cache_size += fdata['surfacewhitewaterproximity']['bytes']
             if 'surfacecolor' in fdata and fdata['surfacecolor']['enabled']: # If statement to support caches without a surfacecolor entry
                 cache_size += fdata['surfacecolor']['bytes']
             if 'surfacesourceid' in fdata and fdata['surfacesourceid']['enabled']: # If statement to support caches without a surfacesourceid entry
@@ -707,6 +791,28 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
                 cache_size += fdata['spraylifetime']['bytes']
             if 'dustlifetime' in fdata and fdata['dustlifetime']['enabled']:
                 cache_size += fdata['dustlifetime']['bytes']
+            if 'fluidparticles' in fdata and fdata['fluidparticles']['enabled']:
+                cache_size += fdata['fluidparticles']['bytes']
+            if 'fluidparticlesid' in fdata and fdata['fluidparticlesid']['enabled']:
+                cache_size += fdata['fluidparticlesid']['bytes']
+            if 'fluidparticlesvelocity' in fdata and fdata['fluidparticlesvelocity']['enabled']:
+                cache_size += fdata['fluidparticlesvelocity']['bytes']
+            if 'fluidparticlesspeed' in fdata and fdata['fluidparticlesspeed']['enabled']:
+                cache_size += fdata['fluidparticlesspeed']['bytes']
+            if 'fluidparticlesvorticity' in fdata and fdata['fluidparticlesvorticity']['enabled']:
+                cache_size += fdata['fluidparticlesvorticity']['bytes']
+            if 'fluidparticlescolor' in fdata and fdata['fluidparticlescolor']['enabled']:
+                cache_size += fdata['fluidparticlescolor']['bytes']
+            if 'fluidparticlesage' in fdata and fdata['fluidparticlesage']['enabled']:
+                cache_size += fdata['fluidparticlesage']['bytes']
+            if 'fluidparticleslifetime' in fdata and fdata['fluidparticleslifetime']['enabled']:
+                cache_size += fdata['fluidparticleslifetime']['bytes']
+            if 'fluidparticlesviscosity' in fdata and fdata['fluidparticlesviscosity']['enabled']:
+                cache_size += fdata['fluidparticlesviscosity']['bytes']
+            if 'fluidparticleswhitewaterproximity' in fdata and fdata['fluidparticleswhitewaterproximity']['enabled']:
+                cache_size += fdata['fluidparticleswhitewaterproximity']['bytes']
+            if 'fluidparticlessourceid' in fdata and fdata['fluidparticlessourceid']['enabled']:
+                cache_size += fdata['fluidparticlessourceid']['bytes']
             if fdata['particles']['enabled']:
                 cache_size += fdata['particles']['bytes']
             if fdata['obstacle']['enabled']:
@@ -743,6 +849,8 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         is_surfacespeed_enabled = False
         is_surfacevorticity_enabled = False
         is_surfaceage_enabled = False
+        is_surfacelifetime_enabled = False
+        is_surfacewhitewaterproximity_enabled = False
         is_surfacecolor_enabled = False
         is_surfacesourceid_enabled = False
         is_surfaceviscosity_enabled = False
@@ -766,7 +874,18 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         is_bubblelifetime_enabled = False
         is_spraylifetime_enabled = False
         is_dustlifetime_enabled = False
-        is_particles_enabled = False
+        is_fluid_particles_enabled = False
+        is_fluid_particles_id_enabled = False
+        is_fluid_particles_velocity_enabled = False
+        is_fluid_particles_vorticity_enabled = False
+        is_fluid_particles_color_enabled = False
+        is_fluid_particles_speed_enabled = False
+        is_fluid_particles_age_enabled = False
+        is_fluid_particles_lifetime_enabled = False
+        is_fluid_particles_viscosity_enabled = False
+        is_fluid_particles_whitewater_proximity_enabled = False
+        is_fluid_particles_source_id_enabled = False
+        is_debug_particles_enabled = False
         is_obstacle_enabled = False
         surface_bytes = 0
         preview_bytes = 0
@@ -775,6 +894,8 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         surfacespeed_bytes = 0
         surfacevorticity_bytes = 0
         surfaceage_bytes = 0
+        surfacelifetime_bytes = 0
+        surfacewhitewaterproximity_bytes = 0
         surfacecolor_bytes = 0
         surfacesourceid_bytes = 0
         surfaceviscosity_bytes = 0
@@ -798,7 +919,18 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         bubblelifetime_bytes = 0
         spraylifetime_bytes = 0
         dustlifetime_bytes = 0
-        particles_bytes = 0
+        fluid_particles_bytes = 0
+        fluid_particles_id_bytes = 0
+        fluid_particles_velocity_bytes = 0
+        fluid_particles_speed_bytes = 0
+        fluid_particles_vorticity_bytes = 0
+        fluid_particles_color_bytes = 0
+        fluid_particles_age_bytes = 0
+        fluid_particles_lifetime_bytes = 0
+        fluid_particles_viscosity_bytes = 0
+        fluid_particles_whitewater_proximity_bytes = 0
+        fluid_particles_source_id_bytes = 0
+        debug_particles_bytes = 0
         obstacle_bytes = 0
 
         total_time = 0.0
@@ -847,6 +979,12 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             if 'surfaceage' in fdata and fdata['surfaceage']['enabled']: # If statement to support caches without a surfaceage entry
                 is_surfaceage_enabled = True
                 surfaceage_bytes += fdata['surfaceage']['bytes']
+            if 'surfacelifetime' in fdata and fdata['surfacelifetime']['enabled']: # If statement to support caches without a surfacelifetime entry
+                is_surfacelifetime_enabled = True
+                surfacelifetime_bytes += fdata['surfacelifetime']['bytes']
+            if 'surfacewhitewaterproximity' in fdata and fdata['surfacewhitewaterproximity']['enabled']: # If statement to support caches without a surfacewhitewaterproximity entry
+                is_surfacewhitewaterproximity_enabled = True
+                surfacewhitewaterproximity_bytes += fdata['surfacewhitewaterproximity']['bytes']
             if 'surfacecolor' in fdata and fdata['surfacecolor']['enabled']: # If statement to support caches without a surfacecolor entry
                 is_surfacecolor_enabled = True
                 surfacecolor_bytes += fdata['surfacecolor']['bytes']
@@ -916,9 +1054,42 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             if 'dustlifetime' in fdata and fdata['dustlifetime']['enabled']:
                 is_dustlifetime_enabled = True
                 dustlifetime_bytes += fdata['dustlifetime']['bytes']
+            if 'fluidparticles' in fdata and fdata['fluidparticles']['enabled']:
+                is_fluid_particles_enabled = True
+                fluid_particles_bytes += fdata['fluidparticles']['bytes']
+            if 'fluidparticlesid' in fdata and fdata['fluidparticlesid']['enabled']:
+                is_fluid_particles_id_enabled = True
+                fluid_particles_id_bytes += fdata['fluidparticlesid']['bytes']
+            if 'fluidparticlesvelocity' in fdata and fdata['fluidparticlesvelocity']['enabled']:
+                is_fluid_particles_velocity_enabled = True
+                fluid_particles_velocity_bytes += fdata['fluidparticlesvelocity']['bytes']
+            if 'fluidparticlesspeed' in fdata and fdata['fluidparticlesspeed']['enabled']:
+                is_fluid_particles_speed_enabled = True
+                fluid_particles_speed_bytes += fdata['fluidparticlesspeed']['bytes']
+            if 'fluidparticlesvorticity' in fdata and fdata['fluidparticlesvorticity']['enabled']:
+                is_fluid_particles_vorticity_enabled = True
+                fluid_particles_vorticity_bytes += fdata['fluidparticlesvorticity']['bytes']
+            if 'fluidparticlescolor' in fdata and fdata['fluidparticlescolor']['enabled']:
+                is_fluid_particles_color_enabled = True
+                fluid_particles_color_bytes += fdata['fluidparticlescolor']['bytes']
+            if 'fluidparticlesage' in fdata and fdata['fluidparticlesage']['enabled']:
+                is_fluid_particles_age_enabled = True
+                fluid_particles_age_bytes += fdata['fluidparticlesage']['bytes']
+            if 'fluidparticleslifetime' in fdata and fdata['fluidparticleslifetime']['enabled']:
+                is_fluid_particles_lifetime_enabled = True
+                fluid_particles_lifetime_bytes += fdata['fluidparticleslifetime']['bytes']
+            if 'fluidparticlesviscosity' in fdata and fdata['fluidparticlesviscosity']['enabled']:
+                is_fluid_particles_viscosity_enabled = True
+                fluid_particles_viscosity_bytes += fdata['fluidparticlesviscosity']['bytes']
+            if 'fluidparticleswhitewaterproximity' in fdata and fdata['fluidparticleswhitewaterproximity']['enabled']:
+                is_fluid_particles_whitewater_proximity_enabled = True
+                fluid_particles_whitewater_proximity_bytes += fdata['fluidparticleswhitewaterproximity']['bytes']
+            if 'fluidparticlessourceid' in fdata and fdata['fluidparticlessourceid']['enabled']:
+                is_fluid_particles_source_id_enabled = True
+                fluid_particles_source_id_bytes += fdata['fluidparticlessourceid']['bytes']
             if fdata['particles']['enabled']:
-                is_particles_enabled = True
-                particles_bytes += fdata['particles']['bytes']
+                is_debug_particles_enabled = True
+                debug_particles_bytes += fdata['particles']['bytes']
             if fdata['obstacle']['enabled']:
                 is_obstacle_enabled = True
                 obstacle_bytes += fdata['obstacle']['bytes']
@@ -942,6 +1113,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             is_average_performance_score_enabled = False
             average_performance_score = 0
 
+        self.frame_start, _ = dprops.simulation.get_frame_range()
         self.num_cache_frames = num_cache_frames
         self.is_average_performance_score_enabled = is_average_performance_score_enabled
         self.average_performance_score = int(average_performance_score)
@@ -953,6 +1125,8 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.surfacespeed_mesh.enabled = is_surfacespeed_enabled
         self.surfacevorticity_mesh.enabled = is_surfacevorticity_enabled
         self.surfaceage_mesh.enabled = is_surfaceage_enabled
+        self.surfacelifetime_mesh.enabled = is_surfacelifetime_enabled
+        self.surfacewhitewaterproximity_mesh.enabled = is_surfacewhitewaterproximity_enabled
         self.surfacecolor_mesh.enabled = is_surfacecolor_enabled
         self.surfacesourceid_mesh.enabled = is_surfacesourceid_enabled
         self.surfaceviscosity_mesh.enabled = is_surfaceviscosity_enabled
@@ -976,7 +1150,18 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.bubblelifetime_mesh.enabled = is_bubblelifetime_enabled
         self.spraylifetime_mesh.enabled = is_spraylifetime_enabled
         self.dustlifetime_mesh.enabled = is_dustlifetime_enabled
-        self.particle_mesh.enabled = is_particles_enabled
+        self.fluid_particle_mesh.enabled = is_fluid_particles_enabled
+        self.fluid_particle_id_mesh.enabled = is_fluid_particles_id_enabled
+        self.fluid_particle_velocity_mesh.enabled = is_fluid_particles_velocity_enabled
+        self.fluid_particle_speed_mesh.enabled = is_fluid_particles_speed_enabled
+        self.fluid_particle_vorticity_mesh.enabled = is_fluid_particles_vorticity_enabled
+        self.fluid_particle_color_mesh.enabled = is_fluid_particles_color_enabled
+        self.fluid_particle_age_mesh.enabled = is_fluid_particles_age_enabled
+        self.fluid_particle_lifetime_mesh.enabled = is_fluid_particles_lifetime_enabled
+        self.fluid_particle_viscosity_mesh.enabled = is_fluid_particles_viscosity_enabled
+        self.fluid_particle_whitewater_proximity_mesh.enabled = is_fluid_particles_whitewater_proximity_enabled
+        self.fluid_particle_source_id_mesh.enabled = is_fluid_particles_source_id_enabled
+        self.debug_particle_mesh.enabled = is_debug_particles_enabled
         self.obstacle_mesh.enabled = is_obstacle_enabled
 
         self.surface_mesh.bytes.set(surface_bytes)
@@ -986,6 +1171,8 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.surfacespeed_mesh.bytes.set(surfacespeed_bytes)
         self.surfacevorticity_mesh.bytes.set(surfacevorticity_bytes)
         self.surfaceage_mesh.bytes.set(surfaceage_bytes)
+        self.surfacelifetime_mesh.bytes.set(surfacelifetime_bytes)
+        self.surfacewhitewaterproximity_mesh.bytes.set(surfacewhitewaterproximity_bytes)
         self.surfacecolor_mesh.bytes.set(surfacecolor_bytes)
         self.surfacesourceid_mesh.bytes.set(surfacesourceid_bytes)
         self.surfaceviscosity_mesh.bytes.set(surfaceviscosity_bytes)
@@ -1009,7 +1196,18 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.bubblelifetime_mesh.bytes.set(bubblelifetime_bytes)
         self.spraylifetime_mesh.bytes.set(spraylifetime_bytes)
         self.dustlifetime_mesh.bytes.set(dustlifetime_bytes)
-        self.particle_mesh.bytes.set(particles_bytes)
+        self.fluid_particle_mesh.bytes.set(fluid_particles_bytes)
+        self.fluid_particle_id_mesh.bytes.set(fluid_particles_id_bytes)
+        self.fluid_particle_velocity_mesh.bytes.set(fluid_particles_velocity_bytes)
+        self.fluid_particle_speed_mesh.bytes.set(fluid_particles_speed_bytes)
+        self.fluid_particle_vorticity_mesh.bytes.set(fluid_particles_vorticity_bytes)
+        self.fluid_particle_color_mesh.bytes.set(fluid_particles_color_bytes)
+        self.fluid_particle_age_mesh.bytes.set(fluid_particles_age_bytes)
+        self.fluid_particle_lifetime_mesh.bytes.set(fluid_particles_lifetime_bytes)
+        self.fluid_particle_viscosity_mesh.bytes.set(fluid_particles_viscosity_bytes)
+        self.fluid_particle_whitewater_proximity_mesh.bytes.set(fluid_particles_whitewater_proximity_bytes)
+        self.fluid_particle_source_id_mesh.bytes.set(fluid_particles_source_id_bytes)
+        self.debug_particle_mesh.bytes.set(debug_particles_bytes)
         self.obstacle_mesh.bytes.set(obstacle_bytes)
 
         time_other = (total_time - time_mesh

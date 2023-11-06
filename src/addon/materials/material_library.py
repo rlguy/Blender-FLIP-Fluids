@@ -34,6 +34,18 @@ def get_surface_material_enums_ui(scene=None, context=None):
     return enums
 
 
+def get_fluid_particles_material_enums_ui(scene=None, context=None):
+    bpy.context.scene.flip_fluid_material_library.check_icons_initialized()
+    enums = []
+    enums += __get_material_library_enums_by_type('MATERIAL_TYPE_SURFACE')
+    enums += __get_material_library_enums_by_type('MATERIAL_TYPE_WHITEWATER')
+    enums += __get_material_library_enums_by_type('MATERIAL_TYPE_ALL')
+    enums += __get_non_material_library_enums_by_type()
+    enums += [__get_none_material_enum()]
+    enums.reverse()
+    return enums
+
+
 def get_whitewater_material_enums_ui(scene=None, context=None):
     bpy.context.scene.flip_fluid_material_library.check_icons_initialized()
     enums = []

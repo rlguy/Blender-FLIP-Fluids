@@ -511,6 +511,22 @@ float MeshObject::getViscosity() {
     return _viscosity;
 }
 
+void MeshObject::setLifetime(float v) {
+    _lifetime = v;
+}
+
+float MeshObject::getLifetime() {
+    return _lifetime;
+}
+
+void MeshObject::setLifetimeVariance(float v) {
+    _lifetimeVariance = v;
+}
+
+float MeshObject::getLifetimeVariance() {
+    return _lifetimeVariance;
+}
+
 void MeshObject::setSourceColor(vmath::vec3 c) {
     _sourceColor = c;
 }

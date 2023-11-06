@@ -59,6 +59,12 @@ struct MarkerParticleAge {
     MarkerParticleAge(float a) : age(a) {}
 };
 
+struct MarkerParticleLifetime {
+    float lifetime;
+
+    MarkerParticleLifetime(float a) : lifetime(a) {}
+};
+
 struct MarkerParticleColor {
     vmath::vec3 color;
 
@@ -75,6 +81,19 @@ struct MarkerParticleViscosity {
     float viscosity;
 
     MarkerParticleViscosity(float v) : viscosity(v) {}
+};
+
+struct MarkerParticleID {
+    uint16_t id;
+
+    MarkerParticleID(uint16_t idval) : id(idval) {}
+};
+
+enum class MarkerParticleType : char { 
+    unset    = 0x00,
+    surface  = 0x01, 
+    boundary = 0x02, 
+    interior = 0x03
 };
 
 #endif

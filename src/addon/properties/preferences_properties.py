@@ -112,29 +112,6 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
     exec(vcu.convert_attribute_to_28("helper_category_name"))
     FAKE_PREFERENCES.helper_category_name = "FLIP Fluids"
 
-    beginner_friendly_mode = BoolProperty(
-                name="Beginner Friendly Mode",
-                description="Beginner friendly mode will show only the most important settings"
-                    " and hide more advanced settings that are not as commonly used in basic"
-                    " simulations. Enabling this will simplify the UI and help you focus on the"
-                    " simulation settings that matter the most while you learn. This setting is"
-                    " also available from the FLIP Fluids sidebar menu",
-                default=False,
-                options={'HIDDEN'},
-                )
-    exec(vcu.convert_attribute_to_28("beginner_friendly_mode"))
-    FAKE_PREFERENCES.beginner_friendly_mode = False
-
-    beginner_friendly_mode_tooltip = BoolProperty(
-            name="Beginner Friendly Mode Tooltip", 
-            description="Beginner Friendly Mode hides all but the most important settings and"
-                " can be disabled in the FLIP Fluids preferences menu (Edit > Preferences >"
-                " Addons > FLIP Fluids)", 
-            default=True,
-            ); 
-    exec(vcu.convert_attribute_to_28("beginner_friendly_mode_tooltip"))
-    FAKE_PREFERENCES.beginner_friendly_mode_tooltip = True
-
     show_documentation_in_ui = BoolProperty(
                 name="Display documentation links in UI",
                 description="Display relevant documentation links within the UI. Documentation links will open in your browser."
@@ -370,6 +347,18 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
             ); 
     exec(vcu.convert_attribute_to_28("dismiss_rtx_driver_warning"))
     FAKE_PREFERENCES.dismiss_rtx_driver_warning = False
+
+    dismiss_export_animated_mesh_parented_relation_hint = BoolProperty(
+            name="Dismiss 'Export Animated Mesh' parented relation hint", 
+            description="Dismiss hints about enabling 'Export Animated Mesh' in the FLIP object UI"
+                " when parented relations are detected. The 'Export Animated Mesh' option is required"
+                " for any animation that is more complex than just keyframed loc/rot/scale or F-Curves,"
+                " such as parented relations, armatures, animated modifiers, deformable meshes, etc."
+                " This option is not needed for static objects",
+            default=False,
+            ); 
+    exec(vcu.convert_attribute_to_28("dismiss_export_animated_mesh_parented_relation_hint"))
+    FAKE_PREFERENCES.dismiss_export_animated_mesh_parented_relation_hint = False
 
     enable_tabbed_domain_settings = BoolProperty(
                 name="Enable Tabbed Domain Settings",
@@ -852,7 +841,7 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         box.enabled = is_installation_complete
         helper_column = box.column(align=True)
         helper_column.label(text="UI Options:")
-        helper_column.prop(self, "beginner_friendly_mode")
+        helper_column.prop(self, "enable_tabbed_domain_settings")
         helper_column.prop(self, "show_documentation_in_ui")
 
         row = helper_column.row()
@@ -862,7 +851,6 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         row.alignment = 'LEFT'
         row.enabled = self.enable_helper
         row.prop(self, "helper_category_name")
-        helper_column.prop(self, "enable_tabbed_domain_settings")
         helper_column.separator()
 
         box = self.layout.box()
@@ -1042,6 +1030,10 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
                 text="Related Bug Reports", 
             ).url = "https://projects.blender.org/blender/blender/issues?type=all&state=open&labels=&milestone=0&project=0&assignee=0&poster=0&q=Persistent+Data"
 
+        row = column_left.row(align=True)
+        row.alignment = 'LEFT'
+        row.prop(self, "dismiss_export_animated_mesh_parented_relation_hint")
+
         if show_rtx_driver_warning:
             row = column_right.row(align=True)
             row.alignment = 'EXPAND'
@@ -1049,6 +1041,14 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
                     "wm.url_open", 
                     text="Click for More Info", 
                 ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/issues/599"
+
+        row = column_right.row(align=True)
+        row.alignment = 'EXPAND'
+        row.operator(
+                "wm.url_open", 
+                text="Mesh Export Documentation", 
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Obstacle-Object-Settings#mesh-data-export"
+
 
     def _get_gpu_device_enums(self, context=None):
         device_enums = []

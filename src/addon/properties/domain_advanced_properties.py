@@ -70,10 +70,12 @@ class DomainAdvancedProperties(bpy.types.PropertyGroup):
             ); exec(conv("particle_jitter_factor"))
     jitter_surface_particles = BoolProperty(
             name="Jitter Surface Particles",
-            description="If disabled, jitter will only be applied to particles within"
-            " the interior of the mesh shape. If enabled, all emitted particles"
+            description="If disabled, a random jitter position will only be applied to particles within"
+            " the interior of the Inflow/Fluid object shape. If enabled, all emitted particles"
             " will be jittered. Enabling may cause bumpy mesh artifacts on the"
-            " initial fluid shape",
+            " initial surface mesh shape and may require additional smoothing."
+            " Enabling is recommended for fluid particle effects and results in"
+            " more natural particle generation",
             default=False,
             ); exec(conv("jitter_surface_particles"))
     pressure_solver_max_iterations = IntProperty(

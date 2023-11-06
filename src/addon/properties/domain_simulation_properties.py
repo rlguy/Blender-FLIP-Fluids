@@ -117,7 +117,8 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
             name="Resolution",
             description="Domain grid resolution. This value specifies the number of"
                 " grid voxels on the longest side of the domain. See the tooltips in"
-                " the Grid Info section below for a detailed explanation of the domain grid",
+                " the 'Domain > Simulation > Grid Info' submenu for a detailed explanation"
+                " of the domain grid",
             min=10,
             default=65,
             update=lambda self, context: self._update_resolution(context),

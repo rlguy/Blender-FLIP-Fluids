@@ -39,7 +39,6 @@ class FLIPFLUID_PT_DomainTypeAdvancedPanel(bpy.types.Panel):
         obj = vcu.get_active_object(context)
         aprops = obj.flip_fluid.domain.advanced
         wprops = obj.flip_fluid.domain.world
-        show_advanced = not vcu.get_addon_preferences(context).beginner_friendly_mode
         show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
 
         if show_documentation:
@@ -81,10 +80,8 @@ class FLIPFLUID_PT_DomainTypeAdvancedPanel(bpy.types.Panel):
             row.prop(aprops.min_max_time_steps_per_frame, "value_min", text="Min")
             row.prop(aprops.min_max_time_steps_per_frame, "value_max", text="Max")
             column.prop(aprops, "CFL_condition_number")
-
-            if show_advanced:
-                column.prop(aprops, "enable_adaptive_obstacle_time_stepping")
-                column.prop(aprops, "enable_adaptive_force_field_time_stepping")
+            column.prop(aprops, "enable_adaptive_obstacle_time_stepping")
+            column.prop(aprops, "enable_adaptive_force_field_time_stepping")
 
             if show_documentation:
                 column = box.column(align=True)
@@ -134,94 +131,92 @@ class FLIPFLUID_PT_DomainTypeAdvancedPanel(bpy.types.Panel):
                     icon="WORLD"
                 ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Advanced-Settings#flip-vs-apic"
 
-        if show_advanced:
-            box = self.layout.box()
-            row = box.row(align=True)
-            row.prop(aprops, "simulation_stability_expanded",
-                icon="TRIA_DOWN" if aprops.simulation_stability_expanded else "TRIA_RIGHT",
-                icon_only=True, 
-                emboss=False
-            )
-            row.label(text="Simulation and Particle Stability:")
+        box = self.layout.box()
+        row = box.row(align=True)
+        row.prop(aprops, "simulation_stability_expanded",
+            icon="TRIA_DOWN" if aprops.simulation_stability_expanded else "TRIA_RIGHT",
+            icon_only=True, 
+            emboss=False
+        )
+        row.label(text="Simulation and Particle Stability:")
 
-            if aprops.simulation_stability_expanded:
-                column = box.column()
+        if aprops.simulation_stability_expanded:
+            column = box.column()
 
-                row = column.row(align=True)
-                row.prop(aprops, "particle_jitter_factor", slider=True)
-                row.prop(aprops, "jitter_surface_particles")
-                column.prop(aprops, "enable_extreme_velocity_removal")
-                column.separator()
-                column = box.column(align=True)
-                column.prop(aprops, "pressure_solver_max_iterations")
-                column.prop(aprops, "viscosity_solver_max_iterations")
-
-        if show_advanced:
-            box = self.layout.box()
-            row = box.row(align=True)
-            row.prop(aprops, "multithreading_expanded",
-                icon="TRIA_DOWN" if aprops.multithreading_expanded else "TRIA_RIGHT",
-                icon_only=True, 
-                emboss=False
-            )
-            row.label(text="Multithreading:")
-
-            if not aprops.multithreading_expanded:
-                info_text = ""
-                if aprops.threading_mode == 'THREADING_MODE_AUTO_DETECT':
-                    info_text = "Auto-detect " + str(aprops.num_threads_auto_detect) + " threads"
-                elif aprops.threading_mode == 'THREADING_MODE_FIXED':
-                    info_text = "Fixed " + str(aprops.num_threads_fixed) + " threads"
-
-                row = row.row(align=True)
-                row.alignment = 'RIGHT'
-                row.label(text=info_text)
-
-            if aprops.multithreading_expanded:
-                column = box.column()
-                split = column.split(align=True)
-
-                column_left = split.column(align=True)
-                row = column_left.row(align=True)
-                row.prop(aprops, "threading_mode", expand=True)
-                row = column_left.row(align=True)
-                if aprops.threading_mode == 'THREADING_MODE_AUTO_DETECT':
-                    row.enabled = False
-                    row.prop(aprops, "num_threads_auto_detect")
-                elif aprops.threading_mode == 'THREADING_MODE_FIXED':
-                    row.prop(aprops, "num_threads_fixed")
-
-                if show_documentation:
-                    column = box.column(align=True)
-                    column.operator(
-                        "wm.url_open", 
-                        text="CPU usage is under 100%, is this normal?", 
-                        icon="WORLD"
-                    ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Performance-Notes-and-Tips"
-            
-            # Performance and optimization settings are hidden from the UI.
-            # These should always be enabled for performance.
-            """
-            column = self.layout.column(align=True)
+            row = column.row(align=True)
+            row.prop(aprops, "particle_jitter_factor", slider=True)
+            row.prop(aprops, "jitter_surface_particles")
+            column.prop(aprops, "enable_extreme_velocity_removal")
             column.separator()
-            column.label(text="Performance and Optimization:")
-            column.prop(aprops, "enable_asynchronous_meshing")
-            column.prop(aprops, "precompute_static_obstacles")
-            column.prop(aprops, "reserve_temporary_grids")
-            """
+            column = box.column(align=True)
+            column.prop(aprops, "pressure_solver_max_iterations")
+            column.prop(aprops, "viscosity_solver_max_iterations")
 
-            box = self.layout.box()
-            row = box.row(align=True)
-            row.prop(aprops, "warnings_and_errors_expanded",
-                icon="TRIA_DOWN" if aprops.warnings_and_errors_expanded else "TRIA_RIGHT",
-                icon_only=True, 
-                emboss=False
-            )
-            row.label(text="Warnings and Errors:")
+        box = self.layout.box()
+        row = box.row(align=True)
+        row.prop(aprops, "multithreading_expanded",
+            icon="TRIA_DOWN" if aprops.multithreading_expanded else "TRIA_RIGHT",
+            icon_only=True, 
+            emboss=False
+        )
+        row.label(text="Multithreading:")
 
-            if aprops.warnings_and_errors_expanded:
+        if not aprops.multithreading_expanded:
+            info_text = ""
+            if aprops.threading_mode == 'THREADING_MODE_AUTO_DETECT':
+                info_text = "Auto-detect " + str(aprops.num_threads_auto_detect) + " threads"
+            elif aprops.threading_mode == 'THREADING_MODE_FIXED':
+                info_text = "Fixed " + str(aprops.num_threads_fixed) + " threads"
+
+            row = row.row(align=True)
+            row.alignment = 'RIGHT'
+            row.label(text=info_text)
+
+        if aprops.multithreading_expanded:
+            column = box.column()
+            split = column.split(align=True)
+
+            column_left = split.column(align=True)
+            row = column_left.row(align=True)
+            row.prop(aprops, "threading_mode", expand=True)
+            row = column_left.row(align=True)
+            if aprops.threading_mode == 'THREADING_MODE_AUTO_DETECT':
+                row.enabled = False
+                row.prop(aprops, "num_threads_auto_detect")
+            elif aprops.threading_mode == 'THREADING_MODE_FIXED':
+                row.prop(aprops, "num_threads_fixed")
+
+            if show_documentation:
                 column = box.column(align=True)
-                column.prop(aprops, "disable_changing_topology_warning")
+                column.operator(
+                    "wm.url_open", 
+                    text="CPU usage is under 100%, is this normal?", 
+                    icon="WORLD"
+                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Performance-Notes-and-Tips"
+        
+        # Performance and optimization settings are hidden from the UI.
+        # These should always be enabled for performance.
+        """
+        column = self.layout.column(align=True)
+        column.separator()
+        column.label(text="Performance and Optimization:")
+        column.prop(aprops, "enable_asynchronous_meshing")
+        column.prop(aprops, "precompute_static_obstacles")
+        column.prop(aprops, "reserve_temporary_grids")
+        """
+
+        box = self.layout.box()
+        row = box.row(align=True)
+        row.prop(aprops, "warnings_and_errors_expanded",
+            icon="TRIA_DOWN" if aprops.warnings_and_errors_expanded else "TRIA_RIGHT",
+            icon_only=True, 
+            emboss=False
+        )
+        row.label(text="Warnings and Errors:")
+
+        if aprops.warnings_and_errors_expanded:
+            column = box.column(align=True)
+            column.prop(aprops, "disable_changing_topology_warning")
         
     
 def register():

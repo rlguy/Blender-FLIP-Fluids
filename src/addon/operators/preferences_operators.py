@@ -912,7 +912,9 @@ def get_system_info_dict():
     if not bpy.app.background:
         try:
             import gpu
-            gpu_string = gpu.platform.renderer_get() + " " + gpu.platform.vendor_get() + " " + gpu.platform.version_get()
+            if hasattr(gpu, "platform"):
+                # Older Blender versions may not have gpu.platform feature
+                gpu_string = gpu.platform.renderer_get() + " " + gpu.platform.vendor_get() + " " + gpu.platform.version_get()
         except Exception as e:
             print(traceback.format_exc())
             print(e)
@@ -994,7 +996,8 @@ def get_system_info_dict():
             addon_name = mod.bl_info.get("name")
             if addon_name not in default_addons:
                 addons_string += addon_name + ", "
-        addons_string = addons_string.removesuffix(", ")
+        addons_string = vcu.str_removesuffix(addons_string, ", ")
+
     except Exception as e:
         print(traceback.format_exc())
         print(e)
@@ -1032,7 +1035,7 @@ def get_system_info_dict():
                 features_string += "Surface Tension, "
             if dprops.world.enable_sheet_seeding:
                 features_string += "Sheeting, "
-            features_string = features_string.removesuffix(", ")
+            features_string = vcu.str_removesuffix(features_string, ", ")
         if not features_string:
             features_string = "Default"
     except Exception as e:
@@ -1054,7 +1057,7 @@ def get_system_info_dict():
                         attributes_string += "Surface Viscosity, "
                     for att in d["attributes"]["whitewater"]:
                         attributes_string += "Whitewater " + att + ", "
-                    attributes_string = attributes_string.removesuffix(", ")
+                    attributes_string = vcu.str_removesuffix(attributes_string, ", ")
     except Exception as e:
         print(traceback.format_exc())
         print(e)
@@ -1092,7 +1095,7 @@ def get_system_info_dict():
             viewport_modes_string = ""
             for mode in shading_modes:
                 viewport_modes_string += mode + ", "
-        viewport_modes_string = viewport_modes_string.removesuffix(", ")
+        viewport_modes_string = vcu.str_removesuffix(viewport_modes_string, ", ")
     except Exception as e:
         print(traceback.format_exc())
         print(e)
@@ -1173,7 +1176,7 @@ def get_system_info_dict():
             domains_string = ""
             for d in found_domains:
                 domains_string += d + ", "
-            domains_string = domains_string.removesuffix(", ")
+            domains_string = vcu.str_removesuffix(domains_string, ", ")
 
         animated_obstacles_string = " <Export Animated: " + str(animated_obstacle_count) + "> "
         animated_fluids_string = " <Export Animated: " + str(animated_fluid_count) + "> "

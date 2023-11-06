@@ -21,6 +21,7 @@ if "bpy" in locals():
         'domain_bake_properties',
         'domain_simulation_properties',
         'domain_cache_properties',
+        'domain_particles_properties',
         'domain_surface_properties',
         'domain_whitewater_properties',
         'domain_world_properties',
@@ -50,6 +51,7 @@ from . import (
         domain_bake_properties,
         domain_simulation_properties,
         domain_cache_properties,
+        domain_particles_properties,
         domain_surface_properties,
         domain_whitewater_properties,
         domain_world_properties,
@@ -89,6 +91,11 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
             description="",
             type=domain_cache_properties.DomainCacheProperties,
             ); exec(conv("cache"))
+    particles = PointerProperty(
+            name="Domain Surface Properties",
+            description="",
+            type=domain_particles_properties.DomainParticlesProperties,
+            ); exec(conv("particles"))
     surface = PointerProperty(
             name="Domain Surface Properties",
             description="",
@@ -238,18 +245,19 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
 
     def _initialize_property_registry(self):
         self.property_registry.clear()
-        self.render.register_preset_properties(    self.property_registry, "domain.render")
-        self.bake.register_preset_properties(      self.property_registry, "domain.bake")
-        self.simulation.register_preset_properties(self.property_registry, "domain.simulation")
-        self.cache.register_preset_properties(     self.property_registry, "domain.cache")
-        self.surface.register_preset_properties(   self.property_registry, "domain.surface")
-        self.whitewater.register_preset_properties(self.property_registry, "domain.whitewater")
-        self.world.register_preset_properties(     self.property_registry, "domain.world")
-        self.presets.register_preset_properties(   self.property_registry, "domain.presets")
-        self.materials.register_preset_properties( self.property_registry, "domain.materials")
-        self.advanced.register_preset_properties(  self.property_registry, "domain.advanced")
-        self.debug.register_preset_properties(     self.property_registry, "domain.debug")
-        self.stats.register_preset_properties(     self.property_registry, "domain.stats")
+        self.render.register_preset_properties(     self.property_registry, "domain.render")
+        self.bake.register_preset_properties(       self.property_registry, "domain.bake")
+        self.simulation.register_preset_properties( self.property_registry, "domain.simulation")
+        self.cache.register_preset_properties(      self.property_registry, "domain.cache")
+        self.particles.register_preset_properties(  self.property_registry, "domain.particles")
+        self.surface.register_preset_properties(    self.property_registry, "domain.surface")
+        self.whitewater.register_preset_properties( self.property_registry, "domain.whitewater")
+        self.world.register_preset_properties(      self.property_registry, "domain.world")
+        self.presets.register_preset_properties(    self.property_registry, "domain.presets")
+        self.materials.register_preset_properties(  self.property_registry, "domain.materials")
+        self.advanced.register_preset_properties(   self.property_registry, "domain.advanced")
+        self.debug.register_preset_properties(      self.property_registry, "domain.debug")
+        self.stats.register_preset_properties(      self.property_registry, "domain.stats")
         self._validate_property_registry()
 
 
@@ -292,6 +300,7 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
         self.simulation.load_post()
         self.bake.load_post()
         self.cache.load_post()
+        self.surface.load_post()
         self.stats.load_post()
         self.debug.load_post()
         #self.presets.load_post()
@@ -360,6 +369,7 @@ def register():
     domain_bake_properties.register()
     domain_simulation_properties.register()
     domain_cache_properties.register()
+    domain_particles_properties.register()
     domain_surface_properties.register()
     domain_whitewater_properties.register()
     domain_world_properties.register()
@@ -376,6 +386,7 @@ def unregister():
     domain_bake_properties.unregister()
     domain_simulation_properties.unregister()
     domain_cache_properties.unregister()
+    domain_particles_properties.unregister()
     domain_surface_properties.unregister()
     domain_whitewater_properties.unregister()
     domain_world_properties.unregister()

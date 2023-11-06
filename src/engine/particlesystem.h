@@ -42,7 +42,8 @@ enum class AttributeDataType : char {
     INT = 0x04,
     ID = 0x05,
     FLOAT = 0x06, 
-    VECTOR3 = 0x07
+    VECTOR3 = 0x07,
+    UINT16 = 0x08
 };
 
 
@@ -86,6 +87,7 @@ public:
     ParticleSystemAttribute addAttributeBool(std::string name, bool defaultValue=false);
     ParticleSystemAttribute addAttributeInt(std::string name, int defaultValue=0);
     ParticleSystemAttribute addAttributeID(std::string name, size_t defaultValue=-1);
+    ParticleSystemAttribute addAttributeUInt16(std::string name, uint16_t defaultValue=0);
     ParticleSystemAttribute addAttributeFloat(std::string name, float defaultValue=0.0f);
     ParticleSystemAttribute addAttributeVector3(std::string name, vmath::vec3 defaultValue=vmath::vec3());
 
@@ -103,6 +105,9 @@ public:
 
     std::vector<size_t> *getAttributeValuesID(ParticleSystemAttribute &att);
     std::vector<size_t> *getAttributeValuesID(std::string name);
+
+    std::vector<uint16_t> *getAttributeValuesUInt16(ParticleSystemAttribute &att);
+    std::vector<uint16_t> *getAttributeValuesUInt16(std::string name);
 
     std::vector<float> *getAttributeValuesFloat(ParticleSystemAttribute &att);
     std::vector<float> *getAttributeValuesFloat(std::string name);
@@ -129,6 +134,9 @@ public:
                 break;
             case AttributeDataType::ID:
                 values = (std::vector<T>*)getAttributeValuesID(att);
+                break;
+            case AttributeDataType::UINT16:
+                values = (std::vector<T>*)getAttributeValuesUInt16(att);
                 break;
             case AttributeDataType::FLOAT:
                 values = (std::vector<T>*)getAttributeValuesFloat(att);
@@ -167,6 +175,9 @@ public:
                 break;
             case AttributeDataType::ID:
                 value = (T*)&(_idDefaults[att.id]);
+                break;
+            case AttributeDataType::UINT16:
+                value = (T*)&(_uint16Defaults[att.id]);
                 break;
             case AttributeDataType::FLOAT:
                 value = (T*)&(_floatDefaults[att.id]);
@@ -287,6 +298,7 @@ private:
     std::vector<std::vector<bool> > _boolAttributes;
     std::vector<std::vector<int> > _intAttributes;
     std::vector<std::vector<size_t> > _idAttributes;
+    std::vector<std::vector<uint16_t> > _uint16Attributes;
     std::vector<std::vector<float> > _floatAttributes;
     std::vector<std::vector<vmath::vec3> > _vector3Attributes;
 
@@ -295,6 +307,7 @@ private:
     std::vector<bool> _boolDefaults;
     std::vector<int> _intDefaults;
     std::vector<size_t> _idDefaults;
+    std::vector<uint16_t> _uint16Defaults;
     std::vector<float> _floatDefaults;
     std::vector<vmath::vec3> _vector3Defaults;
 

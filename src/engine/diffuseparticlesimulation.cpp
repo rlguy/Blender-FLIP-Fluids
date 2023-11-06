@@ -1577,8 +1577,8 @@ void DiffuseParticleSimulation::_initializeMaterialGrid() {
         _mgrid = FluidMaterialGrid(_isize, _jsize, _ksize);
     }
 
-    int gridsize = _mgrid.width * _mgrid.height * _mgrid.depth;
-    int numCPU = ThreadUtils::getMaxThreadCount();
+    size_t gridsize = _mgrid.width * _mgrid.height * _mgrid.depth;
+    size_t numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
     std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);

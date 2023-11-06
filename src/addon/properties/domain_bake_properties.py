@@ -144,7 +144,11 @@ class DomainBakeProperties(bpy.types.PropertyGroup):
         dprops = bpy.context.scene.flip_fluid.get_domain_properties()
         cache_directory = dprops.cache.get_cache_abspath()
         savestates_directory = os.path.join(cache_directory, "savestates")
+
+        # Note: os.listdir is not guaranteed to be sorted
         subdirs = [d for d in os.listdir(savestates_directory) if os.path.isdir(os.path.join(savestates_directory, d))]
+        subdirs.sort()
+
         if "autosave" in subdirs:
             subdirs.remove("autosave")
         autosave_frame = self.autosave_frame
@@ -153,8 +157,8 @@ class DomainBakeProperties(bpy.types.PropertyGroup):
         for d in subdirs:
             try:
                 savestate_frames.append(int(d[-6:]))
-            except:
-                pass
+            except ValueError:
+                continue
 
         if autosave_frame in savestate_frames:
             savestate_frames.remove(autosave_frame)

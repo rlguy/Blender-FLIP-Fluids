@@ -21,6 +21,7 @@ from ..utils import version_compatibility_utils as vcu
 from . import domain_simulation_ui
 from . import domain_cache_ui
 from . import domain_display_ui
+from . import domain_particles_ui
 from . import domain_surface_ui
 from . import domain_whitewater_ui
 from . import domain_world_ui
@@ -62,9 +63,11 @@ class FLIPFLUID_PT_DomainTypeTabbedPanel(bpy.types.Panel):
         column = self.layout.column(align=True)
         row = column.row(align=True)
         row.prop_enum(dprops, "domain_settings_tabbed_panel_view", 'DOMAIN_SETTINGS_PANEL_SIMULATION')
+        row = column.row(align=True)
         row.prop_enum(dprops, "domain_settings_tabbed_panel_view", 'DOMAIN_SETTINGS_PANEL_CACHE')
         row.prop_enum(dprops, "domain_settings_tabbed_panel_view", 'DOMAIN_SETTINGS_PANEL_DISPLAY')
         row.prop_enum(dprops, "domain_settings_tabbed_panel_view", 'DOMAIN_SETTINGS_PANEL_SURFACE')
+        row.prop_enum(dprops, "domain_settings_tabbed_panel_view", 'DOMAIN_SETTINGS_PANEL_PARTICLES')
         row.prop_enum(dprops, "domain_settings_tabbed_panel_view", 'DOMAIN_SETTINGS_PANEL_WHITEWATER')
         row = column.row(align=True)
         row.prop_enum(dprops, "domain_settings_tabbed_panel_view", 'DOMAIN_SETTINGS_PANEL_WORLD')
@@ -90,6 +93,9 @@ class FLIPFLUID_PT_DomainTypeTabbedPanel(bpy.types.Panel):
         elif selected_panel == 'DOMAIN_SETTINGS_PANEL_DISPLAY':
             column.label(text="FLIP Fluid Display Settings")
             domain_display_ui.FLIPFLUID_PT_DomainTypeDisplayPanel.draw(self, context)
+        elif selected_panel == 'DOMAIN_SETTINGS_PANEL_PARTICLES':
+            column.label(text="FLIP Fluid Particles")
+            domain_particles_ui.FLIPFLUID_PT_DomainTypeFluidParticlesPanel.draw(self, context)
         elif selected_panel == 'DOMAIN_SETTINGS_PANEL_SURFACE':
             column.label(text="FLIP Fluid Surface")
             domain_surface_ui.FLIPFLUID_PT_DomainTypeFluidSurfacePanel.draw(self, context)

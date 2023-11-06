@@ -47,6 +47,7 @@ class FLIPFLUID_PT_DomainTypeMaterialsPanel(bpy.types.Panel):
 
         column = self.layout.column()
         column.prop(mprops, "surface_material", text="Surface")
+        column.prop(mprops, "fluid_particles_material", text="Fluid Particles")
         column.prop(mprops, "whitewater_foam_material", text="Foam")
         column.prop(mprops, "whitewater_bubble_material", text="Bubble")
         column.prop(mprops, "whitewater_spray_material", text="Spray")

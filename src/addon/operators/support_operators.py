@@ -150,6 +150,7 @@ class FlipFluidSupportSelectSimulationObjects(bpy.types.Operator):
         if dprops is not None:
             mesh_cache_props = [
                 dprops.mesh_cache.surface,
+                dprops.mesh_cache.particles,
                 dprops.mesh_cache.foam,
                 dprops.mesh_cache.bubble,
                 dprops.mesh_cache.spray,

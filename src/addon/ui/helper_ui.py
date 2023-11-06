@@ -87,7 +87,14 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                 dprops = context.scene.flip_fluid.get_domain_properties()
                 column = box.column(align=True)
                 column.enabled = not dprops.bake.is_simulation_running
-                column.prop(dprops.simulation, "resolution")
+
+                resolution_text = "Resolution"
+                if dprops.simulation.lock_cell_size:
+                    resolution_text += " (voxel size locked)"
+
+                row = column.row(align=True)
+                row.enabled = not dprops.simulation.lock_cell_size
+                row.prop(dprops.simulation, "resolution", text=resolution_text)
                 column.separator()
 
                 split = column.split(align=True)
@@ -192,8 +199,9 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                 warn_box = box.box()
                 warn_column = warn_box.column(align=True)
                 warn_column.enabled = True
-                warn_column.label(text="     Experimental Developer Tools must be")
-                warn_column.label(text="     enabled in preferences to use this feature")
+                warn_column.label(text="     This feature is affected by a current bug in Blender.", icon='ERROR')
+                warn_column.label(text="     The Developer Tools option must be enabled in preferences")
+                warn_column.label(text="     to use this feature.")
                 warn_column.separator()
                 warn_column.prop(prefs, "enable_developer_tools", text="Enable Developer Tools in Preferences")
                 warn_column.separator()
@@ -317,7 +325,9 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                     ).object_type="TYPE_FORCE_FIELD"
             
             column = box.column(align=True)
-            column.operator("flip_fluid_operators.helper_select_surface", text="Surface")
+            row = column.row(align=True)
+            row.operator("flip_fluid_operators.helper_select_surface", text="Fluid Surface")
+            row.operator("flip_fluid_operators.helper_select_fluid_particles", text="Fluid Particles")
             row = column.row(align=True)
             row.operator("flip_fluid_operators.helper_select_foam", text="Foam")
             row.operator("flip_fluid_operators.helper_select_bubble", text="Bubble")
@@ -474,7 +484,9 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
 
                 column.label(text="Mesh and Data Export:")
                 row = column.row(align=True)
+                row.alignment = 'LEFT'
                 row.prop(hprops, "alembic_export_surface")
+                row.prop(hprops, "alembic_export_fluid_particles")
                 row.prop(hprops, "alembic_export_foam")
                 row.prop(hprops, "alembic_export_bubble")
                 row.prop(hprops, "alembic_export_spray")
@@ -532,8 +544,9 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                 warn_box = box.box()
                 warn_column = warn_box.column(align=True)
                 warn_column.enabled = True
-                warn_column.label(text="     Experimental Developer Tools must be")
-                warn_column.label(text="     enabled in preferences to use this feature")
+                warn_column.label(text="     This feature is affected by a current bug in Blender.", icon='ERROR')
+                warn_column.label(text="     The Developer Tools option must be enabled in preferences")
+                warn_column.label(text="     to use this feature.")
                 warn_column.separator()
                 warn_column.prop(prefs, "enable_developer_tools", text="Enable Developer Tools in Preferences")
                 warn_column.separator()
@@ -684,11 +697,10 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
             icon_only=True, 
             emboss=False
         )
-        row.label(text="Beginner Tools and Tips:")
+        row.label(text="Beginner Tips:")
 
         if hprops.beginner_tools_expanded:
             column = box.column(align=True)
-            column.prop(preferences, "beginner_friendly_mode")
             column.prop(preferences, "show_documentation_in_ui")
             column.separator()
 
@@ -843,6 +855,11 @@ class FLIPFLUID_PT_HelperPanelDisplay(bpy.types.Panel):
             column.label(text="Surface Display:")
             row = column.row(align=True)
             row.prop(rprops, "viewport_display", expand=True)
+
+            column.label(text="Fluid Particle Display:")
+            row = column.row(align=True)
+            row.prop(rprops, "fluid_particle_viewport_display", expand=True)
+
 
             column.separator()
             column.label(text="Whitewater Display:")

@@ -24,18 +24,14 @@ SOFTWARE.
 
 #include "gridutils.h"
 
-#include "grid3d.h"
-#include "threadutils.h"
-
 namespace GridUtils {
 
+/*
 void extrapolateGrid(Array3d<float> *grid, Array3d<bool> *valid, int numLayers) {
-    /*
-    char UNKNOWN = 0x00;
-    char WAITING = 0x01;
-    char KNOWN = 0x02;
-    char DONE = 0x03;
-    */
+    // char UNKNOWN = 0x00;
+    // char WAITING = 0x01;
+    // char KNOWN = 0x02;
+    // char DONE = 0x03;
 
     char UNKNOWN = 0x00;
     char KNOWN = 0x02;
@@ -98,6 +94,7 @@ void extrapolateGrid(Array3d<float> *grid, Array3d<bool> *valid, int numLayers) 
         }
     }
 }
+*/
 
 void _initializeStatusGridThread(int startidx, int endidx, Array3d<bool> *valid, Array3d<char> *status) {
     char KNOWN = 0x02;
@@ -176,6 +173,7 @@ void _findExtrapolationCells(int startidx, int endidx, Array3d<char> *status, st
     }
 }
 
+/*
 void _extrapolateCellsThread(int startidx, int endidx, 
                              std::vector<GridIndex> *cells, 
                              Array3d<char> *status, 
@@ -226,6 +224,7 @@ void _extrapolateCellsThread(int startidx, int endidx,
         grid->set(g, sum /(float)count);
     }
 }
+*/
 
 void featherGrid6(Array3d<bool> *grid, int numthreads) {
     Array3d<bool> tempgrid = *grid;
@@ -265,8 +264,8 @@ void _featherGrid6Thread(Array3d<bool> *grid, Array3d<bool> *valid, int startidx
 void featherGrid26(Array3d<bool> *grid, int numthreads) {
     Array3d<bool> tempgrid = *grid;
 
-    int gridsize = grid->width * grid->height * grid->depth;
-    numthreads = (int)fmin(numthreads, gridsize);
+    size_t gridsize = grid->width * grid->height * grid->depth;
+    numthreads = (int)std::min((size_t)numthreads, gridsize);
     std::vector<std::thread> threads(numthreads);
     std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {
