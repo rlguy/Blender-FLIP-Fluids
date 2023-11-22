@@ -405,6 +405,16 @@ bool FluidSimulation::isFluidParticleInteriorOutputEnabled() {
     return _isFluidParticleInteriorOutputEnabled;
 }
 
+int FluidSimulation::getFluidParticleSourceIDBlacklist() { 
+    return _fluidParticleSourceIDBlacklist; 
+}
+
+void FluidSimulation::setFluidParticleSourceIDBlacklist(int id) { 
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " setFluidParticleSourceIDBlacklist: " << id << std::endl);
+    _fluidParticleSourceIDBlacklist = id; 
+}
+
 int FluidSimulation::getSurfaceSubdivisionLevel() {
     return _outputFluidSurfaceSubdivisionLevel;
 }
@@ -5280,13 +5290,6 @@ void FluidSimulation::_calculateFluidCurvatureGridThread() {
 }
 
 void FluidSimulation::_launchCalculateFluidCurvatureGridThread() {
-    if (!_isSurfaceTensionEnabled && 
-        !_isSheetSeedingEnabled && 
-        !_isDiffuseMaterialOutputEnabled && 
-        !_isFluidParticleOutputEnabled) {
-        return;
-    }
-
     _fluidCurvatureThread = std::thread(&FluidSimulation::_calculateFluidCurvatureGridThread, 
                                         this);
     _isCalculateFluidCurvatureGridThreadRunning = true;
@@ -8858,10 +8861,17 @@ void FluidSimulation::_generateFluidParticleDataFFP3(ParticleSystem &fluidPartic
     bool isSurfaceEnabled = _isFluidParticleSurfaceOutputEnabled;
     bool isBoundaryEnabled = _isFluidParticleBoundaryOutputEnabled;
     bool isInteriorEnabled = _isFluidParticleInteriorOutputEnabled;
+    bool isSourceIDEnabled = _isFluidParticleSourceIDAttributeEnabled;
+    int skipSourceID = _fluidParticleSourceIDBlacklist;
 
     std::vector<uint16_t> *particle_ids;
     _markerParticles.getAttributeValues("ID", particle_ids);
     int idLimit = (int)std::round(_fluidParticleIDLimit * _fluidParticleOutputAmount);
+
+    std::vector<int> *source_ids = NULL;
+    if (isSourceIDEnabled) {
+        _markerParticles.getAttributeValues("SOURCEID", source_ids);
+    }
 
     int numsurface = 0;
     int numboundary = 0;
@@ -8871,6 +8881,12 @@ void FluidSimulation::_generateFluidParticleDataFFP3(ParticleSystem &fluidPartic
         uint16_t pid = particle_ids->at(i);
         if (pid >= idLimit) {
             continue;
+        }
+
+        if (isSourceIDEnabled && skipSourceID >= 0) {
+            if (source_ids->at(i) == skipSourceID) {
+                continue;
+            }
         }
 
         if (isSurfaceEnabled && ptype == MarkerParticleType::surface) {
@@ -8893,6 +8909,12 @@ void FluidSimulation::_generateFluidParticleDataFFP3(ParticleSystem &fluidPartic
         uint16_t pid = particle_ids->at(i);
         if (ptype == MarkerParticleType::unset || pid >= idLimit) {
             continue;
+        }
+
+        if (isSourceIDEnabled && skipSourceID >= 0) {
+            if (source_ids->at(i) == skipSourceID) {
+                continue;
+            }
         }
 
         if (isSurfaceEnabled && ptype == MarkerParticleType::surface) {
@@ -8925,6 +8947,12 @@ void FluidSimulation::_generateFluidParticleDataFFP3(ParticleSystem &fluidPartic
         uint16_t pid = particle_ids->at(i);
         if (ptype == MarkerParticleType::unset || pid >= idLimit) {
             continue;
+        }
+
+        if (isSourceIDEnabled && skipSourceID >= 0) {
+            if (source_ids->at(i) == skipSourceID) {
+                continue;
+            }
         }
 
         if (isSurfaceEnabled && ptype == MarkerParticleType::surface) {
@@ -9315,7 +9343,11 @@ void FluidSimulation::_stepFluid(double dt) {
         _joinUpdateLiquidLevelSetThread();
         _launchAdvectVelocityFieldThread();
         _joinAdvectVelocityFieldThread();
-        _launchCalculateFluidCurvatureGridThread();
+
+        if (_isSurfaceTensionEnabled or _isSheetSeedingEnabled or _isDiffuseMaterialOutputEnabled) {
+            _launchCalculateFluidCurvatureGridThread();
+        }
+
         _saveVelocityField();
         _applyBodyForcesToVelocityField(dt);
         _applyViscosityToVelocityField(dt);
@@ -9334,10 +9366,6 @@ void FluidSimulation::_stepFluid(double dt) {
         _updateDiffuseMaterial(dt);
 
         if (_isSheetSeedingEnabled) {
-            _joinCalculateFluidCurvatureGridThread();
-        }
-
-        if (_isFluidParticleOutputEnabled) {
             _joinCalculateFluidCurvatureGridThread();
         }
 

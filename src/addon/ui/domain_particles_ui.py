@@ -238,6 +238,8 @@ class FLIPFLUID_PT_DomainTypeFluidParticlesPanel(bpy.types.Panel):
             subcolumn.prop(pprops, "enable_fluid_particle_surface_output")
             subcolumn.prop(pprops, "enable_fluid_particle_boundary_output")
             subcolumn.prop(pprops, "enable_fluid_particle_interior_output")
+            subcolumn.separator()
+            subcolumn.prop(pprops, "fluid_particle_source_id_blacklist", text="Skip Particles With Source ID Value")
 
         box = self.layout.box()
         row = box.row(align=True)
@@ -262,7 +264,6 @@ class FLIPFLUID_PT_DomainTypeFluidParticlesPanel(bpy.types.Panel):
 
         box = self.layout.box()
         row = box.row(align=True)
-        row.enabled = pprops.enable_fluid_particle_output
         row.prop(pprops, "fluid_particle_display_settings_expanded",
             icon="TRIA_DOWN" if pprops.fluid_particle_display_settings_expanded else "TRIA_RIGHT",
             icon_only=True, 

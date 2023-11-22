@@ -142,8 +142,8 @@ class FLIPFLUID_PT_InflowTypePanel(bpy.types.Panel):
             box.label(text="Geometry Attributes:")
             column = box.column(align=True)
             if vcu.is_blender_293():
-                is_color_attribute_enabled = (dprops.surface.enable_color_attribute or 
-                                              dprops.particles.enable_fluid_particle_color_attribute)
+                is_color_attribute_enabled = dprops is not None and (dprops.surface.enable_color_attribute or 
+                                                                     dprops.particles.enable_fluid_particle_color_attribute)
                 show_color = dprops is not None and is_color_attribute_enabled
                 split = column.split(align=True)
                 column_left = split.column(align=True)
@@ -175,8 +175,8 @@ class FLIPFLUID_PT_InflowTypePanel(bpy.types.Panel):
                     row.label(text="Domain required for this option")
                 column.separator()
 
-                is_lifetime_attribute_enabled = (dprops.surface.enable_lifetime_attribute or 
-                                                 dprops.particles.enable_fluid_particle_lifetime_attribute)
+                is_lifetime_attribute_enabled = dprops is not None and (dprops.surface.enable_lifetime_attribute or 
+                                                                        dprops.particles.enable_fluid_particle_lifetime_attribute)
                 show_lifetime = dprops is not None and is_lifetime_attribute_enabled
                 split = column.split(align=True)
                 column_left = split.column(align=True)
@@ -195,8 +195,8 @@ class FLIPFLUID_PT_InflowTypePanel(bpy.types.Panel):
                     row.label(text="Domain required for this option")
                 column.separator()
 
-                is_source_id_attribute_enabled = (dprops.surface.enable_source_id_attribute or 
-                                                  dprops.particles.enable_fluid_particle_source_id_attribute)
+                is_source_id_attribute_enabled = dprops is not None and (dprops.surface.enable_source_id_attribute or 
+                                                                         dprops.particles.enable_fluid_particle_source_id_attribute)
                 show_source_id = dprops is not None and is_source_id_attribute_enabled
                 split = column.split(align=True)
                 column_left = split.column(align=True)

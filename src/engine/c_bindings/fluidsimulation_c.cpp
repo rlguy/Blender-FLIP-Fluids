@@ -441,6 +441,21 @@ extern "C" {
         );
     }
 
+    EXPORTDLL int FluidSimulation_get_fluid_particle_source_id_blacklist(FluidSimulation* obj, 
+                                                                         int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getFluidParticleSourceIDBlacklist, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_set_fluid_particle_source_id_blacklist(FluidSimulation* obj, 
+                                                                          int id,
+                                                                          int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setFluidParticleSourceIDBlacklist, id, err
+        );
+    }
+
     EXPORTDLL int FluidSimulation_get_surface_subdivision_level(FluidSimulation* obj, 
                                                                 int *err) {
         return CBindings::safe_execute_method_ret_0param(

@@ -68,6 +68,14 @@ class DomainParticlesProperties(bpy.types.PropertyGroup):
                 " to be interior particles if they are not classified as either surface or boundary particles",
             default=True,
             ); exec(conv("enable_fluid_particle_interior_output"))
+    fluid_particle_source_id_blacklist = IntProperty(
+            name="Skip Source ID",
+            description="If the Source ID attribute is enabled, do not export fluid particles with the specified"
+                " Source ID value. Useful to reduce cache size and speed up playback in situations where particles"
+                " are not needed from specific Fluid or Inflow objects",
+            min=-1,
+            default=-1,
+            ); exec(conv("fluid_particle_source_id_blacklist"))
     enable_fluid_particle_velocity_vector_attribute = BoolProperty(
             name="Generate Velocity Attributes",
             description="Generate fluid 3D velocity vector attributes for the fluid particles. After"
@@ -147,7 +155,7 @@ class DomainParticlesProperties(bpy.types.PropertyGroup):
             ); exec(conv("enable_fluid_particle_source_id_attribute"))
 
     fluid_particles_expanded = BoolProperty(default=True); exec(conv("fluid_particles_expanded"))
-    fluid_particle_generation_expanded = BoolProperty(default=True); exec(conv("fluid_particle_generation_expanded"))
+    fluid_particle_generation_expanded = BoolProperty(default=False); exec(conv("fluid_particle_generation_expanded"))
     fluid_particle_display_settings_expanded = BoolProperty(default=False); exec(conv("fluid_particle_display_settings_expanded"))
     geometry_attributes_expanded = BoolProperty(default=False); exec(conv("geometry_attributes_expanded"))
     velocity_attributes_expanded = BoolProperty(default=False); exec(conv("velocity_attributes_expanded"))
@@ -162,6 +170,7 @@ class DomainParticlesProperties(bpy.types.PropertyGroup):
         add(path + ".enable_fluid_particle_surface_output",                 "Export Surface Particles",     group_id=0)
         add(path + ".enable_fluid_particle_boundary_output",                "Export Boundary Particles",    group_id=0)
         add(path + ".enable_fluid_particle_interior_output",                "Export Interior Particles",    group_id=0)
+        add(path + ".fluid_particle_source_id_blacklist",                   "Skip Source ID",               group_id=0)
         add(path + ".enable_fluid_particle_velocity_vector_attribute",      "Velocity Attribute",           group_id=0)
         add(path + ".enable_fluid_particle_speed_attribute",                "Speed Attribute",              group_id=0)
         add(path + ".enable_fluid_particle_vorticity_vector_attribute",     "Vorticity Attribute",          group_id=0)

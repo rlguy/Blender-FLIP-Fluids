@@ -103,17 +103,19 @@ namespace GridUtils {
         char KNOWN = 0x02;
         Array3d<char> status(grid->width, grid->height, grid->depth, UNKNOWN);
 
+        size_t voxelsPerThread = 100000;
         size_t gridsize = grid->width * grid->height * grid->depth;
+        size_t recommendedThreads = (size_t)std::ceil((double)gridsize / (double)voxelsPerThread);
         size_t numCPU = ThreadUtils::getMaxThreadCount();
-        int numthreads = (int)fmin(numCPU, gridsize);
+        size_t numthreads = (int)std::min(std::min(numCPU, recommendedThreads), gridsize);
         std::vector<std::thread> threads(numthreads);
         std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
-        for (int i = 0; i < numthreads; i++) {
+        for (size_t i = 0; i < numthreads; i++) {
             threads[i] = std::thread(&_initializeStatusGridThread,
                                      intervals[i], intervals[i + 1], valid, &status);
         }
 
-        for (int i = 0; i < numthreads; i++) {
+        for (size_t i = 0; i < numthreads; i++) {
             threads[i].join();
         }
 
@@ -126,13 +128,13 @@ namespace GridUtils {
             }
 
             threads = std::vector<std::thread>(numthreads);
-            for (int i = 0; i < numthreads; i++) {
+            for (size_t i = 0; i < numthreads; i++) {
                 threads[i] = std::thread(&_findExtrapolationCells,
                                          intervals[i], intervals[i + 1], &status, &(threadResults[i]));
             }
 
             int cellcount = 0;
-            for (int i = 0; i < numthreads; i++) {
+            for (size_t i = 0; i < numthreads; i++) {
                 threads[i].join();
                 cellcount += threadResults[i].size();
             }
@@ -142,16 +144,16 @@ namespace GridUtils {
                 extrapolationCells.insert(extrapolationCells.end(), threadResults[i].begin(), threadResults[i].end());
             }
 
-            int extrapolationThreads = (int)fmin(numCPU, extrapolationCells.size());
+            size_t extrapolationThreads = (size_t)std::min(numthreads, extrapolationCells.size());
             threads = std::vector<std::thread>(extrapolationThreads);
             std::vector<int> extrapolationIntervals = ThreadUtils::splitRangeIntoIntervals(0, extrapolationCells.size(), extrapolationThreads);
-            for (int i = 0; i < extrapolationThreads; i++) {
+            for (size_t i = 0; i < extrapolationThreads; i++) {
                 threads[i] = std::thread(&_extrapolateCellsThread<T>,
                                          extrapolationIntervals[i], extrapolationIntervals[i + 1], 
                                          &extrapolationCells, &status, grid);
             }
 
-            for (int i = 0; i < extrapolationThreads; i++) {
+            for (size_t i = 0; i < extrapolationThreads; i++) {
                 threads[i].join();
             }
 
