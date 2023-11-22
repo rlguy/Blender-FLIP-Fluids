@@ -366,7 +366,7 @@ class FluidSimulation(object):
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
         return pb.execute_lib_func(libfunc, [self()])
 
-    @density.setter
+    @fluid_particle_output_amount.setter
     @decorators.check_ge_zero
     def fluid_particle_output_amount(self, value):
         libfunc = lib.FluidSimulation_set_fluid_particle_output_amount
@@ -417,6 +417,18 @@ class FluidSimulation(object):
             libfunc = lib.FluidSimulation_disable_fluid_particle_interior_output
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def fluid_particle_source_id_blacklist(self):
+        libfunc = lib.FluidSimulation_get_fluid_particle_source_id_blacklist
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @fluid_particle_source_id_blacklist.setter
+    def fluid_particle_source_id_blacklist(self, id):
+        libfunc = lib.FluidSimulation_set_fluid_particle_source_id_blacklist
+        pb.init_lib_func(libfunc, [c_void_p, c_int, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), int(id)])
 
     @property
     def surface_subdivision_level(self):

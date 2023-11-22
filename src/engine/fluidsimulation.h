@@ -362,6 +362,9 @@ public:
     void disableFluidParticleInteriorOutput();
     bool isFluidParticleInteriorOutputEnabled();
 
+    int getFluidParticleSourceIDBlacklist();
+    void setFluidParticleSourceIDBlacklist(int id);
+
     /*
         The surface subdivision level determines how many times the
         simulation grid is divided when converting marker particles
@@ -2162,6 +2165,7 @@ private:
     double _fluidParticleOutputAmount = 1.0;
     bool _isFluidParticleBoundaryOutputEnabled = true;
     bool _isFluidParticleInteriorOutputEnabled = true;
+    int _fluidParticleSourceIDBlacklist = true;
 
     bool _isFluidParticleVelocityAttributeEnabled = false;
     bool _isFluidParticleSpeedAttributeEnabled = false;

@@ -1100,6 +1100,9 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
     enable_fluid_particle_interior_output = __get_parameter_data(particles.enable_fluid_particle_interior_output, frameno)
     fluidsim.enable_fluid_particle_interior_output = enable_fluid_particle_interior_output
 
+    source_id = __get_parameter_data(particles.fluid_particle_source_id_blacklist, frameno)
+    fluidsim.fluid_particle_source_id_blacklist = source_id
+
     enable_velocity_attribute = __get_parameter_data(particles.enable_fluid_particle_velocity_vector_attribute, frameno)
     fluidsim.enable_fluid_particle_velocity_attribute = enable_velocity_attribute
 
@@ -2046,6 +2049,9 @@ def __update_animatable_domain_properties(fluidsim, data, frameno):
     enable_fluid_particle_interior_output = __get_parameter_data(particles.enable_fluid_particle_interior_output, frameno)
     __set_property(fluidsim, 'enable_fluid_particle_interior_output', enable_fluid_particle_interior_output)
 
+    source_id = __get_parameter_data(particles.fluid_particle_source_id_blacklist, frameno)
+    __set_property(fluidsim, 'fluid_particle_source_id_blacklist', source_id)
+    
     # Surface Settings
 
     surface = dprops.surface
