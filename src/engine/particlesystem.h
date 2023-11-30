@@ -29,6 +29,7 @@ SOFTWARE.
 #include <string>
 #include <sstream>
 #include <stdexcept>
+#include <cstdint>
 
 #include "vmath.h"
 #include "fluidsimassert.h"
