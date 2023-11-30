@@ -24,6 +24,7 @@ SOFTWARE.
 
 #ifndef FLUIDENGINE_MARKERPARTICLE_H
 #define FLUIDENGINE_MARKERPARTICLE_H
+#include <cstdint>
 
 #include "vmath.h"
 
