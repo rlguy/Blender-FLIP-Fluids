@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2023 Ryan L. Guy
+# Copyright (C) 2024 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -165,7 +165,7 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
             description="The distance (in number of voxels) from the domain boundary that fluid will be"
                 " removed for open boundary sides. Note: This setting is for testing purposes and may"
                 " be removed in a future update if not needed",
-            min=1,
+            soft_min=2, min=1,
             soft_max=10,
             default=4,
             ); exec(conv("fluid_open_boundary_width"))

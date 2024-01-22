@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2023 Ryan L. Guy
+# Copyright (C) 2024 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -232,7 +232,12 @@ material_types = (
     ('MATERIAL_TYPE_ALL',        "All",        "Material suitable for any mesh"),
     )
 
-cmd_render_mode = (
+cmd_bake_and_render_mode = (
+    ('CMD_BAKE_AND_RENDER_MODE_SEQUENCE',     "Render After Bake",  "Begin rendering the simulation after baking is finished."),
+    ('CMD_BAKE_AND_RENDER_MODE_INTERLEAVED',  "Render During Bake", "Begin rendering the simulation as frames are completed while baking. This mode will require more system memory."),
+    )
+
+cmd_render_after_bake_mode = (
     ('CMD_RENDER_MODE_NORMAL', "Normal", "Launch normal command line render. This is equivalent to executing the 'Launch Render' operator."),
     ('CMD_RENDER_MODE_BATCH',  "Batch",  "Launch batch file command line render. This is equivalent to executing the 'Generate Batch File' operator followed by the 'Launch Batch File Render' operator."),
     )

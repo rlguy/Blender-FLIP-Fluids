@@ -395,6 +395,29 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                 row = column.row(align=True)
                 row.operator("flip_fluid_operators.helper_command_line_bake")
                 row.operator("flip_fluid_operators.helper_command_line_bake_to_clipboard", text="", icon='COPYDOWN')
+                column.separator()
+                
+                column = subbox.column(align=True)
+                row = column.row(align=True)
+                row.prop(hprops, "cmd_bake_and_render")
+                row = column.row(align=True)
+                row.enabled = hprops.cmd_bake_and_render
+                row.prop(hprops, "cmd_bake_and_render_mode", expand=True)
+
+                row = column.row(align=True)
+                row.enabled = hprops.cmd_bake_and_render
+                row.alignment = 'EXPAND'
+                if hprops.cmd_bake_and_render_mode == 'CMD_BAKE_AND_RENDER_MODE_SEQUENCE':
+                    system = platform.system()
+                    if system == "Windows":
+                        row.label(text="Render Mode:")
+                        row.prop(hprops, "cmd_launch_render_after_bake_mode", text="")
+                    else:
+                        row.label(text="")
+                elif hprops.cmd_bake_and_render_mode == 'CMD_BAKE_AND_RENDER_MODE_INTERLEAVED':
+                    row.prop(hprops, "cmd_bake_and_render_interleaved_instances")
+
+                """
                 row = column.row(align=True)
                 row.prop(hprops, "cmd_launch_render_after_bake")
 
@@ -402,7 +425,8 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                 if system == "Windows":
                     row = row.row(align=True)
                     row.enabled = hprops.cmd_launch_render_after_bake
-                    row.prop(hprops, "cmd_launch_render_mode", text="")
+                    row.prop(hprops, "cmd_launch_render_after_bake_mode", text="")
+                """
             else:
                 row = row.row(align=True)
                 row.operator("flip_fluid_operators.helper_command_line_bake")

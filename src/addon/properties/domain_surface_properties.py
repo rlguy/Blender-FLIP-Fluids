@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2023 Ryan L. Guy
+# Copyright (C) 2024 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -360,6 +360,15 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
 
     show_smoothing_radius_in_ui = BoolProperty(default=False); exec(conv("show_smoothing_radius_in_ui"))
     is_smoothing_radius_updated_to_default = BoolProperty(default=False); exec(conv("is_smoothing_radius_updated_to_default"))
+
+    preview_mode_attributes_tooltip = BoolProperty(
+            name="Preview Mode Attributes Tooltip", 
+            description="The fluid surface mesh is currently set to Preview Mode within the viewport and attributes"
+                " will not be loaded. Attributes will not be displayed correctly in viewport render mode."
+                " Surface attributes will only be loaded in Final Mode. The surface mesh display"
+                " mode can be set in the 'Domain > Display Settings' panel", 
+            default=True,
+            ); exec(conv("preview_mode_attributes_tooltip"))
 
 
     def register_preset_properties(self, registry, path):

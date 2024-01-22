@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2023 Ryan L. Guy
+Copyright (C) 2024 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -5134,10 +5134,17 @@ void FluidSimulation::_updateObstacleObjects(double) {
 
     StopWatch t;
     t.start();
-    _updateObstacles(_currentFrameDeltaTime);
-    _updateSolidLevelSet(_currentFrameDeltaTime);
-    _updateNearSolidGrid();
-    _updateMeshingVolumeSDF();
+
+    bool runObstacleObjectUpdate = _isFluidOrWhitewaterInSimulation() || 
+                                   _isFluidGeneratingThisFrame() ||
+                                   _isInternalObstacleMeshOutputEnabled;
+
+    if (runObstacleObjectUpdate) {
+        _updateObstacles(_currentFrameDeltaTime);
+        _updateSolidLevelSet(_currentFrameDeltaTime);
+        _updateNearSolidGrid();
+        _updateMeshingVolumeSDF();
+    }
     t.stop();
 
     _timingData.updateObstacleObjects += t.getTime();
@@ -5164,12 +5171,16 @@ void FluidSimulation::_updateLiquidLevelSet() {
     StopWatch t;
     t.start();
 
-    double radius = _liquidSDFParticleRadius;
-    if (_isSurfaceTensionEnabled && _isSmoothSurfaceTensionKernelEnabled) {
-        radius = _liquidSDFSurfaceTensionParticleScale * _liquidSDFParticleRadius;
-    }
+    if (_isFluidInSimulation()) {
 
-    _liquidSDF.calculateSignedDistanceField(_markerParticles, radius);
+        double radius = _liquidSDFParticleRadius;
+        if (_isSurfaceTensionEnabled && _isSmoothSurfaceTensionKernelEnabled) {
+            radius = _liquidSDFSurfaceTensionParticleScale * _liquidSDFParticleRadius;
+        }
+
+        _liquidSDF.calculateSignedDistanceField(_markerParticles, radius);
+
+    }
 
     t.stop();
 
@@ -5197,9 +5208,12 @@ _logfile.logString(_logfile.getTime() + " BEGIN       Advect Velocity Field");
     StopWatch t;
     t.start();
 
-    _validVelocities.reset();
-    _MACVelocity.clear();
-    if (!_markerParticles.empty()) {
+    if (_isFluidInSimulation() || _isFluidGeneratingThisFrame()) {
+        _validVelocities.reset();
+        _MACVelocity.clear();
+    }
+
+    if (_isFluidInSimulation()) {
         double radius = _liquidSDFParticleRadius;
         if (_isSurfaceTensionEnabled && _isSmoothSurfaceTensionKernelEnabled) {
             radius = _liquidSDFSurfaceTensionParticleScale * _liquidSDFParticleRadius;
@@ -5241,7 +5255,11 @@ void FluidSimulation::_saveVelocityField() {
 
     StopWatch t;
     t.start();
-    _savedVelocityField = _MACVelocity;
+
+    if (_isFluidOrWhitewaterInSimulation() || _isFluidGeneratingThisFrame()) {
+        _savedVelocityField = _MACVelocity;
+    }
+
     t.stop();
     _timingData.saveVelocityField += t.getTime();
 
@@ -5271,17 +5289,21 @@ void FluidSimulation::_calculateFluidCurvatureGridThread() {
     StopWatch t;
     t.start();
 
-    if (_fluidCurvatureGrid.width == _isize && 
-            _fluidCurvatureGrid.height == _jsize && 
-            _fluidCurvatureGrid.depth == _ksize) {
-        _fluidSurfaceLevelSet.fill(0.0f);
-        _fluidCurvatureGrid.fill(0.0f);
-    } else {
-        _fluidSurfaceLevelSet = Array3d<float>(_isize, _jsize, _ksize, 0.0f);
-        _fluidCurvatureGrid = Array3d<float>(_isize, _jsize, _ksize, 0.0f);
-    }
+    if (_isFluidInSimulation()) {
 
-    _liquidSDF.calculateCurvatureGrid(_fluidSurfaceLevelSet, _fluidCurvatureGrid);
+        if (_fluidCurvatureGrid.width == _isize && 
+                _fluidCurvatureGrid.height == _jsize && 
+                _fluidCurvatureGrid.depth == _ksize) {
+            _fluidSurfaceLevelSet.fill(0.0f);
+            _fluidCurvatureGrid.fill(0.0f);
+        } else {
+            _fluidSurfaceLevelSet = Array3d<float>(_isize, _jsize, _ksize, 0.0f);
+            _fluidCurvatureGrid = Array3d<float>(_isize, _jsize, _ksize, 0.0f);
+        }
+
+        _liquidSDF.calculateCurvatureGrid(_fluidSurfaceLevelSet, _fluidCurvatureGrid);
+
+    }
 
     t.stop();
     _timingData.calculateFluidCurvatureGrid += t.getTime();
@@ -5516,14 +5538,18 @@ void FluidSimulation::_applyBodyForcesToVelocityField(double dt) {
     StopWatch t;
     t.start();
 
-    ValidVelocityComponentGrid ex(_isize, _jsize, _ksize);
-    _getInflowConstrainedVelocityComponents(ex);
+    if (_isFluidOrWhitewaterInSimulation() || _isFluidGeneratingThisFrame() || _isForceFieldDebugOutputEnabled) {
 
-    if (_isForceFieldsEnabled) {
-        _updateForceFieldGrid(dt);
-        _applyForceFieldGridForces(ex, dt);
-    } else {
-        _applyConstantBodyForces(ex, dt);
+        ValidVelocityComponentGrid ex(_isize, _jsize, _ksize);
+        _getInflowConstrainedVelocityComponents(ex);
+
+        if (_isForceFieldsEnabled) {
+            _updateForceFieldGrid(dt);
+            _applyForceFieldGridForces(ex, dt);
+        } else {
+            _applyConstantBodyForces(ex, dt);
+        }
+
     }
 
     t.stop();
@@ -5710,103 +5736,111 @@ void FluidSimulation::_pressureSolve(double dt) {
     StopWatch t;
     t.start();
 
-    _updateWeightGrid();
+    _pressureSolverSuccess = true;
+    _pressureSolverIterations = 0;
+    _pressureSolverError = 0.0f;
 
-    /*
-    // Testing Coarse Grid Solve
-    double dxcoarse = _dx * 2.0;
-    int icoarse = 0; int jcoarse = 0; int kcoarse = 0;
-    _MACVelocity.getCoarseGridDimensions(&icoarse, &jcoarse, &kcoarse);
-    Array3d<float> pressureGridLevel1(icoarse, jcoarse, kcoarse, 0.0f);
-    {
+    if (_isFluidInSimulation()) {
 
-        StopWatch timerLevel1;
-        timerLevel1.start();
+        _updateWeightGrid();
+
+        /*
+        // Testing Coarse Grid Solve
+        double dxcoarse = _dx * 2.0;
+        int icoarse = 0; int jcoarse = 0; int kcoarse = 0;
+        _MACVelocity.getCoarseGridDimensions(&icoarse, &jcoarse, &kcoarse);
+        Array3d<float> pressureGridLevel1(icoarse, jcoarse, kcoarse, 0.0f);
+        {
+
+            StopWatch timerLevel1;
+            timerLevel1.start();
+
+            PressureSolverParameters params;
+            params.cellwidth = dxcoarse;
+            params.deltaTime = dt;
+            params.tolerance = _pressureSolveTolerance;
+            params.acceptableTolerance = _pressureSolveAcceptableTolerance;
+            params.maxIterations = _maxPressureSolveIterations;
+
+            MACVelocityField vfieldLevel1 = _MACVelocity.generateCoarseGrid();
+            MACVelocityField vfieldSolidLevel1 = _solidSDF.getVelocityDataGrid()->field.generateCoarseGrid();
+            ValidVelocityComponentGrid validVelocitiesLevel1(icoarse, jcoarse, kcoarse);
+            Array3d<float> LiquidSDFLevel1 = _liquidSDF.getPhiGrid()->generateCoarseGrid();
+            WeightGrid weightGridLevel1 = _weightGrid.generateCoarseGrid();
+            Array3d<float> fluidCurvatureGridLevel1;
+            if (_isSurfaceTensionEnabled) {
+                fluidCurvatureGridLevel1 = _fluidCurvatureGrid.generateCoarseGrid();
+            }
+
+            params.velocityFieldFluid = &vfieldLevel1;
+            params.velocityFieldSolid = &vfieldSolidLevel1;
+            params.validVelocities = &validVelocitiesLevel1;
+            params.liquidSDF = &LiquidSDFLevel1;
+            params.weightGrid = &weightGridLevel1;
+            params.pressureGrid = &pressureGridLevel1;
+
+            params.isSurfaceTensionEnabled = _isSurfaceTensionEnabled;
+            if (_isSurfaceTensionEnabled) {
+                params.surfaceTensionConstant = _surfaceTensionConstant;
+                params.curvatureGrid = &fluidCurvatureGridLevel1;
+            }
+
+            PressureSolver psolver;
+            bool success = psolver.solve(params);
+            std::string pressureSolverStatus = psolver.getSolverStatus();
+
+            timerLevel1.stop();
+        }
+        */
+
+        Array3d<float> pressureGrid(_isize, _jsize, _ksize, 0.0f);
 
         PressureSolverParameters params;
-        params.cellwidth = dxcoarse;
+        params.cellwidth = _dx;
         params.deltaTime = dt;
         params.tolerance = _pressureSolveTolerance;
         params.acceptableTolerance = _pressureSolveAcceptableTolerance;
         params.maxIterations = _maxPressureSolveIterations;
 
-        MACVelocityField vfieldLevel1 = _MACVelocity.generateCoarseGrid();
-        MACVelocityField vfieldSolidLevel1 = _solidSDF.getVelocityDataGrid()->field.generateCoarseGrid();
-        ValidVelocityComponentGrid validVelocitiesLevel1(icoarse, jcoarse, kcoarse);
-        Array3d<float> LiquidSDFLevel1 = _liquidSDF.getPhiGrid()->generateCoarseGrid();
-        WeightGrid weightGridLevel1 = _weightGrid.generateCoarseGrid();
-        Array3d<float> fluidCurvatureGridLevel1;
-        if (_isSurfaceTensionEnabled) {
-            fluidCurvatureGridLevel1 = _fluidCurvatureGrid.generateCoarseGrid();
-        }
-
-        params.velocityFieldFluid = &vfieldLevel1;
-        params.velocityFieldSolid = &vfieldSolidLevel1;
-        params.validVelocities = &validVelocitiesLevel1;
-        params.liquidSDF = &LiquidSDFLevel1;
-        params.weightGrid = &weightGridLevel1;
-        params.pressureGrid = &pressureGridLevel1;
+        params.velocityFieldFluid = &_MACVelocity;
+        params.velocityFieldSolid = &(_solidSDF.getVelocityDataGrid()->field);
+        params.validVelocities = &_validVelocities;
+        params.liquidSDF = _liquidSDF.getPhiGrid();
+        params.weightGrid = &_weightGrid;
+        params.pressureGrid = &pressureGrid;
 
         params.isSurfaceTensionEnabled = _isSurfaceTensionEnabled;
         if (_isSurfaceTensionEnabled) {
             params.surfaceTensionConstant = _surfaceTensionConstant;
-            params.curvatureGrid = &fluidCurvatureGridLevel1;
+            params.curvatureGrid = &_fluidCurvatureGrid;
         }
 
         PressureSolver psolver;
         bool success = psolver.solve(params);
-        std::string pressureSolverStatus = psolver.getSolverStatus();
-
-        timerLevel1.stop();
-    }
-    */
-
-    Array3d<float> pressureGrid(_isize, _jsize, _ksize, 0.0f);
-
-    PressureSolverParameters params;
-    params.cellwidth = _dx;
-    params.deltaTime = dt;
-    params.tolerance = _pressureSolveTolerance;
-    params.acceptableTolerance = _pressureSolveAcceptableTolerance;
-    params.maxIterations = _maxPressureSolveIterations;
-
-    params.velocityFieldFluid = &_MACVelocity;
-    params.velocityFieldSolid = &(_solidSDF.getVelocityDataGrid()->field);
-    params.validVelocities = &_validVelocities;
-    params.liquidSDF = _liquidSDF.getPhiGrid();
-    params.weightGrid = &_weightGrid;
-    params.pressureGrid = &pressureGrid;
-
-    params.isSurfaceTensionEnabled = _isSurfaceTensionEnabled;
-    if (_isSurfaceTensionEnabled) {
-        params.surfaceTensionConstant = _surfaceTensionConstant;
-        params.curvatureGrid = &_fluidCurvatureGrid;
-    }
-
-    PressureSolver psolver;
-    bool success = psolver.solve(params);
-    if (success) {
-        psolver.applySolutionToVelocityField();
-    }
-
-    _pressureSolverStatus = psolver.getSolverStatus();
-    if (_currentFrameTimeStepNumber == 0) {
-        _pressureSolverSuccess = success;
-        _pressureSolverIterations = psolver.getIterations();
-        _pressureSolverError = psolver.getError();
-    } else {
-        // Solver status should capture the first failure state
-        // Otherwise, it should capture the substep with max iterations
-        int numIterations = psolver.getIterations();
-        float error = psolver.getError();
-        if (_pressureSolverSuccess && (!success || (numIterations > _pressureSolverIterations))) {
-            _pressureSolverSuccess = success;
-            _pressureSolverIterations = numIterations;
-            _pressureSolverError = error;
+        if (success) {
+            psolver.applySolutionToVelocityField();
         }
-    }
 
-    _extrapolateFluidVelocities(_MACVelocity, _validVelocities);
+        _pressureSolverStatus = psolver.getSolverStatus();
+        if (_currentFrameTimeStepNumber == 0) {
+            _pressureSolverSuccess = success;
+            _pressureSolverIterations = psolver.getIterations();
+            _pressureSolverError = psolver.getError();
+        } else {
+            // Solver status should capture the first failure state
+            // Otherwise, it should capture the substep with max iterations
+            int numIterations = psolver.getIterations();
+            float error = psolver.getError();
+            if (_pressureSolverSuccess && (!success || (numIterations > _pressureSolverIterations))) {
+                _pressureSolverSuccess = success;
+                _pressureSolverIterations = numIterations;
+                _pressureSolverError = error;
+            }
+        }
+
+        _extrapolateFluidVelocities(_MACVelocity, _validVelocities);
+
+    }
     
     t.stop();
     _timingData.pressureSolve += t.getTime();
@@ -5985,8 +6019,12 @@ void FluidSimulation::_constrainVelocityFields() {
 
     StopWatch t;
     t.start();
-    _constrainVelocityField(_savedVelocityField);
-    _constrainVelocityField(_MACVelocity);
+
+    if (_isFluidOrWhitewaterInSimulation() || _isFluidGeneratingThisFrame()) {
+        _constrainVelocityField(_savedVelocityField);
+        _constrainVelocityField(_MACVelocity);
+    }
+
     t.stop();
     _timingData.constrainVelocityFields += t.getTime();
 
@@ -6078,129 +6116,132 @@ void FluidSimulation::_updateSheetSeeding() {
     StopWatch t;
     t.start();
 
+    if (_isFluidInSimulation()) {
 
-    ParticleSheeterParameters params;
-    params.particles = &_markerParticles;
-    params.fluidSurfaceLevelSet = &_fluidSurfaceLevelSet;
-    params.isize = _isize;
-    params.jsize = _jsize;
-    params.ksize = _ksize;
-    params.dx = _dx;
-    params.sheetFillThreshold = _sheetFillThreshold;
+        ParticleSheeterParameters params;
+        params.particles = &_markerParticles;
+        params.fluidSurfaceLevelSet = &_fluidSurfaceLevelSet;
+        params.isize = _isize;
+        params.jsize = _jsize;
+        params.ksize = _ksize;
+        params.dx = _dx;
+        params.sheetFillThreshold = _sheetFillThreshold;
 
-    std::vector<vmath::vec3> sheetParticles;
-    ParticleSheeter sheeter;
-    sheeter.generateSheetParticles(params, sheetParticles);
+        std::vector<vmath::vec3> sheetParticles;
+        ParticleSheeter sheeter;
+        sheeter.generateSheetParticles(params, sheetParticles);
 
-    std::vector<vmath::vec3> *positions, *velocities;
-    _markerParticles.getAttributeValues("POSITION", positions);
-    _markerParticles.getAttributeValues("VELOCITY", velocities);
+        std::vector<vmath::vec3> *positions, *velocities;
+        _markerParticles.getAttributeValues("POSITION", positions);
+        _markerParticles.getAttributeValues("VELOCITY", velocities);
 
-    std::vector<float> *ages;
-    Array3d<float> tempAgeAttributeGrid;
-    Array3d<bool> tempAgeAttributeValidGrid;
-    if (_isSurfaceAgeAttributeEnabled || _isFluidParticleAgeAttributeEnabled) {
-        tempAgeAttributeGrid = _ageAttributeGrid;
-        tempAgeAttributeValidGrid = _ageAttributeValidGrid;
-        _markerParticles.getAttributeValues("AGE", ages);
-        _updateMarkerParticleAgeAttributeGrid(tempAgeAttributeGrid, tempAgeAttributeValidGrid);
-    }
+        std::vector<float> *ages;
+        Array3d<float> tempAgeAttributeGrid;
+        Array3d<bool> tempAgeAttributeValidGrid;
+        if (_isSurfaceAgeAttributeEnabled || _isFluidParticleAgeAttributeEnabled) {
+            tempAgeAttributeGrid = _ageAttributeGrid;
+            tempAgeAttributeValidGrid = _ageAttributeValidGrid;
+            _markerParticles.getAttributeValues("AGE", ages);
+            _updateMarkerParticleAgeAttributeGrid(tempAgeAttributeGrid, tempAgeAttributeValidGrid);
+        }
 
-    std::vector<float> *lifetimes;
-    Array3d<float> tempLifetimeAttributeGrid;
-    Array3d<bool> tempLifetimeAttributeValidGrid;
-    if (_isSurfaceLifetimeAttributeEnabled || _isFluidParticleLifetimeAttributeEnabled) {
-        tempLifetimeAttributeGrid = _lifetimeAttributeGrid;
-        tempLifetimeAttributeValidGrid = _lifetimeAttributeValidGrid;
-        _markerParticles.getAttributeValues("LIFETIME", lifetimes);
-        _updateMarkerParticleLifetimeAttributeGrid(tempLifetimeAttributeGrid, tempLifetimeAttributeValidGrid);
-    }
+        std::vector<float> *lifetimes;
+        Array3d<float> tempLifetimeAttributeGrid;
+        Array3d<bool> tempLifetimeAttributeValidGrid;
+        if (_isSurfaceLifetimeAttributeEnabled || _isFluidParticleLifetimeAttributeEnabled) {
+            tempLifetimeAttributeGrid = _lifetimeAttributeGrid;
+            tempLifetimeAttributeValidGrid = _lifetimeAttributeValidGrid;
+            _markerParticles.getAttributeValues("LIFETIME", lifetimes);
+            _updateMarkerParticleLifetimeAttributeGrid(tempLifetimeAttributeGrid, tempLifetimeAttributeValidGrid);
+        }
 
-    std::vector<float> *viscosities;
-    Array3d<float> tempViscosityAttributeGrid;
-    Array3d<bool> tempViscosityAttributeValidGrid;
-    if (_isSurfaceSourceViscosityAttributeEnabled) {
-        tempViscosityAttributeGrid = _viscosityAttributeGrid;
-        tempViscosityAttributeValidGrid = _viscosityAttributeValidGrid;
-        _markerParticles.getAttributeValues("VISCOSITY", viscosities);
-        _updateMarkerParticleViscosityAttributeGrid(tempViscosityAttributeGrid, tempViscosityAttributeValidGrid);
-    }
+        std::vector<float> *viscosities;
+        Array3d<float> tempViscosityAttributeGrid;
+        Array3d<bool> tempViscosityAttributeValidGrid;
+        if (_isSurfaceSourceViscosityAttributeEnabled) {
+            tempViscosityAttributeGrid = _viscosityAttributeGrid;
+            tempViscosityAttributeValidGrid = _viscosityAttributeValidGrid;
+            _markerParticles.getAttributeValues("VISCOSITY", viscosities);
+            _updateMarkerParticleViscosityAttributeGrid(tempViscosityAttributeGrid, tempViscosityAttributeValidGrid);
+        }
 
-    std::vector<uint16_t> *ids;
-    if (_isFluidParticleIDAttributeEnabled) {
-        _markerParticles.getAttributeValues("ID", ids);
-    }
+        std::vector<uint16_t> *ids;
+        if (_isFluidParticleIDAttributeEnabled) {
+            _markerParticles.getAttributeValues("ID", ids);
+        }
 
-    std::vector<vmath::vec3> *colors;
-    Array3d<float> tempColorAttributeGridR;
-    Array3d<float> tempColorAttributeGridG;
-    Array3d<float> tempColorAttributeGridB;
-    Array3d<bool> tempColorAttributeValidGrid;
-    if (_isSurfaceSourceColorAttributeEnabled || _isFluidParticleSourceColorAttributeEnabled) {
-        tempColorAttributeGridR = _colorAttributeGridR;
-        tempColorAttributeGridG = _colorAttributeGridG;
-        tempColorAttributeGridB = _colorAttributeGridB;
-        tempColorAttributeValidGrid = _colorAttributeValidGrid;
-        _markerParticles.getAttributeValues("COLOR", colors);
-        _updateMarkerParticleColorAttributeGrid(tempColorAttributeGridR,
-                                                tempColorAttributeGridG,
-                                                tempColorAttributeGridB,
-                                                tempColorAttributeValidGrid);
-    }
+        std::vector<vmath::vec3> *colors;
+        Array3d<float> tempColorAttributeGridR;
+        Array3d<float> tempColorAttributeGridG;
+        Array3d<float> tempColorAttributeGridB;
+        Array3d<bool> tempColorAttributeValidGrid;
+        if (_isSurfaceSourceColorAttributeEnabled || _isFluidParticleSourceColorAttributeEnabled) {
+            tempColorAttributeGridR = _colorAttributeGridR;
+            tempColorAttributeGridG = _colorAttributeGridG;
+            tempColorAttributeGridB = _colorAttributeGridB;
+            tempColorAttributeValidGrid = _colorAttributeValidGrid;
+            _markerParticles.getAttributeValues("COLOR", colors);
+            _updateMarkerParticleColorAttributeGrid(tempColorAttributeGridR,
+                                                    tempColorAttributeGridG,
+                                                    tempColorAttributeGridB,
+                                                    tempColorAttributeValidGrid);
+        }
 
-    vmath::vec3 goffset(0.5f * _dx, 0.5f * _dx, 0.5f * _dx);
-    float solidSheetingWidth = 2.0f * _dx;
-    for (size_t i = 0; i < sheetParticles.size(); i++) {
-        vmath::vec3 p = sheetParticles[i];
-        float sheetFillRate = _sheetFillRate;
-        if (_solidSDF.trilinearInterpolate(p) < solidSheetingWidth) {
-            GridIndex g = Grid3d::positionToGridIndex(p, _dx);
-            if (Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize)) {
-                MeshObject *obj = _solidSDF.getClosestMeshObject(g);
-                if (obj != nullptr) {
-                    sheetFillRate = _clamp(sheetFillRate * obj->getSheetingStrength(), 0.0f, 1.0f);
+        vmath::vec3 goffset(0.5f * _dx, 0.5f * _dx, 0.5f * _dx);
+        float solidSheetingWidth = 2.0f * _dx;
+        for (size_t i = 0; i < sheetParticles.size(); i++) {
+            vmath::vec3 p = sheetParticles[i];
+            float sheetFillRate = _sheetFillRate;
+            if (_solidSDF.trilinearInterpolate(p) < solidSheetingWidth) {
+                GridIndex g = Grid3d::positionToGridIndex(p, _dx);
+                if (Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize)) {
+                    MeshObject *obj = _solidSDF.getClosestMeshObject(g);
+                    if (obj != nullptr) {
+                        sheetFillRate = _clamp(sheetFillRate * obj->getSheetingStrength(), 0.0f, 1.0f);
+                    }
                 }
+            }
+
+            if (_randomDouble(0.0, 1.0) > sheetFillRate) {
+                continue;
+            }
+
+            vmath::vec3 v = _savedVelocityField.evaluateVelocityAtPositionLinear(p);
+            positions->push_back(p);
+            velocities->push_back(v);
+
+            if (_isSurfaceAgeAttributeEnabled || _isFluidParticleAgeAttributeEnabled) {
+                float age = Interpolation::trilinearInterpolate(p - goffset, _dx, tempAgeAttributeGrid);
+                ages->push_back(age);
+            }
+
+            if (_isSurfaceLifetimeAttributeEnabled || _isSurfaceLifetimeAttributeEnabled) {
+                float lifetime = Interpolation::trilinearInterpolate(p - goffset, _dx, tempLifetimeAttributeGrid);
+                lifetimes->push_back(lifetime);
+            }
+
+            if (_isSurfaceSourceViscosityAttributeEnabled) {
+                float viscosity = Interpolation::trilinearInterpolate(p - goffset, _dx, tempViscosityAttributeGrid);
+                viscosities->push_back(viscosity);
+            }
+
+            if (_isFluidParticleIDAttributeEnabled) {
+                uint16_t idval = _generateRandomFluidParticleID();
+                ids->push_back(idval);
+            }
+
+            if (_isSurfaceSourceColorAttributeEnabled || _isFluidParticleSourceColorAttributeEnabled) {
+                float r = Interpolation::trilinearInterpolate(p - goffset, _dx, tempColorAttributeGridR);
+                float g = Interpolation::trilinearInterpolate(p - goffset, _dx, tempColorAttributeGridG);
+                float b = Interpolation::trilinearInterpolate(p - goffset, _dx, tempColorAttributeGridB);
+                vmath::vec3 color(r, g, b);
+                colors->push_back(color);
             }
         }
 
-        if (_randomDouble(0.0, 1.0) > sheetFillRate) {
-            continue;
-        }
+        _markerParticles.update();
 
-        vmath::vec3 v = _savedVelocityField.evaluateVelocityAtPositionLinear(p);
-        positions->push_back(p);
-        velocities->push_back(v);
-
-        if (_isSurfaceAgeAttributeEnabled || _isFluidParticleAgeAttributeEnabled) {
-            float age = Interpolation::trilinearInterpolate(p - goffset, _dx, tempAgeAttributeGrid);
-            ages->push_back(age);
-        }
-
-        if (_isSurfaceLifetimeAttributeEnabled || _isSurfaceLifetimeAttributeEnabled) {
-            float lifetime = Interpolation::trilinearInterpolate(p - goffset, _dx, tempLifetimeAttributeGrid);
-            lifetimes->push_back(lifetime);
-        }
-
-        if (_isSurfaceSourceViscosityAttributeEnabled) {
-            float viscosity = Interpolation::trilinearInterpolate(p - goffset, _dx, tempViscosityAttributeGrid);
-            viscosities->push_back(viscosity);
-        }
-
-        if (_isFluidParticleIDAttributeEnabled) {
-            uint16_t idval = _generateRandomFluidParticleID();
-            ids->push_back(idval);
-        }
-
-        if (_isSurfaceSourceColorAttributeEnabled || _isFluidParticleSourceColorAttributeEnabled) {
-            float r = Interpolation::trilinearInterpolate(p - goffset, _dx, tempColorAttributeGridR);
-            float g = Interpolation::trilinearInterpolate(p - goffset, _dx, tempColorAttributeGridG);
-            float b = Interpolation::trilinearInterpolate(p - goffset, _dx, tempColorAttributeGridB);
-            vmath::vec3 color(r, g, b);
-            colors->push_back(color);
-        }
     }
-
-    _markerParticles.update();
 
     t.stop();
 
@@ -6975,12 +7016,14 @@ void FluidSimulation::_updateMarkerParticleAttributes(double dt) {
     StopWatch t;
     t.start();
 
-    _updateMarkerParticleVelocityBasedAttributes();
-    _updateMarkerParticleAgeAttribute(dt);
-    _updateMarkerParticleLifetimeAttribute(dt);
-    _updateMarkerParticleWhitewaterProximityAttribute();
-    _updateMarkerParticleViscosityAttribute();
-    _updateMarkerParticleColorAttribute(dt);
+    if (_isFluidInSimulation()) {
+        _updateMarkerParticleVelocityBasedAttributes();
+        _updateMarkerParticleAgeAttribute(dt);
+        _updateMarkerParticleLifetimeAttribute(dt);
+        _updateMarkerParticleWhitewaterProximityAttribute();
+        _updateMarkerParticleViscosityAttribute();
+        _updateMarkerParticleColorAttribute(dt);
+    }
 
     t.stop();
     _timingData.updateMarkerParticleVelocities += t.getTime();
@@ -7234,38 +7277,42 @@ void FluidSimulation::_advanceMarkerParticles(double dt) {
     StopWatch t;
     t.start();
 
-    std::vector<vmath::vec3> *positions, *velocities;
-    _markerParticles.getAttributeValues("POSITION", positions);
-    _markerParticles.getAttributeValues("VELOCITY", velocities);
-    
-    std::vector<vmath::vec3> positionsCopy = *positions;
+    if (_isFluidInSimulation()) {
 
-    int numCPU = ThreadUtils::getMaxThreadCount();
-    int numthreads = (int)fmin(numCPU, positionsCopy.size());
-    std::vector<std::thread> threads(numthreads);
-    std::vector<vmath::vec3> output(positionsCopy.size());
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, positionsCopy.size(), numthreads);
-    for (int i = 0; i < numthreads; i++) {
-        threads[i] = std::thread(&FluidSimulation::_advanceMarkerParticlesThread, this,
-                                 dt, intervals[i], intervals[i + 1], &positionsCopy, &output);
-    }
+        std::vector<vmath::vec3> *positions, *velocities;
+        _markerParticles.getAttributeValues("POSITION", positions);
+        _markerParticles.getAttributeValues("VELOCITY", velocities);
+        
+        std::vector<vmath::vec3> positionsCopy = *positions;
 
-    for (int i = 0; i < numthreads; i++) {
-        threads[i].join();
-    }
-
-    for (size_t i = 0; i < _markerParticles.size(); i++) {
-        float distanceTravelled = vmath::length(positions->at(i) - output[i]);
-        if (distanceTravelled < 1e-6) {
-            // In the rare case that a particle did not move, it could be
-            // that this particle is stuck. Velocity should be set to 0.0
-            // which helps the particle 'reset' and become unstuck.
-            //velocities->at(i) = vmath::vec3();
+        int numCPU = ThreadUtils::getMaxThreadCount();
+        int numthreads = (int)fmin(numCPU, positionsCopy.size());
+        std::vector<std::thread> threads(numthreads);
+        std::vector<vmath::vec3> output(positionsCopy.size());
+        std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, positionsCopy.size(), numthreads);
+        for (int i = 0; i < numthreads; i++) {
+            threads[i] = std::thread(&FluidSimulation::_advanceMarkerParticlesThread, this,
+                                     dt, intervals[i], intervals[i + 1], &positionsCopy, &output);
         }
-        positions->at(i) = output[i];
-    }
 
-    _removeMarkerParticles(_currentFrameDeltaTime);
+        for (int i = 0; i < numthreads; i++) {
+            threads[i].join();
+        }
+
+        for (size_t i = 0; i < _markerParticles.size(); i++) {
+            float distanceTravelled = vmath::length(positions->at(i) - output[i]);
+            if (distanceTravelled < 1e-6) {
+                // In the rare case that a particle did not move, it could be
+                // that this particle is stuck. Velocity should be set to 0.0
+                // which helps the particle 'reset' and become unstuck.
+                //velocities->at(i) = vmath::vec3();
+            }
+            positions->at(i) = output[i];
+        }
+
+        _removeMarkerParticles(_currentFrameDeltaTime);
+
+    }
 
     t.stop();
     _timingData.advanceMarkerParticles += t.getTime();
@@ -7690,9 +7737,48 @@ void FluidSimulation::_updateOutflowMeshFluidSources() {
     }
 }
 
+void FluidSimulation::_updateOutflowBoundary() {
+    AABB boundaryAABB = _getBoundaryAABB();
+    vmath::vec3 minp = boundaryAABB.getMinPoint();
+    vmath::vec3 maxp = boundaryAABB.getMaxPoint();
+    float buffer = _openBoundaryWidth * _dx;
+    float infNeg = -std::numeric_limits<float>::infinity();
+    float infPos = std::numeric_limits<float>::infinity();
+
+    float boundaryXNeg = _openBoundaryXNeg ? minp.x + buffer : infNeg;
+    float boundaryXPos = _openBoundaryXPos ? maxp.x - buffer : infPos;
+    float boundaryYNeg = _openBoundaryYNeg ? minp.y + buffer : infNeg;
+    float boundaryYPos = _openBoundaryYPos ? maxp.y - buffer : infPos;
+    float boundaryZNeg = _openBoundaryZNeg ? minp.z + buffer : infNeg;
+    float boundaryZPos = _openBoundaryZPos ? maxp.z - buffer : infPos;
+    bool isBoundaryAllClosed = !_openBoundaryXNeg && !_openBoundaryXPos &&
+                               !_openBoundaryYNeg && !_openBoundaryYPos &&
+                               !_openBoundaryZNeg && !_openBoundaryZPos;
+
+    if (isBoundaryAllClosed) {
+        return;
+    }
+
+    std::vector<vmath::vec3> *positions;
+    _markerParticles.getAttributeValues("POSITION", positions);
+
+    std::vector<bool> isRemoved(_markerParticles.size(), false);
+    for (size_t i = 0; i < _markerParticles.size(); i++) {
+        vmath::vec3 position = positions->at(i);
+        if (position.x < boundaryXNeg || position.x > boundaryXPos ||
+                position.y < boundaryYNeg || position.y > boundaryYPos ||
+                position.z < boundaryZNeg || position.z > boundaryZPos) {
+            isRemoved[i] = true;
+        }
+    }
+
+    _markerParticles.removeParticles(isRemoved);
+}
+
 void FluidSimulation::_updateMeshFluidSources() {
     _updateInflowMeshFluidSources();
     _updateOutflowMeshFluidSources();
+    _updateOutflowBoundary();
 }
 
 void FluidSimulation::_updateAddedFluidMeshObjectQueue() {
@@ -8590,7 +8676,9 @@ void FluidSimulation::_launchOutputSurfaceMeshThread() {
 
     // solidSDF will be deleted within the thread after use
     MeshLevelSet *tempSolidSDF = new MeshLevelSet();
-    tempSolidSDF->constructMinimalSignedDistanceField(_solidSDF);
+    if (_isFluidInSimulation()) {
+        tempSolidSDF->constructMinimalSignedDistanceField(_solidSDF);
+    }
 
     // Velocity Field will be deleted within the thread after use
     MACVelocityField *vfield = new MACVelocityField();
@@ -8830,7 +8918,7 @@ void FluidSimulation::_classifyFluidParticleTypesThread(int startidx, int endidx
             if (d >= 0 && (d <= meshingVolumeBoundaryWidth || isOnBoundary)) {
                 fluidParticleTypes->at(i) = MarkerParticleType::boundary;
                 continue;
-            } else if (d > 0) {
+            } else if (d < 0) {
                 fluidParticleTypes->at(i) = MarkerParticleType::unset;
                 continue;
             }
@@ -8984,10 +9072,12 @@ void FluidSimulation::_outputFluidParticles() {
     }
 
     // TODO: Optimize to avoid repeated computations
-    _launchUpdateLiquidLevelSetThread();
-    _joinUpdateLiquidLevelSetThread();
-    _launchCalculateFluidCurvatureGridThread();
-    _joinCalculateFluidCurvatureGridThread();
+    if (_isFluidInSimulation()) {
+        _launchUpdateLiquidLevelSetThread();
+        _joinUpdateLiquidLevelSetThread();
+        _launchCalculateFluidCurvatureGridThread();
+        _joinCalculateFluidCurvatureGridThread();
+    }
 
     /*
         Fluid Particle Positions
@@ -9379,6 +9469,29 @@ void FluidSimulation::_stepFluid(double dt) {
     }
 }
 
+bool FluidSimulation::_isFluidGeneratingThisFrame() {
+    bool isInflowGenerating = false;
+    for (size_t i = 0; i < _meshFluidSources.size(); i++) {
+        if (_meshFluidSources[i]->isInflow() && _meshFluidSources[i]->isEnabled()) {
+            isInflowGenerating = true;
+            break;
+        }
+    }
+
+    bool isFluidObjectGenerating = !_addedFluidMeshObjectQueue.empty();
+
+    return isInflowGenerating || isFluidObjectGenerating;
+}
+
+bool FluidSimulation::_isFluidOrWhitewaterInSimulation() {
+    ParticleSystem *whitewaterParticles = _diffuseMaterial.getDiffuseParticles();
+    return !_markerParticles.empty() || !whitewaterParticles->empty();
+}
+
+bool FluidSimulation::_isFluidInSimulation() {
+    return !_markerParticles.empty();
+}
+
 double FluidSimulation::_getMaximumMeshObjectFluidVelocity(MeshObject *object, 
                                                            vmath::vec3 fluidVelocity) {
     double maxu = 0.0;
@@ -9473,12 +9586,15 @@ double FluidSimulation::_calculateNextTimeStep(double dt) {
     } else {
         maxu = _getMaximumMarkerParticleSpeed();
     }
-    maxu = fmax(_getMaximumObstacleSpeed(dt), maxu);
+
+    if (_isFluidInSimulation() || _isFluidGeneratingThisFrame()) {
+        maxu = fmax(_getMaximumObstacleSpeed(dt), maxu);
+    }
 
     double eps = 1e-6;
     double timeStep = _CFLConditionNumber * _dx / (maxu + eps);
 
-    if (_isSurfaceTensionEnabled) {
+    if (_isSurfaceTensionEnabled && (_isFluidInSimulation() || _isFluidGeneratingThisFrame())) {
         double restriction = sqrt(_dx * _dx * _dx) * sqrt(1.0 / (_surfaceTensionConstant + eps));
         timeStep = fmin(timeStep, _surfaceTensionConditionNumber * restriction);
     }
@@ -9674,8 +9790,8 @@ void FluidSimulation::update(double dt) {
     _viscositySolverIterations = 0;
     _viscositySolverError = 0.0f;
 
-    int totalFluidParticlesProcessed = 0;
-    float totalFluidParticlesProcessedTime = 0.0f;
+    size_t totalFluidParticlesProcessed = 0;
+    double totalFluidParticlesProcessedTime = 0.0f;
 
     double eps = 1e-9;
     do {
@@ -9723,7 +9839,7 @@ void FluidSimulation::update(double dt) {
         _logfile.newline();
 
         totalFluidParticlesProcessed += _markerParticles.size();
-        totalFluidParticlesProcessedTime += (float)stepTimer.getTime();
+        totalFluidParticlesProcessedTime += stepTimer.getTime();
 
         _currentFrameTimeStepNumber++;
     } while (_currentFrameDeltaTimeRemaining > eps);
@@ -9732,7 +9848,7 @@ void FluidSimulation::update(double dt) {
     _timingData.frameTime = frameTimer.getTime();
     _totalSimulationTime += frameTimer.getTime();
 
-    _currentPerformanceScore = (int)((float)totalFluidParticlesProcessed / totalFluidParticlesProcessedTime) / (1000.0f);
+    _currentPerformanceScore = (int)(((double)totalFluidParticlesProcessed / totalFluidParticlesProcessedTime) / 1000.0);
 
     _updateTimingData();
     _logFrameInfo();

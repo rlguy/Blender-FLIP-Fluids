@@ -5,7 +5,7 @@ the MIT License:
 
 MIT License
 
-Copyright (C) 2023 Ryan L. Guy
+Copyright (C) 2024 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

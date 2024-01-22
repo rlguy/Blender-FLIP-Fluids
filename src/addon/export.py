@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2023 Ryan L. Guy
+# Copyright (C) 2024 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -411,8 +411,13 @@ def __generate_meshing_volume_export_object(bl_meshing_object, bl_domain_object)
 def add_objects_to_geometry_exporter(geometry_exporter):
     domain = bpy.context.scene.flip_fluid.get_domain_object()
     dprops = bpy.context.scene.flip_fluid.get_domain_properties()
-    objects = bpy.context.scene.flip_fluid.get_simulation_objects()
+
+    # Objects disabled in the viewport shouldn't be exported for the simulation, so skip these
+    objects = bpy.context.scene.flip_fluid.get_simulation_objects(skip_hide_viewport=True)
     disable_topology_warning = dprops.advanced.disable_changing_topology_warning
+
+    for obj in objects:
+        print(obj)
 
     # Add regular FLIP Fluid objects
     for obj in objects:
@@ -472,11 +477,13 @@ def export_simulation_data(context, data_filepath):
 
     simulation_objects = flip_fluid_map.Map({})
     simulation_objects.domain = domain_object
-    simulation_objects.fluid_objects = simprops.get_fluid_objects()
-    simulation_objects.obstacle_objects = simprops.get_obstacle_objects()
-    simulation_objects.inflow_objects = simprops.get_inflow_objects()
-    simulation_objects.outflow_objects = simprops.get_outflow_objects()
-    simulation_objects.force_field_objects = simprops.get_force_field_objects()
+
+    # Objects disabled in the viewport shouldn't be exported for the simulation, so skip these
+    simulation_objects.fluid_objects = simprops.get_fluid_objects(skip_hide_viewport=True)
+    simulation_objects.obstacle_objects = simprops.get_obstacle_objects(skip_hide_viewport=True)
+    simulation_objects.inflow_objects = simprops.get_inflow_objects(skip_hide_viewport=True)
+    simulation_objects.outflow_objects = simprops.get_outflow_objects(skip_hide_viewport=True)
+    simulation_objects.force_field_objects = simprops.get_force_field_objects(skip_hide_viewport=True)
 
     success = __export_simulation_data_to_file(context, simulation_objects, data_filepath)
 

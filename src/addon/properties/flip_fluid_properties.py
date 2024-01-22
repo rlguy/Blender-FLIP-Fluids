@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2023 Ryan L. Guy
+# Copyright (C) 2024 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -119,9 +119,11 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
         return n
 
 
-    def get_fluid_objects(self):
+    def get_fluid_objects(self, skip_hide_viewport=False):
         objects = []
         for obj in vcu.get_all_scene_objects():
+            if skip_hide_viewport and obj.hide_viewport:
+                continue
             if obj.flip_fluid.is_fluid():
                 objects.append(obj)
         return objects
@@ -135,9 +137,11 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
         return n
 
 
-    def get_obstacle_objects(self):
+    def get_obstacle_objects(self, skip_hide_viewport=False):
         objects = []
         for obj in vcu.get_all_scene_objects():
+            if skip_hide_viewport and obj.hide_viewport:
+                continue
             if obj.flip_fluid.is_obstacle():
                 objects.append(obj)
         return objects
@@ -151,9 +155,11 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
         return n
 
 
-    def get_inflow_objects(self):
+    def get_inflow_objects(self, skip_hide_viewport=False):
         objects = []
         for obj in vcu.get_all_scene_objects():
+            if skip_hide_viewport and obj.hide_viewport:
+                continue
             if obj.flip_fluid.is_inflow():
                 objects.append(obj)
         return objects
@@ -167,9 +173,11 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
         return n
 
 
-    def get_outflow_objects(self):
+    def get_outflow_objects(self, skip_hide_viewport=False):
         objects = []
         for obj in vcu.get_all_scene_objects():
+            if skip_hide_viewport and obj.hide_viewport:
+                continue
             if obj.flip_fluid.is_outflow():
                 objects.append(obj)
         return objects
@@ -183,18 +191,22 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
         return n
 
 
-    def get_force_field_objects(self):
+    def get_force_field_objects(self, skip_hide_viewport=False):
         objects = []
         for obj in vcu.get_all_scene_objects():
+            if skip_hide_viewport and obj.hide_viewport:
+                continue
             if obj.flip_fluid.is_force_field():
                 objects.append(obj)
         return objects
 
 
-    def get_simulation_objects(self):
+    def get_simulation_objects(self, skip_hide_viewport=False):
         objects = []
         for obj in vcu.get_all_scene_objects():
             if obj.flip_fluid.is_active:
+                if skip_hide_viewport and obj.hide_viewport:
+                    continue
                 if obj.flip_fluid.is_domain():
                     # get all FLIP Fluid objects that are not a domain
                     continue
