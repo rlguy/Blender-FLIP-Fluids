@@ -60,18 +60,37 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             options={'HIDDEN'},
             ); exec(conv("playback_frame_offset"))
 
-    cmd_launch_render_after_bake = BoolProperty(
-            name="Render After Bake",
-            description="After the command line bake process is finished, begin rendering animation",
+    cmd_bake_and_render = BoolProperty(
+            name="Bake and Render",
+            description="Enable both baking and rendering in the command line process",
             default=False,
-            ); exec(conv("cmd_launch_render_after_bake"))
-    cmd_launch_render_mode = EnumProperty(
-            name="CMD Render Mode",
-            description="Frame range to use for baking the simulation",
-            items=types.cmd_render_mode,
+            ); exec(conv("cmd_bake_and_render"))
+    cmd_bake_and_render_mode = EnumProperty(
+            name="CMD Bake and Render Mode",
+            description="How to bake and render the simulation",
+            items=types.cmd_bake_and_render_mode,
+            default='CMD_BAKE_AND_RENDER_MODE_SEQUENCE',
+            options={'HIDDEN'},
+            ); exec(conv("cmd_bake_and_render_mode"))
+    cmd_launch_render_after_bake_mode = EnumProperty(
+            name="CMD Render After Bake Mode",
+            description="How to render the simulation after the baking process finishes",
+            items=types.cmd_render_after_bake_mode,
             default='CMD_RENDER_MODE_NORMAL',
             options={'HIDDEN'},
-            ); exec(conv("cmd_launch_render_mode"))
+            ); exec(conv("cmd_launch_render_after_bake_mode"))
+    cmd_bake_and_render_interleaved_instances = IntProperty(
+            name="Render Instances",
+            description="Maximum number of render instances to run simultaneously. This number is how many frames"
+                " are allowed to be rendered at the same time. More render instances maximizes system resource usage"
+                " if the simulation is running faster than the render but will require more RAM and also VRAM if"
+                " rendering on the GPU",
+            default=1,
+            min=1,
+            soft_max=8,
+            options={'HIDDEN'},
+            ); exec(conv("cmd_bake_and_render_interleaved_instances"))
+
     cmd_open_image_after_render = BoolProperty(
             name="Open Image After Render",
             description="After the command line render process is finished, open the image in your default OS image program",

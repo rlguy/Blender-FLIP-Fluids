@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2023 Ryan L. Guy
+# Copyright (C) 2024 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -758,7 +758,11 @@ def __delete_outdated_savestates(cache_directory, savestate_id):
         if savestate_number > savestate_id:
             path = os.path.join(savestate_directory, d)
             try:
-                fpl.delete_files_in_directory(path, extensions, remove_directory=True)
+                fpl.delete_files_in_directory(
+                        path, extensions, 
+                        remove_directory=True, 
+                        display_popup_on_error=False
+                        )
             except:
                 print("Error: unable to delete directory <" + path + "> (skipping)")
 
@@ -828,15 +832,27 @@ def __load_save_state_data(fluidsim, data, cache_directory, savestate_id):
             backup_autosave_directory = current_autosave_directory + ".backup"
             if os.path.isdir(backup_autosave_directory):
                 # Backup autosave directory may already exist from a previous bake, remove if so
-                fpl.delete_files_in_directory(backup_autosave_directory, [".state", ".data"], remove_directory=True)
+                fpl.delete_files_in_directory(
+                        backup_autosave_directory, [".state", ".data"], 
+                        remove_directory=True, 
+                        display_popup_on_error=False
+                        )
             os.rename(current_autosave_directory, backup_autosave_directory)
             try:
                 old_directory = autosave_directory
                 new_directory = os.path.join(savestate_directory, "autosave")
                 shutil.copytree(old_directory, new_directory, dirs_exist_ok=True)
-                fpl.delete_files_in_directory(backup_autosave_directory, [".state", ".data"], remove_directory=True)
+                fpl.delete_files_in_directory(
+                        backup_autosave_directory, [".state", ".data"], 
+                        remove_directory=True, 
+                        display_popup_on_error=False
+                        )
             except Exception as e:
-                os.rename(backup_autosave_directory, current_autosave_directory)
+                try:
+                    os.rename(backup_autosave_directory, current_autosave_directory)
+                except FileNotFoundError:
+                    pass
+                raise
 
     if init_data.delete_outdated_meshes:
         __delete_outdated_meshes(cache_directory, autosave_info["frame"])
@@ -2884,7 +2900,7 @@ def __write_autosave_data(domain_data, cache_directory, fluidsim, frameno):
                           )
         for filepath in data_filepaths:
             if os.path.isfile(filepath):
-                fpl.delete_file(filepath)
+                fpl.delete_file(filepath, display_popup_on_error=False)
     except Exception as e:
         print("FLIP Fluids: OS/Filesystem Error: Unable to delete older autosave files from storage")
         print("Error Message: ", e)
@@ -2931,8 +2947,21 @@ def __write_autosave_data(domain_data, cache_directory, fluidsim, frameno):
             numstr = str(frameno).zfill(6)
             savestate_dir = os.path.join(cache_directory, "savestates", "autosave" + numstr)
             if os.path.isdir(savestate_dir):
-                fpl.delete_files_in_directory(savestate_dir, [".state", ".data"], remove_directory=True)
+                fpl.delete_files_in_directory(
+                        savestate_dir, [".state", ".data"], 
+                        remove_directory=True, 
+                        display_popup_on_error=False
+                        )
             shutil.copytree(autosave_dir, savestate_dir, dirs_exist_ok=True)
+
+
+def __write_finished_file(cache_directory, frameno):
+    fstring = __frame_number_to_string(frameno)
+    finished_filename = "finished" + fstring + ".txt"
+    finished_filepath = os.path.join(cache_directory, "bakefiles", finished_filename)
+    filestring = fstring
+    with open(finished_filepath, 'w') as f:
+        f.write(filestring)
 
 
 def __write_simulation_output(domain_data, fluidsim, frameno, cache_directory):
@@ -2959,6 +2988,7 @@ def __write_simulation_output(domain_data, fluidsim, frameno, cache_directory):
     __write_logfile_data(cache_directory, domain_data.initialize.logfile_name, fluidsim)
     __write_frame_stats_data(cache_directory, fluidsim, frameno)
     __write_autosave_data(domain_data, cache_directory, fluidsim, frameno)
+    __write_finished_file(cache_directory, frameno)
 
 
 def __get_current_frame_delta_time(domain_data, frameno):

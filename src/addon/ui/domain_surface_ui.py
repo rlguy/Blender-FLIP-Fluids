@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2023 Ryan L. Guy
+# Copyright (C) 2024 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ from ..utils import installation_utils
 def _draw_geometry_attributes_menu(self, context):
     obj = vcu.get_active_object(context)
     sprops = obj.flip_fluid.domain.surface
+    rprops = obj.flip_fluid.domain.render
     show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
 
     #
@@ -63,6 +64,26 @@ def _draw_geometry_attributes_menu(self, context):
             column.label(text="Geometry attribute features for the fluid surface are only available in", icon='ERROR')
             column.label(text="Blender 2.93 or later. Blender 3.1 or later recommended.", icon='ERROR')
             return
+
+        is_preview_mode_enabled = rprops.viewport_display == 'DISPLAY_PREVIEW'
+        is_attributes_enabled = (
+                sprops.enable_velocity_vector_attribute or
+                sprops.enable_speed_attribute or
+                sprops.enable_vorticity_vector_attribute or
+                sprops.enable_color_attribute or
+                sprops.enable_age_attribute or
+                sprops.enable_lifetime_attribute or
+                sprops.enable_whitewater_proximity_attribute or
+                sprops.enable_source_id_attribute or
+                sprops.enable_viscosity_attribute
+                )
+
+        if is_preview_mode_enabled and is_attributes_enabled:
+            row = box.row(align=True)
+            row.alert = True
+            row.alignment = 'LEFT'
+            row.prop(sprops, "preview_mode_attributes_tooltip", icon="QUESTION", emboss=False, text="")
+            row.label(text="Warning: Surface attributes will not be loaded in mesh Preview Mode")
 
         #
         # Velocity Attributes

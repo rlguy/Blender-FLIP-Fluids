@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2023 Ryan L. Guy
+Copyright (C) 2024 Ryan L. Guy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -1738,6 +1738,9 @@ private:
     void _logStepInfo();
     void _logFrameInfo();
     void _logGreeting();
+    bool _isFluidGeneratingThisFrame();
+    bool _isFluidOrWhitewaterInSimulation();
+    bool _isFluidInSimulation();
     void _stepFluid(double dt);
 
     /*
@@ -1936,6 +1939,7 @@ private:
     void _updateMeshFluidSources();
     void _updateInflowMeshFluidSources();
     void _updateOutflowMeshFluidSources();
+    void _updateOutflowBoundary();
     void _updateInflowMeshFluidSource(MeshFluidSource *source, ParticleMaskGrid &maskgrid);
     void _updateOutflowMeshFluidSource(MeshFluidSource *source);
     int _getNumFluidCells();

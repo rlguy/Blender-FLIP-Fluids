@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2023 Ryan L. Guy
+# Copyright (C) 2024 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -129,7 +129,7 @@ def check_directory_valid(base_directory):
         raise FilesystemProtectionError(error_msg)
 
 
-def delete_files_in_directory(base_directory, extensions, remove_directory=False):
+def delete_files_in_directory(base_directory, extensions, remove_directory=False, display_popup_on_error=True):
     extension_blacklist = get_delete_directory_extension_blacklist()
     for ext in extension_blacklist:
         if ext in extensions:
@@ -169,17 +169,23 @@ def delete_files_in_directory(base_directory, extensions, remove_directory=False
                 first_error = str(e)
 
     if remove_error_count > 0:
-        errmsg = "Error encountered attempting to remove " + str(remove_error_count) + " file(s). Reason: <" + first_error + ">. "
+        errmsg = "Error encountered attempting to remove " + str(remove_error_count) + " file(s) in <" + base_directory + ">. Reason: <" + first_error + ">. "
         errmsg += "Try closing all applications accessing the directory, restarting Blender/System, or deleting directory manually."
-        bpy.ops.flip_fluid_operators.display_error(
-                'INVOKE_DEFAULT',
-                error_message="Error Removing Files",
-                error_description=errmsg,
-                popup_width=700
-                )
+        if display_popup_on_error:
+            # Method may be run from bake.py script where there is not window from this context
+            # in this case, 'display_popup_on_error' should be set so this operator does not run.
+            bpy.ops.flip_fluid_operators.display_error(
+                    'INVOKE_DEFAULT',
+                    error_message="Error Removing Files",
+                    error_description=errmsg,
+                    popup_width=700
+                    )
+        else:
+            print(errmsg)
+            raise PermissionError(errmsg)
 
 
-def delete_file(filepath, error_ok=False):
+def delete_file(filepath, error_ok=False, display_popup_on_error=True):
     if not os.path.isfile(filepath):
         return
 
@@ -194,12 +200,18 @@ def delete_file(filepath, error_ok=False):
             pass
         else:
             errmsg = "Error encountered attempting to remove file. Reason: <" + str(e) + ">."
-            bpy.ops.flip_fluid_operators.display_error(
-                    'INVOKE_DEFAULT',
-                    error_message="Error Removing Files",
-                    error_description=errmsg,
-                    popup_width=700
-                    )
+            if display_popup_on_error:
+                # Method may be run from bake.py script where there is not window from this context
+                # in this case, 'display_popup_on_error' should be set so this operator does not run.
+                bpy.ops.flip_fluid_operators.display_error(
+                        'INVOKE_DEFAULT',
+                        error_message="Error Removing Files",
+                        error_description=errmsg,
+                        popup_width=700
+                        )
+            else:
+                print(errmsg)
+                raise PermissionError(errmsg)
 
 
 def clear_cache_directory(cache_directory, clear_export=False, clear_logs=False, remove_directory=False):
@@ -207,7 +219,7 @@ def clear_cache_directory(cache_directory, clear_export=False, clear_logs=False,
     delete_file(stats_filepath)
 
     bakefiles_dir = os.path.join(cache_directory, "bakefiles")
-    extensions = [".bbox", ".bobj", ".data", ".wwp", ".wwf", ".wwi", ".fpd", ".ffd", ".ffp3"]
+    extensions = [".bbox", ".bobj", ".data", ".wwp", ".wwf", ".wwi", ".fpd", ".ffd", ".ffp3", ".txt"]
     delete_files_in_directory(bakefiles_dir, extensions, remove_directory=True)
 
     temp_dir = os.path.join(cache_directory, "temp")

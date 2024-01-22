@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2023 Ryan L. Guy
+# Copyright (C) 2024 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -1085,17 +1085,25 @@ def get_system_info_dict():
 
     viewport_modes_string = "N/A"
     try:
-        shading_modes = []
-        for area in bpy.data.screens[3].areas: 
-            if area.type == 'VIEW_3D':
-               for space in area.spaces: 
-                   if space.type == 'VIEW_3D':
-                      shading_modes.append(space.shading.type)
-        if shading_modes:
-            viewport_modes_string = ""
-            for mode in shading_modes:
-                viewport_modes_string += mode + ", "
-        viewport_modes_string = vcu.str_removesuffix(viewport_modes_string, ", ")
+        is_screen_data_available = hasattr(bpy.data, "screens")
+        layout_screen = None
+        if is_screen_data_available:
+            for screen in bpy.data.screens:
+                if screen.name == "Layout":
+                    layout_screen = screen
+
+        if layout_screen:
+            shading_modes = []
+            for area in layout_screen.areas: 
+                if area.type == 'VIEW_3D':
+                   for space in area.spaces: 
+                       if space.type == 'VIEW_3D':
+                          shading_modes.append(space.shading.type)
+            if shading_modes:
+                viewport_modes_string = ""
+                for mode in shading_modes:
+                    viewport_modes_string += mode + ", "
+            viewport_modes_string = vcu.str_removesuffix(viewport_modes_string, ", ")
     except Exception as e:
         print(traceback.format_exc())
         print(e)

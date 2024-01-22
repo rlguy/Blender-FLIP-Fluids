@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2023 Ryan L. Guy
+# Copyright (C) 2024 Ryan L. Guy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -185,6 +185,16 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
     exec(vcu.convert_attribute_to_28("enable_support_tools"))
     FAKE_PREFERENCES.enable_support_tools = False
 
+    cmd_save_before_launch = BoolProperty(
+            name="Autosave Blend file before launching command line operators (Recommended)", 
+            description="Command line operators require the Blend file to be saved for changes to take effect when using command"
+            " line operators. If enabled, the Blend file will be automatically saved when using command line operators so that"
+            " manual saving is not necessary", 
+            default=False,
+            ); 
+    exec(vcu.convert_attribute_to_28("cmd_save_before_launch"))
+    FAKE_PREFERENCES.cmd_save_before_launch = False
+
     cmd_bake_max_attempts = IntProperty(
             name="Max Attempts",
             description="When using the command line baking operator, if a bake fails due to a crash or an error, attempt"
@@ -361,7 +371,7 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
     FAKE_PREFERENCES.dismiss_export_animated_mesh_parented_relation_hint = False
 
     enable_tabbed_domain_settings = BoolProperty(
-                name="Enable Tabbed Domain Settings",
+                name="Enable Tabbed Domain Settings (Recommended)",
                 description="Enable tabbed domain settings view. If enabled, domain panel categories will be displayed"
                     " using a tab header selector. If disabled, the classic view will display all domain panel categories in a vertical stack",
                 default=False,
@@ -857,8 +867,11 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         box.enabled = is_installation_complete
         helper_column = box.column(align=True)
         helper_column.label(text="Command Line Tools:")
-        row = helper_column.row()
-        row.label(text="     Re-launch bake after crash:")
+        row = helper_column.row(align=True)
+        row.prop(self, "cmd_save_before_launch")
+        row = helper_column.row(align=True)
+        row.alignment = 'LEFT'
+        row.label(text="Re-launch bake after crash:", icon='FILE_REFRESH')
         row.prop(self, "cmd_bake_max_attempts")
         row.label(text="")
         helper_column.separator()
