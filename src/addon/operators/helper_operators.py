@@ -3544,17 +3544,8 @@ class FLIPFLUIDS_MT_render_menu(bpy.types.Menu):
     bl_idname = "FLIPFLUIDS_MT_render_menu"
 
     def draw(self, context):
-        oskey_symbol = "OS"
-        system = platform.system()
-        if system == "Windows":
-            oskey_symbol = "❖"
-        elif system == "Darwin":
-            oskey_symbol = "⌘"
-        elif system == "Linux":
-            oskey_symbol = "❖"
-
-        render_frame_text = "Shift " + oskey_symbol + " F12"
-        render_animation_text = "Shift F12"
+        render_frame_text = "Shift F12"
+        render_animation_text = "Shift Ctrl F12"
 
         row1 = self.layout.row()
         row2 = self.layout.row()
@@ -3675,7 +3666,7 @@ def register():
         kmi = km.keymap_items.new(FlipFluidHelperCommandLineRenderFrame.bl_idname, type='F12', value='PRESS', shift=True)
         ADDON_KEYMAPS.append((km, kmi))
 
-        kmi = km.keymap_items.new(FlipFluidHelperCommandLineRender.bl_idname, type='F12', value='PRESS', shift=True, oskey=True)
+        kmi = km.keymap_items.new(FlipFluidHelperCommandLineRender.bl_idname, type='F12', value='PRESS', shift=True, ctrl=True)
         ADDON_KEYMAPS.append((km, kmi))
 
 
