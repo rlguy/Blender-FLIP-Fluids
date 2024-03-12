@@ -150,27 +150,27 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
 
 
     def is_domain(self):
-        return self.object_type == 'TYPE_DOMAIN'
+        return self.is_active and self.object_type == 'TYPE_DOMAIN'
 
 
     def is_fluid(self):
-        return self.object_type == 'TYPE_FLUID'
+        return self.is_active and self.object_type == 'TYPE_FLUID'
 
 
     def is_obstacle(self):
-        return self.object_type == 'TYPE_OBSTACLE'
+        return self.is_active and self.object_type == 'TYPE_OBSTACLE'
 
 
     def is_inflow(self):
-        return self.object_type == 'TYPE_INFLOW'
+        return self.is_active and self.object_type == 'TYPE_INFLOW'
 
 
     def is_outflow(self):
-        return self.object_type == 'TYPE_OUTFLOW'
+        return self.is_active and self.object_type == 'TYPE_OUTFLOW'
 
 
     def is_force_field(self):
-        return self.object_type == 'TYPE_FORCE_FIELD'
+        return self.is_active and self.object_type == 'TYPE_FORCE_FIELD'
 
 
     def get_property_group(self):

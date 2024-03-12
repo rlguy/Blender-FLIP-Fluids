@@ -38,6 +38,18 @@ class FLIPFLUID_PT_OutflowTypePanel(bpy.types.Panel):
         outflow_props = obj_props.outflow
         show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
 
+        show_disabled_in_viewport_warning = True
+        if show_disabled_in_viewport_warning and obj.hide_viewport:
+            box = self.layout.box()
+            box.alert = True
+            column = box.column(align=True)
+            row = column.row(align=True)
+            row.alignment = 'LEFT'
+            row.prop(outflow_props, "disabled_in_viewport_tooltip", icon="QUESTION", emboss=False, text="")
+            row.label(text="Object is currently disabled in the viewport")
+            row.label(text="", icon="RESTRICT_VIEW_ON")
+            column.label(text="This object will not be included within the simulation")
+
         column = self.layout.column()
         column.prop(obj_props, "object_type")
 

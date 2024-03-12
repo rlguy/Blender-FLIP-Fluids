@@ -78,8 +78,7 @@ def draw_frame_info_simulation_stats(self, context, box):
             column.label(text="             Bubble:")
             column.label(text="             Spray:")
             column.label(text="             Dust:")
-        if sprops.frame_performance_score != -1:
-            column.label(text="Performance Score:")
+        column.label(text="Performance Score:")
 
         column = split.column()
         column.label(text=str(sprops.frame_info_id))
@@ -94,8 +93,10 @@ def draw_frame_info_simulation_stats(self, context, box):
             column.label(text=format_number(sprops.spray_mesh.verts).lstrip())
             column.label(text=format_number(sprops.dust_mesh.verts).lstrip())
 
+        performance_score_str = "0"
         if sprops.frame_performance_score != -1:
-            column.label(text=str(sprops.frame_performance_score))
+            performance_score_str = str(sprops.frame_performance_score)
+        column.label(text=performance_score_str)
 
 
 def draw_frame_info_solver_stats(self, context, box):
@@ -650,9 +651,7 @@ def draw_cache_info_simulation_stats(self, context, box):
         column.label(text="Completed Frames:")
         column.label(text="Start Frame:")
         column.label(text="End Frame:")
-
-        if sprops.is_average_performance_score_enabled:
-            column.label(text="Average Performance Score:")
+        column.label(text="Average Performance Score:")
 
         column = split.column()
         if num_baked_frames > num_frames:
@@ -663,9 +662,7 @@ def draw_cache_info_simulation_stats(self, context, box):
         column.label(text=str(sprops.frame_start))
         #column.label(text=str(simprops.frame_end))
         column.label(text=str(sprops.frame_start + num_baked_frames - 1))
-
-        if sprops.is_average_performance_score_enabled:
-            column.label(text=str(sprops.average_performance_score))
+        column.label(text=str(sprops.average_performance_score))
 
         if dprops.bake.is_simulation_running:
             column = subbox.column()

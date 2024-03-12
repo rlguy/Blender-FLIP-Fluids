@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys, os, shutil, json, traceback, math
+import sys, os, shutil, json, traceback, math, time
 
 from .objects import flip_fluid_map
 from .objects import flip_fluid_geometry_database
@@ -160,7 +160,8 @@ def __extract_keyframed_mesh(object_name, frameno):
         raise Exception(msg)
 
     tmesh = TriangleMesh.from_bobj(bobj_data)
-    tmesh.apply_transform(__extract_transform_data(object_name, frameno))
+    transform_data = __extract_transform_data(object_name, frameno)
+    tmesh.apply_transform(transform_data)
 
     data = __get_simulation_data()
     scale = data.domain_data.initialize.scale
@@ -1044,6 +1045,11 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
     # World Settings
     world = dprops.world
     fluidsim.add_body_force(__get_parameter_data(world.gravity, frameno))
+    fluidsim.force_field_weight_fluid_particles = __get_parameter_data(world.force_field_weight_fluid_particles, frameno)
+    fluidsim.force_field_weight_whitewater_foam = __get_parameter_data(world.force_field_weight_whitewater_foam, frameno)
+    fluidsim.force_field_weight_whitewater_bubble = __get_parameter_data(world.force_field_weight_whitewater_bubble, frameno)
+    fluidsim.force_field_weight_whitewater_spray = __get_parameter_data(world.force_field_weight_whitewater_spray, frameno)
+    fluidsim.force_field_weight_whitewater_dust = __get_parameter_data(world.force_field_weight_whitewater_dust, frameno)
 
     # Caches created in older versions may not contain force field data. Ignore these features
     # if force field data cannot be found in the cache
@@ -1294,6 +1300,9 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
 
     fluidsim.enable_asynchronous_meshing = \
         __get_parameter_data(advanced.enable_asynchronous_meshing, frameno)
+
+    fluidsim.enable_fracture_optimization = \
+        __get_parameter_data(advanced.enable_fracture_optimization, frameno)
 
     fluidsim.enable_static_solid_levelset_precomputation = \
         __get_parameter_data(advanced.precompute_static_obstacles, frameno)
@@ -1633,15 +1642,20 @@ def __update_dynamic_force_field_mesh(animated_object, object_data):
     animated_object.update_mesh_animated(mesh_previous, mesh_current, mesh_next)
 
 
-def __update_animatable_inflow_properties(data, frameid):
+def __update_animatable_inflow_properties(data, mesh_geometry_data, frameid):
     inflow_objects = data.inflow_objects
     inflow_data = data.inflow_data
 
     for idx, inflow in enumerate(inflow_objects):
         data = inflow_data[idx]
 
-        if __is_object_dynamic(data.name):
-            __update_dynamic_object_mesh(inflow, data)
+        name_slug = __get_name_slug(data.name)
+        object_geometry_data = mesh_geometry_data[name_slug]
+        if object_geometry_data["is_motion_dynamic"]:
+            mesh_previous = object_geometry_data["triangle_mesh_previous"]
+            mesh_current = object_geometry_data["triangle_mesh_current"]
+            mesh_next = object_geometry_data["triangle_mesh_next"]
+            inflow.update_mesh_animated(mesh_previous, mesh_current, mesh_next)
         
         inflow.enable = __get_parameter_data(data.is_enabled, frameid)
         inflow.set_velocity(__get_inflow_object_velocity(data, frameid))
@@ -1662,15 +1676,20 @@ def __update_animatable_inflow_properties(data, frameid):
         inflow.set_source_color(__get_parameter_data(data.color, frameid))
 
 
-def __update_animatable_outflow_properties(data, frameid):
+def __update_animatable_outflow_properties(data, mesh_geometry_data, frameid):
     outflow_objects = data.outflow_objects
     outflow_data = data.outflow_data
 
     for idx, outflow in enumerate(outflow_objects):
         data = outflow_data[idx]
 
-        if __is_object_dynamic(data.name):
-            __update_dynamic_object_mesh(outflow, data)
+        name_slug = __get_name_slug(data.name)
+        object_geometry_data = mesh_geometry_data[name_slug]
+        if object_geometry_data["is_motion_dynamic"]:
+            mesh_previous = object_geometry_data["triangle_mesh_previous"]
+            mesh_current = object_geometry_data["triangle_mesh_current"]
+            mesh_next = object_geometry_data["triangle_mesh_next"]
+            outflow.update_mesh_animated(mesh_previous, mesh_current, mesh_next)
 
         outflow.enable = __get_parameter_data(data.is_enabled, frameid)
         outflow.fluid_outflow =  __get_parameter_data(data.remove_fluid, frameid)
@@ -1716,7 +1735,7 @@ def __update_animatable_force_field_properties(data, frameid):
             force_field.gravity_scale_width = __get_parameter_data(data.gravity_scale_width_curve, frameid)
 
 
-def __update_animatable_obstacle_properties(data, frameid):
+def __update_animatable_obstacle_properties(data, mesh_geometry_data, frameid):
     obstacle_objects = data.obstacle_objects
     obstacle_data = data.obstacle_data
 
@@ -1752,11 +1771,19 @@ def __update_animatable_obstacle_properties(data, frameid):
                 
     #### END WORKAROUND ####
 
+    total_update_time = 0.0
+    start_mesh_object = time.time()
+
     for idx, mesh_object in enumerate(obstacle_objects):
         data = obstacle_data[idx]
 
-        if __is_object_dynamic(data.name):
-            __update_dynamic_object_mesh(mesh_object, data)
+        name_slug = __get_name_slug(data.name)
+        object_geometry_data = mesh_geometry_data[name_slug]
+        if object_geometry_data["is_motion_dynamic"]:
+            mesh_previous = object_geometry_data["triangle_mesh_previous"]
+            mesh_current = object_geometry_data["triangle_mesh_current"]
+            mesh_next = object_geometry_data["triangle_mesh_next"]
+            mesh_object.update_mesh_animated(mesh_previous, mesh_current, mesh_next)
 
         mesh_object.enable = __get_parameter_data(data.is_enabled, frameid)
         mesh_object.friction = __get_parameter_data(data.friction, frameid, value_min=0.0)
@@ -2009,6 +2036,17 @@ def __update_animatable_domain_properties(fluidsim, data, frameno):
             gravity = [0.0, 0.0, 0.0]
     __set_body_force_property(fluidsim, gravity)
 
+    weight_fluid_particles = __get_parameter_data(world.force_field_weight_fluid_particles, frameno)
+    weight_whitewater_foam = __get_parameter_data(world.force_field_weight_whitewater_foam, frameno)
+    weight_whitewater_bubble = __get_parameter_data(world.force_field_weight_whitewater_bubble, frameno)
+    weight_whitewater_spray = __get_parameter_data(world.force_field_weight_whitewater_spray, frameno)
+    weight_whitewater_dust = __get_parameter_data(world.force_field_weight_whitewater_dust, frameno)
+    __set_property(fluidsim, 'force_field_weight_fluid_particles', weight_fluid_particles)
+    __set_property(fluidsim, 'force_field_weight_whitewater_foam', weight_whitewater_foam)
+    __set_property(fluidsim, 'force_field_weight_whitewater_bubble', weight_whitewater_bubble)
+    __set_property(fluidsim, 'force_field_weight_whitewater_spray', weight_whitewater_spray)
+    __set_property(fluidsim, 'force_field_weight_whitewater_dust', weight_whitewater_dust)
+
     is_viscosity_enabled = __get_parameter_data(world.enable_viscosity, frameno)
     if is_viscosity_enabled:
         surface = dprops.surface
@@ -2190,6 +2228,9 @@ def __update_animatable_domain_properties(fluidsim, data, frameno):
     enable_async_meshing = __get_parameter_data(advanced.enable_asynchronous_meshing, frameno)
     __set_property(fluidsim, 'enable_asynchronous_meshing', enable_async_meshing)
 
+    enable_fracture_optimization = __get_parameter_data(advanced.enable_fracture_optimization, frameno)
+    __set_property(fluidsim, 'enable_fracture_optimization', enable_fracture_optimization)
+
     precomp_static_sdf = __get_parameter_data(advanced.precompute_static_obstacles, frameno)
     __set_property(fluidsim, 'enable_static_solid_levelset_precomputation', precomp_static_sdf)
 
@@ -2211,10 +2252,15 @@ def __update_animatable_domain_properties(fluidsim, data, frameno):
 
 
 def __update_animatable_properties(fluidsim, data, frameno):
-    __update_animatable_inflow_properties(data, frameno)
-    __update_animatable_outflow_properties(data, frameno)
+    geometry_database = __get_geometry_database()
+    simulation_data = __get_simulation_data()
+    timeline_frame = __get_timeline_frame()
+    geometry_data = geometry_database.get_mesh_geometry_data_dict_for_frame(simulation_data, timeline_frame)
+    
+    __update_animatable_inflow_properties(data, geometry_data, frameno)
+    __update_animatable_outflow_properties(data, geometry_data, frameno)
     __update_animatable_force_field_properties(data, frameno)
-    __update_animatable_obstacle_properties(data, frameno)
+    __update_animatable_obstacle_properties(data, geometry_data, frameno)
     __update_animatable_meshing_volume_properties(data, frameno)
     __update_animatable_domain_properties(fluidsim, data, frameno)
 

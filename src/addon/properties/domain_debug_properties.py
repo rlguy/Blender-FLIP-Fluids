@@ -361,17 +361,20 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
         self.print_system_info()
 
         self.is_draw_debug_grid_operator_running = False
-        is_draw_gl_particles_operator_running = False
+        self.is_draw_gl_particles_operator_running = False
 
-        if self.enable_fluid_particle_debug_output:
-            self._update_debug_particle_geometry(bpy.context)
-            bpy.ops.flip_fluid_operators.draw_gl_particles('INVOKE_DEFAULT')
-        if self.is_simulation_grid_debugging_enabled():
-            self._update_debug_grid_geometry(bpy.context)
-            bpy.ops.flip_fluid_operators.draw_debug_grid('INVOKE_DEFAULT')
-        if self.export_force_field:
-            self._update_force_field_geometry(bpy.context)
-            bpy.ops.flip_fluid_operators.draw_force_field('INVOKE_DEFAULT')
+        # Draw operators should not be run when Blender is launched from the command line
+        # in background mode - context will be incorrect.
+        if not bpy.app.background:
+            if self.enable_fluid_particle_debug_output:
+                self._update_debug_particle_geometry(bpy.context)
+                bpy.ops.flip_fluid_operators.draw_gl_particles('INVOKE_DEFAULT')
+            if self.is_simulation_grid_debugging_enabled():
+                self._update_debug_grid_geometry(bpy.context)
+                bpy.ops.flip_fluid_operators.draw_debug_grid('INVOKE_DEFAULT')
+            if self.export_force_field:
+                self._update_force_field_geometry(bpy.context)
+                bpy.ops.flip_fluid_operators.draw_force_field('INVOKE_DEFAULT')
 
 
     def print_system_and_blend_info(self):

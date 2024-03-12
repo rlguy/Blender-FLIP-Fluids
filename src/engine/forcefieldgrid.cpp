@@ -24,9 +24,6 @@ SOFTWARE.
 
 #include "forcefieldgrid.h"
 
-// DEBUG
-#include <iostream>
-
 #include <random>
 #include <algorithm>
 
@@ -52,7 +49,6 @@ void ForceFieldGrid::initialize(int isize, int jsize, int ksize, double dx) {
 
     _forceField = MACVelocityField(_isize, _jsize, _ksize, _dx);
     _gravityScaleGrid = ForceFieldGravityScaleGrid(_isize + 1, _jsize + 1, _ksize + 1);
-
     for (size_t i = 0; i < _forceFields.size(); i++) {
         _forceFields[i]->initialize(isize, jsize, ksize, dx);
     }
@@ -107,24 +103,37 @@ void ForceFieldGrid::setGravityVector(vmath::vec3 g) {
     _gravityVector = g;
 }
 
-vmath::vec3 ForceFieldGrid::evaluateForceAtPosition(vmath::vec3 p) {
-    return _forceField.evaluateVelocityAtPositionLinear(p.x, p.y, p.z);
+vmath::vec3 ForceFieldGrid::evaluateForceAtPosition(vmath::vec3 p, float forceScale) {
+    vmath::vec3 forceVector = _forceField.evaluateVelocityAtPositionLinear(p.x, p.y, p.z);
+    float gravityScale = Interpolation::trilinearInterpolate(p, _dx, _gravityScaleGrid.gravityScale);
+    vmath::vec3 totalForce = forceScale * forceVector + gravityScale * _gravityVector;
+    return totalForce;
 }
 
-float ForceFieldGrid::evaluateForceAtPositionU(vmath::vec3 p) {
-    return _forceField.evaluateVelocityAtPositionLinearU(p.x, p.y, p.z);
+float ForceFieldGrid::evaluateForceAtPositionU(vmath::vec3 p, float forceScale) {
+    float forceU = _forceField.evaluateVelocityAtPositionLinearU(p.x, p.y, p.z);
+    float gravityScale = Interpolation::trilinearInterpolate(p, _dx, _gravityScaleGrid.gravityScale);
+    float totalForceU = forceScale * forceU + gravityScale * _gravityVector.x;
+    return totalForceU;
 }
 
-float ForceFieldGrid::evaluateForceAtPositionV(vmath::vec3 p) {
-    return _forceField.evaluateVelocityAtPositionLinearV(p.x, p.y, p.z);
+float ForceFieldGrid::evaluateForceAtPositionV(vmath::vec3 p, float forceScale) {
+    float forceV = _forceField.evaluateVelocityAtPositionLinearV(p.x, p.y, p.z);
+    float gravityScale = Interpolation::trilinearInterpolate(p, _dx, _gravityScaleGrid.gravityScale);
+    float totalForceV = forceScale * forceV + gravityScale * _gravityVector.y;
+    return totalForceV;
 }
 
-float ForceFieldGrid::evaluateForceAtPositionW(vmath::vec3 p) {
-    return _forceField.evaluateVelocityAtPositionLinearW(p.x, p.y, p.z);
+float ForceFieldGrid::evaluateForceAtPositionW(vmath::vec3 p, float forceScale) {
+    float forceW = _forceField.evaluateVelocityAtPositionLinearW(p.x, p.y, p.z);
+    float gravityScale = Interpolation::trilinearInterpolate(p, _dx, _gravityScaleGrid.gravityScale);
+    float totalForceW = forceScale * forceW + gravityScale * _gravityVector.z;
+    return totalForceW;
 }
 
 void ForceFieldGrid::generateDebugNodes(std::vector<ForceFieldDebugNode> &nodes) {
     float eps = 1e-6;
+    float forceScale = 1.0f;
 
     int gridpad = 1;
     vmath::vec3 debugmin = Grid3d::GridIndexToPosition(gridpad, gridpad, gridpad, _dx);
@@ -146,13 +155,13 @@ void ForceFieldGrid::generateDebugNodes(std::vector<ForceFieldDebugNode> &nodes)
     float stepDistance = _stepDistanceFactor * _dx;
     for (size_t i = 0; i < probes.size(); i++) {
         vmath::vec3 seed = probes[i];
-        vmath::vec3 seedforce = evaluateForceAtPosition(seed);
+        vmath::vec3 seedforce = evaluateForceAtPosition(seed, forceScale);
         float seedstrength = seedforce.length();
 
         vmath::vec3 p1 = seed + seedforce.normalize() * stepDistance;
         vmath::vec3 p2 = seed + -seedforce.normalize() * stepDistance;
-        float s1 = evaluateForceAtPosition(p1).length();
-        float s2 = evaluateForceAtPosition(p2).length();
+        float s1 = evaluateForceAtPosition(p1, forceScale).length();
+        float s2 = evaluateForceAtPosition(p2, forceScale).length();
         float direction = 1.0f;
         if (s1 > seedstrength) {
             direction = -1.0f;
@@ -162,7 +171,7 @@ void ForceFieldGrid::generateDebugNodes(std::vector<ForceFieldDebugNode> &nodes)
 
         std::vector<ForceFieldDebugNode> forceline;
         for (int sidx = 0; sidx < numSegments; sidx++) {
-            vmath::vec3 force = evaluateForceAtPosition(seed);
+            vmath::vec3 force = evaluateForceAtPosition(seed, forceScale);
 
             ForceFieldDebugNode node;
             node.x = seed.x;
@@ -194,7 +203,7 @@ void ForceFieldGrid::generateDebugNodes(std::vector<ForceFieldDebugNode> &nodes)
             vmath::vec3 p1(n1.x, n1.y, n1.z);
             vmath::vec3 p2(n2.x, n2.y, n2.z);
             vmath::vec3 p3(n3.x, n3.y, n3.z);
-            vmath::vec3 forcedir = evaluateForceAtPosition(p2).normalize();
+            vmath::vec3 forcedir = evaluateForceAtPosition(p2, forceScale).normalize();
 
             vmath::vec3 v1 = p1 - p2;
             vmath::vec3 v2 = p3 - p2;
@@ -217,8 +226,8 @@ void ForceFieldGrid::generateDebugNodes(std::vector<ForceFieldDebugNode> &nodes)
                     break;
                 }
 
-                float s1 = evaluateForceAtPosition(a1).length();
-                float s2 = evaluateForceAtPosition(a2).length();
+                float s1 = evaluateForceAtPosition(a1, forceScale).length();
+                float s2 = evaluateForceAtPosition(a2, forceScale).length();
 
                 ForceFieldDebugNode n1;
                 n1.x = a1.x;
@@ -270,45 +279,5 @@ void ForceFieldGrid::_applyGravity() {
         }
     }
     _gravityScaleGrid.normalize();
-
     _forceField.setOutOfRangeVector(_gravityVector);
-
-
-
-    float eps = 1e-6;
-    if (fabs(_gravityVector.x) > eps) {
-        for (int k = 0; k < _ksize; k++) {
-            for (int j = 0; j < _jsize; j++) {
-                for (int i = 0; i < _isize + 1; i++) {
-                    vmath::vec3 p = Grid3d::FaceIndexToPositionU(i, j, k, _dx);
-                    float scale = Interpolation::trilinearInterpolate(p, _dx, _gravityScaleGrid.gravityScale);
-                    _forceField.addU(i, j, k, scale * _gravityVector.x);
-                }
-            }
-        }
-    }
-
-    if (fabs(_gravityVector.y) > eps) {
-        for (int k = 0; k < _ksize; k++) {
-            for (int j = 0; j < _jsize + 1; j++) {
-                for (int i = 0; i < _isize; i++) {
-                    vmath::vec3 p = Grid3d::FaceIndexToPositionV(i, j, k, _dx);
-                    float scale = Interpolation::trilinearInterpolate(p, _dx, _gravityScaleGrid.gravityScale);
-                    _forceField.addV(i, j, k, scale * _gravityVector.y);
-                }
-            }
-        }
-    }
-
-    if (fabs(_gravityVector.z) > eps) {
-        for (int k = 0; k < _ksize + 1; k++) {
-            for (int j = 0; j < _jsize; j++) {
-                for (int i = 0; i < _isize; i++) {
-                    vmath::vec3 p = Grid3d::FaceIndexToPositionW(i, j, k, _dx);
-                    float scale = Interpolation::trilinearInterpolate(p, _dx, _gravityScaleGrid.gravityScale);
-                    _forceField.addW(i, j, k, scale * _gravityVector.z);
-                }
-            }
-        }
-    }
 }

@@ -162,7 +162,6 @@ class PyFluidLib():
             msg += " (1) Make sure that you are using a 64-bit version of Python/Blender"
             msg += " if built for 64-bit and likewise if built for 32-bit."
             msg += " (2) Try clearing your Blender user settings (make a backup first!)."
-            msg += " (3) Contact the developers if you think that this is an error."
             raise LibraryLoadError(msg)
 
         return loaded_library

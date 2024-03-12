@@ -195,6 +195,38 @@ ParticleSystem* DiffuseParticleSimulation::getDiffuseParticles() {
     return &_diffuseParticles;
 }
 
+double DiffuseParticleSimulation::getForceFieldWeightWhitewaterFoam() {
+    return _forceFieldWeightWhitewaterFoam;
+}
+
+void DiffuseParticleSimulation::setForceFieldWeightWhitewaterFoam(double v) {
+    _forceFieldWeightWhitewaterFoam = v;
+}
+
+double DiffuseParticleSimulation::getForceFieldWeightWhitewaterBubble() {
+    return _forceFieldWeightWhitewaterBubble;
+}
+
+void DiffuseParticleSimulation::setForceFieldWeightWhitewaterBubble(double v) {
+    _forceFieldWeightWhitewaterBubble = v;
+}
+
+double DiffuseParticleSimulation::getForceFieldWeightWhitewaterSpray() {
+    return _forceFieldWeightWhitewaterSpray;
+}
+
+void DiffuseParticleSimulation::setForceFieldWeightWhitewaterSpray(double v) {
+    _forceFieldWeightWhitewaterSpray = v;
+}
+
+double DiffuseParticleSimulation::getForceFieldWeightWhitewaterDust() {
+    return _forceFieldWeightWhitewaterDust;
+}
+
+void DiffuseParticleSimulation::setForceFieldWeightWhitewaterDust(double v) {
+    _forceFieldWeightWhitewaterDust = v;
+}
+
 int DiffuseParticleSimulation::getNumDiffuseParticles() {
     return _diffuseParticles.size();
 }
@@ -2229,7 +2261,7 @@ void DiffuseParticleSimulation::_advanceSprayParticlesThread(int startidx, int e
         double maxd = _sprayDragCoefficient + _sprayDragCoefficient * _sprayDragVarianceFactor;
         double dragCoefficient = mind + (1.0 - factor) * (maxd - mind);
 
-        vmath::vec3 bodyForce = _getGravityVector(dp.position);
+        vmath::vec3 bodyForce = _getGravityVector(dp.position, dp.type);
         vmath::vec3 dragvec = -dragCoefficient * dp.velocity * (float)dt;
         vmath::vec3 nextv = dp.velocity + bodyForce * (float)dt + dragvec;
         vmath::vec3 nextp = dp.position + nextv * (float)dt;
@@ -2259,7 +2291,7 @@ void DiffuseParticleSimulation::_advanceBubbleParticlesThread(int startidx, int 
             continue;
         }
 
-        vmath::vec3 bodyForce = _getGravityVector(dp.position);
+        vmath::vec3 bodyForce = _getGravityVector(dp.position, dp.type);
         vmath::vec3 vmac = _vfield->evaluateVelocityAtPositionLinear(dp.position);
         vmath::vec3 vbub = dp.velocity;
         vmath::vec3 bouyancyVelocity = (float)-_bubbleBouyancyCoefficient * bodyForce;
@@ -2331,7 +2363,7 @@ void DiffuseParticleSimulation::_advanceDustParticlesThread(int startidx, int en
         double maxd = std::min(_dustDragCoefficient + _dustDragCoefficient * _dustDragVarianceFactor, 1.0);
         double dragCoefficient = mind + (1.0 - factor) * (maxd - mind);
 
-        vmath::vec3 bodyForce = _getGravityVector(dp.position);
+        vmath::vec3 bodyForce = _getGravityVector(dp.position, dp.type);
         vmath::vec3 vmac = _vfield->evaluateVelocityAtPositionLinear(dp.position);
         vmath::vec3 vbub = dp.velocity;
         vmath::vec3 bouyancyVelocity = (float)-buoyancyCoefficient * bodyForce;
@@ -2498,9 +2530,19 @@ int DiffuseParticleSimulation::_getNearestSideIndex(vmath::vec3 p, AABB &boundar
     return 0;
 }
 
-vmath::vec3 DiffuseParticleSimulation::_getGravityVector(vmath::vec3 pos) {
+vmath::vec3 DiffuseParticleSimulation::_getGravityVector(vmath::vec3 pos, DiffuseParticleType dtype) {
     if (_isForceFieldGridSet) {
-        return _forceFieldGrid->evaluateForceAtPosition(pos);
+        float forceScale = 1.0f;
+        if (dtype == DiffuseParticleType::foam) {
+            forceScale = _forceFieldWeightWhitewaterFoam;
+        } else if (dtype == DiffuseParticleType::bubble) {
+            forceScale = _forceFieldWeightWhitewaterBubble;
+        } else if (dtype == DiffuseParticleType::spray) {
+            forceScale = _forceFieldWeightWhitewaterSpray;
+        }else if (dtype == DiffuseParticleType::dust) {
+            forceScale = _forceFieldWeightWhitewaterDust;
+        }
+        return _forceFieldGrid->evaluateForceAtPosition(pos, forceScale);
     }
 
     return _bodyForce;

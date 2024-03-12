@@ -510,6 +510,9 @@ class FLIPFluidInstallPresetLibrary(bpy.types.Operator, ImportHelper):
         for lib_entry in bl_filepaths.asset_libraries:
             if self.is_path_equal(lib_entry.path, preset_library_directory):
                 lib_entry.name = preset_library_name
+                if vcu.is_blender_35():
+                    # Only available in Blender >= 3.5
+                    lib_entry.import_method = 'APPEND'
 
         installation_utils.update_preset_library_installation_status()
         success_message = "The Preset Scenes Library has been installed successfully into the Blender Asset Browser."
@@ -638,6 +641,9 @@ class FLIPFluidSelectPresetLibraryFolder(bpy.types.Operator):
                     lib_version_str = "v" + str(version[0]) + "." + str(version[1]) + "." + str(version[2])
                     preset_library_name = "FLIP Fluids Addon Presets " + lib_version_str
                     lib_entry.name = preset_library_name
+                    if vcu.is_blender_35():
+                        # Only available in Blender >= 3.5
+                        lib_entry.import_method = 'APPEND'
 
         installation_utils.update_preset_library_installation_status()
         success_message = "The Preset Scenes Library has been installed successfully into the Blender Asset Browser."
@@ -992,6 +998,8 @@ def get_system_info_dict():
     addons_string = ""
     try:
         for mod_name in bpy.context.preferences.addons.keys():
+            if mod_name not in sys.modules:
+                continue
             mod = sys.modules[mod_name]
             addon_name = mod.bl_info.get("name")
             if addon_name not in default_addons:

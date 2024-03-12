@@ -1073,6 +1073,20 @@ public:
     vmath::vec3 getConstantBodyForce();
 
     /*
+        Set force field weights depending on particle type.
+    */
+    double getForceFieldWeightFluidParticles();
+    void setForceFieldWeightFluidParticles(double v);
+    double getForceFieldWeightWhitewaterFoam();
+    void setForceFieldWeightWhitewaterFoam(double v);
+    double getForceFieldWeightWhitewaterBubble();
+    void setForceFieldWeightWhitewaterBubble(double v);
+    double getForceFieldWeightWhitewaterSpray();
+    void setForceFieldWeightWhitewaterSpray(double v);
+    double getForceFieldWeightWhitewaterDust();
+    void setForceFieldWeightWhitewaterDust(double v);
+
+    /*
         Remove all added body forces.
     */
     void resetBodyForce();
@@ -1228,6 +1242,13 @@ public:
     void enableExperimentalOptimizationFeatures();
     void disableExperimentalOptimizationFeatures();
     bool isExperimentalOptimizationFeaturesEnabled();
+
+    /*
+        Enable/Disable fracture obstacle optimization features
+    */
+    void enableFractureOptimization();
+    void disableFractureOptimization();
+    bool isFractureOptimizationEnabled();
 
     /*
         Enable/Disable precomputation of static obstacle MeshLevelSet
@@ -2144,6 +2165,7 @@ private:
     Array3d<bool> _nearSolidGrid;
     int _nearSolidGridCellSizeFactor = 3;
     double _nearSolidGridCellSize = 0.0f;
+    bool _isFractureOptimizationEnabled = false;
 
     // Compute levelset signed distance field
     MeshLevelSet _solidSDF;
@@ -2261,6 +2283,7 @@ private:
     bool _isForceFieldsEnabled = false;
     int _forceFieldReductionLevel = 1;
     ForceFieldGrid _forceFieldGrid;
+    float _forceFieldWeightFluidParticles = 1.0f;
 
     // Viscosity solve
     ViscositySolver _viscositySolver;

@@ -90,7 +90,13 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             soft_max=8,
             options={'HIDDEN'},
             ); exec(conv("cmd_bake_and_render_interleaved_instances"))
-
+    cmd_bake_and_render_interleaved_no_overwrite = BoolProperty(
+            name="Continue render from last rendered frame",
+            description="If enabled, already rendered frames will not be overwritten and the render will begin"
+                " after the last rendered frame. If disabled, frames will be overwritten and rendering will begin from"
+                " the first frame",
+            default=False,
+            ); exec(conv("cmd_bake_and_render_interleaved_no_overwrite"))
     cmd_open_image_after_render = BoolProperty(
             name="Open Image After Render",
             description="After the command line render process is finished, open the image in your default OS image program",
@@ -140,6 +146,14 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
                 " be baked before export",
             default=False,
             ); exec(conv("alembic_export_velocity"))
+    alembic_global_scale = FloatProperty(
+            name="Scale", 
+            description="Scale value by which to enlarge or shrink the simulation meshes with respect to the world's origin", 
+            min=0.0001,
+            max=1000.0,
+            default=1.0,
+            precision=3,
+            ); exec(conv("alembic_global_scale"))
     alembic_frame_range_mode = EnumProperty(
             name="Frame Range Mode",
             description="Frame range to use for Alembic Export",

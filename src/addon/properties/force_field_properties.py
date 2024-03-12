@@ -266,12 +266,22 @@ class FlipFluidForceFieldProperties(bpy.types.PropertyGroup):
             ); exec(conv("enable_endcaps"))
 
 
-
     property_registry = PointerProperty(
             name="Outflow Property Registry",
             description="",
             type=preset_properties.PresetRegistry,
             ); exec(conv("property_registry"))
+
+
+    disabled_in_viewport_tooltip = BoolProperty(
+            name="Object Disabled in Viewport", 
+            description="This force field object is currently disabled in the viewport within the"
+                " outliner (Monitor Icon) and will not be included in the simulation. If you"
+                " want the object hidden in the viewport, but still have the object included in the"
+                " simulation, use the outliner Hide in Viewport option instead (Eye Icon)", 
+            default=True,
+            ); exec(conv("disabled_in_viewport_tooltip"))
+
 
 
     def initialize(self):

@@ -83,6 +83,54 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
             default='FORCE_FIELD_RESOLUTION_ULTRA',
             options={'HIDDEN'},
             ); exec(conv("force_field_resolution"))
+    force_field_weight_fluid_particles = FloatProperty(
+            name="Fluid Particles", 
+            description="Force field object weight for fluid particles", 
+            soft_min=0.0,
+            soft_max=1.0,
+            default=1.0,
+            precision=3,
+            ); exec(conv("force_field_weight_fluid_particles"))
+    force_field_weight_whitewater_foam = FloatProperty(
+            name="Whitewater Foam", 
+            description="Force field object weight for whitewater foam particles. Note: This setting"
+                " currently has no effect on the simulation. The movement of foam particles is"
+                " controlled only by the motion of the fluid surface. Force fields and gravity"
+                " currently have no effect on foam particles", 
+            soft_min=0.0,
+            soft_max=1.0,
+            default=1.0,
+            precision=3,
+            ); exec(conv("force_field_weight_whitewater_foam"))
+    force_field_weight_whitewater_bubble = FloatProperty(
+            name="Whitewater Bubble", 
+            description="Force field object weight for whitewater bubble particles. Note: Bubble particles"
+                " are assumed to be lower density than the containing liquid and due to buoyancy, bubbles"
+                " will drift the opposite direction of the force fields. If you desire bubble particles"
+                " to move with the direction of the force fields, set this weight to a negative value", 
+            soft_min=0.0,
+            soft_max=1.0,
+            default=1.0,
+            precision=3,
+            ); exec(conv("force_field_weight_whitewater_bubble"))
+    force_field_weight_whitewater_spray = FloatProperty(
+            name="Whitewater Spray", 
+            description="Force field object weight for whitewater spray particles. Tip: Spray particles are"
+                " often lower a lower density than the fluid. Depending on the desired effect, setting a higher"
+                " weight value can be a good choice", 
+            soft_min=0.0,
+            soft_max=1.0,
+            default=1.0,
+            precision=3,
+            ); exec(conv("force_field_weight_whitewater_spray"))
+    force_field_weight_whitewater_dust = FloatProperty(
+            name="Whitewater Dust", 
+            description="Force field object weight for whitewater dust particles", 
+            soft_min=0.0,
+            soft_max=1.0,
+            default=1.0,
+            precision=3,
+            ); exec(conv("force_field_weight_whitewater_dust"))
     force_field_resolution_tooltip = BoolProperty(
             name="Force Field Grid Resolution", 
             description="Exact force field grid resolution calculated from the domain"
@@ -256,25 +304,30 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
 
     def register_preset_properties(self, registry, path):
         add = registry.add_property
-        add(path + ".world_scale_mode",                 "World Scaling Mode",        group_id=0)
-        add(path + ".world_scale_relative",             "Relative Scale",            group_id=0)
-        add(path + ".world_scale_absolute",             "Absolute Scale",            group_id=0)
-        add(path + ".gravity_type",                     "Gravity Type",              group_id=0)
-        add(path + ".gravity",                          "Gravity",                   group_id=0)
-        add(path + ".force_field_resolution",           "Force Field Resolution",    group_id=0)
-        add(path + ".enable_viscosity",                 "Enable Viscosity",          group_id=0)
-        add(path + ".viscosity",                        "Viscosity Base",            group_id=0)
-        add(path + ".viscosity_exponent",               "Viscosity Exponent",        group_id=0)
-        add(path + ".viscosity_solver_error_tolerance", "Viscosity Accuracy",        group_id=0)
-        add(path + ".enable_surface_tension",           "Enable Surface Tension",    group_id=0)
-        add(path + ".surface_tension",                  "Surface Tension",           group_id=0)
-        add(path + ".surface_tension_exponent",         "Surface Tension Exponent",  group_id=0)
-        add(path + ".surface_tension_accuracy",         "Surface Tension Accuracy",  group_id=0)
-        add(path + ".surface_tension_solver_method",    "Surface Tension Solver",    group_id=0)
-        add(path + ".enable_sheet_seeding",             "Enable Sheeting Effects",   group_id=0)
-        add(path + ".sheet_fill_rate",                  "Sheeting Strength",         group_id=0)
-        add(path + ".sheet_fill_threshold",             "Sheeting Thickness",        group_id=0)
-        add(path + ".boundary_friction",                "Boundary Friction",         group_id=0)
+        add(path + ".world_scale_mode",                     "World Scaling Mode",        group_id=0)
+        add(path + ".world_scale_relative",                 "Relative Scale",            group_id=0)
+        add(path + ".world_scale_absolute",                 "Absolute Scale",            group_id=0)
+        add(path + ".gravity_type",                         "Gravity Type",              group_id=0)
+        add(path + ".gravity",                              "Gravity",                   group_id=0)
+        add(path + ".force_field_resolution",               "Force Field Resolution",    group_id=0)
+        add(path + ".force_field_weight_fluid_particles",   "Force Field Weight Fluid",  group_id=0)
+        add(path + ".force_field_weight_whitewater_foam",   "Force Field Weight Foam",   group_id=0)
+        add(path + ".force_field_weight_whitewater_bubble", "Force Field Weight Bubble", group_id=0)
+        add(path + ".force_field_weight_whitewater_spray",  "Force Field Weight Spray",  group_id=0)
+        add(path + ".force_field_weight_whitewater_dust",   "Force Field Weight Dust",   group_id=0)
+        add(path + ".enable_viscosity",                     "Enable Viscosity",          group_id=0)
+        add(path + ".viscosity",                            "Viscosity Base",            group_id=0)
+        add(path + ".viscosity_exponent",                   "Viscosity Exponent",        group_id=0)
+        add(path + ".viscosity_solver_error_tolerance",     "Viscosity Accuracy",        group_id=0)
+        add(path + ".enable_surface_tension",               "Enable Surface Tension",    group_id=0)
+        add(path + ".surface_tension",                      "Surface Tension",           group_id=0)
+        add(path + ".surface_tension_exponent",             "Surface Tension Exponent",  group_id=0)
+        add(path + ".surface_tension_accuracy",             "Surface Tension Accuracy",  group_id=0)
+        add(path + ".surface_tension_solver_method",        "Surface Tension Solver",    group_id=0)
+        add(path + ".enable_sheet_seeding",                 "Enable Sheeting Effects",   group_id=0)
+        add(path + ".sheet_fill_rate",                      "Sheeting Strength",         group_id=0)
+        add(path + ".sheet_fill_threshold",                 "Sheeting Thickness",        group_id=0)
+        add(path + ".boundary_friction",                    "Boundary Friction",         group_id=0)
 
 
     def get_gravity_data_dict(self):

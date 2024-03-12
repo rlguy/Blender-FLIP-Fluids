@@ -2579,6 +2579,76 @@ extern "C" {
         );
     }
 
+    EXPORTDLL double FluidSimulation_get_force_field_weight_fluid_particles(FluidSimulation* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getForceFieldWeightFluidParticles, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_set_force_field_weight_fluid_particles(FluidSimulation* obj, 
+                                                                          double v,
+                                                                          int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setForceFieldWeightFluidParticles, v, err
+        );
+    }
+
+    EXPORTDLL double FluidSimulation_get_force_field_weight_whitewater_foam(FluidSimulation* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getForceFieldWeightWhitewaterFoam, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_set_force_field_weight_whitewater_foam(FluidSimulation* obj, 
+                                                                          double v,
+                                                                          int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setForceFieldWeightWhitewaterFoam, v, err
+        );
+    }
+
+    EXPORTDLL double FluidSimulation_get_force_field_weight_whitewater_bubble(FluidSimulation* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getForceFieldWeightWhitewaterBubble, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_set_force_field_weight_whitewater_bubble(FluidSimulation* obj, 
+                                                                            double v,
+                                                                            int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setForceFieldWeightWhitewaterBubble, v, err
+        );
+    }
+
+    EXPORTDLL double FluidSimulation_get_force_field_weight_whitewater_spray(FluidSimulation* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getForceFieldWeightWhitewaterSpray, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_set_force_field_weight_whitewater_spray(FluidSimulation* obj, 
+                                                                           double v,
+                                                                           int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setForceFieldWeightWhitewaterSpray, v, err
+        );
+    }
+
+    EXPORTDLL double FluidSimulation_get_force_field_weight_whitewater_dust(FluidSimulation* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getForceFieldWeightWhitewaterDust, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_set_force_field_weight_whitewater_dust(FluidSimulation* obj, 
+                                                                          double v,
+                                                                          int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setForceFieldWeightWhitewaterDust, v, err
+        );
+    }
+
     EXPORTDLL void FluidSimulation_enable_force_fields(FluidSimulation* obj, int *err) {
         CBindings::safe_execute_method_void_0param(
             obj, &FluidSimulation::enableForceFields, err
@@ -2932,6 +3002,26 @@ extern "C" {
         std::string str_device_name = device_name;
         CBindings::safe_execute_method_void_1param(
             obj, &FluidSimulation::setPreferredGPUDevice, str_device_name, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_enable_fracture_optimization(FluidSimulation* obj, int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableFractureOptimization, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_fracture_optimization(FluidSimulation* obj,
+                                                                                int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableFractureOptimization, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_fracture_optimization_enabled(FluidSimulation* obj,
+                                                                                  int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isFractureOptimizationEnabled, err
         );
     }
 

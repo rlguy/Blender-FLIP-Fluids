@@ -412,10 +412,16 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                     if system == "Windows":
                         row.label(text="Render Mode:")
                         row.prop(hprops, "cmd_launch_render_after_bake_mode", text="")
+                        column.label(text="")
                     else:
-                        row.label(text="")
+                        column.label(text="")
+                        column.label(text="")
                 elif hprops.cmd_bake_and_render_mode == 'CMD_BAKE_AND_RENDER_MODE_INTERLEAVED':
                     row.prop(hprops, "cmd_bake_and_render_interleaved_instances")
+                    row = column.row(align=True)
+                    row.enabled = hprops.cmd_bake_and_render
+                    row.alignment = 'RIGHT'
+                    row.prop(hprops, "cmd_bake_and_render_interleaved_no_overwrite")
 
                 """
                 row = column.row(align=True)
@@ -453,7 +459,7 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                 if system == "Windows":
                     row = column.row(align=True)
                     row.operator("flip_fluid_operators.helper_cmd_render_to_scriptfile")
-                    row.operator("flip_fluid_operators.helper_run_scriptfile", text="", icon='PLAY')
+                    row.operator("flip_fluid_operators.helper_run_batch_render_scriptfile", text="", icon='PLAY').regenerate_batch_file=False
                     row.operator("flip_fluid_operators.helper_open_outputfolder", text="", icon='FILE_FOLDER')
             else:
                 row = row.row(align=True)
@@ -518,6 +524,9 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                 row = column.row(align=True)
                 row.prop(hprops, "alembic_export_velocity")
                 column.separator()
+                row = column.row(align=True)
+                row.prop(hprops, "alembic_global_scale")
+                column.separator()
 
                 column.label(text="Frame Range:")
                 row = column.row()
@@ -556,14 +565,14 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
         )
         row.label(text="Geometry Node Tools:")
 
+        prefs = vcu.get_addon_preferences()
+        is_developer_mode = prefs.is_developer_tools_enabled()
         if hprops.geometry_node_tools_expanded:
             column = box.column(align=True)
 
             if not vcu.is_blender_31():
                 column.label(text="Blender 3.1 or later required")
 
-            prefs = vcu.get_addon_preferences()
-            is_developer_mode = prefs.is_developer_tools_enabled()
             if not is_developer_mode:
                 warn_box = box.box()
                 warn_column = warn_box.column(align=True)
@@ -584,6 +593,9 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
             column.enabled = vcu.is_blender_31() and is_developer_mode
             column.operator("flip_fluid_operators.helper_initialize_motion_blur", icon='ADD')
             column.operator("flip_fluid_operators.helper_remove_motion_blur", icon='REMOVE')
+        else:
+            if is_developer_mode and vcu.is_blender_31():
+                row.operator("flip_fluid_operators.helper_initialize_motion_blur", icon='ADD')
 
 
         #

@@ -1763,16 +1763,13 @@ class FlipFluidHelperCommandLineBake(bpy.types.Operator):
                 # changed Blender's working directory
                 blender_exe_path = "blender.exe"
 
-            """
-            command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" --python \"" + script_path + "\"" + " -- " + frame_string + " " + open_image_after
-            command = ["start", "cmd", cmd_start_flag, blender_exe_path, "--background", bpy.data.filepath, "--python", script_path, "--", frame_string, open_image_after]
-            """
             command = ["start", "cmd", "/k", blender_exe_path, "--background", bpy.data.filepath, "--python", script_path]
             command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" --python \"" + script_path + "\""
             if hprops.cmd_bake_and_render and hprops.cmd_bake_and_render_mode == 'CMD_BAKE_AND_RENDER_MODE_INTERLEAVED':
                 num_instance_string = str(hprops.cmd_bake_and_render_interleaved_instances)
-                command += ["--", num_instance_string]
-                command_text += " -- " + num_instance_string
+                use_overwrite_string = "0" if hprops.cmd_bake_and_render_interleaved_no_overwrite else "1"
+                command += ["--", num_instance_string, use_overwrite_string]
+                command_text += " -- " + num_instance_string + " " + use_overwrite_string
             
             prefs = vcu.get_addon_preferences()
             launch_attempts = prefs.cmd_bake_max_attempts
@@ -1808,7 +1805,8 @@ class FlipFluidHelperCommandLineBake(bpy.types.Operator):
             command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" --python \"" + script_path + "\""
             if hprops.cmd_bake_and_render and hprops.cmd_bake_and_render_mode == 'CMD_BAKE_AND_RENDER_MODE_INTERLEAVED':
                 num_instance_string = str(hprops.cmd_bake_and_render_interleaved_instances)
-                command_text += " -- " + num_instance_string
+                use_overwrite_string = "0" if hprops.cmd_bake_and_render_interleaved_no_overwrite else "1"
+                command_text += " -- " + num_instance_string + " " + use_overwrite_string
 
             script_text = "#!/bin/bash\n" + command_text
             script_name = "BAKE_" + bpy.path.basename(context.blend_data.filepath) + ".sh"
@@ -2155,11 +2153,6 @@ class FlipFluidHelperCmdRenderFrameToClipboard(bpy.types.Operator):
         self.report({'INFO'}, info_msg)
 
         return {'FINISHED'}
-
-
-
-
-
 
 
 class FlipFluidHelperCommandLineAlembicExport(bpy.types.Operator):
@@ -2753,10 +2746,14 @@ class FlipFluidHelperCommandLineRenderToScriptfile(bpy.types.Operator):
 
 
 class FlipFluidHelperRunScriptfile(bpy.types.Operator):
-    bl_idname = "flip_fluid_operators.helper_run_scriptfile"
+    bl_idname = "flip_fluid_operators.helper_run_batch_render_scriptfile"
     bl_label = "Launch Batch File Render"
     bl_description = ("Runs the generated batch file. If no batch file has been generated, one will be created automatically." +
                      " The .blend file will need to be saved before using this operator for changes to take effect")
+
+
+    regenerate_batch_file = BoolProperty(False)
+    exec(vcu.convert_attribute_to_28("regenerate_batch_file"))
 
 
     @classmethod
@@ -2770,15 +2767,15 @@ class FlipFluidHelperRunScriptfile(bpy.types.Operator):
         script_filename = "RENDER_" + blend_filename + ".bat"
         batch_filepath = os.path.join(directory, script_filename)
 
-        if not os.path.isfile(batch_filepath):
+        if self.regenerate_batch_file or not os.path.isfile(batch_filepath):
             bpy.ops.flip_fluid_operators.helper_cmd_render_to_scriptfile()
             if not os.path.isfile(batch_filepath):
                 self.report({'ERROR'}, "Unable to generate the render script.")
 
         os.startfile(batch_filepath)
           
-        info_msg = "Beginning to run the renderscript!\n\n"
-        info_msg += "For more information on batchfile rendering, visit our documentation:\n"
+        info_msg = "Beginning to run the batch render script!\n\n"
+        info_msg += "For more information on batch file rendering, visit our documentation:\n"
         info_msg += "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Helper-Menu-Settings#command-line-tools"
         self.report({'INFO'}, info_msg)
         return {'FINISHED'}
@@ -3546,15 +3543,26 @@ class FLIPFLUIDS_MT_render_menu(bpy.types.Menu):
     def draw(self, context):
         render_frame_text = "Shift F12"
         render_animation_text = "Shift Ctrl F12"
+        render_batch_animation_text = "Shift Ctrl B"
+
+        system = platform.system()
 
         row1 = self.layout.row()
         row2 = self.layout.row()
+        if system == "Windows":
+            row3 = self.layout.row()
 
         row1.operator(FlipFluidHelperCommandLineRenderFrame.bl_idname, icon="RENDER_STILL")
         row2.operator(FlipFluidHelperCommandLineRender.bl_idname, text="Launch Animation Render", icon="RENDER_ANIMATION")
+        if system == "Windows":
+            row3.operator(FlipFluidHelperRunScriptfile.bl_idname, text="Launch Batch Render", icon="CONSOLE").regenerate_batch_file=True
 
         row1.label(text=render_frame_text)
         row2.label(text=render_animation_text)
+        if system == "Windows":
+            row3.label(text=render_batch_animation_text)
+
+
         
 
 def draw_flip_fluids_render_menu(self, context):
@@ -3668,6 +3676,11 @@ def register():
 
         kmi = km.keymap_items.new(FlipFluidHelperCommandLineRender.bl_idname, type='F12', value='PRESS', shift=True, ctrl=True)
         ADDON_KEYMAPS.append((km, kmi))
+
+        system = platform.system()
+        if system == "Windows":
+            kmi = km.keymap_items.new(FlipFluidHelperRunScriptfile.bl_idname, type='B', value='PRESS', shift=True, ctrl=True)
+            ADDON_KEYMAPS.append((km, kmi))
 
 
 def unregister():

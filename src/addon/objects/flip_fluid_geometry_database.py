@@ -19,6 +19,8 @@ import bpy, os, sqlite3, math
 from .flip_fluid_geometry_export_object import GeometryExportType, MotionExportType
 from ..filesystem import filesystem_protection_layer as fpl
 
+from ..pyfluid import TriangleMesh
+
 
 class GeometryDatabase():
     def __init__(self, db_filepath, clear_database=False):
@@ -596,6 +598,169 @@ class GeometryDatabase():
         if not result:
             return None
         return result[0]
+
+
+    def get_mesh_geometry_data_dict_for_frame(self, simulation_data, frameno):
+        cmd = """ SELECT object_id, object_slug, object_motion_type FROM object"""
+        self._cursor.execute(cmd)
+        result = self._cursor.fetchall()
+
+        geometry_data = {}
+        object_id_to_name_slug = {}
+        for row in result:
+            object_id = row[0]
+            name_slug = row[1]
+            object_motion_type = row[2]
+            is_static = object_motion_type == 'STATIC'
+            is_dynamic = not is_static
+
+            geometry_data[name_slug] = {
+                "object_id": object_id,
+                "object_motion_type": object_motion_type,
+                "is_motion_static": is_static,
+                "is_motion_dynamic": is_dynamic,
+                "static_bobj_data": None,
+                "transform_previous": None,
+                "transform_current": None,
+                "transform_next": None,
+                "triangle_mesh_previous": None,
+                "triangle_mesh_current": None,
+                "triangle_mesh_next": None,
+            }
+            object_id_to_name_slug[object_id] = name_slug
+
+
+        # Retreive static meshes for static and keyframed objects
+        cmd = """SELECT object_id, mesh_static_data FROM mesh_static"""
+        self._cursor.execute(cmd)
+        result_static_bobj_data = self._cursor.fetchall()
+
+        static_bobj_data = {}
+        for row in result_static_bobj_data:
+            object_id = row[0]
+            bobj_data = row[1]
+            static_bobj_data[object_id] = bobj_data
+
+            name_slug = object_id_to_name_slug[object_id]
+            geometry_data[name_slug]["static_bobj_data"] = bobj_data
+
+        frame_previous = frameno - 1
+        frame_current = frameno
+        frame_next = frameno + 1
+
+        # Retrieve keyframed mesh transforms
+        cmd = """
+            SELECT object_id,
+                   m00, m01, m02, m03, 
+                   m10, m11, m12, m13, 
+                   m20, m21, m22, m23, 
+                   m30, m31, m32, m33 FROM mesh_keyframed 
+            WHERE frame_id=?
+            """
+
+        self._cursor.execute(cmd, (frame_previous,))
+        result_frame_previous = self._cursor.fetchall()
+        self._cursor.execute(cmd, (frame_current,))
+        result_frame_current = self._cursor.fetchall()
+        self._cursor.execute(cmd, (frame_next,))
+        result_frame_next = self._cursor.fetchall()
+
+        for row in result_frame_previous:
+            object_id = row[0]
+            transform = list(row[1:])
+            name_slug = object_id_to_name_slug[object_id]
+            geometry_data[name_slug]["transform_previous"] = transform
+
+        for row in result_frame_current:
+            object_id = row[0]
+            transform = list(row[1:])
+            name_slug = object_id_to_name_slug[object_id]
+            geometry_data[name_slug]["transform_current"] = transform
+
+        for row in result_frame_next:
+            object_id = row[0]
+            transform = list(row[1:])
+            name_slug = object_id_to_name_slug[object_id]
+            geometry_data[name_slug]["transform_next"] = transform
+
+        for name_slug, entry in geometry_data.items():
+            if not entry["object_motion_type"] == 'KEYFRAMED':
+                continue
+            if entry["transform_previous"] is None:
+                entry["transform_previous"] = entry["transform_current"]
+            if entry["transform_next"] is None:
+                entry["transform_next"] = entry["transform_current"]
+
+        # Generate keyframed triangle meshes from transforms
+        scale = simulation_data.domain_data.initialize.scale
+        bbox = simulation_data.domain_data.initialize.bbox
+        for name_slug, entry in geometry_data.items():
+            if not entry["object_motion_type"] == 'KEYFRAMED':
+                continue
+
+            mesh_previous = TriangleMesh.from_bobj(entry["static_bobj_data"])
+            mesh_current = TriangleMesh.from_bobj(entry["static_bobj_data"])
+            mesh_next = TriangleMesh.from_bobj(entry["static_bobj_data"])
+            mesh_previous.apply_transform(entry["transform_previous"])
+            mesh_current.apply_transform(entry["transform_current"])
+            mesh_next.apply_transform(entry["transform_next"])
+            mesh_previous.translate(-bbox.x, -bbox.y, -bbox.z)
+            mesh_current.translate(-bbox.x, -bbox.y, -bbox.z)
+            mesh_next.translate(-bbox.x, -bbox.y, -bbox.z)
+            mesh_previous.scale(scale)
+            mesh_current.scale(scale)
+            mesh_next.scale(scale)
+
+            entry["triangle_mesh_previous"] = mesh_previous
+            entry["triangle_mesh_current"] = mesh_current
+            entry["triangle_mesh_next"] = mesh_next
+
+        # Retrieve animated triangle meshes
+        cmd = """SELECT object_id, mesh_animated_data FROM mesh_animated WHERE frame_id=?"""
+
+        self._cursor.execute(cmd, (frame_previous,))
+        result_frame_previous = self._cursor.fetchall()
+        self._cursor.execute(cmd, (frame_current,))
+        result_frame_current = self._cursor.fetchall()
+        self._cursor.execute(cmd, (frame_next,))
+        result_frame_next = self._cursor.fetchall()
+
+        for row in result_frame_previous:
+            object_id = row[0]
+            bobj_data = row[1]
+            name_slug = object_id_to_name_slug[object_id]
+            mesh = TriangleMesh.from_bobj(bobj_data)
+            mesh.translate(-bbox.x, -bbox.y, -bbox.z)
+            mesh.scale(scale)
+            geometry_data[name_slug]["triangle_mesh_previous"] = mesh
+
+        for row in result_frame_current:
+            object_id = row[0]
+            bobj_data = row[1]
+            name_slug = object_id_to_name_slug[object_id]
+            mesh = TriangleMesh.from_bobj(bobj_data)
+            mesh.translate(-bbox.x, -bbox.y, -bbox.z)
+            mesh.scale(scale)
+            geometry_data[name_slug]["triangle_mesh_current"] = mesh
+
+        for row in result_frame_next:
+            object_id = row[0]
+            bobj_data = row[1]
+            name_slug = object_id_to_name_slug[object_id]
+            mesh = TriangleMesh.from_bobj(bobj_data)
+            mesh.translate(-bbox.x, -bbox.y, -bbox.z)
+            mesh.scale(scale)
+            geometry_data[name_slug]["triangle_mesh_next"] = mesh
+
+        for name_slug, entry in geometry_data.items():
+            if not entry["object_motion_type"] == 'ANIMATED':
+                continue
+            if entry["triangle_mesh_previous"] is None:
+                entry["triangle_mesh_previous"] = entry["triangle_mesh_current"]
+            if entry["triangle_mesh_next"] is None:
+                entry["triangle_mesh_next"] = entry["triangle_mesh_current"]
+
+        return geometry_data
 
 
 

@@ -416,9 +416,6 @@ def add_objects_to_geometry_exporter(geometry_exporter):
     objects = bpy.context.scene.flip_fluid.get_simulation_objects(skip_hide_viewport=True)
     disable_topology_warning = dprops.advanced.disable_changing_topology_warning
 
-    for obj in objects:
-        print(obj)
-
     # Add regular FLIP Fluid objects
     for obj in objects:
         props = obj.flip_fluid.get_property_group()

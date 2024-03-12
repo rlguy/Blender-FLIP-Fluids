@@ -3,8 +3,10 @@ import bpy, sys, os, threading, time, subprocess, queue
 argv = sys.argv
 argv = argv[argv.index("--") + 1:]
 num_render_instances_option = int(argv[0])
+use_overwrite_option = int(argv[1])
 
 _NUM_RENDER_INSTANCES = num_render_instances_option
+_USE_OVERWRITE = bool(use_overwrite_option)
 _RENDER_THREADS = []
 _IS_SIMULATION_FINISHED = False
 
@@ -61,8 +63,10 @@ def render_loop(settings):
                 next_frame = settings["frame_start"]
 
             for i in range(next_frame, max_frameno + 1):
-                baked_frames.append(i)
-                render_frame_queue.put(i)
+                is_valid_frame = ((i - settings["frame_start"]) % settings["frame_step"]) == 0
+                if is_valid_frame:
+                    baked_frames.append(i)
+                    render_frame_queue.put(i)
 
         # Launch render worker thread
         if not render_frame_queue.empty():
@@ -116,7 +120,8 @@ settings["blender_binary_path"] = bpy.app.binary_path
 settings["blend_filepath"] = bpy.data.filepath
 settings["frame_start"] = bpy.context.scene.frame_start
 settings["frame_end"] = bpy.context.scene.frame_end
-settings["use_overwrite"] = bpy.context.scene.render.use_overwrite
+settings["frame_step"] = bpy.context.scene.frame_step
+settings["use_overwrite"] = _USE_OVERWRITE
 settings["frame_filepaths"] = frame_filepaths
 
 render_loop_thread = threading.Thread(target=render_loop, args=(settings,))

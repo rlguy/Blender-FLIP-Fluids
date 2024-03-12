@@ -169,6 +169,17 @@ class DomainAdvancedProperties(bpy.types.PropertyGroup):
             update=lambda self, context: self.initialize_num_threads_auto_detect(),
             options={'HIDDEN'},
             ); exec(conv("threading_mode"))
+    enable_fracture_optimization = BoolProperty(
+            name="Enable Fracture Optimizations",
+            description="Enable optimizations when using animated fracture simulations as"
+                " FLIP obstacles. These optimizations can greatly improve simulation performance"
+                " when there are a large number of small separate FLIP Obstacle objects, such"
+                " as in Cell Fracture and RBDLab simulations. Not recommended for fracture simulations"
+                " where all pieces are contained within a single FLIP Obstacle as this can harm performance. Enabling"
+                " this option can increase memory requirements",
+            default = False,
+            options={'HIDDEN'},
+            ); exec(conv("enable_fracture_optimization"))
     enable_asynchronous_meshing = BoolProperty(
             name="Enable Async Meshing",
             description="Run mesh generation process in a separate thread while"
@@ -236,6 +247,7 @@ class DomainAdvancedProperties(bpy.types.PropertyGroup):
         add(path + ".threading_mode",                            "Threading Mode",                     group_id=1)
         add(path + ".num_threads_fixed",                         "Num Threads (fixed)",                group_id=1)
         add(path + ".enable_asynchronous_meshing",               "Async Meshing",                      group_id=1)
+        add(path + ".enable_fracture_optimization",              "Enable Fracture Optimization",        group_id=1)
         add(path + ".precompute_static_obstacles",               "Precompute Static Obstacles",        group_id=1)
         add(path + ".reserve_temporary_grids",                   "Reserve Temporary Grid Memory",      group_id=1)
         add(path + ".disable_changing_topology_warning",         "Disable Changing Topology Warning",  group_id=1)

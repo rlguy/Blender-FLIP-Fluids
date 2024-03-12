@@ -51,10 +51,10 @@ public:
     void addForceField(ForceField *field);
     void update(double dt, double frameInterpolation);
 
-    vmath::vec3 evaluateForceAtPosition(vmath::vec3 p);
-    float evaluateForceAtPositionU(vmath::vec3 p);
-    float evaluateForceAtPositionV(vmath::vec3 p);
-    float evaluateForceAtPositionW(vmath::vec3 p);
+    vmath::vec3 evaluateForceAtPosition(vmath::vec3 p, float scale);
+    float evaluateForceAtPositionU(vmath::vec3 p, float scale);
+    float evaluateForceAtPositionV(vmath::vec3 p, float scale);
+    float evaluateForceAtPositionW(vmath::vec3 p, float scale);
 
     vmath::vec3 getGravityVector();
     void setGravityVector(vmath::vec3 g);

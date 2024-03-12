@@ -2416,6 +2416,62 @@ void FluidSimulation::resetBodyForce() {
     _constantBodyForces.clear();
 }
 
+double FluidSimulation::getForceFieldWeightFluidParticles() {
+    return _forceFieldWeightFluidParticles;
+}
+
+void FluidSimulation::setForceFieldWeightFluidParticles(double v) {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " setForceFieldWeightFluidParticles: " << v << std::endl);
+
+    _forceFieldWeightFluidParticles = v;
+}
+
+double FluidSimulation::getForceFieldWeightWhitewaterFoam() {
+    return _diffuseMaterial.getForceFieldWeightWhitewaterFoam();
+}
+
+void FluidSimulation::setForceFieldWeightWhitewaterFoam(double v) {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " setForceFieldWeightWhitewaterFoam: " << v << std::endl);
+
+    _diffuseMaterial.setForceFieldWeightWhitewaterFoam(v);
+}
+
+double FluidSimulation::getForceFieldWeightWhitewaterBubble() {
+    return _diffuseMaterial.getForceFieldWeightWhitewaterBubble();
+}
+
+void FluidSimulation::setForceFieldWeightWhitewaterBubble(double v) {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " setForceFieldWeightWhitewaterBubble: " << v << std::endl);
+
+    _diffuseMaterial.setForceFieldWeightWhitewaterBubble(v);
+}
+
+
+double FluidSimulation::getForceFieldWeightWhitewaterSpray() {
+    return _diffuseMaterial.getForceFieldWeightWhitewaterSpray();
+}
+
+void FluidSimulation::setForceFieldWeightWhitewaterSpray(double v) {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " setForceFieldWeightWhitewaterSpray: " << v << std::endl);
+
+    _diffuseMaterial.setForceFieldWeightWhitewaterSpray(v);
+}
+
+double FluidSimulation::getForceFieldWeightWhitewaterDust() {
+    return _diffuseMaterial.getForceFieldWeightWhitewaterDust();
+}
+
+void FluidSimulation::setForceFieldWeightWhitewaterDust(double v) {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " setForceFieldWeightWhitewaterDust: " << v << std::endl);
+
+    _diffuseMaterial.setForceFieldWeightWhitewaterDust(v);
+}
+
 void FluidSimulation::enableForceFields() {
     _logfile.log(std::ostringstream().flush() << 
                  _logfile.getTime() << " enableForceFields" << std::endl);
@@ -2801,6 +2857,24 @@ void FluidSimulation::setPreferredGPUDevice(std::string deviceName) {
 
 std::string FluidSimulation::getPreferredGPUDevice() {
     return OpenCLUtils::getPreferredGPUDevice();
+}
+
+void FluidSimulation::enableFractureOptimization() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " enableFractureOptimization" << std::endl);
+
+    _isFractureOptimizationEnabled = true;
+}
+
+void FluidSimulation::disableFractureOptimization() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " disableFractureOptimization" << std::endl);
+
+    _isFractureOptimizationEnabled = false;
+}
+
+bool FluidSimulation::isFractureOptimizationEnabled() {
+    return _isFractureOptimizationEnabled;
 }
 
 void FluidSimulation::enableStaticSolidLevelSetPrecomputation() {
@@ -4831,10 +4905,19 @@ void FluidSimulation::_addAnimatedObjectsToSolidSDF(double dt) {
         _tempSolidSDF = MeshLevelSet(_isize, _jsize, _ksize, _dx);
     }
 
-    for (size_t i = 0; i < normalObstacles.size(); i++) {
-        _tempSolidSDF.reset();
-        normalObstacles[i]->getMeshLevelSet(dt, frameProgress, _solidLevelSetExactBand, _tempSolidSDF);
-        _solidSDF.calculateUnion(_tempSolidSDF);
+    if (_isFractureOptimizationEnabled) {
+        if (!normalObstacles.empty()) {
+            _tempSolidSDF.reset();
+            MeshObject tempMeshObject;
+            tempMeshObject.getMeshLevelSetFractureOptimization(normalObstacles, dt, frameProgress, _solidLevelSetExactBand, _tempSolidSDF);
+            _solidSDF.calculateUnion(_tempSolidSDF);
+        }
+    } else {
+        for (size_t i = 0; i < normalObstacles.size(); i++) {
+            _tempSolidSDF.reset();
+            normalObstacles[i]->getMeshLevelSet(dt, frameProgress, _solidLevelSetExactBand, _tempSolidSDF);
+            _solidSDF.calculateUnion(_tempSolidSDF);
+        }
     }
 
     if (!inversedObstacles.empty()) {
@@ -4890,10 +4973,19 @@ void FluidSimulation::_addStaticObjectsToSDF(double dt, MeshLevelSet &sdf){
         _tempSolidSDF = MeshLevelSet(_isize, _jsize, _ksize, _dx);
     }
 
-    for (size_t i = 0; i < normalObstacles.size(); i++) {
-        _tempSolidSDF.reset();
-        normalObstacles[i]->getMeshLevelSet(dt, frameProgress, _solidLevelSetExactBand, _tempSolidSDF);
-        sdf.calculateUnion(_tempSolidSDF);
+    if (_isFractureOptimizationEnabled) {
+        if (!normalObstacles.empty()) {
+            _tempSolidSDF.reset();
+            MeshObject tempMeshObject;
+            tempMeshObject.getMeshLevelSetFractureOptimization(normalObstacles, dt, frameProgress, _solidLevelSetExactBand, _tempSolidSDF);
+            sdf.calculateUnion(_tempSolidSDF);
+        }
+    } else {
+        for (size_t i = 0; i < normalObstacles.size(); i++) {
+            _tempSolidSDF.reset();
+            normalObstacles[i]->getMeshLevelSet(dt, frameProgress, _solidLevelSetExactBand, _tempSolidSDF);
+            sdf.calculateUnion(_tempSolidSDF);
+        }
     }
 
     if (!inversedObstacles.empty()) {
@@ -4980,9 +5072,6 @@ void FluidSimulation::_updateSolidLevelSet(double dt) {
 
     _solidSDF.reset();
 
-    StopWatch t;
-    t.start();
-
     int pi, pj, pk;
     _tempSolidSDF.getGridDimensions(&pi, &pj, &pk);
     if (_isTempSolidLevelSetEnabled) {
@@ -4997,9 +5086,7 @@ void FluidSimulation::_updateSolidLevelSet(double dt) {
 
     _addStaticObjectsToSolidSDF(dt, objectStatus);
     _addAnimatedObjectsToSolidSDF(dt);
-
     _solidSDF.normalizeVelocityGrid();
-
     _resolveSolidLevelSetUpdateCollisions();
 
     _isSolidLevelSetUpToDate = true;
@@ -5502,7 +5589,7 @@ void FluidSimulation::_applyForceFieldGridForcesThread(int startidx, int endidx,
             GridIndex g = Grid3d::getUnflattenedIndex(idx, _isize + 1, _jsize);
             if (!ex->validU(g)) {
                 vmath::vec3 p = Grid3d::FaceIndexToPositionU(g, _dx);
-                float xvel = _forceFieldGrid.evaluateForceAtPositionU(p);
+                float xvel = _forceFieldGrid.evaluateForceAtPositionU(p, _forceFieldWeightFluidParticles);
                 _MACVelocity.addU(g, xvel * dt);
             }
         }
@@ -5513,7 +5600,7 @@ void FluidSimulation::_applyForceFieldGridForcesThread(int startidx, int endidx,
             GridIndex g = Grid3d::getUnflattenedIndex(idx, _isize, _jsize + 1);
             if (!ex->validV(g)) {
                 vmath::vec3 p = Grid3d::FaceIndexToPositionV(g, _dx);
-                float yvel = _forceFieldGrid.evaluateForceAtPositionV(p);
+                float yvel = _forceFieldGrid.evaluateForceAtPositionV(p, _forceFieldWeightFluidParticles);
                 _MACVelocity.addV(g, yvel * dt);
             }
         }
@@ -5524,7 +5611,7 @@ void FluidSimulation::_applyForceFieldGridForcesThread(int startidx, int endidx,
             GridIndex g = Grid3d::getUnflattenedIndex(idx, _isize, _jsize);
             if (!ex->validW(g)) {
                 vmath::vec3 p = Grid3d::FaceIndexToPositionW(g, _dx);
-                float zvel = _forceFieldGrid.evaluateForceAtPositionW(p);
+                float zvel = _forceFieldGrid.evaluateForceAtPositionW(p, _forceFieldWeightFluidParticles);
                 _MACVelocity.addW(g, zvel * dt);
             }
         }
@@ -8218,6 +8305,13 @@ void FluidSimulation::_applyMeshingVolumeToSDF(MeshLevelSet *sdf) {
         return;
     }
 
+    int isdf, jsdf, ksdf;
+    sdf->getGridDimensions(&isdf, &jsdf, &ksdf);
+    if (isdf == 0 && jsdf == 0 && ksdf == 0) {
+        // SDF has not been initialized and does not need meshing volume applied
+        return;
+    }
+
     for (int k = 0; k < _ksize + 1; k++) {
         for (int j = 0; j < _jsize + 1; j++) {
             for (int i = 0; i < _isize + 1; i++) {
@@ -9848,7 +9942,11 @@ void FluidSimulation::update(double dt) {
     _timingData.frameTime = frameTimer.getTime();
     _totalSimulationTime += frameTimer.getTime();
 
-    _currentPerformanceScore = (int)(((double)totalFluidParticlesProcessed / totalFluidParticlesProcessedTime) / 1000.0);
+    if (totalFluidParticlesProcessed == 0 || totalFluidParticlesProcessedTime < 1e-9) {
+        _currentPerformanceScore = -1;
+    } else {
+        _currentPerformanceScore = (int)(((double)totalFluidParticlesProcessed / totalFluidParticlesProcessedTime) / 1000.0);
+    }
 
     _updateTimingData();
     _logFrameInfo();

@@ -2106,6 +2106,67 @@ class FluidSimulation(object):
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self()])
 
+
+    @property
+    def force_field_weight_fluid_particles(self):
+        libfunc = lib.FluidSimulation_get_force_field_weight_fluid_particles
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @force_field_weight_fluid_particles.setter
+    def force_field_weight_fluid_particles(self, value):
+        libfunc = lib.FluidSimulation_set_force_field_weight_fluid_particles
+        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), value])
+
+    @property
+    def force_field_weight_whitewater_foam(self):
+        libfunc = lib.FluidSimulation_get_force_field_weight_whitewater_foam
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @force_field_weight_whitewater_foam.setter
+    def force_field_weight_whitewater_foam(self, value):
+        libfunc = lib.FluidSimulation_set_force_field_weight_whitewater_foam
+        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), value])
+
+    @property
+    def force_field_weight_whitewater_bubble(self):
+        libfunc = lib.FluidSimulation_get_force_field_weight_whitewater_bubble
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @force_field_weight_whitewater_bubble.setter
+    def force_field_weight_whitewater_bubble(self, value):
+        libfunc = lib.FluidSimulation_set_force_field_weight_whitewater_bubble
+        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), value])
+
+    @property
+    def force_field_weight_whitewater_spray(self):
+        libfunc = lib.FluidSimulation_get_force_field_weight_whitewater_spray
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @force_field_weight_whitewater_spray.setter
+    def force_field_weight_whitewater_spray(self, value):
+        libfunc = lib.FluidSimulation_set_force_field_weight_whitewater_spray
+        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), value])
+
+    @property
+    def force_field_weight_whitewater_dust(self):
+        libfunc = lib.FluidSimulation_get_force_field_weight_whitewater_dust
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @force_field_weight_whitewater_dust.setter
+    def force_field_weight_whitewater_dust(self, value):
+        libfunc = lib.FluidSimulation_set_force_field_weight_whitewater_dust
+        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), value])
+
     @property
     def enable_force_fields(self):
         libfunc = lib.FluidSimulation_is_force_fields_enabled
@@ -2416,6 +2477,21 @@ class FluidSimulation(object):
         libfunc = lib.FluidSimulation_set_preferred_gpu_device
         pb.init_lib_func(libfunc, [c_void_p, c_char_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), c_device_name])
+
+    @property
+    def enable_fracture_optimization(self):
+        libfunc = lib.FluidSimulation_is_fracture_optimization_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_fracture_optimization.setter
+    def enable_fracture_optimization(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_fracture_optimization
+        else:
+            libfunc = lib.FluidSimulation_disable_fracture_optimization
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
 
     @property
     def enable_static_solid_levelset_precomputation(self):
