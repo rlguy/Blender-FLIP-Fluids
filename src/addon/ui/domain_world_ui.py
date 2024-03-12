@@ -150,11 +150,13 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
         row.label(text="Gravity and Force Fields:")
 
         if wprops.force_field_settings_expanded:
-            box.label(text="Gravity:")
-            row = box.row(align=True)
+
+            subbox = box.box()
+            subbox.label(text="Gravity:")
+            row = subbox.row(align=True)
             row.prop(wprops, "gravity_type", expand=True)
 
-            column = box.column(align=True)
+            column = subbox.column(align=True)
             split = column.split(align=True)
             column_left = split.column()
             column_right = split.column()
@@ -182,16 +184,16 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
             elif wprops.gravity_type == 'GRAVITY_TYPE_CUSTOM':
                 column_right.prop(wprops, "gravity", text="")
 
-            column = box.column(align=True)
+            column = subbox.column(align=True)
             column.operator("flip_fluid_operators.make_zero_gravity")
 
-            
-            box.label(text="Force Field Resolution:")
-            column = box.column(align=True)
+            subbox = box.box()
+            subbox.label(text="Force Field Resolution:")
+            column = subbox.column(align=True)
             row = column.row(align=True)
             row.prop(wprops, "force_field_resolution", expand=True)
 
-            column = box.column(align=True)
+            column = subbox.column(align=True)
             split = column.split(align=True)
             column_left = split.column(align=True)
             column_right = split.column(align=True)
@@ -209,8 +211,17 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
             row.label(text="Grid resolution: ")
             column_right.label(text=str(field_resolution))
 
+            subbox = box.box()
+            subbox.label(text="Force Field Weights:")
+            column = subbox.column(align=True)
+            column.prop(wprops, "force_field_weight_fluid_particles", slider=True)
+            column.prop(wprops, "force_field_weight_whitewater_foam", slider=True)
+            column.prop(wprops, "force_field_weight_whitewater_bubble", slider=True)
+            column.prop(wprops, "force_field_weight_whitewater_spray", slider=True)
+            column.prop(wprops, "force_field_weight_whitewater_dust", slider=True)
+
         if show_documentation:
-            column = box.column(align=True)
+            column = subbox.column(align=True)
             column.operator(
                 "wm.url_open", 
                 text="Force Field Resolution", 

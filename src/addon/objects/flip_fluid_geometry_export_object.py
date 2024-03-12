@@ -59,6 +59,25 @@ def get_vector4_at_frame(obj, path, frame_id):
 def get_rotation_mode_at_frame(obj, frame_id):
     mode_curve = find_fcurve(obj, "rotation_mode")
     mode = mode_curve.evaluate(frame_id) if mode_curve else getattr(obj, "rotation_mode")
+    if isinstance(mode, float):
+        # Handles case where rotation mode is keyframed - enum returns a float instead of a string
+        enum = int(mode)
+        if mode == 0:
+            mode = 'QUATERNION'
+        elif mode == 1:
+            mode = 'XYZ'
+        elif mode == 2:
+            mode = 'XZY'
+        elif mode == 3:
+            mode = 'YXZ'
+        elif mode == 4:
+            mode = 'YZX'
+        elif mode == 5:
+            mode = 'ZXY'
+        elif mode == 6:
+            mode = 'ZYX'
+        elif mode == 7:
+            mode = 'AXIS_ANGLE'
     return mode
 
 

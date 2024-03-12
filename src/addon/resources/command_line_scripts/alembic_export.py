@@ -442,6 +442,7 @@ check_cache_velocity_data()
 
 print("\n*** Starting Alembic Export ***\n")
 
+global_scale = hprops.alembic_global_scale
 frame_start, frame_end = get_export_frame_range()
 alembic_filepath = get_alembic_output_filepath()
 
@@ -498,4 +499,4 @@ def frame_change_handler(scene):
 
 bpy.app.handlers.frame_change_post.append(frame_change_handler)
 
-bpy.ops.wm.alembic_export(filepath=alembic_filepath, selected=True, start=frame_start, end=frame_end)
+bpy.ops.wm.alembic_export(filepath=alembic_filepath, selected=True, start=frame_start, end=frame_end, global_scale=global_scale)

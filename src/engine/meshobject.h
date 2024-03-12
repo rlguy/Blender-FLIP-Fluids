@@ -87,6 +87,9 @@ public:
     std::vector<vmath::vec3> getFrameVertexVelocities(int frameno, double dt);
     void getMeshLevelSet(double dt, float frameInterpolation, int exactBand, 
                          MeshLevelSet &levelset);
+    void getMeshLevelSetFractureOptimization(std::vector<MeshObject*> obstacles, 
+                                             double dt, float frameInterpolation, int exactBand, 
+                                             MeshLevelSet &levelset);
 
     void enable();
     void disable();
@@ -164,6 +167,10 @@ private:
                                            BoundedBuffer<MeshLevelSet*> *finishedWorkQueue,
                                            MeshLevelSet *domainLevelSet,
                                            int exactBand);
+    void _obstacleMeshLevelSetProducerThread(BoundedBuffer<MeshObject*> *workQueue,
+                                             BoundedBuffer<MeshLevelSet*> *finishedWorkQueue,
+                                             MeshLevelSet *domainLevelSet,
+                                             double dt, float frameInterpolation, int exactBand);
     bool _isMeshChanged();
 
     void _sortTriangleIndices(Triangle &t);

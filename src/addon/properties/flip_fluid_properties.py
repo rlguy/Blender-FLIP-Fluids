@@ -122,6 +122,8 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
     def get_fluid_objects(self, skip_hide_viewport=False):
         objects = []
         for obj in vcu.get_all_scene_objects():
+            if not obj.flip_fluid.is_active:
+                continue
             if skip_hide_viewport and obj.hide_viewport:
                 continue
             if obj.flip_fluid.is_fluid():
@@ -132,6 +134,8 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
     def get_num_obstacle_objects(self):
         n = 0
         for obj in vcu.get_all_scene_objects():
+            if not obj.flip_fluid.is_active:
+                continue
             if obj.flip_fluid.is_obstacle():
                 n += 1
         return n
@@ -140,6 +144,8 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
     def get_obstacle_objects(self, skip_hide_viewport=False):
         objects = []
         for obj in vcu.get_all_scene_objects():
+            if not obj.flip_fluid.is_active:
+                continue
             if skip_hide_viewport and obj.hide_viewport:
                 continue
             if obj.flip_fluid.is_obstacle():
@@ -150,6 +156,8 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
     def get_num_inflow_objects(self):
         n = 0
         for obj in vcu.get_all_scene_objects():
+            if not obj.flip_fluid.is_active:
+                continue
             if obj.flip_fluid.is_inflow():
                 n += 1
         return n
@@ -158,6 +166,8 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
     def get_inflow_objects(self, skip_hide_viewport=False):
         objects = []
         for obj in vcu.get_all_scene_objects():
+            if not obj.flip_fluid.is_active:
+                continue
             if skip_hide_viewport and obj.hide_viewport:
                 continue
             if obj.flip_fluid.is_inflow():
@@ -168,6 +178,8 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
     def get_num_outflow_objects(self):
         n = 0
         for obj in vcu.get_all_scene_objects():
+            if not obj.flip_fluid.is_active:
+                continue
             if obj.flip_fluid.is_outflow():
                 n += 1
         return n
@@ -176,6 +188,8 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
     def get_outflow_objects(self, skip_hide_viewport=False):
         objects = []
         for obj in vcu.get_all_scene_objects():
+            if not obj.flip_fluid.is_active:
+                continue
             if skip_hide_viewport and obj.hide_viewport:
                 continue
             if obj.flip_fluid.is_outflow():
@@ -186,6 +200,8 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
     def get_num_force_field_objects(self):
         n = 0
         for obj in vcu.get_all_scene_objects():
+            if not obj.flip_fluid.is_active:
+                continue
             if obj.flip_fluid.is_force_field():
                 n += 1
         return n
@@ -194,6 +210,8 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
     def get_force_field_objects(self, skip_hide_viewport=False):
         objects = []
         for obj in vcu.get_all_scene_objects():
+            if not obj.flip_fluid.is_active:
+                continue
             if skip_hide_viewport and obj.hide_viewport:
                 continue
             if obj.flip_fluid.is_force_field():
@@ -204,13 +222,14 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
     def get_simulation_objects(self, skip_hide_viewport=False):
         objects = []
         for obj in vcu.get_all_scene_objects():
-            if obj.flip_fluid.is_active:
-                if skip_hide_viewport and obj.hide_viewport:
-                    continue
-                if obj.flip_fluid.is_domain():
-                    # get all FLIP Fluid objects that are not a domain
-                    continue
-                objects.append(obj)
+            if not obj.flip_fluid.is_active:
+                continue
+            if skip_hide_viewport and obj.hide_viewport:
+                continue
+            if obj.flip_fluid.is_domain():
+                # get all FLIP Fluid objects that are not a domain
+                continue
+            objects.append(obj)
 
         return objects
 

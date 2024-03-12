@@ -140,6 +140,16 @@ def update_debug_grid_geometry(context):
     maxy = bbox.y + jsize * dx - solid_width
     maxz = bbox.z + ksize * dx - solid_width
 
+    if minx > maxx:
+        minx = bbox.x + 0.5 * isize * dx
+        maxx = minx
+    if miny > maxy:
+        miny = bbox.y + 0.5 * jsize * dx
+        maxy = miny
+    if minz > maxz:
+        minz = bbox.z + 0.5 * ksize * dx
+        maxz = minz
+
     bounds_coords = [
         (minx, miny, minz), (maxx, miny, minz), (minx, maxy, minz), (maxx, maxy, minz), 
         (minx, miny, maxz), (maxx, miny, maxz), (minx, maxy, maxz), (maxx, maxy, maxz),

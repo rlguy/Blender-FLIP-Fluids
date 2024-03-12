@@ -124,6 +124,15 @@ public:
     ParticleSystem* getDiffuseParticles();
     int getNumDiffuseParticles();
 
+    double getForceFieldWeightWhitewaterFoam();
+    void setForceFieldWeightWhitewaterFoam(double v);
+    double getForceFieldWeightWhitewaterBubble();
+    void setForceFieldWeightWhitewaterBubble(double v);
+    double getForceFieldWeightWhitewaterSpray();
+    void setForceFieldWeightWhitewaterSpray(double v);
+    double getForceFieldWeightWhitewaterDust();
+    void setForceFieldWeightWhitewaterDust(double v);
+
     double getEmitterGenerationRate();
     void setEmitterGenerationRate(double rate);
 
@@ -374,7 +383,7 @@ private:
     std::vector<bool>* _getActiveSides(DiffuseParticle &dp);
     int _getNearestSideIndex(vmath::vec3 p, AABB &boundary);
 
-    vmath::vec3 _getGravityVector(vmath::vec3 pos);
+    vmath::vec3 _getGravityVector(vmath::vec3 pos, DiffuseParticleType dtype);
 
     void _getDiffuseParticleTypeCounts(int *numfoam, 
                                       int *numbubble, 
@@ -427,6 +436,10 @@ private:
     double _CFLConditionNumber = 5;
     double _markerParticleRadius = 0;
     vmath::vec3 _bodyForce;
+    float _forceFieldWeightWhitewaterFoam = 1.0f;
+    float _forceFieldWeightWhitewaterBubble = 1.0f;
+    float _forceFieldWeightWhitewaterSpray = 1.0f;
+    float _forceFieldWeightWhitewaterDust = 1.0f;
     vmath::vec3 _domainOffset;
     double _domainScale = 1.0;
 

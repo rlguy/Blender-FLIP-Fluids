@@ -159,7 +159,7 @@ class FLIPFLUID_PT_DomainTypeAdvancedPanel(bpy.types.Panel):
             icon_only=True, 
             emboss=False
         )
-        row.label(text="Multithreading:")
+        row.label(text="Multithreading and Performance:")
 
         if not aprops.multithreading_expanded:
             info_text = ""
@@ -185,6 +185,9 @@ class FLIPFLUID_PT_DomainTypeAdvancedPanel(bpy.types.Panel):
                 row.prop(aprops, "num_threads_auto_detect")
             elif aprops.threading_mode == 'THREADING_MODE_FIXED':
                 row.prop(aprops, "num_threads_fixed")
+
+            column = box.column()
+            column.prop(aprops, "enable_fracture_optimization")
 
             if show_documentation:
                 column = box.column(align=True)

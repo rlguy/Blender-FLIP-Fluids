@@ -263,6 +263,46 @@ void MeshObject::getMeshLevelSet(double dt, float frameInterpolation, int exactB
     }
 }
 
+void MeshObject::getMeshLevelSetFractureOptimization(std::vector<MeshObject*> obstacles, 
+                                                     double dt, float frameInterpolation, int exactBand, 
+                                                     MeshLevelSet &domainLevelSet) {
+    BoundedBuffer<MeshObject*> workQueue(obstacles.size());
+    for (size_t i = 0; i < obstacles.size(); i++) {
+        workQueue.push(obstacles[i]);
+    }
+
+    int obstaclesPerThread = _numIslandsPerThreadForFractureOptimization;
+    int suggestedNumTheads = std::max((int)(obstacles.size()) / obstaclesPerThread, 1);
+    int numthreads = std::min(ThreadUtils::getMaxThreadCount(), suggestedNumTheads);
+    std::vector<std::thread> threads(numthreads);
+    BoundedBuffer<MeshLevelSet*> finishedWorkQueue(numthreads * _finishedWorkQueueSize);
+
+    for (int i = 0; i < numthreads; i++) {
+        threads[i] = std::thread(&MeshObject::_obstacleMeshLevelSetProducerThread, this,
+                                 &workQueue, &finishedWorkQueue, &domainLevelSet, 
+                                 dt, frameInterpolation, exactBand);
+    }
+
+    int numItemsProcessed = 0;
+    while (numItemsProcessed < (int)obstacles.size()) {
+        std::vector<MeshLevelSet*> finishedItems;
+        finishedWorkQueue.popAll(finishedItems);
+
+        for (size_t i = 0; i < finishedItems.size(); i++) {
+            domainLevelSet.calculateUnion(*(finishedItems[i]));
+            delete (finishedItems[i]);
+            numItemsProcessed++;
+        }
+    }
+
+    workQueue.notifyFinished();
+    for (size_t i = 0; i < threads.size(); i++) {
+        workQueue.notifyFinished();
+        threads[i].join();
+    }
+
+}
+
 void MeshObject::enable() {
     if (!_isEnabled) {
         _isObjectStateChanged = true;
@@ -787,6 +827,58 @@ void MeshObject::_islandMeshLevelSetProducerThread(BoundedBuffer<MeshIslandWorkI
 
             finishedWorkQueue->push(islandLevelSet);
         }
+    }
+}
+
+void MeshObject::_obstacleMeshLevelSetProducerThread(BoundedBuffer<MeshObject*> *workQueue,
+                                                     BoundedBuffer<MeshLevelSet*> *finishedWorkQueue,
+                                                     MeshLevelSet *domainLevelSet,
+                                                     double dt, float frameInterpolation, int exactBand) {
+    int isize, jsize, ksize;
+    domainLevelSet->getGridDimensions(&isize, &jsize, &ksize);
+    double dx = domainLevelSet->getCellSize();
+
+    int itemsPerLoop = 10;
+    while (workQueue->size() > 0) {
+        std::vector<MeshObject*> items;
+        int numItems = workQueue->pop(itemsPerLoop, items);
+        if (numItems == 0) {
+            continue;
+        }
+
+        for (size_t widx = 0; widx < items.size(); widx++) {
+            MeshObject *obstacle = items[widx];
+
+            TriangleMesh mesh = obstacle->getMesh(frameInterpolation);
+            std::vector<int> removedVertices = mesh.removeExtraneousVertices();
+            std::vector<vmath::vec3> vertexVelocities = obstacle->getVertexVelocities(dt, frameInterpolation);
+            for (int vidx = removedVertices.size() - 1; vidx >= 0; vidx--) {
+                vertexVelocities.erase(vertexVelocities.begin() + removedVertices[vidx]);
+            }
+
+            AABB islandAABB(mesh.vertices);
+            GridIndex gmin = Grid3d::positionToGridIndex(islandAABB.getMinPoint(), dx);
+            GridIndex gmax = Grid3d::positionToGridIndex(islandAABB.getMaxPoint(), dx);
+            gmin.i = (int)std::min(std::max(gmin.i - exactBand, 0), isize - 1);
+            gmin.j = (int)std::min(std::max(gmin.j - exactBand, 0), jsize - 1);
+            gmin.k = (int)std::min(std::max(gmin.k - exactBand, 0), ksize - 1);
+            gmax.i = (int)std::min(std::max(gmax.i + exactBand + 1, 0), isize - 1);
+            gmax.j = (int)std::min(std::max(gmax.j + exactBand + 1, 0), jsize - 1);
+            gmax.k = (int)std::min(std::max(gmax.k + exactBand + 1, 0), ksize - 1);
+
+            int gwidth = (int)std::max(gmax.i - gmin.i, 1);
+            int gheight = (int)std::max(gmax.j - gmin.j, 1);
+            int gdepth = (int)std::max(gmax.k - gmin.k, 1);
+
+            MeshLevelSet *islandLevelSet = new MeshLevelSet(gwidth, gheight, gdepth, dx, obstacle);
+
+            islandLevelSet->setGridOffset(gmin);
+            islandLevelSet->disableMultiThreading();
+            islandLevelSet->fastCalculateSignedDistanceField(mesh, vertexVelocities, exactBand);
+
+            finishedWorkQueue->push(islandLevelSet);
+        }
+
     }
 }
 

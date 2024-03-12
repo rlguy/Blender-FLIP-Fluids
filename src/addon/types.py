@@ -206,13 +206,6 @@ threading_modes = (
     ('THREADING_MODE_FIXED',       "Fixed",       "Use a specified fixed number of threads for the simulation. TIP: Running smaller low resolution simulations with less threads may boost baking speed due to reducing overhead from thread management - try values around 4 threads for default lower resolution simulations.")
     )
 
-
-grid_display_modes = (
-    ('GRID_DISPLAY_SIMULATION',  "Simulation Grid",   "Display the domain simulation grid"),
-    ('GRID_DISPLAY_MESH',        "Final Mesh Grid",   "Display the domain surface mesh grid"),
-    ('GRID_DISPLAY_PREVIEW',     "Preview Mesh Grid", "Display the domain surface preview mesh grid"),
-    )
-
 grid_display_modes = (
     ('GRID_DISPLAY_SIMULATION',  "Simulation Grid",   "Display the domain simulation grid"),
     ('GRID_DISPLAY_MESH',        "Final Mesh Grid",   "Display the domain surface mesh grid"),

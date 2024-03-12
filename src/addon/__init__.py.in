@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 bl_info = {
-    "name" : "FLIP Fluids Demo @FLUIDENGINE_VERSION_MAJOR@.@FLUIDENGINE_VERSION_MINOR@.@FLUIDENGINE_VERSION_REVISION@",
+    "name" : "FLIP Fluids Demo",
     "description": "A FLIP Fluid Simulation Tool for Blender (v@FLUIDENGINE_VERSION_LABEL@)",
     "author" : "Ryan Guy & Dennis Fassbaender <support[at]flipfluids.com>",
     "version" : (@FLUIDENGINE_VERSION_MAJOR@, @FLUIDENGINE_VERSION_MINOR@, @FLUIDENGINE_VERSION_REVISION@),

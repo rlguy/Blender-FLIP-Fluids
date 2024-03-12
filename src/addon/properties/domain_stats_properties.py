@@ -673,6 +673,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
                                  - data['timing']['objects'])
         time_other = max(0.0, time_other)
 
+        total_time = max(total_time, 1e-4)
         self.time_mesh.set_time_pct(     100 * data['timing']['mesh']      / total_time)
         self.time_advection.set_time_pct(100 * data['timing']['advection'] / total_time)
         self.time_particles.set_time_pct(100 * data['timing']['particles'] / total_time)
@@ -945,6 +946,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         is_data_in_cache = False
         num_cache_frames = 0
         average_performance_score = 0
+        num_performance_score_frames = 0;
         is_average_performance_score_enabled = False
         for key in cachedata.keys():
             if not key.isdigit():
@@ -955,8 +957,10 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
 
             fdata = cachedata[key]
             if 'performance_score' in fdata:
-                is_average_performance_score_enabled = True
-                average_performance_score += fdata['performance_score']
+                if fdata['performance_score'] != -1:
+                    num_performance_score_frames += 1
+                    is_average_performance_score_enabled = True
+                    average_performance_score += fdata['performance_score']
 
             if fdata['surface']['enabled']:
                 is_surface_enabled = True
@@ -1107,8 +1111,8 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             self.is_cache_info_available = False
             return
 
-        if num_cache_frames > 0 and is_average_performance_score_enabled:
-            average_performance_score /= num_cache_frames
+        if num_performance_score_frames > 0 and is_average_performance_score_enabled:
+            average_performance_score /= num_performance_score_frames
         else:
             is_average_performance_score_enabled = False
             average_performance_score = 0
@@ -1229,6 +1233,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.display_frame_viscosity_timing_stats = time_viscosity > 0.0
         self.display_frame_diffuse_timing_stats = time_diffuse > 0.0
 
+        total_time = max(total_time, 1e-4)
         self.time_mesh.set_time_pct(     100 * time_mesh      / total_time)
         self.time_advection.set_time_pct(100 * time_advection / total_time)
         self.time_particles.set_time_pct(100 * time_particles / total_time)
