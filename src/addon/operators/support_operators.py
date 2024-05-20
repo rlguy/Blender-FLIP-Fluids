@@ -170,11 +170,6 @@ class FlipFluidSupportSelectSimulationObjects(bpy.types.Operator):
                 if obj is not None:
                     obj.select_set(True)
 
-            for obj_props in whitewater_cache_props:
-                obj = obj_props.get_duplivert_object()
-                if obj is not None:
-                    obj.select_set(True)
-
         domain_obj = context.scene.flip_fluid.get_domain_object()
         if domain_obj is not None:
             vcu.set_active_object(domain_obj)

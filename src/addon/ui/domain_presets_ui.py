@@ -31,7 +31,7 @@ class FLIPFLUID_PT_DomainTypePresetsPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        if vcu.get_addon_preferences(context).enable_tabbed_domain_settings:
+        if vcu.get_addon_preferences(context).enable_tabbed_domain_settings_view:
             return False
         obj_props = vcu.get_active_object(context).flip_fluid
         return obj_props.is_active and obj_props.object_type == "TYPE_DOMAIN"

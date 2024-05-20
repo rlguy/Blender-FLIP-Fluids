@@ -103,13 +103,6 @@ def initialize_simulation_mesh_selection():
         dprops.mesh_cache.disable_simulation_mesh_load('DUST')
         print("Whitewater dust export disabled, skipping...")
 
-    # Prevent whitewater instances from being loaded and exported
-    dprops.render.only_display_whitewater_in_render = True
-    dprops.render.only_display_foam_in_render = True
-    dprops.render.only_display_bubble_in_render = True
-    dprops.render.only_display_spray_in_render = True
-    dprops.render.only_display_dust_in_render = True
-
     dprops.mesh_cache.disable_simulation_mesh_load('OBSTACLE_DEBUG')
     dprops.mesh_cache.disable_simulation_mesh_load('PARTICLE_DEBUG')
     dprops.mesh_cache.disable_simulation_mesh_load('FORCE_FIELD_DEBUG')

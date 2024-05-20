@@ -342,8 +342,8 @@ def __update_fluid_particle_display_mode():
         particle_cache.mesh_prefix = "fluidparticles"
         particle_cache.mesh_display_name_prefix = "final_"
         particle_cache.enable_velocity_attribute = particle_props.enable_fluid_particle_velocity_vector_attribute
-        particle_cache.enable_vorticity_attribute = particle_props.enable_fluid_particle_speed_attribute
-        particle_cache.enable_speed_attribute = particle_props.enable_fluid_particle_vorticity_vector_attribute
+        particle_cache.enable_vorticity_attribute = particle_props.enable_fluid_particle_vorticity_vector_attribute
+        particle_cache.enable_speed_attribute = particle_props.enable_fluid_particle_speed_attribute
         particle_cache.enable_age_attribute = particle_props.enable_fluid_particle_age_attribute
         particle_cache.enable_lifetime_attribute = particle_props.enable_fluid_particle_lifetime_attribute
         particle_cache.enable_whitewater_proximity_attribute = particle_props.enable_fluid_particle_whitewater_proximity_attribute
@@ -355,8 +355,8 @@ def __update_fluid_particle_display_mode():
         particle_cache.mesh_prefix = "fluidparticles"
         particle_cache.mesh_display_name_prefix = "preview_"
         particle_cache.enable_velocity_attribute = particle_props.enable_fluid_particle_velocity_vector_attribute
-        particle_cache.enable_vorticity_attribute = particle_props.enable_fluid_particle_speed_attribute
-        particle_cache.enable_speed_attribute = particle_props.enable_fluid_particle_vorticity_vector_attribute
+        particle_cache.enable_vorticity_attribute = particle_props.enable_fluid_particle_vorticity_vector_attribute
+        particle_cache.enable_speed_attribute = particle_props.enable_fluid_particle_speed_attribute
         particle_cache.enable_age_attribute = particle_props.enable_fluid_particle_age_attribute
         particle_cache.enable_lifetime_attribute = particle_props.enable_fluid_particle_lifetime_attribute
         particle_cache.enable_whitewater_proximity_attribute = particle_props.enable_fluid_particle_whitewater_proximity_attribute
@@ -419,27 +419,18 @@ def __get_whitewater_display_percentages():
     rprops = dprops.render
 
     display_mode = __get_whitewater_display_mode()
-    if rprops.whitewater_view_settings_mode == 'VIEW_SETTINGS_WHITEWATER':
-        if display_mode == 'DISPLAY_FINAL':
-            pct = rprops.render_whitewater_pct
-        elif display_mode == 'DISPLAY_PREVIEW':
-            pct = rprops.viewport_whitewater_pct
-        elif display_mode == 'DISPLAY_NONE':
-            pct = 0
-        foam_pct = bubble_pct = spray_pct = dust_pct = pct
-    else:
-        if display_mode == 'DISPLAY_FINAL':
-            foam_pct = rprops.render_foam_pct
-            bubble_pct = rprops.render_bubble_pct
-            spray_pct = rprops.render_spray_pct
-            dust_pct = rprops.render_dust_pct
-        elif display_mode == 'DISPLAY_PREVIEW':
-            foam_pct = rprops.viewport_foam_pct
-            bubble_pct = rprops.viewport_bubble_pct
-            spray_pct = rprops.viewport_spray_pct
-            dust_pct = rprops.viewport_dust_pct
-        elif display_mode == 'DISPLAY_NONE':
-            foam_pct = bubble_pct = spray_pct = dust_pct = 0
+    if display_mode == 'DISPLAY_FINAL':
+        foam_pct = rprops.render_foam_pct
+        bubble_pct = rprops.render_bubble_pct
+        spray_pct = rprops.render_spray_pct
+        dust_pct = rprops.render_dust_pct
+    elif display_mode == 'DISPLAY_PREVIEW':
+        foam_pct = rprops.viewport_foam_pct
+        bubble_pct = rprops.viewport_bubble_pct
+        spray_pct = rprops.viewport_spray_pct
+        dust_pct = rprops.viewport_dust_pct
+    elif display_mode == 'DISPLAY_NONE':
+        foam_pct = bubble_pct = spray_pct = dust_pct = 0
 
     return foam_pct, bubble_pct, spray_pct, dust_pct
 
@@ -645,96 +636,7 @@ def __load_whitewater_particle_frame(frameno, force_reload=False, depsgraph=None
         dprops.mesh_cache.dust.load_frame(frameno, force_load, depsgraph)
 
 
-def __generate_icosphere_geometry():
-    # Icosphere with 1 subdivision (20 sides) centred at origin
-    verts = [
-        (0.0000, 0.0000, -1.0000), (0.7236, -0.5257, -0.4472), (-0.2764, -0.8506, -0.4472),
-        (-0.8944, 0.0000, -0.4472), (-0.2764, 0.8506, -0.4472), (0.7236, 0.5257, -0.4472),
-        (0.2764, -0.8506, 0.4472), (-0.7236, -0.5257, 0.4472), (-0.7236, 0.5257, 0.4472),
-        (0.2764, 0.8506, 0.4472), (0.8944, 0.0000, 0.4472), (0.0000, 0.0000, 1.0000)
-    ]
-    tris = [
-        (0, 1, 2), (1, 0, 5), (0, 2, 3), (0, 3, 4), (0, 4, 5), (1, 5, 10), (2, 1, 6), (3, 2, 7),
-        (4, 3, 8), (5, 4, 9), (1, 10, 6), (2, 6, 7), (3, 7, 8), (4, 8, 9), (5, 9, 10), (6, 10, 11),
-        (7, 6, 11), (8, 7, 11), (9, 8, 11), (10, 9, 11)
-    ]
-    return verts, tris
-
-
-def __generate_cube_geometry():
-    # cube with 6 sides centred at origin
-    h = 0.5
-    verts = [
-        (h, h, -h), (h, -h, -h), (-h, -h, -h), (-h, h, -h), (h, h, h), (h, -h, h), (-h, -h, h), (-h, h, h)
-    ]
-    tris = [
-        (0, 1, 2, 3), (4, 7, 6, 5),  (0, 4, 5, 1),  (1, 5, 6, 2),  (2, 6, 7, 3),  (4, 0, 3, 7)
-    ]
-    return verts, tris
-
-
-def __get_object_geometry(bl_object):
-    verts, faces = [], []
-    for v in bl_object.data.vertices:
-        verts.append((v.co.x, v.co.y, v.co.z))
-    for p in bl_object.data.polygons:
-        face = []
-        for idx in p.vertices:
-            face.append(idx)
-        faces.append(tuple(face))
-    return verts, faces
-
-
-def __get_whitewater_particle_object_geometry(whitewater_type):
-    dprops = __get_domain_properties()
-    rprops = dprops.render
-
-    if whitewater_type == 'FOAM':
-        particle_mode = rprops.foam_particle_object_mode
-        particle_object = rprops.foam_particle_object
-    elif whitewater_type == 'BUBBLE':
-        particle_mode = rprops.bubble_particle_object_mode
-        particle_object = rprops.bubble_particle_object
-    elif whitewater_type == 'SPRAY':
-        particle_mode = rprops.spray_particle_object_mode
-        particle_object = rprops.spray_particle_object
-    elif whitewater_type == 'DUST':
-        particle_mode = rprops.dust_particle_object_mode
-        particle_object = rprops.dust_particle_object
-
-    merge_settings = rprops.whitewater_particle_object_settings_mode == 'WHITEWATER_OBJECT_SETTINGS_WHITEWATER'
-    if merge_settings:
-            use_builtin_object = rprops.whitewater_particle_object_mode != 'WHITEWATER_PARTICLE_CUSTOM'
-            particle_mode = rprops.whitewater_particle_object_mode
-    else:
-        use_builtin_object = particle_mode != 'WHITEWATER_PARTICLE_CUSTOM'
-
-    if use_builtin_object:
-        if particle_mode == 'WHITEWATER_PARTICLE_ICOSPHERE':
-            return __generate_icosphere_geometry()
-        elif particle_mode == 'WHITEWATER_PARTICLE_CUBE':
-            return __generate_cube_geometry()
-    else:
-        if merge_settings:
-            particle_object = rprops.whitewater_particle_object
-
-        if particle_object is None:
-            # No custom particle object has been set
-            return [], []
-            
-        bl_object = bpy.data.objects.get(particle_object.name)
-
-        if bl_object is not None:
-            return __get_object_geometry(bl_object)
-        else:
-            return [], []
-
-
-def get_whitewater_particle_object_geometry(whitewater_type):
-    return __get_whitewater_particle_object_geometry(whitewater_type)
-
-
-def __get_whitewater_particle_object_scale(whitewater_type):
+def get_whitewater_particle_object_scale(whitewater_type):
     dprops = __get_domain_properties()
     rprops = dprops.render
 
@@ -751,122 +653,6 @@ def __get_whitewater_particle_object_scale(whitewater_type):
         return rprops.whitewater_particle_scale
     else:
         return particle_object_scale
-
-
-def get_whitewater_particle_object_scale(whitewater_type):
-    return __get_whitewater_particle_object_scale(whitewater_type)
-
-def __get_whitewater_particle_object_display_bool(whitewater_type):
-    global IS_RENDERING
-    dprops = __get_domain_properties()
-    rprops = dprops.render
-
-    if whitewater_type == 'FOAM':
-        particle_object_viewport_display = not rprops.only_display_foam_in_render
-    elif whitewater_type == 'BUBBLE':
-        particle_object_viewport_display = not rprops.only_display_bubble_in_render
-    elif whitewater_type == 'SPRAY':
-        particle_object_viewport_display = not rprops.only_display_spray_in_render
-    elif whitewater_type == 'DUST':
-        particle_object_viewport_display = not rprops.only_display_dust_in_render
-
-    if rprops.whitewater_particle_object_settings_mode == 'WHITEWATER_OBJECT_SETTINGS_WHITEWATER':
-        return (not rprops.only_display_whitewater_in_render) or IS_RENDERING
-    else:
-        return particle_object_viewport_display or IS_RENDERING
-
-
-def __load_whitewater_particle_object_frame(frameno, force_reload=False, depsgraph=None):
-    global IS_RENDERING
-    if not __is_domain_set():
-        return
-
-    dprops = __get_domain_properties()
-    if not dprops.whitewater.enable_whitewater_simulation:
-        return
-
-    foam_verts,   foam_tris =   __get_whitewater_particle_object_geometry("FOAM")
-    bubble_verts, bubble_tris = __get_whitewater_particle_object_geometry("BUBBLE")
-    spray_verts,  spray_tris =  __get_whitewater_particle_object_geometry("SPRAY")
-    dust_verts,   dust_tris =   __get_whitewater_particle_object_geometry("DUST")
-
-    foam_scale =   __get_whitewater_particle_object_scale('FOAM')
-    bubble_scale = __get_whitewater_particle_object_scale('BUBBLE')
-    spray_scale =  __get_whitewater_particle_object_scale('SPRAY')
-    dust_scale =   __get_whitewater_particle_object_scale('DUST')
-
-    display_foam_particle =   __get_whitewater_particle_object_display_bool('FOAM')
-    display_bubble_particle = __get_whitewater_particle_object_display_bool('BUBBLE')
-    display_spray_particle =  __get_whitewater_particle_object_display_bool('SPRAY')
-    display_dust_particle =   __get_whitewater_particle_object_display_bool('DUST')
-
-    force_load = force_reload or IS_RENDERING
-    if foam_verts and display_foam_particle and is_simulation_mesh_load_enabled('FOAM'):
-        dprops.mesh_cache.foam.load_duplivert_object(
-                foam_verts, foam_tris,
-                foam_scale,
-                force_load,
-                depsgraph
-                )
-        dprops.mesh_cache.foam.set_duplivert_instance_type('VERTS')
-        if vcu.is_blender_279():
-            # In Blender 2.79, the duplivert object must not be hidden
-            # in the viewport in order to be displayed in the viewport.
-            dprops.mesh_cache.foam.set_duplivert_hide_viewport(False)
-    else:
-        dprops.mesh_cache.foam.set_duplivert_instance_type('NONE')
-        if vcu.is_blender_279():
-            dprops.mesh_cache.foam.set_duplivert_hide_viewport(True)
-        
-    if bubble_verts and display_bubble_particle and is_simulation_mesh_load_enabled('BUBBLE'):
-        dprops.mesh_cache.bubble.load_duplivert_object(
-                bubble_verts, bubble_tris,
-                bubble_scale,
-                force_load,
-                depsgraph
-                )
-        dprops.mesh_cache.bubble.set_duplivert_instance_type('VERTS')
-        if vcu.is_blender_279():
-            dprops.mesh_cache.bubble.set_duplivert_hide_viewport(False)
-    else:
-        dprops.mesh_cache.bubble.set_duplivert_instance_type('NONE')
-        if vcu.is_blender_279():
-            dprops.mesh_cache.bubble.set_duplivert_hide_viewport(True)
-
-    if spray_verts and display_spray_particle and is_simulation_mesh_load_enabled('SPRAY'):
-        dprops.mesh_cache.spray.load_duplivert_object(
-                spray_verts, spray_tris,
-                spray_scale,
-                force_load,
-                depsgraph
-                )
-        dprops.mesh_cache.spray.set_duplivert_instance_type('VERTS')
-        if vcu.is_blender_279():
-            dprops.mesh_cache.spray.set_duplivert_hide_viewport(False)
-    else:
-        dprops.mesh_cache.spray.set_duplivert_instance_type('NONE')
-        if vcu.is_blender_279():
-            dprops.mesh_cache.spray.set_duplivert_hide_viewport(True)
-
-    if dust_verts and display_dust_particle and is_simulation_mesh_load_enabled('DUST'):
-        dprops.mesh_cache.dust.load_duplivert_object(
-                dust_verts, dust_tris,
-                dust_scale,
-                force_load,
-                depsgraph
-                )
-        dprops.mesh_cache.dust.set_duplivert_instance_type('VERTS')
-        if vcu.is_blender_279():
-            dprops.mesh_cache.dust.set_duplivert_hide_viewport(False)
-    else:
-        dprops.mesh_cache.dust.set_duplivert_instance_type('NONE')
-        if vcu.is_blender_279():
-            dprops.mesh_cache.dust.set_duplivert_hide_viewport(True)
-
-
-def __load_whitewater_frame(frameno, force_reload=False, depsgraph=None):
-    __load_whitewater_particle_frame(frameno, force_reload, depsgraph)
-    __load_whitewater_particle_object_frame(frameno, force_reload, depsgraph)
 
 
 def __load_fluid_particle_debug_frame(frameno, force_reload=False):
@@ -926,7 +712,7 @@ def __load_frame(frameno, force_reload=False, depsgraph=None):
 
     __load_surface_frame(frameno, force_reload, depsgraph)
     __load_fluid_particle_frame(frameno, force_reload, depsgraph)
-    __load_whitewater_frame(frameno, force_reload, depsgraph)
+    __load_whitewater_particle_frame(frameno, force_reload, depsgraph)
     __load_fluid_particle_debug_frame(frameno, force_reload)
     __load_force_field_debug_frame(frameno, force_reload)
     __load_obstacle_debug_frame(frameno, force_reload)
@@ -951,12 +737,6 @@ def render_init(scene):
 
     dprops = __get_domain_properties()
     dprops.mesh_cache.initialize_cache_objects()
-
-    if dprops.whitewater.enable_whitewater_simulation:
-        dprops.mesh_cache.foam.initialize_duplivert_object()
-        dprops.mesh_cache.bubble.initialize_duplivert_object()
-        dprops.mesh_cache.spray.initialize_duplivert_object()
-        dprops.mesh_cache.dust.initialize_duplivert_object()
 
 
 def render_complete(scene):

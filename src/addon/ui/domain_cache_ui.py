@@ -47,7 +47,7 @@ class FLIPFLUID_PT_DomainTypeCachePanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        if vcu.get_addon_preferences(context).enable_tabbed_domain_settings:
+        if vcu.get_addon_preferences(context).enable_tabbed_domain_settings_view:
             return False
         obj_props = vcu.get_active_object(context).flip_fluid
         is_addon_disabled = context.scene.flip_fluid.is_addon_disabled_in_blend_file()

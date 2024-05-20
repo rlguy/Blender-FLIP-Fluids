@@ -60,10 +60,11 @@ from . import (
         domain_advanced_properties,
         domain_stats_properties,
         domain_debug_properties,
-        preset_properties
+        preset_properties,
         )
 from .. import types
 from ..objects import flip_fluid_cache
+from ..operators import helper_operators
 from ..utils import version_compatibility_utils as vcu
 from ..utils import api_workaround_utils
 
@@ -155,6 +156,9 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
             options={'HIDDEN'},
             ); exec(conv("domain_settings_tabbed_panel_view"))
 
+    is_updated_to_flip_fluids_version_180 = BoolProperty(default=False)
+    exec(conv("is_updated_to_flip_fluids_version_180"));
+
 
     def initialize(self):
         self.simulation.initialize()
@@ -164,6 +168,8 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
         self._initialize_cache()
         self._initialize_property_registry()
         self.presets.initialize()
+
+        self.is_updated_to_flip_fluids_version_180 = True
 
 
     def dummy_initialize(self):
@@ -276,6 +282,117 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
                 continue
 
 
+    def _update_to_flip_fluids_version_180(self):
+        dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+        if dprops is None:
+            return
+
+        if self.is_updated_to_flip_fluids_version_180:
+            return
+
+        print("\n*** Begin updating FLIP Domain to FLIP Fluids version 1.8.0+ ***")
+
+        rprops = dprops.render
+        if rprops.whitewater_view_settings_mode == 'VIEW_SETTINGS_WHITEWATER':
+            viewport_whitewater_pct = rprops.viewport_whitewater_pct
+            render_whitewater_pct = rprops.render_whitewater_pct
+
+            print("\tSetting viewport whitewater foam   display percent to " + str(viewport_whitewater_pct) + "%")
+            rprops.viewport_foam_pct = viewport_whitewater_pct
+            print("\tSetting viewport whitewater bubble display percent to " + str(viewport_whitewater_pct) + "%")
+            rprops.viewport_bubble_pct = viewport_whitewater_pct
+            print("\tSetting viewport whitewater spray  display percent to " + str(viewport_whitewater_pct) + "%")
+            rprops.viewport_spray_pct = viewport_whitewater_pct
+            print("\tSetting viewport whitewater dust   display percent to " + str(viewport_whitewater_pct) + "%")
+            rprops.viewport_dust_pct = viewport_whitewater_pct
+            print("\tSetting render whitewater foam   display percent to " + str(render_whitewater_pct) + "%")
+            rprops.render_foam_pct = render_whitewater_pct
+            print("\tSetting render whitewater bubble display percent to " + str(render_whitewater_pct) + "%")
+            rprops.render_bubble_pct = render_whitewater_pct
+            print("\tSetting render whitewater spray  display percent to " + str(render_whitewater_pct) + "%")
+            rprops.render_spray_pct = render_whitewater_pct
+            print("\tSetting render whitewater dust   display percent to " + str(render_whitewater_pct) + "%")
+            rprops.render_dust_pct = render_whitewater_pct
+
+        parent_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        blend_resource_filename = "geometry_nodes_library.blend"
+        resource_filepath = os.path.join(parent_path, "resources", "geometry_nodes", blend_resource_filename)
+
+        if rprops.whitewater_particle_object_settings_mode == 'WHITEWATER_OBJECT_SETTINGS_WHITEWATER':
+            foam_scale = bubble_scale = spray_scale = dust_scale = rprops.whitewater_particle_scale
+        else:
+            foam_scale = rprops.foam_particle_scale
+            bubble_scale = rprops.bubble_particle_scale
+            spray_scale = rprops.spray_particle_scale
+            dust_scale = rprops.dust_particle_scale
+        particle_scales = [foam_scale, bubble_scale, spray_scale, dust_scale]
+
+        mesh_cache_foam = dprops.mesh_cache.foam.get_cache_object()
+        mesh_cache_bubble = dprops.mesh_cache.bubble.get_cache_object()
+        mesh_cache_spray = dprops.mesh_cache.spray.get_cache_object()
+        mesh_cache_dust = dprops.mesh_cache.dust.get_cache_object()
+        mesh_caches = [mesh_cache_foam, mesh_cache_bubble, mesh_cache_spray, mesh_cache_dust]
+
+        resource_names = [
+            "FF_MotionBlurWhitewaterFoam", 
+            "FF_MotionBlurWhitewaterBubble", 
+            "FF_MotionBlurWhitewaterSpray", 
+            "FF_MotionBlurWhitewaterDust"
+            ]
+
+        for idx, mesh_cache in enumerate(mesh_caches):
+            if mesh_cache is None:
+                continue
+            if helper_operators.is_geometry_node_point_cloud_detected(mesh_cache):
+                continue
+
+            print("\tInitializing geometry node modifier on <" + mesh_cache.name + ">")
+            gn_modifier = helper_operators.add_geometry_node_modifier(mesh_cache, resource_filepath, resource_names[idx])
+            if gn_modifier:
+                try:
+                    # Material
+                    if mesh_cache.active_material is not None:
+                        print("\t\tSetting point cloud material to <" + mesh_cache.active_material.name + ">")
+                        gn_modifier["Input_5"] = mesh_cache.active_material
+                except:
+                    pass
+
+                try:
+                    # Input flip_velocity
+                    gn_modifier["Input_2_use_attribute"] = 1
+                    gn_modifier["Input_2_attribute_name"] = 'flip_velocity'
+                except:
+                    pass
+
+                try:
+                    # Output velocity
+                    gn_modifier["Output_3_attribute_name"] = 'velocity'
+                except:
+                    pass
+
+                try:
+                    # Particle Scale
+                    print("\t\tSetting point cloud particle scale to " + str(particle_scales[idx]))
+                    gn_modifier["Input_6"] = particle_scales[idx]
+                except:
+                    pass
+
+                try:
+                    # Enable Point Cloud
+                    gn_modifier["Input_9"] = True
+                except:
+                    pass
+
+                try:
+                    # Enable Instancing
+                    gn_modifier["Input_10"] = False
+                except:
+                    pass
+
+        print("*** Finished updating FLIP Domain to FLIP Fluids version 1.8.0+ ***\n")
+        self.is_updated_to_flip_fluids_version_180 = True
+
+
     def scene_update_post(self, scene):
         self.render.scene_update_post(scene)
         self.simulation.scene_update_post(scene)
@@ -310,6 +427,7 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
         self._initialize_property_registry()
 
         api_workaround_utils.load_post_update_cycles_visibility_forward_compatibility_from_blender_3()
+        self._update_to_flip_fluids_version_180()
 
 
     def save_pre(self):

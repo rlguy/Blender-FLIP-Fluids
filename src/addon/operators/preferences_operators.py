@@ -1455,12 +1455,26 @@ class FlipFluidOpenPreferences(bpy.types.Operator):
     bl_label = "FLIP Fluids Preferences"
     bl_description = ("Open the FLIP Fluids addon preferences menu")
 
+    view_mode = StringProperty(default="NONE")
+    exec(vcu.convert_attribute_to_28("view_mode"))
+
 
     def execute(self, context):
         return {'FINISHED'}
 
 
     def invoke(self, context, event):
+        valid_view_modes = [
+            'PREFERENCES_MENU_VIEW_GENERAL',
+            'PREFERENCES_MENU_VIEW_MIXBOX',
+            'PREFERENCES_MENU_VIEW_PRESETS',
+            'PREFERENCES_MENU_VIEW_SUPPORT'
+        ]
+
+        if self.view_mode in valid_view_modes:
+            prefs = vcu.get_addon_preferences()
+            prefs.preferences_menu_view_mode = self.view_mode
+
         bpy.ops.preferences.addon_show(module=installation_utils.get_module_name())
         return {'FINISHED'}
 
@@ -1491,7 +1505,7 @@ class FLIPFLUIDS_MT_help_menu(bpy.types.Menu):
         self.layout.operator("flip_fluid_operators.copy_system_info", icon="COPYDOWN")
 
         if vcu.is_blender_28():
-            self.layout.operator("flip_fluid_operators.open_preferences", icon="PREFERENCES")
+            self.layout.operator("flip_fluid_operators.open_preferences", icon="PREFERENCES").view_mode = 'NONE'
 
 
 def draw_flip_fluids_help_menu(self, context):

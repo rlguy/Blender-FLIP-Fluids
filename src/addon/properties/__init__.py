@@ -44,6 +44,7 @@ from . import (
 
 def scene_update_post(scene):
     object_properties.scene_update_post(scene)
+    helper_properties.scene_update_post(scene)
 
 
 def frame_change_post(scene, depsgraph=None):

@@ -353,6 +353,7 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
     meshing_volume_expanded = BoolProperty(default=False); exec(conv("meshing_volume_expanded"))
     meshing_against_boundary_expanded = BoolProperty(default=False); exec(conv("meshing_against_boundary_expanded"))
     meshing_against_obstacles_expanded = BoolProperty(default=False); exec(conv("meshing_against_obstacles_expanded"))
+    surface_display_settings_expanded = BoolProperty(default=False); exec(conv("surface_display_settings_expanded"))
     geometry_attributes_expanded = BoolProperty(default=False); exec(conv("geometry_attributes_expanded"))
     velocity_attributes_expanded = BoolProperty(default=False); exec(conv("velocity_attributes_expanded"))
     color_attributes_expanded = BoolProperty(default=False); exec(conv("color_attributes_expanded"))

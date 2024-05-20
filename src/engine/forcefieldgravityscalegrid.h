@@ -30,39 +30,40 @@ SOFTWARE.
 
 struct ForceFieldGravityScaleGrid {
     Array3d<float> gravityScale;
-    Array3d<int> gravityCount;
+    Array3d<float> gravityWeight;
 
     ForceFieldGravityScaleGrid() {
     }
 
     ForceFieldGravityScaleGrid(int isize, int jsize, int ksize) {
         gravityScale = Array3d<float>(isize, jsize, ksize, 0.0f);
-        gravityCount = Array3d<int>(isize, jsize, ksize, 0);
+        gravityWeight = Array3d<float>(isize, jsize, ksize, 0.0f);
     }
 
     void reset() {
         gravityScale.fill(0.0f);
-        gravityCount.fill(0);
+        gravityWeight.fill(0.0f);
     }
 
-    void addScale(int i, int j, int k, float scale) {
+    void addScale(int i, int j, int k, float scale, float weight) {
         gravityScale.add(i, j, k, scale);
-        gravityCount.add(i, j, k, 1);
+        gravityWeight.add(i, j, k, weight);
     }
 
-    void addScale(GridIndex g, float scale) {
-        addScale(g.i, g.j, g.k, scale);
+    void addScale(GridIndex g, float scale, float weight) {
+        addScale(g.i, g.j, g.k, scale, weight);
     }
 
     void normalize() {
+        float eps = 1e-6f;
         for (int k = 0; k < gravityScale.depth; k++) {
             for (int j = 0; j < gravityScale.height; j++) {
                 for (int i = 0; i < gravityScale.width; i++) {
-                    int count = gravityCount(i, j, k);
-                    if (count == 0) {
+                    float weight = gravityWeight(i, j, k);
+                    if (weight < eps) {
                         gravityScale.set(i, j, k, 1.0f);
                     } else {
-                        float avg = gravityScale(i, j, k) / count;
+                        float avg = gravityScale(i, j, k) / weight;
                         gravityScale.set(i, j, k, avg);
                     }
                 }

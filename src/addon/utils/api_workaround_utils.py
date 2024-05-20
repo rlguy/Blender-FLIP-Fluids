@@ -54,6 +54,7 @@ def frame_change_post_apply_T71908_workaround(context, depsgraph=None):
 
     cache_objects = [
         dprops.mesh_cache.surface.get_cache_object(),
+        dprops.mesh_cache.particles.get_cache_object(),
         dprops.mesh_cache.foam.get_cache_object(),
         dprops.mesh_cache.bubble.get_cache_object(),
         dprops.mesh_cache.spray.get_cache_object(),
@@ -68,16 +69,28 @@ def frame_change_post_apply_T71908_workaround(context, depsgraph=None):
                 obj.modifiers[i].time = obj_eval.modifiers[i].time
 
     # Apply to any FF_MotionBlur geometry node 'Motion Blur Scale' value on the mesh objects, another issue 
-    # for this bug when adjusting motion blur for slow motion simulations
+    # for this bug when adjusting motion blur for slow motion simulations.
+    # Also apply to other FF_MotionBlur inputs in case the user wants to keyframe these values.
+
+    input_name_list = [
+        "Input_4",  # Motion Blur Scale
+        "Input_6",  # Particle Scale
+        "Input_8",  # Enable Motion Blur
+        "Input_9",  # Enable Point Cloud
+        "Input_10", # Enable Instancing
+    ]
 
     for obj in cache_objects:
         obj_eval = obj.evaluated_get(depsgraph)
         for i in range(len(obj.modifiers)):
             if obj.modifiers[i].type == 'NODES' and obj.modifiers[i].name.startswith("FF_MotionBlur"):
-                if obj.modifiers[i].name.startswith("FF_MotionBlurSurface"):
-                    obj.modifiers[i]["Input_4"] = obj_eval.modifiers[i]["Input_4"]
-                elif obj.modifiers[i].name.startswith("FF_MotionBlurWhitewater"):
-                    obj.modifiers[i]["Input_4"] = obj_eval.modifiers[i]["Input_4"]
+                for input_name in input_name_list:
+                    if obj.modifiers[i].name.startswith("FF_MotionBlurSurface") and input_name in obj.modifiers[i]:
+                        obj.modifiers[i][input_name] = obj_eval.modifiers[i][input_name]
+                    if obj.modifiers[i].name.startswith("FF_MotionBlurFluidParticles") and input_name in obj.modifiers[i]:
+                        obj.modifiers[i][input_name] = obj_eval.modifiers[i][input_name]
+                    elif obj.modifiers[i].name.startswith("FF_MotionBlurWhitewater") and input_name in obj.modifiers[i]:
+                        obj.modifiers[i][input_name] = obj_eval.modifiers[i][input_name]
 
 
 # In some versions of Blender the viewport rendered view is 

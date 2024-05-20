@@ -242,107 +242,16 @@ class DomainRenderProperties(bpy.types.PropertyGroup):
             items=types.whitewater_view_settings_modes,
             default='VIEW_SETTINGS_WHITEWATER',
             ); exec(conv("whitewater_view_settings_mode"))
-    whitewater_particle_object = PointerProperty(
-            name="Whitewater",
-            description="Show this mesh object in place of whitewater particles",
-            type=bpy.types.Object,
-            poll=object_is_mesh_type_poll,
-            ); exec(conv("whitewater_particle_object"))
-    foam_particle_object = PointerProperty(
-            name="Foam",
-            description="Show this mesh object in place of foam particles",
-            type=bpy.types.Object,
-            poll=object_is_mesh_type_poll,
-            ); exec(conv("foam_particle_object"))
-    bubble_particle_object = PointerProperty(
-            name="Bubble",
-            description="Show this mesh object in place of bubble particles",
-            type=bpy.types.Object,
-            poll=object_is_mesh_type_poll,
-            ); exec(conv("bubble_particle_object"))
-    spray_particle_object = PointerProperty(
-            name="Spray",
-            description="Show this mesh object in place of spray particles",
-            type=bpy.types.Object,
-            poll=object_is_mesh_type_poll,
-            ); exec(conv("spray_particle_object"))
-    dust_particle_object = PointerProperty(
-            name="Dust",
-            description="Show this mesh object in place of dust particles",
-            type=bpy.types.Object,
-            poll=object_is_mesh_type_poll,
-            ); exec(conv("dust_particle_object"))
-    whitewater_particle_object_mode = EnumProperty(
+    whitewater_particle_object_settings_mode = EnumProperty(
             name="Particle Object Settings Mode",
-            description="Type of whitewater particle geometry to use for rendering",
-            items=types.whitewater_particle_object_modes,
-            default='WHITEWATER_PARTICLE_ICOSPHERE',
-            options = {'HIDDEN'},
-            ); exec(conv("whitewater_particle_object_mode"))
-    foam_particle_object_mode = EnumProperty(
-            name="Particle Object Settings Mode",
-            description="Type of foam particle geometry to use for rendering",
-            items=types.whitewater_particle_object_modes,
-            default='WHITEWATER_PARTICLE_ICOSPHERE',
-            options = {'HIDDEN'},
-            ); exec(conv("foam_particle_object_mode"))
-    bubble_particle_object_mode = EnumProperty(
-            name="Particle Object Settings Mode",
-            description="Type of bubble particle geometry to use for rendering",
-            items=types.whitewater_particle_object_modes,
-            default='WHITEWATER_PARTICLE_ICOSPHERE',
-            options = {'HIDDEN'},
-            ); exec(conv("bubble_particle_object_mode"))
-    spray_particle_object_mode = EnumProperty(
-            name="Particle Object Settings Mode",
-            description="Type of spray particle geometry to use for rendering",
-            items=types.whitewater_particle_object_modes,
-            default='WHITEWATER_PARTICLE_ICOSPHERE',
-            options = {'HIDDEN'},
-            ); exec(conv("spray_particle_object_mode"))
-    dust_particle_object_mode = EnumProperty(
-            name="Particle Object Settings Mode",
-            description="Type of dust particle geometry to use for rendering",
-            items=types.whitewater_particle_object_modes,
-            default='WHITEWATER_PARTICLE_ICOSPHERE',
-            options = {'HIDDEN'},
-            ); exec(conv("dust_particle_object_mode"))
-    only_display_whitewater_in_render = BoolProperty(
-            name="Render Only",
-            description="Only display whitewater particle object during render and"
-                " hide in viewport. Hiding particle geometry in viewport will improve"
-                " viewport performance",
-            default = True,
-            ); exec(conv("only_display_whitewater_in_render"))
-    only_display_foam_in_render = BoolProperty(
-            name="Render Only",
-            description="Only display foam particle object during render and"
-                " hide in viewport. Hiding particle geometry in viewport will improve"
-                " viewport performance",
-            default=True,
-            ); exec(conv("only_display_foam_in_render"))
-    only_display_bubble_in_render = BoolProperty(
-            name="Render Only",
-            description="Only display bubble particle object during render and"
-                " hide in viewport. Hiding particle geometry in viewport will improve"
-                " viewport performance",
-            default=True,
-            ); exec(conv("only_display_bubble_in_render"))
-    only_display_spray_in_render = BoolProperty(
-            name="Render Only",
-            description="Only display spray particle object during render and"
-                " hide in viewport. Hiding particle geometry in viewport will improve"
-                " viewport performance",
-            default=True,
-            ); exec(conv("only_display_spray_in_render"))
-    only_display_dust_in_render = BoolProperty(
-            name="Render Only",
-            description="Only display dust particle object during render and"
-                " hide in viewport. Hiding particle geometry in viewport will improve"
-                " viewport performance",
-            default=True,
-            ); exec(conv("only_display_dust_in_render"))
+            description="How particle object settings will be applied to whitewater particles",
+            items=types.whitewater_object_settings_modes,
+            default='WHITEWATER_OBJECT_SETTINGS_WHITEWATER',
+            ); exec(conv("whitewater_particle_object_settings_mode"))
 
+    # Particle scale settings are no longer used in FLIP Fluids 1.8.0+
+    # Only used to update Blend files created in FLIP Fluids 1.7.5 and earlier
+    # to newer addon versions.
     whitewater_particle_scale = FloatProperty(
             name="Scale",
             description="Scale of the whitewater particle object",
@@ -384,13 +293,6 @@ class DomainRenderProperties(bpy.types.PropertyGroup):
             precision=4,
             ); exec(conv("dust_particle_scale"))
 
-    whitewater_particle_object_settings_mode = EnumProperty(
-            name="Particle Object Settings Mode",
-            description="How particle object settings will be applied to whitewater particles",
-            items=types.whitewater_object_settings_modes,
-            default='WHITEWATER_OBJECT_SETTINGS_WHITEWATER',
-            ); exec(conv("whitewater_particle_object_settings_mode"))
-
     simulation_playback_mode = EnumProperty(
             name="Simulation Playback Mode",
             description="How to playback the simulation animation",
@@ -425,49 +327,32 @@ class DomainRenderProperties(bpy.types.PropertyGroup):
         add = registry.add_property
         add(path + ".render_display",                             "Surface Render",            group_id=0)
         add(path + ".viewport_display",                           "Surface Viewport",          group_id=0)
-        add(path + ".fluid_particle_render_display",              "Particle Render",            group_id=0)
-        add(path + ".fluid_particle_viewport_display",            "Particle Viewport",          group_id=0)
+        add(path + ".fluid_particle_render_display",              "Particle Render",           group_id=0)
+        add(path + ".fluid_particle_viewport_display",            "Particle Viewport",         group_id=0)
         add(path + ".whitewater_render_display",                  "Whitewater Render",         group_id=0)
         add(path + ".whitewater_viewport_display",                "Whitewater Viewport",       group_id=0)
         add(path + ".render_surface_motion_blur",                 "Render Motion Blur",        group_id=0)
         add(path + ".override_frame",                             "Override Frame",            group_id=0)
 
-        add(path + ".whitewater_view_settings_mode",              "Whitewater View Mode",      group_id=1, is_key=True)
-        key_path = path + ".whitewater_view_settings_mode"
-        value1 = "VIEW_SETTINGS_WHITEWATER"
-        value2 = "VIEW_SETTINGS_FOAM_BUBBLE_SPRAY"
+        add(path + ".whitewater_view_settings_mode",              "Whitewater View Mode",      group_id=1)
+        add(path + ".whitewater_particle_object_settings_mode",   "Whitewater View Mode",      group_id=1)
 
-        add(path + ".render_whitewater_pct",                      "Whitewater Render Pct",     group_id=1, key_path=key_path, key_value=value1)
-        add(path + ".viewport_whitewater_pct",                    "Whitewater Viewport Pct",   group_id=1, key_path=key_path, key_value=value1)
-        add(path + ".render_foam_pct",                            "Foam Render Pct",           group_id=1, key_path=key_path, key_value=value2)
-        add(path + ".render_bubble_pct",                          "Bubble Render Pct",         group_id=1, key_path=key_path, key_value=value2)
-        add(path + ".render_spray_pct",                           "Spray Render Pct",          group_id=1, key_path=key_path, key_value=value2)
-        add(path + ".render_dust_pct",                            "Dust Render Pct",           group_id=1, key_path=key_path, key_value=value2)
-        add(path + ".viewport_foam_pct",                          "Foam Viewport Pct",         group_id=1, key_path=key_path, key_value=value2)
-        add(path + ".viewport_bubble_pct",                        "Bubble Viewport Pct",       group_id=1, key_path=key_path, key_value=value2)
-        add(path + ".viewport_spray_pct",                         "Spray Viewport Pct",        group_id=1, key_path=key_path, key_value=value2)
-        add(path + ".viewport_dust_pct",                          "Dust Viewport Pct",         group_id=1, key_path=key_path, key_value=value2)
+        add(path + ".render_whitewater_pct",                      "Whitewater Render Pct",     group_id=1)
+        add(path + ".viewport_whitewater_pct",                    "Whitewater Viewport Pct",   group_id=1)
+        add(path + ".render_foam_pct",                            "Foam Render Pct",           group_id=1)
+        add(path + ".render_bubble_pct",                          "Bubble Render Pct",         group_id=1)
+        add(path + ".render_spray_pct",                           "Spray Render Pct",          group_id=1)
+        add(path + ".render_dust_pct",                            "Dust Render Pct",           group_id=1)
+        add(path + ".viewport_foam_pct",                          "Foam Viewport Pct",         group_id=1)
+        add(path + ".viewport_bubble_pct",                        "Bubble Viewport Pct",       group_id=1)
+        add(path + ".viewport_spray_pct",                         "Spray Viewport Pct",        group_id=1)
+        add(path + ".viewport_dust_pct",                          "Dust Viewport Pct",         group_id=1)
 
-        add(path + ".whitewater_particle_object_settings_mode",   "Whitewater Particle Mode",  group_id=2, is_key=True)
-        key_path = path + ".whitewater_particle_object_settings_mode"
-        value1 = "WHITEWATER_OBJECT_SETTINGS_WHITEWATER"
-        value2 = "WHITEWATER_OBJECT_SETTINGS_FOAM_BUBBLE_SPRAY"
-
-        add(path + ".whitewater_particle_object_mode",            "Whitewater Particle",       group_id=2, key_path=key_path, key_value=value1)
-        add(path + ".only_display_whitewater_in_render",          "Whitewater Render Only",    group_id=2, key_path=key_path, key_value=value1)
-        add(path + ".whitewater_particle_scale",                  "Whitewater Particle Scale", group_id=2, key_path=key_path, key_value=value1)
-        add(path + ".foam_particle_object_mode",                  "Foam Particle",             group_id=2, key_path=key_path, key_value=value2)
-        add(path + ".bubble_particle_object_mode",                "Bubble Particle",           group_id=2, key_path=key_path, key_value=value2)
-        add(path + ".spray_particle_object_mode",                 "Spray Particle",            group_id=2, key_path=key_path, key_value=value2)
-        add(path + ".dust_particle_object_mode",                  "Dust Particle",             group_id=2, key_path=key_path, key_value=value2)
-        add(path + ".only_display_foam_in_render",                "Foam Render Only",          group_id=2, key_path=key_path, key_value=value2)
-        add(path + ".only_display_bubble_in_render",              "Bubble Render Only",        group_id=2, key_path=key_path, key_value=value2)
-        add(path + ".only_display_spray_in_render",               "Spray Render Only",         group_id=2, key_path=key_path, key_value=value2)
-        add(path + ".only_display_dust_in_render",                "Dust Render Only",          group_id=2, key_path=key_path, key_value=value2)
-        add(path + ".foam_particle_scale",                        "Foam Particle Scale",       group_id=2, key_path=key_path, key_value=value2)
-        add(path + ".bubble_particle_scale",                      "Bubble Particle Scale",     group_id=2, key_path=key_path, key_value=value2)
-        add(path + ".spray_particle_scale",                       "Spray Particle Scale",      group_id=2, key_path=key_path, key_value=value2)
-        add(path + ".dust_particle_scale",                        "Dust Particle Scale",       group_id=2, key_path=key_path, key_value=value2)
+        add(path + ".whitewater_particle_scale",                  "Whitewater Particle Scale", group_id=2)
+        add(path + ".foam_particle_scale",                        "Foam Particle Scale",       group_id=2)
+        add(path + ".bubble_particle_scale",                      "Bubble Particle Scale",     group_id=2)
+        add(path + ".spray_particle_scale",                       "Spray Particle Scale",      group_id=2)
+        add(path + ".dust_particle_scale",                        "Dust Particle Scale",       group_id=2)
         
 
     def scene_update_post(self, scene):
