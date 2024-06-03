@@ -124,7 +124,7 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
 
 
     def save_pre(self):
-        self._save_unused_materials_with_fake_user()
+        pass
 
 
     def _is_domain_set(self):
@@ -178,7 +178,6 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
             foam_object,
             'whitewater_foam_material', 'last_whitewater_foam_material'
         )
-        dprops.mesh_cache.foam.apply_duplivert_object_material()
 
         helper_operators.update_geometry_node_material(foam_object, "FF_MotionBlurWhitewaterFoam")
 
@@ -194,7 +193,6 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
             bubble_object,
             'whitewater_bubble_material', 'last_whitewater_bubble_material'
         )
-        dprops.mesh_cache.bubble.apply_duplivert_object_material()
 
         helper_operators.update_geometry_node_material(bubble_object, "FF_MotionBlurWhitewaterBubble")
 
@@ -210,7 +208,6 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
             spray_object,
             'whitewater_spray_material', 'last_whitewater_spray_material'
         )
-        dprops.mesh_cache.spray.apply_duplivert_object_material()
 
         helper_operators.update_geometry_node_material(spray_object, "FF_MotionBlurWhitewaterSpray")
 
@@ -226,7 +223,6 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
             dust_object,
             'whitewater_dust_material', 'last_whitewater_dust_material'
         )
-        dprops.mesh_cache.dust.apply_duplivert_object_material()
 
         helper_operators.update_geometry_node_material(dust_object, "FF_MotionBlurWhitewaterDust")
 
@@ -395,80 +391,25 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
 
     def _check_whitewater_material(self, mesh_cache_object, material_prop):
         dprops = self._get_domain_properties()
-        new_duplivert_material = None
         new_object_material = None
 
-        duplivert_object = mesh_cache_object.get_duplivert_object()
-        if duplivert_object is not None:
-            if len(duplivert_object.data.materials) == 0:
-                new_duplivert_material = 'MATERIAL_NONE'
-            else:
-                material_idx = duplivert_object.active_material_index
-                material = duplivert_object.data.materials[material_idx]
-                if material is not None:
-                    material_enums = material_library.get_whitewater_material_enums_ui()
-                    material_id = self._get_material_identifier_from_name(material.name, material_enums)
-                    new_duplivert_material = material_id
-
-        foam_object = mesh_cache_object.get_cache_object()
-        if foam_object is None:
+        whitewater_object = mesh_cache_object.get_cache_object()
+        if whitewater_object is None:
             return
 
-        if len(foam_object.data.materials) == 0:
+        if len(whitewater_object.data.materials) == 0:
             new_object_material = 'MATERIAL_NONE'
         else:
-            material_idx = foam_object.active_material_index
-            material = foam_object.data.materials[material_idx]
+            material_idx = whitewater_object.active_material_index
+            material = whitewater_object.data.materials[material_idx]
             if material is not None:
                 material_enums = material_library.get_whitewater_material_enums_ui()
                 material_id = self._get_material_identifier_from_name(material.name, material_enums)
                 new_object_material = material_id
 
-        if (new_duplivert_material == getattr(self, material_prop) and 
-                new_object_material == getattr(self, material_prop)):
-            return
-
-        if new_duplivert_material is None:
-            if new_object_material is not None and getattr(self, material_prop) != new_object_material:
-                setattr(self, material_prop, new_object_material)
-            return
-
-        if new_object_material is None:
-            if getattr(self, material_prop) != new_duplivert_material:
-                setattr(self, material_prop, new_duplivert_material)
-            return
-
-        if getattr(self, material_prop) != new_duplivert_material:
-            setattr(self, material_prop, new_duplivert_material)
-            return
-
-        if getattr(self, material_prop) != new_object_material:
+        if new_object_material is not None and getattr(self, material_prop) != new_object_material:
             setattr(self, material_prop, new_object_material)
             return
-
-
-    def _save_unused_materials_with_fake_user(self):
-        """
-        TODO: Remove
-
-        material_ids = [
-            self.surface_material,
-            self.whitewater_foam_material,
-            self.whitewater_bubble_material,
-            self.whitewater_spray_material,
-            self.whitewater_dust_material
-        ]
-        material_ids = [x for x in material_ids if x is not 'MATERIAL_NONE']
-        for mid in material_ids:
-            mname = material_library.material_identifier_to_name(mid)
-            if mname is None:
-                mname = mid
-            for m in bpy.data.materials:
-                if m.name == mname and m.users == 0:
-                    m.use_fake_user = True
-                    m.flip_fluid.is_fake_use_set_by_addon = True
-                    break
-        """
 
 
 def register():

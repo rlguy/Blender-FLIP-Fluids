@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, os, platform
+import bpy, os, platform, math, mathutils
 from bpy.props import (
         IntProperty,
         FloatProperty,
@@ -30,11 +30,35 @@ from .custom_properties import (
 
 from . import preset_properties
 from .. import types
+from ..operators import helper_operators
 from ..utils import version_compatibility_utils as vcu
 
 DISABLE_FRAME_CHANGE_POST_HANDLER = False
 
-
+#def update_camerascreen_position(self, context):
+#    """Aktualisiert die Position und Skalierung der CameraScreen-Plane"""
+#    hprops = context.scene.flip_fluid_helper
+#    camera_screen = bpy.data.objects.get("CameraScreen")
+#    camera = bpy.data.objects.get(hprops.render_passes_cameraselection)
+#
+#    if camera and camera_screen:
+#        # Holen der Matrix der Kamera inklusive Elternobjekte
+#        camera_matrix = camera.matrix_world
+#
+#        if camera.parent:
+#            parent_matrix = camera.parent.matrix_world
+#            camera_matrix = parent_matrix @ camera.matrix_basis
+#
+#        # Berechne Position entlang der Blickachse
+#        direction = camera_matrix.to_quaternion() @ mathutils.Vector((0.0, 0.0, -1.0))
+#        distance = hprops.render_passes_camerascreen_distance
+#        new_location = camera_matrix.to_translation() + direction * distance
+#
+#        # Setze Position und Rotation der Plane
+#        camera_screen.matrix_parent_inverse = camera_matrix.inverted()
+#        camera_screen.location = new_location
+#        camera_screen.rotation_euler = camera_matrix.to_euler()
+        
 class FlipFluidHelperProperties(bpy.types.PropertyGroup):
     conv = vcu.convert_attribute_to_28
 
@@ -107,6 +131,90 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             description="After the command line render process is finished, open the image in your default OS image program",
             default=False,
             ); exec(conv("cmd_close_window_after_render"))
+            
+
+    ### NEW RENDER PASSES ###
+
+    # Disabled by default for the release of FLIP Fluids 1.8.0
+    display_compositing_tools_in_ui = BoolProperty(default=False); exec(conv("display_compositing_tools_in_ui"))
+   
+    render_passes = BoolProperty(
+            name="Activate Passes Rendering",
+            description="Activate rendering of selected passes",
+            default=False
+            ); exec(conv("render_passes"))
+    
+    render_passes_objectlist = bpy.props.CollectionProperty(type=bpy.types.PropertyGroup); exec(conv("render_passes_objectlist"))
+    render_passes_objectlist_index = bpy.props.IntProperty(); exec(conv("render_passes_objectlist_index"))
+    
+    def get_camera_items(self, context):
+        return [(cam.name, cam.name, "") for cam in bpy.data.objects if cam.type == 'CAMERA']
+    
+    render_passes_cameraselection: bpy.props.EnumProperty(
+        items=get_camera_items,
+        name="Camera Selection",
+        description="Select a camera for rendering"
+    )
+    
+    render_passes_camerascreen_distance: bpy.props.FloatProperty(
+        name="CameraScreen Distance",
+        description="Controls the distance to the selected camera",
+        default=10.0,
+        min=0.0,
+        max=10000.0,
+        #update=update_camerascreen_position
+    )
+       
+    render_passes_fluid_only: bpy.props.BoolProperty(
+        name="Fluid Surface Only",
+        description="Only the fluid_surface with reflections from the background only",
+        default=False
+    )
+    
+    render_passes_fluidparticles_only: bpy.props.BoolProperty(
+        name="Fluid Particles Only",
+        description="Only the fluidparticles with reflections from the background only",
+        default=False
+    )
+
+    render_passes_fluid_shadows_only: bpy.props.BoolProperty(
+        name="Fluid Surface Shadows Only",
+        description="Only the Shadow of the fluid_surface",
+        default=False
+    )    
+
+    render_passes_reflr_only: bpy.props.BoolProperty(
+        name="Reflections And Refractions Only",
+        description="Only reflections and refractions (except the background)",
+        default=False
+    )
+
+    render_passes_objects_only: bpy.props.BoolProperty(
+        name="Objects Only",
+        description="Only visible objects",
+        default=False
+    )
+
+    render_passes_object_shadows_only: bpy.props.BoolProperty(
+        name="Object Shadows Only",
+        description="Only the shadows of visible objects",
+        default=False
+    )       
+ 
+    render_passes_bubblesanddust_only: bpy.props.BoolProperty(
+        name="Bubbles And Dust Only",
+        description="Bubbles And Dust Only",
+        default=False
+    )    
+ 
+
+    render_passes_foamandspray_only: bpy.props.BoolProperty(
+        name="Foam And Spray Only",
+        description="Foam And Spray Only",
+        default=False
+    )    
+ 
+    ### END OF PASSES ###
 
     alembic_export_surface = BoolProperty(
             name="Surface",
@@ -191,6 +299,14 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             default=True,
             ); exec(conv("unsaved_blend_file_tooltip"))
 
+    turbo_tools_render_tooltip = BoolProperty(
+            name="Turbo Tools command line rendering support", 
+            description="An installation of the Turbo Tools addon has been detected. Use these operators to launch"
+                " a Turbo Tools render process or copy the render command. Refer to the Turbo Tools documentation for more info"
+                " on command line rendering", 
+            default=True,
+            ); exec(conv("turbo_tools_render_tooltip"))
+
     flip_fluids_remesh_skip_hide_render_objects = BoolProperty(
             name="Skip Hidden Render Objects",
             description="Skip remeshing objects in the collection that are hidden from render (outliner camera icon)",
@@ -263,8 +379,10 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
 
     command_line_tools_expanded = BoolProperty(default=True); exec(conv("command_line_tools_expanded"))
     command_line_bake_expanded = BoolProperty(default=False); exec(conv("command_line_bake_expanded"))
+    command_line_render_passes_expanded = BoolProperty(default=False); exec(conv("command_line_render_passes_expanded"))
     command_line_render_expanded = BoolProperty(default=False); exec(conv("command_line_render_expanded"))
     command_line_render_frame_expanded = BoolProperty(default=False); exec(conv("command_line_render_frame_expanded"))
+    command_line_render_turbo_tools_expanded  = BoolProperty(default=False); exec(conv("command_line_render_turbo_tools_expanded"))
     command_line_alembic_export_expanded = BoolProperty(default=False); exec(conv("command_line_alembic_export_expanded"))
 
     geometry_node_tools_expanded = BoolProperty(default=False); exec(conv("geometry_node_tools_expanded"))
@@ -297,6 +415,10 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             bpy.ops.flip_fluid_operators.auto_load_baked_frames_cmd('INVOKE_DEFAULT')
 
         self.check_alembic_output_filepath()
+
+
+    def scene_update_post(self, scene):
+        self._update_render_passes_camera_screen(scene)
 
 
     def save_post(self):
@@ -367,6 +489,19 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             self["alembic_output_filepath"] = default_cache_directory_str
 
 
+    def _update_render_passes_camera_screen(self, scene):
+        bl_camera_screen = bpy.data.objects.get("ff_camera_screen")
+        if bl_camera_screen is None:
+            return
+
+        hprops = scene.flip_fluid_helper
+        bl_camera = bpy.data.objects.get(hprops.render_passes_cameraselection)
+        if bl_camera is None:
+            return
+
+        helper_operators.update_camera_screen_scale(bl_camera_screen, bl_camera)
+
+
     def check_alembic_output_filepath(self):
         if self.is_alembic_output_filepath_set:
             return
@@ -406,6 +541,10 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
 
 def load_post():
     bpy.context.scene.flip_fluid_helper.load_post()
+
+
+def scene_update_post(scene):
+    scene.flip_fluid_helper.scene_update_post(scene)
 
 
 def frame_change_post(scene, depsgraph=None):

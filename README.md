@@ -12,7 +12,7 @@ With our reputation for delivering high quality software and outstanding custome
 - [Frequently Asked Questions (FAQ)](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Frequently-Asked-Questions)
 - [What is the difference between Blender's Mantaflow FLIP simulator and the FLIP Fluids addon?](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Frequently-Asked-Questions#what-is-the-difference-between-blenders-mantaflow-fluid-simulator-and-the-flip-fluids-addon)
 
-Have any questions? Do not hesitate to ask us here or at support@flipfluids.com!
+Have any questions? Do not hesitate to ask us at support@flipfluids.com!
 
 ## Getting the FLIP Fluids Addon
 
@@ -29,11 +29,9 @@ See any of our [market place product pages](https://github.com/rlguy/Blender-FLI
 ## System Requirements
 
 - Windows, MacOS, or Linux operating system
-- Blender 2.8 to 4.0 compatible
+- Blender 3.1 to 4.1 compatible
 - CPU 64-bit Intel® or AMD® or Apple Silicon multi-core processor
 - 8 GB RAM minimum, 16 GB of RAM or more is highly recommended
-
-**Blender Support on MacOS:** Due to a MacOS specific [Blender bug](https://developer.blender.org/T68243) in versions 2.80, 2.81, and 2.82, these Blender versions cannot be supported. Blender 2.83+ or later is required for MacOS.
 
 ## Release Notes
 

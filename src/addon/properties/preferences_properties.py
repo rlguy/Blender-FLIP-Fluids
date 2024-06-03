@@ -92,6 +92,14 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
     global FAKE_PREFERENCES
     bl_idname = __name__.split(".")[0]
 
+    preferences_menu_view_mode = EnumProperty(
+            name="Preferences Menu View",
+            description="Select the preferences category to view",
+            items=types.preferences_menu_view_modes,
+            default='PREFERENCES_MENU_VIEW_GENERAL',
+            options={'HIDDEN'},
+            ); exec(vcu.convert_attribute_to_28("preferences_menu_view_mode"))
+
     enable_helper = BoolProperty(
                 name="Enable Helper Sidebar",
                 description="Enable the FLIP Fluid helper menu in the 3D view sidebar."
@@ -185,15 +193,15 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
     exec(vcu.convert_attribute_to_28("enable_support_tools"))
     FAKE_PREFERENCES.enable_support_tools = False
 
-    cmd_save_before_launch = BoolProperty(
-            name="Autosave Blend file before launching command line operators (Recommended)", 
+    cmd_save_blend_file_before_launch = BoolProperty(
+            name="Autosave Blend file before launching command line operators", 
             description="Command line operators require the Blend file to be saved for changes to take effect when using command"
             " line operators. If enabled, the Blend file will be automatically saved when using command line operators so that"
             " manual saving is not necessary", 
-            default=False,
+            default=True,
             ); 
-    exec(vcu.convert_attribute_to_28("cmd_save_before_launch"))
-    FAKE_PREFERENCES.cmd_save_before_launch = False
+    exec(vcu.convert_attribute_to_28("cmd_save_blend_file_before_launch"))
+    FAKE_PREFERENCES.cmd_save_blend_file_before_launch = True
 
     cmd_bake_max_attempts = IntProperty(
             name="Max Attempts",
@@ -370,15 +378,16 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
     exec(vcu.convert_attribute_to_28("dismiss_export_animated_mesh_parented_relation_hint"))
     FAKE_PREFERENCES.dismiss_export_animated_mesh_parented_relation_hint = False
 
-    enable_tabbed_domain_settings = BoolProperty(
-                name="Enable Tabbed Domain Settings (Recommended)",
+    enable_tabbed_domain_settings_view = BoolProperty(
+                name="Enable Tabbed Domain Settings",
                 description="Enable tabbed domain settings view. If enabled, domain panel categories will be displayed"
-                    " using a tab header selector. If disabled, the classic view will display all domain panel categories in a vertical stack",
-                default=False,
+                    " using a tab header selector. If disabled, the classic view will display all domain panel categories"
+                    " in a vertical stack",
+                default=True,
                 options={'HIDDEN'},
                 )
-    exec(vcu.convert_attribute_to_28("enable_tabbed_domain_settings"))
-    FAKE_PREFERENCES.enable_tabbed_domain_settings = False
+    exec(vcu.convert_attribute_to_28("enable_tabbed_domain_settings_view"))
+    FAKE_PREFERENCES.enable_tabbed_domain_settings_view = True
 
 
     def is_developer_tools_enabled(self):
@@ -767,7 +776,7 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
                     row.label(text="    Path: " + path)
 
 
-    def draw(self, context):
+    def draw_preferences_notifications(self, context):
         is_installation_complete = installation_utils.is_installation_complete()
         column = self.layout.column(align=True)
         if not is_installation_complete:
@@ -778,75 +787,22 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
             row.label(text="To complete installation of the FLIP Fluids addon, click here: ")
             row.operator("flip_fluid_operators.complete_installation", icon='MOD_FLUIDSIM')
             box.label(text="Or you may restart Blender to complete installation")
-            box.label(text="Preferences will become available after the installation is complete")
-            box.label(text="Optional: The Mixbox color blending plugin may be installed below now or after completing installation", icon="INFO")
+            box.label(text="Full preferences menu will become available after the installation is complete")
             box.operator(
                     "wm.url_open", 
                     text="FLIP Fluids Addon Installation Instructions", 
                     icon="URL"
                 ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Addon-Installation-and-Uninstallation"
-            box.operator(
-                    "wm.url_open", 
-                    text="Mixbox Plugin Installation Instructions", 
-                    icon="URL"
-                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Mixbox-Installation-and-Uninstallation"
 
-        show_rtx_driver_warning = False  # Fixed in recent drivers (~January 2023)
-        if not self.dismiss_rtx_driver_warning and show_rtx_driver_warning:
-            model_search_string = "RTX"
-            gpu_model_string = preferences_operators.get_gpu_string()
-            if model_search_string in gpu_model_string:
-                column = self.layout.column(align=True)
-                box = column.box()
-                column = box.column(align=True)
-                column.alert = True
-                column.label(text="Warning: Potential NVIDIA GeForce RTX Driver Incompatibility", icon='ERROR')
-                column = box.column(align=True)
-                column.label(text="GPU Model: " + gpu_model_string, icon="INFO")
-                column.label(text="    A recent NVIDIA RTX 'Game Ready Driver' update may cause frequent Blender crashes.")
-                column.label(text="    It is recommented to update to the NVIDIA RTX 'Studio Drivers' that are typically more stable")
-                column.label(text="    when using content creation software.")
-                column.label(text="    If you are already running the Studio Drivers, ignore this message.")
-                column.separator()
-                box.operator(
-                        "wm.url_open", 
-                        text="Click for more information about this issue", 
-                        icon="URL"
-                    ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/issues/599"
-                box.operator(
-                        "wm.url_open", 
-                        text="Download NVIDIA Drivers", 
-                        icon="URL"
-                    ).url = "https://www.nvidia.com/en-us/geforce/drivers/"
-                box.prop(self, "dismiss_rtx_driver_warning", text="Dismiss this warning", toggle=1, icon='X')
 
-        if vcu.is_blender_28() and not vcu.is_blender_281():
-            box = column.box()
-            box.label(text="WARNING: Blender 2.80 contains bugs that can cause frequent crashes", icon='ERROR')
-            box.label(text="     during render, Alembic export, and rigid/cloth simulation baking.")
-            box.separator()
-            box.label(text="     Blender version 2.81 or higher is recommended.")
-            box.separator()
-            box.operator(
-                    "wm.url_open", 
-                    text="Blender 2.80 Known Issues and Workarounds", 
-                    icon="URL"
-                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Blender-2.8-Support#known-issues"
-            column.separator()
-            column.separator()
-
-        """
-        if vcu.is_blender_28():
-            box = column.box()
-            box.label(text="Reminder: It is necessary to lock the Blender interface during render to ", icon='INFO')
-            box.label(text="     prevent crashes (Blender > Render > Lock Interface).")
-        """
+    def draw_general_preferences_menu(self, context):
+        is_installation_complete = installation_utils.is_installation_complete()
 
         box = self.layout.box()
         box.enabled = is_installation_complete
         helper_column = box.column(align=True)
         helper_column.label(text="UI Options:")
-        helper_column.prop(self, "enable_tabbed_domain_settings")
+        helper_column.prop(self, "enable_tabbed_domain_settings_view")
         helper_column.prop(self, "show_documentation_in_ui")
 
         row = helper_column.row()
@@ -863,7 +819,7 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         helper_column = box.column(align=True)
         helper_column.label(text="Command Line Tools:")
         row = helper_column.row(align=True)
-        row.prop(self, "cmd_save_before_launch")
+        row.prop(self, "cmd_save_blend_file_before_launch")
         row = helper_column.row(align=True)
         row.alignment = 'LEFT'
         row.label(text="Re-launch bake after crash:", icon='FILE_REFRESH')
@@ -884,7 +840,7 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         box = self.layout.box()
         box.enabled = is_installation_complete
         helper_column = box.column(align=True)
-        helper_column.label(text="Experimental & Debug Tools:")
+        helper_column.label(text="Experimental and Extra Features:")
 
         if installation_utils.is_experimental_build():
             helper_column.prop(self, "enable_experimental_build_warning")
@@ -903,25 +859,53 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         helper_column.prop(self, "enable_blend_file_logging")
         helper_column.prop(self, "enable_support_tools")
 
-        self.draw_mixbox_menu(context)
-        self.draw_preset_library_menu(context)
-
-        """
-        helper_column.separator()
-        helper_column.label(text="Deprecated Features:")
-        helper_column.prop(self, "enable_presets")
-
-        helper_column.operator(
-                "wm.url_open", 
-                text="Why Are Preset Features Deprecated?", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Preset-Settings"
-        """
-
         box = self.layout.box()
         box.enabled = is_installation_complete
+        column = box.column()
+        column.label(text="Warnings and Errors:")
+
+        split = vcu.ui_split(column, factor=0.666, align=True)
+        column_left = split.column(align=True)
+        column_right = split.column(align=True)
+
+        row = column_left.row(align=True)
+        row.alignment = 'LEFT'
+        row.prop(self, "dismiss_T88811_crash_warning")
+
+        row = column_left.row(align=True)
+        row.alignment = 'LEFT'
+        row.prop(self, "dismiss_persistent_data_render_warning")
+
+        row = column_right.row(align=True)
+        row.alignment = 'EXPAND'
+        row.operator(
+                "wm.url_open", 
+                text="Bug Report: T88811", 
+            ).url = "https://projects.blender.org/blender/blender/issues/88811"
+
+        row = column_right.row(align=True)
+        row.alignment = 'EXPAND'
+        row.operator(
+                "wm.url_open", 
+                text="Related Bug Reports", 
+            ).url = "https://projects.blender.org/blender/blender/issues?type=all&state=open&labels=&milestone=0&project=0&assignee=0&poster=0&q=Persistent+Data"
+
+        row = column_left.row(align=True)
+        row.alignment = 'LEFT'
+        row.prop(self, "dismiss_export_animated_mesh_parented_relation_hint")
+
+        row = column_right.row(align=True)
+        row.alignment = 'EXPAND'
+        row.operator(
+                "wm.url_open", 
+                text="Mesh Export Documentation", 
+            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Obstacle-Object-Settings#mesh-data-export"
+
+
+    def draw_support_preferences_menu(self, context):
+        box = self.layout.box()
         column = box.column(align=True)
-        split = column.split()
+        split = column.split(factor=0.7)
         column_left = split.column(align=True)
         column_right = split.column()
         
@@ -947,6 +931,11 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
                 icon="URL"
             ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Video-Learning-Series"
 
+        box = self.layout.box()
+        column = box.column(align=True)
+        split = column.split(factor=0.7)
+        column_left = split.column(align=True)
+        column_right = split.column()
         column_left.label(text="Report a Bug:")
         column_left.operator(
                 "wm.url_open", 
@@ -960,9 +949,8 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         column.label(text="Reports can also be sent through official marketplaces or to support@flipfluids.com")
 
         box = self.layout.box()
-        box.enabled = is_installation_complete
         column = box.column(align=True)
-        split = column.split()
+        split = column.split(factor=0.7)
         column_left = split.column(align=True)
         column_right = split.column()
 
@@ -987,75 +975,43 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         row = column_left.row(align=True)
         row.operator(
                 "wm.url_open", 
-                text="Facebook", 
-            ).url = "https://www.facebook.com/FLIPFluids"
-        row.operator(
-                "wm.url_open", 
-                text="Twitter", 
-            ).url = "https://twitter.com/flipfluids"
+                text="YouTube", 
+            ).url = "https://www.youtube.com/FLIPFluids"
         row.operator(
                 "wm.url_open", 
                 text="Instagram", 
             ).url = "https://www.instagram.com/flip.fluids/"
         row.operator(
                 "wm.url_open", 
-                text="YouTube", 
-            ).url = "https://www.youtube.com/FLIPFluids"
-
-        box = self.layout.box()
-        box.enabled = is_installation_complete
-        column = box.column()
-        column.label(text="Warnings and Errors:")
-
-        split = vcu.ui_split(column, factor=0.666, align=True)
-        column_left = split.column(align=True)
-        column_right = split.column(align=True)
-
-        row = column_left.row(align=True)
-        row.alignment = 'LEFT'
-        row.prop(self, "dismiss_T88811_crash_warning")
-
-        row = column_left.row(align=True)
-        row.alignment = 'LEFT'
-        row.prop(self, "dismiss_persistent_data_render_warning")
-
-        if show_rtx_driver_warning:
-            row = column_left.row(align=True)
-            row.alignment = 'LEFT'
-            row.prop(self, "dismiss_rtx_driver_warning")
-
-        row = column_right.row(align=True)
-        row.alignment = 'EXPAND'
+                text="Twitter", 
+            ).url = "https://twitter.com/flipfluids"
         row.operator(
                 "wm.url_open", 
-                text="Bug Report: T88811", 
-            ).url = "https://projects.blender.org/blender/blender/issues/88811"
-
-        row = column_right.row(align=True)
-        row.alignment = 'EXPAND'
-        row.operator(
-                "wm.url_open", 
-                text="Related Bug Reports", 
-            ).url = "https://projects.blender.org/blender/blender/issues?type=all&state=open&labels=&milestone=0&project=0&assignee=0&poster=0&q=Persistent+Data"
-
+                text="Facebook", 
+            ).url = "https://www.facebook.com/FLIPFluids"
+        
         row = column_left.row(align=True)
-        row.alignment = 'LEFT'
-        row.prop(self, "dismiss_export_animated_mesh_parented_relation_hint")
-
-        if show_rtx_driver_warning:
-            row = column_right.row(align=True)
-            row.alignment = 'EXPAND'
-            row.operator(
-                    "wm.url_open", 
-                    text="Click for More Info", 
-                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/issues/599"
-
-        row = column_right.row(align=True)
-        row.alignment = 'EXPAND'
         row.operator(
                 "wm.url_open", 
-                text="Mesh Export Documentation", 
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Obstacle-Object-Settings#mesh-data-export"
+                text="Discord Server", 
+            ).url = "https://discord.gg/FLIPFluids"
+
+
+
+    def draw(self, context):
+        self.draw_preferences_notifications(context)
+
+        row = self.layout.row(align=True)
+        row.prop(self, "preferences_menu_view_mode", expand=True)
+
+        if self.preferences_menu_view_mode == 'PREFERENCES_MENU_VIEW_GENERAL':
+            self.draw_general_preferences_menu(context)
+        elif self.preferences_menu_view_mode == 'PREFERENCES_MENU_VIEW_MIXBOX':
+            self.draw_mixbox_menu(context)
+        elif self.preferences_menu_view_mode == 'PREFERENCES_MENU_VIEW_PRESETS':
+            self.draw_preset_library_menu(context)
+        elif self.preferences_menu_view_mode == 'PREFERENCES_MENU_VIEW_SUPPORT':
+            self.draw_support_preferences_menu(context)
 
 
     def _get_gpu_device_enums(self, context=None):

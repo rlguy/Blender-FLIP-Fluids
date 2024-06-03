@@ -16,8 +16,15 @@
 
 import bpy
 
+from ..ui import domain_display_ui
 from ..utils import version_compatibility_utils as vcu
 from ..utils import installation_utils
+
+
+def _draw_fluid_surface_display_settings(self, context):
+    obj = vcu.get_active_object(context)
+    dprops = obj.flip_fluid.domain
+    domain_display_ui.draw_surface_display_settings(self, context, dprops.surface)
 
 
 def _draw_geometry_attributes_menu(self, context):
@@ -168,7 +175,10 @@ def _draw_geometry_attributes_menu(self, context):
                     else:
                         column.label(text="Install the Mixbox plugin in the", icon="INFO")
                         column.label(text="FLIP Fluids Addon preferences", icon="INFO")
-                        column.operator("flip_fluid_operators.open_preferences", text="Open Preferences", icon="PREFERENCES")
+                        column.operator(
+                                "flip_fluid_operators.open_preferences", 
+                                text="Open Preferences", icon="PREFERENCES"
+                                ).view_mode = 'PREFERENCES_MENU_VIEW_MIXBOX'
         else:
             row = row.row(align=True)
             row.alignment = 'RIGHT'
@@ -240,7 +250,7 @@ class FLIPFLUID_PT_DomainTypeFluidSurfacePanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        if vcu.get_addon_preferences(context).enable_tabbed_domain_settings:
+        if vcu.get_addon_preferences(context).enable_tabbed_domain_settings_view:
             return False
         obj_props = vcu.get_active_object(context).flip_fluid
         is_addon_disabled = context.scene.flip_fluid.is_addon_disabled_in_blend_file()
@@ -406,6 +416,7 @@ class FLIPFLUID_PT_DomainTypeFluidSurfacePanel(bpy.types.Panel):
         #column.separator()
         #column.prop(sprops, "generate_motion_blur_data")
 
+        _draw_fluid_surface_display_settings(self, context)
         _draw_geometry_attributes_menu(self, context)
 
         self.layout.separator()

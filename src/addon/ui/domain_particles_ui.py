@@ -22,6 +22,12 @@ from ..utils import version_compatibility_utils as vcu
 from ..utils import installation_utils
 
 
+def _draw_fluid_particle_display_settings(self, context):
+    obj = vcu.get_active_object(context)
+    dprops = obj.flip_fluid.domain
+    domain_display_ui.draw_fluid_particle_display_settings(self, context, dprops.particles)
+
+
 def _draw_geometry_attributes_menu(self, context):
     obj = vcu.get_active_object(context)
     pprops = obj.flip_fluid.domain.particles
@@ -120,7 +126,10 @@ def _draw_geometry_attributes_menu(self, context):
                     else:
                         column.label(text="Install the Mixbox plugin in the", icon="INFO")
                         column.label(text="FLIP Fluids Addon preferences", icon="INFO")
-                        column.operator("flip_fluid_operators.open_preferences", text="Open Preferences", icon="PREFERENCES")
+                        column.operator(
+                                "flip_fluid_operators.open_preferences", 
+                                text="Open Preferences", icon="PREFERENCES"
+                                ).view_mode = 'PREFERENCES_MENU_VIEW_MIXBOX'
         else:
             row = row.row(align=True)
             row.alignment = 'RIGHT'
@@ -182,7 +191,7 @@ class FLIPFLUID_PT_DomainTypeFluidParticlesPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        if vcu.get_addon_preferences(context).enable_tabbed_domain_settings:
+        if vcu.get_addon_preferences(context).enable_tabbed_domain_settings_view:
             return False
         obj_props = vcu.get_active_object(context).flip_fluid
         is_addon_disabled = context.scene.flip_fluid.is_addon_disabled_in_blend_file()
@@ -262,41 +271,7 @@ class FLIPFLUID_PT_DomainTypeFluidParticlesPanel(bpy.types.Panel):
             row.prop(aprops, "particle_jitter_factor", slider=True)
             row.prop(aprops, "jitter_surface_particles")
 
-        box = self.layout.box()
-        row = box.row(align=True)
-        row.prop(pprops, "fluid_particle_display_settings_expanded",
-            icon="TRIA_DOWN" if pprops.fluid_particle_display_settings_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
-        row.label(text="Fluid Particle Display and Render Settings:")
-
-        if pprops.fluid_particle_display_settings_expanded:
-            bl_fluid_particles_mesh_cache = dprops.mesh_cache.particles.get_cache_object()
-            point_cloud_detected = helper_operators.is_geometry_node_point_cloud_detected(bl_fluid_particles_mesh_cache)
-
-            column = box.column(align=True)
-            column.label(text="More display settings can be found in the FLIP Fluid Display Settings panel")
-
-            subbox = box.box()
-            subbox.enabled = pprops.enable_fluid_particle_output
-            column = subbox.column(align=True)
-            column.label(text="Particle Object Settings:")
-
-            if point_cloud_detected:
-                column.label(text="Point cloud geometry nodes setup detected", icon="INFO")
-                column.label(text="More settings can be found in the fluid particles object geometry nodes modifier", icon="INFO")
-                column.separator()
-
-                bl_mod = domain_display_ui.get_motion_blur_geometry_node_modifier(bl_fluid_particles_mesh_cache)
-                row = column.row(align=True)
-                row.alignment = 'LEFT'
-                row.label(text="Fluid Particles:")
-                domain_display_ui.draw_whitewater_motion_blur_geometry_node_properties(row, bl_mod)
-            else:
-                column.label(text="FLIP Fluids Geometry Nodes Modifier not found on fluid particles object.", icon="INFO")
-                column.label(text="Fluid particle settings will be unavailable in this menu.", icon="INFO")
-
+        _draw_fluid_particle_display_settings(self, context)
         _draw_geometry_attributes_menu(self, context)
 
         self.layout.separator()

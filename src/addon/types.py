@@ -133,12 +133,6 @@ whitewater_object_settings_modes = (
     ('WHITEWATER_OBJECT_SETTINGS_FOAM_BUBBLE_SPRAY', "Foam Bubble Spray Dust", "Adjust particle object settings for foam, bubble, spray, and dust particles separately")
     )
 
-whitewater_particle_object_modes = (
-    ('WHITEWATER_PARTICLE_ICOSPHERE',   "Icosphere",    "Render whitewater particles as a 20 sided icosphere"),
-    ('WHITEWATER_PARTICLE_CUBE',        "Cube",         "Render whitewater particles as a 6 sided cube"),
-    ('WHITEWATER_PARTICLE_CUSTOM',      "Custom",       "Render whitewater particles as a custom blender object")
-    )
-
 whitewater_ui_modes = (
     ('WHITEWATER_UI_MODE_BASIC',    "Basic",    "Display only the basic and most important whitewater simulation parameters"),
     ('WHITEWATER_UI_MODE_ADVANCED', "Advanced", "Display all whitewater simulation parameters. Advanced settings will be highlighted in red by default. For most simulations, you will not need to change these settings from their defaults.")
@@ -262,4 +256,11 @@ domain_settings_panel = (
 measurement_units_mode = (
     ('MEASUREMENT_UNITS_MODE_METRIC',   "Metric",   "Display measurements in metric units"),
     ('MEASUREMENT_UNITS_MODE_IMPERIAL', "Imperial", "Display measurements in imperial units")
+    )
+
+preferences_menu_view_modes = (
+    ('PREFERENCES_MENU_VIEW_GENERAL', "General",              "General preferences settings"),
+    ('PREFERENCES_MENU_VIEW_MIXBOX',  "Mixbox Installation",  "Install the Mixbox color blending plugin"),
+    ('PREFERENCES_MENU_VIEW_PRESETS', "Presets Installation", "Install the asset browser preset library"),
+    ('PREFERENCES_MENU_VIEW_SUPPORT', "Help & Support",       "Info and links for help and support"),
     )

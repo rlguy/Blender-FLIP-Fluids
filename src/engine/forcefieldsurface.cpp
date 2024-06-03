@@ -87,7 +87,7 @@ void ForceFieldSurface::addGravityScaleToGrid(ForceFieldGravityScaleGrid &scaleG
                 vmath::vec3 vectToSurface = _vectorField(i, j, k);
                 float distanceToSurface = vectToSurface.length();
                 if (distanceToSurface > scaleWidth) {
-                    scaleGrid.addScale(i + _ioffsetSDF, j + _joffsetSDF, k + _koffsetSDF, 1.0f);
+                    scaleGrid.addScale(i + _ioffsetSDF, j + _joffsetSDF, k + _koffsetSDF, 1.0f, 1.0f);
                     continue;
                 }
 
@@ -96,7 +96,7 @@ void ForceFieldSurface::addGravityScaleToGrid(ForceFieldGravityScaleGrid &scaleG
                 if (distanceFactor > _gravityScaleFalloffThreshold) {
                     scaleFactor = 1.0f - (distanceFactor - _gravityScaleFalloffThreshold) / (1.0f - _gravityScaleFalloffThreshold);
                 }
-                scaleGrid.addScale(i + _ioffsetSDF, j + _joffsetSDF, k + _koffsetSDF, scaleFactor * _gravityScale);
+                scaleGrid.addScale(i + _ioffsetSDF, j + _joffsetSDF, k + _koffsetSDF, scaleFactor * _gravityScale, scaleFactor);
             }
         }
     }

@@ -25,7 +25,7 @@ bl_info = {
     "description": "The file you have installed is not an addon. Enable for more info.",
     "author" : "The FLIP Fluids Development Team",
     "version" : (0, 0, 0),
-    "blender" : (2, 81, 0),
+    "blender" : (3, 1, 0),
     "location" : "",
     "warning" : "",
     "wiki_url" : "https://github.com/rlguy/Blender-FLIP-Fluids",

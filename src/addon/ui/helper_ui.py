@@ -438,6 +438,86 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                 row.operator("flip_fluid_operators.helper_command_line_bake")
                 row.operator("flip_fluid_operators.helper_command_line_bake_to_clipboard", text="", icon='COPYDOWN')
 
+            
+            ### Prepare Compositing Passes Rendering Panel ###
+
+            # Disabled by default for the release of FLIP Fluids 1.8.0
+            # Can be enabled in a Blend file by running the following script:
+            """
+            import bpy
+            bpy.context.scene.flip_fluid_helper.display_compositing_tools_in_ui = True
+            """
+            
+            if hprops.display_compositing_tools_in_ui:
+                subbox = box.box()
+                row = subbox.row(align=True)
+                row.prop(hprops, "command_line_render_passes_expanded",
+                    icon="TRIA_DOWN" if hprops.command_line_render_passes_expanded else "TRIA_RIGHT",
+                    icon_only=True,
+                    emboss=False
+                )
+                row.label(text="Compositing Tools:")
+
+                if not hprops.command_line_render_passes_expanded:
+                    row.operator("flip_fluid_operators.helper_cmd_render_pass_animation", text="Launch Render Passes")
+                    row.operator("flip_fluid_operators.helper_cmd_render_pass_anim_clipboard", text="", icon='COPYDOWN')
+
+                if hprops.command_line_render_passes_expanded:
+                    
+                    row = subbox.row(align=True)
+                    row.prop(hprops, "render_passes")
+
+                    is_render_passes_active = hprops.render_passes
+
+                    row = subbox.row()
+                    row.active = is_render_passes_active
+                    row.alignment = 'LEFT'
+                    row.prop(hprops, "render_passes_fluid_only")
+                    row.prop(hprops, "render_passes_fluid_shadows_only")
+                    row.prop(hprops, "render_passes_fluidparticles_only")
+
+                    row = subbox.row()
+                    row.active = is_render_passes_active
+                    row.alignment = 'LEFT'
+                    row.prop(hprops, "render_passes_objects_only")
+                    #row.prop(hprops, "render_passes_object_shadows_only")
+                    row.prop(hprops, "render_passes_reflr_only")
+
+                    row = subbox.row()
+                    row.active = is_render_passes_active
+                    row.alignment = 'LEFT'
+                    row.prop(hprops, "render_passes_foamandspray_only")
+                    row.prop(hprops, "render_passes_bubblesanddust_only")
+                    
+                    column = subbox.column()
+                    row = column.row(align=True)
+                    row.operator("flip_fluid_operators.reset_passes_settings", text="Reset Settings", icon='FILE_REFRESH')
+                    
+                    # Hier fügen wir die neue Liste und die Bedienelemente für die Objekte hinzu
+                    row = subbox.row()
+                    row.label(text="Objects to render (no fluid objects):")
+                    row = subbox.row()
+                    row.template_list("FLIPFLUID_UL_passes_items", "", hprops, "render_passes_objectlist", hprops, "render_passes_objectlist_index")
+                                    
+                    col = row.column(align=True)
+                    col.operator("flip_fluid_operators.add_item_to_list", icon='ADD', text="")
+                    col.operator("flip_fluid_operators.remove_item_from_list", icon='REMOVE', text="").index = hprops.render_passes_objectlist_index
+                    
+                    column = subbox.column()
+                    row = column.row(align=True)
+                    row = subbox.row()
+                    row.label(text="Generate Background Plane (CameraScreen):")
+                    row = subbox.row()
+                    row.prop(hprops, 'render_passes_cameraselection', text="Select Camera")
+                    row.operator("flip_fluid_operators.add_camera_screen", text="Add CameraScreen", icon='IMAGE_BACKGROUND')
+                    row.prop(hprops, 'render_passes_camerascreen_distance', text="")
+                  
+
+                    column = subbox.column()
+                    row = column.row(align=True)
+                    row.operator("flip_fluid_operators.helper_cmd_render_pass_animation", text="Launch Render Passes")
+                    row.operator("flip_fluid_operators.helper_cmd_render_pass_anim_clipboard", text="", icon='COPYDOWN')
+
             ### Command Line Render Animation ###
 
             subbox = box.box()
@@ -448,12 +528,12 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                 emboss=False
             )
             row.label(text="Render Animation:")
-
+            
             if hprops.command_line_render_expanded:
                 column = subbox.column(align=True)
                 row = column.row(align=True)
-                row.operator("flip_fluid_operators.helper_command_line_render")
-                row.operator("flip_fluid_operators.helper_command_line_render_to_clipboard", text="", icon='COPYDOWN')
+                row.operator("flip_fluid_operators.helper_command_line_render").use_turbo_tools = False
+                row.operator("flip_fluid_operators.helper_command_line_render_to_clipboard", text="", icon='COPYDOWN').use_turbo_tools = False
 
                 system = platform.system()
                 if system == "Windows":
@@ -463,8 +543,8 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                     row.operator("flip_fluid_operators.helper_open_outputfolder", text="", icon='FILE_FOLDER')
             else:
                 row = row.row(align=True)
-                row.operator("flip_fluid_operators.helper_command_line_render")
-                row.operator("flip_fluid_operators.helper_command_line_render_to_clipboard", text="", icon='COPYDOWN')
+                row.operator("flip_fluid_operators.helper_command_line_render").use_turbo_tools = False
+                row.operator("flip_fluid_operators.helper_command_line_render_to_clipboard", text="", icon='COPYDOWN').use_turbo_tools = False
 
             ### Command Line Render Frame ###
 
@@ -493,6 +573,44 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                 row = row.row(align=True)
                 row.operator("flip_fluid_operators.helper_command_line_render_frame")
                 row.operator("flip_fluid_operators.helper_cmd_render_frame_to_clipboard", text="", icon='COPYDOWN')
+
+
+            ### Turbo Tools Command Line Render ###
+
+            if installation_utils.is_turbo_tools_addon_enabled():
+                subbox = box.box()
+                row = subbox.row(align=True)
+                row.prop(hprops, "command_line_render_turbo_tools_expanded",
+                    icon="TRIA_DOWN" if hprops.command_line_render_turbo_tools_expanded else "TRIA_RIGHT",
+                    icon_only=True, 
+                    emboss=False
+                )
+                row.label(text="Turbo Tools Command Line Render:")
+
+                if hprops.command_line_render_turbo_tools_expanded:
+                    column = subbox.column(align=True)
+                    row = subbox.row(align=True)
+                    row.alignment = 'LEFT'
+                    row.prop(hprops, "turbo_tools_render_tooltip", icon="QUESTION", emboss=False, text="")
+                    row.label(text="Turbo Tools Addon Detected")
+
+                    column = subbox.column(align=True)
+                    row = column.row(align=True)
+                    row.operator("flip_fluid_operators.helper_command_line_render", text="Render Animation").use_turbo_tools = True
+                    row.operator("flip_fluid_operators.helper_command_line_render_to_clipboard", text="", icon='COPYDOWN').use_turbo_tools = True
+                    row = column.row(align=True)
+                    row.operator("flip_fluid_operators.helper_command_line_render_frame", text="Render Frame").use_turbo_tools = True
+                    row.operator("flip_fluid_operators.helper_cmd_render_frame_to_clipboard", text="", icon='COPYDOWN').use_turbo_tools = True
+                    row = column.row(align=True)
+                    row.prop(hprops, "cmd_open_image_after_render")
+
+                    if platform.system() == "Windows":
+                        row = column.row(align=True)
+                        row.prop(hprops, "cmd_close_window_after_render")
+                else:
+                    row = row.row(align=True)
+                    row.operator("flip_fluid_operators.helper_command_line_render", text="Render Animation").use_turbo_tools = True
+                    row.operator("flip_fluid_operators.helper_command_line_render_to_clipboard", text="", icon='COPYDOWN').use_turbo_tools = True
 
             ### Command Line Alembic Export ###
 
@@ -591,12 +709,32 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
 
             column = box.column(align=False)
             column.enabled = vcu.is_blender_31() and is_developer_mode
-            column.operator("flip_fluid_operators.helper_initialize_motion_blur", icon='ADD')
-            column.operator("flip_fluid_operators.helper_remove_motion_blur", icon='REMOVE')
+
+            if vcu.is_blender_33():
+                # Icon only available in Blender 3.3 or later
+                column.operator("flip_fluid_operators.helper_initialize_motion_blur", icon='GEOMETRY_NODES')
+            else:
+                column.operator("flip_fluid_operators.helper_initialize_motion_blur")
+
+            row = column.row(align=True)
+            row.label(text="Toggle Motion Blur Rendering:")
+            row = row.row(align=True)
+            row.alignment = 'RIGHT'
+            row.operator("flip_fluid_operators.helper_toggle_motion_blur_rendering", 
+                    text="ON", 
+                    icon="CHECKMARK"
+                    ).enable_motion_blur_rendering=True
+            row.operator("flip_fluid_operators.helper_toggle_motion_blur_rendering", 
+                    text="OFF", 
+                    icon="X"
+                    ).enable_motion_blur_rendering=False
         else:
             if is_developer_mode and vcu.is_blender_31():
-                row.operator("flip_fluid_operators.helper_initialize_motion_blur", icon='ADD')
-
+                if vcu.is_blender_33():
+                    # Icon only available in Blender 3.3 or later
+                    row.operator("flip_fluid_operators.helper_initialize_motion_blur", icon='GEOMETRY_NODES')
+                else:
+                    row.operator("flip_fluid_operators.helper_initialize_motion_blur")
 
         #
         # Object Speed Measurement Tools
@@ -999,7 +1137,6 @@ class FLIPFLUID_PT_HelperTechnicalSupport(bpy.types.Panel):
         column.separator()
         column.operator("flip_fluid_operators.increment_and_save_file", icon='FILE_TICK')
 
-
 def register():
     # These panels will be registered in properties.preferences_properties.py
     # Small fix: It´s properties.helper_properties.py
@@ -1011,5 +1148,6 @@ def unregister():
         bpy.utils.unregister_class(FLIPFLUID_PT_HelperPanelMain)
         bpy.utils.unregister_class(FLIPFLUID_PT_HelperPanelDisplay)
         bpy.utils.unregister_class(FLIPFLUID_PT_HelperTechnicalSupport)
+
     except:
         pass

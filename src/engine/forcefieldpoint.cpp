@@ -67,7 +67,7 @@ void ForceFieldPoint::addGravityScaleToGrid(ForceFieldGravityScaleGrid &scaleGri
                 vmath::vec3 v = gp - p;
                 float distanceToPoint = vmath::length(v);
                 if (distanceToPoint > scaleWidth) {
-                    scaleGrid.addScale(i, j, k, 1.0f);
+                    scaleGrid.addScale(i, j, k, 1.0f, 1.0f);
                     continue;
                 }
 
@@ -76,7 +76,7 @@ void ForceFieldPoint::addGravityScaleToGrid(ForceFieldGravityScaleGrid &scaleGri
                 if (distanceFactor > _gravityScaleFalloffThreshold) {
                     scaleFactor = 1.0f - (distanceFactor - _gravityScaleFalloffThreshold) / (1.0f - _gravityScaleFalloffThreshold);
                 }
-                scaleGrid.addScale(i, j, k, scaleFactor * _gravityScale);
+                scaleGrid.addScale(i, j, k, scaleFactor * _gravityScale, scaleFactor);
             }
         }
     }

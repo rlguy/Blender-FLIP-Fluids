@@ -19,7 +19,7 @@ bl_info = {
     "description": "A FLIP Fluid Simulation Tool for Blender (v@FLUIDENGINE_VERSION_LABEL@)",
     "author" : "Ryan Guy & Dennis Fassbaender",
     "version" : (@FLUIDENGINE_VERSION_MAJOR@, @FLUIDENGINE_VERSION_MINOR@, @FLUIDENGINE_VERSION_REVISION@),
-    "blender" : (2, 81, 0),
+    "blender" : (3, 1, 0),
     "location" : "Properties > Physics > FLIP Fluid",
     "warning" : "",
     "wiki_url" : "https://github.com/rlguy/Blender-FLIP-Fluids/wiki",
