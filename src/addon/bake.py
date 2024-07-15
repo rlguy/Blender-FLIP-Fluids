@@ -20,6 +20,8 @@ from .objects import flip_fluid_map
 from .objects import flip_fluid_geometry_database
 from .operators import bake_operators
 from .filesystem import filesystem_protection_layer as fpl
+from .utils import version_compatibility_utils as vcu
+from . import bl_info
 
 from .pyfluid import (
         pyfluid,
@@ -3098,10 +3100,15 @@ def set_console_output(boolval):
 
 
 def __get_addon_version():
-    module_dir = os.path.dirname(os.path.realpath(__file__))
-    module_name = os.path.basename(os.path.normpath(module_dir))
-    module = sys.modules[module_name]
-    addon_major, addon_minor, addon_revision = module.bl_info.get('version', (-1, -1, -1))
+    if vcu.is_blender_42():
+        bl_info_dict = bl_info
+    else:
+        module_dir = os.path.dirname(os.path.realpath(__file__))
+        module_name = os.path.basename(os.path.normpath(module_dir))
+        module = sys.modules[module_name]
+        bl_info_dict = module.bl_info
+
+    addon_major, addon_minor, addon_revision = bl_info_dict.get('version', (-1, -1, -1))
     return str(addon_major) + "." + str(addon_minor) + "." + str(addon_revision)
 
 

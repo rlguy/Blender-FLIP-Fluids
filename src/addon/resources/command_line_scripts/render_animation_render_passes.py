@@ -3,12 +3,14 @@ import bpy, sys, os, platform, subprocess, pathlib
 _USE_OVERWRITE = False # TODO
 
 def render_script():
+
     hprops = bpy.context.scene.flip_fluid_helper
 
     blend_file_directory = os.path.dirname(bpy.data.filepath)
     base_file_name = pathlib.Path(bpy.path.basename(bpy.data.filepath)).stem
 
     pass_suffixes = [
+        ("catchers_only",       hprops.render_passes_catchers_only),
         ("objects_only",        hprops.render_passes_objects_only),
         ("fluidparticles_only", hprops.render_passes_fluidparticles_only),
         ("fluid_only",          hprops.render_passes_fluid_only),

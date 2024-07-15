@@ -69,26 +69,21 @@ def complete_installation():
     IS_INSTALLATION_UTILS_INITIALIZED = True
 
 
+# Avoid using this method in Blender 4.2+
 def get_module_name():
-    from ..properties import preferences_properties
-    prefs = preferences_properties.get_addon_preferences()
-
     module_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     module_name = os.path.basename(os.path.normpath(module_dir))
-    if prefs.enable_addon_directory_renaming:
-        return module_name
-    else:
-        hardcoded_name = "flip_fluids_addon"
-        if module_name != hardcoded_name:
-            errmsg = "Installation Error Detected"
-            errdesc = "The FLIP Fluids addon directory located at <" + module_dir + "> must be named 'flip_fluids_addon'. Please rename this directory, restart Blender, and re-enable the addon."
-            bpy.ops.flip_fluid_operators.display_error(
-                'INVOKE_DEFAULT',
-                error_message=errmsg,
-                error_description=errdesc,
-                popup_width=600
-                )
-        return hardcoded_name
+    hardcoded_name = "flip_fluids_addon"
+    if module_name != hardcoded_name:
+        errmsg = "Installation Error Detected"
+        errdesc = "The FLIP Fluids addon directory located at <" + module_dir + "> must be named 'flip_fluids_addon'. Please rename this directory, restart Blender, and re-enable the addon."
+        bpy.ops.flip_fluid_operators.display_error(
+            'INVOKE_DEFAULT',
+            error_message=errmsg,
+            error_description=errdesc,
+            popup_width=600
+            )
+    return hardcoded_name
 
 
 def get_enabled_flip_fluids_addon_installations():

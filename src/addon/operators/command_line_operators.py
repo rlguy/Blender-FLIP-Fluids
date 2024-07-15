@@ -25,10 +25,24 @@ from . import render_passes
 
 ### PREPARE VISIBLITY SETTINGS FOR PASSES ###
 
+def transfer_catchers_to_catcher_list(hprops):
+    # Leere die bestehende Catcher-Liste
+    hprops.render_passes_catcherlist.clear()
+    
+    # Übertrage die Catcher-Objekte in die Catcher-Liste
+    for obj_prop in hprops.render_passes_objectlist:
+        if obj_prop.catcher:
+            new_catcher = hprops.render_passes_catcherlist.add()
+            new_catcher.name = obj_prop.name
+            new_catcher.catcher = obj_prop.catcher
+
 def apply_visibility_settings_for_pass(pass_name):
     visibility_settings = render_passes.visibility_settings
     settings = visibility_settings.get(pass_name, {})
     hprops = bpy.context.scene.flip_fluid_helper
+
+    # Übertrage Catcher-Objekte in die Catcher-Liste im Hintergrund
+    transfer_catchers_to_catcher_list(hprops)
 
     print(f"Applying settings for pass: {pass_name}")
     print(f"Settings being applied: {settings}")
@@ -65,6 +79,17 @@ def apply_visibility_settings_for_pass(pass_name):
             else:
                 print(f"Selected object not found in Blender: {obj_prop.name}")
 
+    if "catchers" in settings:
+        catcher_list_settings = settings["catchers"]
+        print(f"Settings for 'catchers' in pass '{pass_name}': {catcher_list_settings}")
+        for catcher_prop in hprops.render_passes_catcherlist:
+            catcher = bpy.data.objects.get(catcher_prop.name)
+            if catcher:
+                print(f"Applying '{pass_name}' settings to catcher {catcher_prop.name}")
+                apply_visibility_settings_for_object(catcher, catcher_list_settings)
+            else:
+                print(f"Catcher object not found in Blender: {catcher_prop.name}")
+
 def apply_film_transparency(film_transparent):
     bpy.context.scene.render.film_transparent = film_transparent
     print(f"Film transparency set to: {film_transparent}")
@@ -82,7 +107,7 @@ def apply_visibility_settings_for_world(world, world_settings):
         print("No world found in the current scene.")
         return
 
-    # Visiblitysettings for the world
+    # Visibility settings for the world
     visibility_attributes = ['camera', 'diffuse', 'glossy', 'transmission', 'scatter', 'shadow']
     for attr in visibility_attributes:
         if attr in world_settings:
@@ -103,15 +128,7 @@ def apply_visibility_settings_for_object(obj, obj_visibility):
     if "is_holdout" in obj_visibility:
         obj.is_holdout = obj_visibility["is_holdout"]
 
-#def apply_render_output_path_for_pass(suffix):
-#    render_output = bpy.context.scene.render.filepath
-#    render_output = render_output.replace('\\', '/')
-#    render_output_prefix = bpy.path.basename(render_output)
-#    render_output_directory = render_output.removesuffix(render_output_prefix)
-#    new_render_output_path = render_output_directory + suffix + "/" + render_output_prefix
-#    if render_output_prefix:
-#        new_render_output_path += suffix + "_"
-#    bpy.context.scene.render.filepath = new_render_output_path
+
 
 def prepare_render_passes_blend_files():
     props = bpy.context.scene.flip_fluid_helper
@@ -123,6 +140,7 @@ def prepare_render_passes_blend_files():
     base_file_name = pathlib.Path(bpy.path.basename(bpy.data.filepath)).stem
 
     pass_suffixes = [
+        ("catchers_only",       props.render_passes_catchers_only),
         ("objects_only",        props.render_passes_objects_only),
         ("fluidparticles_only", props.render_passes_fluidparticles_only),
         ("fluid_only",          props.render_passes_fluid_only),
@@ -173,7 +191,7 @@ def prepare_render_passes_blend_files():
     for filename in files_to_remove:
         blend_filepath = os.path.join(blend_file_directory, filename)
 
-        # Disabled for the FLIP Fluids 1.8.0 release - just in case an unfound bug could
+        # Note: Comment out os.remove() calls for the FLIP Fluids 1.8.0 release - just in case an unfound bug could
         # delete an incorrect Blend file.
         # All calls to os.remove should be implemented and checked in 
         #     filesystem/filesystem_protection_layer.py
@@ -181,10 +199,9 @@ def prepare_render_passes_blend_files():
         #     https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Cache-Settings#file-and-data-protection-features
         #
         # TODO: update this later - Ryan
-        """
         os.remove(blend_filepath)
         print(f"Removed file: {blend_filepath}")
-        """
+        
 
 def apply_render_output_path_for_pass(suffix, number, base_file_name):
     # Der Pfad zum Render-Verzeichnis

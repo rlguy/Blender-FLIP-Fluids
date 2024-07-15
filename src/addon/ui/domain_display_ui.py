@@ -216,7 +216,10 @@ def draw_fluid_particle_display_settings(self, context, menu_expand_prop_group=N
         row = column.row(align=True)
         row.alignment = 'LEFT'
         row.label(text="Fluid Particles:")
-        draw_fluid_particles_motion_blur_geometry_node_properties(row, bl_mod)
+        if is_fluid_particles_enabled:
+            draw_fluid_particles_motion_blur_geometry_node_properties(row, bl_mod)
+        else:
+            row.label(text="Enable Fluid Particle feature to view full particle settings", icon='INFO')
 
         subbox = box.box()
         column = subbox.column(align=True)
@@ -408,7 +411,10 @@ def draw_whitewater_display_settings(self, context, menu_expand_prop_group=None)
             row = column1.row(align=True)
             row.label(text=whitewater_labels[idx])
             row = column2.row(align=True)
-            draw_whitewater_particles_motion_blur_geometry_node_properties(row, bl_mod)
+            if is_whitewater_enabled:
+                draw_whitewater_particles_motion_blur_geometry_node_properties(row, bl_mod)
+            else:
+                row.label(text="Enable Whitewater feature to view full particle settings", icon='INFO')
 
         box = master_box.box()
         box.enabled = is_whitewater_enabled

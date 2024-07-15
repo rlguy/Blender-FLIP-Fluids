@@ -35,30 +35,35 @@ from ..utils import version_compatibility_utils as vcu
 
 DISABLE_FRAME_CHANGE_POST_HANDLER = False
 
-#def update_camerascreen_position(self, context):
-#    """Aktualisiert die Position und Skalierung der CameraScreen-Plane"""
-#    hprops = context.scene.flip_fluid_helper
-#    camera_screen = bpy.data.objects.get("CameraScreen")
-#    camera = bpy.data.objects.get(hprops.render_passes_cameraselection)
-#
-#    if camera and camera_screen:
-#        # Holen der Matrix der Kamera inklusive Elternobjekte
-#        camera_matrix = camera.matrix_world
-#
-#        if camera.parent:
-#            parent_matrix = camera.parent.matrix_world
-#            camera_matrix = parent_matrix @ camera.matrix_basis
-#
-#        # Berechne Position entlang der Blickachse
-#        direction = camera_matrix.to_quaternion() @ mathutils.Vector((0.0, 0.0, -1.0))
-#        distance = hprops.render_passes_camerascreen_distance
-#        new_location = camera_matrix.to_translation() + direction * distance
-#
-#        # Setze Position und Rotation der Plane
-#        camera_screen.matrix_parent_inverse = camera_matrix.inverted()
-#        camera_screen.location = new_location
-#        camera_screen.rotation_euler = camera_matrix.to_euler()
-        
+def _update_render_passes_camera_screen(self, context):
+    hprops = context.scene.flip_fluid_helper
+    override_preferences = False # Feature enable override for development purposes
+    if hprops.display_compositing_tools_in_ui or override_preferences:
+
+        print("Update render passes camera screen called.")
+        bl_camera_screen = bpy.data.objects.get("ff_camera_screen")
+        if bl_camera_screen is None:
+            print("Camera screen not found.")
+            return
+
+        bl_camera = bpy.data.objects.get(hprops.render_passes_cameraselection)
+        if bl_camera is None:
+            print("Camera not found.")
+            return
+
+        print(f"Updating camera screen scale with distance: {hprops.render_passes_camerascreen_distance}")
+        helper_operators.update_camera_screen_scale(bl_camera_screen, bl_camera)
+
+
+class FlipFluidHelperPropertiesRenderPassesCatcher(bpy.types.PropertyGroup):
+    name: bpy.props.StringProperty(name="Name")
+    catcher: bpy.props.BoolProperty(
+        name="Catcher",
+        description="Object will be used as catcher for shadows and reflections",
+        default=False
+    )
+
+
 class FlipFluidHelperProperties(bpy.types.PropertyGroup):
     conv = vcu.convert_attribute_to_28
 
@@ -143,13 +148,18 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             description="Activate rendering of selected passes",
             default=False
             ); exec(conv("render_passes"))
+ 
+    #render_passes_objectlist = bpy.props.CollectionProperty(type=bpy.types.PropertyGroup); exec(conv("render_passes_objectlist"))
+    #render_passes_objectlist_index = bpy.props.IntProperty(); exec(conv("render_passes_objectlist_index"))
     
-    render_passes_objectlist = bpy.props.CollectionProperty(type=bpy.types.PropertyGroup); exec(conv("render_passes_objectlist"))
-    render_passes_objectlist_index = bpy.props.IntProperty(); exec(conv("render_passes_objectlist_index"))
+    render_passes_objectlist: bpy.props.CollectionProperty(type=FlipFluidHelperPropertiesRenderPassesCatcher)
+    render_passes_catcherlist: bpy.props.CollectionProperty(type=FlipFluidHelperPropertiesRenderPassesCatcher)
+    render_passes_objectlist_index: bpy.props.IntProperty()
+    render_passes_catcherlist_index: bpy.props.IntProperty()
     
     def get_camera_items(self, context):
         return [(cam.name, cam.name, "") for cam in bpy.data.objects if cam.type == 'CAMERA']
-    
+
     render_passes_cameraselection: bpy.props.EnumProperty(
         items=get_camera_items,
         name="Camera Selection",
@@ -162,54 +172,60 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
         default=10.0,
         min=0.0,
         max=10000.0,
-        #update=update_camerascreen_position
+        update=_update_render_passes_camera_screen
     )
        
     render_passes_fluid_only: bpy.props.BoolProperty(
-        name="Fluid Surface Only",
+        name="Fluid Surface",
         description="Only the fluid_surface with reflections from the background only",
         default=False
     )
     
     render_passes_fluidparticles_only: bpy.props.BoolProperty(
-        name="Fluid Particles Only",
+        name="Fluid Particles",
         description="Only the fluidparticles with reflections from the background only",
         default=False
     )
 
     render_passes_fluid_shadows_only: bpy.props.BoolProperty(
-        name="Fluid Surface Shadows Only",
+        name="Fluid Surface Shadows",
         description="Only the Shadow of the fluid_surface",
         default=False
     )    
 
     render_passes_reflr_only: bpy.props.BoolProperty(
-        name="Reflections And Refractions Only",
+        name="Reflections & Refractions",
         description="Only reflections and refractions (except the background)",
         default=False
     )
 
     render_passes_objects_only: bpy.props.BoolProperty(
-        name="Objects Only",
+        name="Objects",
         description="Only visible objects",
+        default=False
+    )
+    
+    render_passes_catchers_only: bpy.props.BoolProperty(
+        name="Catchers",
+        description="Only catcher objects",
         default=False
     )
 
     render_passes_object_shadows_only: bpy.props.BoolProperty(
-        name="Object Shadows Only",
+        name="Object Shadows",
         description="Only the shadows of visible objects",
         default=False
     )       
  
     render_passes_bubblesanddust_only: bpy.props.BoolProperty(
-        name="Bubbles And Dust Only",
+        name="Bubbles & Dust",
         description="Bubbles And Dust Only",
         default=False
     )    
  
 
     render_passes_foamandspray_only: bpy.props.BoolProperty(
-        name="Foam And Spray Only",
+        name="Foam & Spray",
         description="Foam And Spray Only",
         default=False
     )    
@@ -418,7 +434,7 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
 
 
     def scene_update_post(self, scene):
-        self._update_render_passes_camera_screen(scene)
+        _update_render_passes_camera_screen(self, bpy.context)
 
 
     def save_post(self):
@@ -489,19 +505,6 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             self["alembic_output_filepath"] = default_cache_directory_str
 
 
-    def _update_render_passes_camera_screen(self, scene):
-        bl_camera_screen = bpy.data.objects.get("ff_camera_screen")
-        if bl_camera_screen is None:
-            return
-
-        hprops = scene.flip_fluid_helper
-        bl_camera = bpy.data.objects.get(hprops.render_passes_cameraselection)
-        if bl_camera is None:
-            return
-
-        helper_operators.update_camera_screen_scale(bl_camera_screen, bl_camera)
-
-
     def check_alembic_output_filepath(self):
         if self.is_alembic_output_filepath_set:
             return
@@ -559,8 +562,10 @@ def save_post():
 
 
 def register():
+    bpy.utils.register_class(FlipFluidHelperPropertiesRenderPassesCatcher)
     bpy.utils.register_class(FlipFluidHelperProperties)
 
 
 def unregister():
+    bpy.utils.unregister_class(FlipFluidHelperPropertiesRenderPassesCatcher)
     bpy.utils.unregister_class(FlipFluidHelperProperties)

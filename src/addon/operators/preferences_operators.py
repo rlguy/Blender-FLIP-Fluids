@@ -17,6 +17,8 @@
 import bpy, os, shutil, json, zipfile, urllib.request, sys, textwrap, platform, random, traceback
 from bpy_extras.io_utils import ImportHelper
 
+from .. import __package__ as base_package
+
 from bpy.props import (
         StringProperty,
         BoolProperty,
@@ -31,6 +33,7 @@ from ..utils import installation_utils
 from ..utils import audio_utils
 from ..utils import api_workaround_utils as api_utils
 from ..filesystem import filesystem_protection_layer as fpl
+from .. import bl_info
 
 
 def _get_addon_directory():
@@ -782,107 +785,6 @@ class VersionDataTextEntry(bpy.types.PropertyGroup):
     exec(vcu.convert_attribute_to_28("text"))
 
 
-class FlipFluidCheckForUpdates(bpy.types.Operator):
-    bl_idname = "flip_fluid_operators.check_for_updates"
-    bl_label = "Check for Updates"
-    bl_description = ("Check for version updates. Note: this will not automatically" + 
-        " install new versions of the addon. Version updates can be found in your" + 
-        " Blender Market account downloads")
-
-    version_data_url = StringProperty(default="http://rlguy.com/blender_flip_fluids/version_data/versions.json")
-    exec(vcu.convert_attribute_to_28("version_data_url"))
-
-    error = BoolProperty(default=False)
-    exec(vcu.convert_attribute_to_28("error"))
-
-    error_message = StringProperty(default="")
-    exec(vcu.convert_attribute_to_28("error_message"))
-
-    version_text = CollectionProperty(type=VersionDataTextEntry)
-    exec(vcu.convert_attribute_to_28("version_text"))
-
-    window_width = IntProperty(default=1280)
-    exec(vcu.convert_attribute_to_28("window_width"))
-
-
-    def initialize_ui_text(self, text):
-        self.version_text.clear()
-        
-        module = sys.modules[installation_utils.get_module_name()]
-        current_version = module.bl_info.get('version', (-1, -1, -1))
-
-        version_data_json = json.loads(text)
-        version_data = []
-        for k,v in version_data_json.items():
-            version = k.split('.')
-            version_tuple = (int(version[0]), int(version[1]), int(version[2]))
-            if version_tuple >= current_version:
-                version_data.append({'version': version_tuple, 'data': v})
-
-        version_data_sorted = sorted(version_data, key=lambda k: k['version'], reverse=True)
-        if len(version_data) <= 1:
-            entry = self.version_text.add()
-            entry.text = "You are currently using the most recent version of the FLIP Fluids addon!"
-        else:
-            entry = self.version_text.add()
-            entry.text = "A new version of the FLIP Fluids addon is available!"
-            entry = self.version_text.add()
-            entry.text = "You may download the update from your Blender Market account downloads."
-        entry = self.version_text.add()
-
-        for ve in version_data_sorted:
-            version_string = str(ve['version'][0]) + "." + str(ve['version'][1]) + "." + str(ve['version'][2])
-            entry = self.version_text.add()
-            entry.text = "Version " + version_string
-            for change_text in ve['data']:
-                text_list = textwrap.wrap(change_text, width=120)
-                for i,text_line in enumerate(text_list):
-                    if i == 0:
-                        indent = 6
-                    else:
-                        indent = 10
-                    entry = self.version_text.add()
-                    entry.text = " "*indent + text_line
-            self.version_text.add()
-
-
-    def draw(self, context):
-        column = self.layout.column(align=True)
-
-        if self.error:
-            column.label(text="Error checking for updates:", icon="ERROR")
-            column.separator()
-            column.label(text=self.error_message)
-            return
-
-        for text_entry in self.version_text:
-            column.label(text=text_entry.text)
-
-
-    def execute(self, context):
-        return {'FINISHED'}
-
-
-    def invoke(self, context, event):
-        self.error = False
-        try:
-            response = urllib.request.urlopen(self.version_data_url)
-        except urllib.error.HTTPError:
-            self.error = True
-            self.error_message = "Unable to find version data file. Please contact the developers."
-        except urllib.error.URLError:
-            self.error = True
-            self.error_message = "No network connection found. Please check your internet connection."
-
-        if self.error:
-            return context.window_manager.invoke_props_dialog(self, width=self.window_width)
-
-        data = response.read()
-        text = data.decode('utf-8')
-        self.initialize_ui_text(text)
-        return context.window_manager.invoke_props_dialog(self, width=self.window_width)
-
-
 def get_gpu_string():
     gpu_string = ""
     if not bpy.app.background:
@@ -903,8 +805,6 @@ def get_system_info_dict():
         elif vt is list or vt is tuple:
             r = r[1:-1]
         return r
-
-    bl_info = sys.modules[installation_utils.get_module_name()].bl_info
 
     blender_version = ("%s, %s, %s %s, %s" % (
             bpy.app.version_string,
@@ -997,14 +897,18 @@ def get_system_info_dict():
 
     addons_string = ""
     try:
-        for mod_name in bpy.context.preferences.addons.keys():
-            if mod_name not in sys.modules:
-                continue
-            mod = sys.modules[mod_name]
-            addon_name = mod.bl_info.get("name")
-            if addon_name not in default_addons:
-                addons_string += addon_name + ", "
-        addons_string = vcu.str_removesuffix(addons_string, ", ")
+        if vcu.is_blender_42():
+            # TODO find method to retrieve installed addons/extensions for Blender 4.2
+            addons_string = "Unknown (Blender 4.2)"
+        else:
+            for mod_name in bpy.context.preferences.addons.keys():
+                if mod_name not in sys.modules:
+                    continue
+                mod = sys.modules[mod_name]
+                addon_name = mod.bl_info.get("name")
+                if addon_name not in default_addons:
+                    addons_string += addon_name + ", "
+            addons_string = vcu.str_removesuffix(addons_string, ", ")
 
     except Exception as e:
         print(traceback.format_exc())
@@ -1475,7 +1379,11 @@ class FlipFluidOpenPreferences(bpy.types.Operator):
             prefs = vcu.get_addon_preferences()
             prefs.preferences_menu_view_mode = self.view_mode
 
-        bpy.ops.preferences.addon_show(module=installation_utils.get_module_name())
+        if vcu.is_blender_42():
+            module_name = base_package
+        else:
+            module_name = installation_utils.get_module_name()
+        bpy.ops.preferences.addon_show(module=module_name)
         return {'FINISHED'}
 
 
@@ -1527,7 +1435,6 @@ def register():
     bpy.utils.register_class(FLIPFluidUninstallPresetLibrary)
 
     bpy.utils.register_class(VersionDataTextEntry)
-    bpy.utils.register_class(FlipFluidCheckForUpdates)
 
     bpy.utils.register_class(FlipFluidReportBugPrefill)
     bpy.utils.register_class(FlipFluidCopySystemInfo)
@@ -1564,7 +1471,6 @@ def unregister():
     bpy.utils.unregister_class(FLIPFluidUninstallPresetLibrary)
 
     bpy.utils.unregister_class(VersionDataTextEntry)
-    bpy.utils.unregister_class(FlipFluidCheckForUpdates)
 
     bpy.utils.unregister_class(FlipFluidReportBugPrefill)
     bpy.utils.unregister_class(FlipFluidCopySystemInfo)

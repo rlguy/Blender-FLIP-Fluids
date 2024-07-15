@@ -43,6 +43,7 @@ from ..operators import preferences_operators
 from ..utils import version_compatibility_utils as vcu
 from ..utils import installation_utils
 from ..objects import flip_fluid_cache
+from .. import bl_info
 
 _LOGGING_DISABLED_MESSAGE = "(Blend file logging disabled in host preferences)"
 
@@ -401,11 +402,15 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
             preferences = vcu.get_addon_preferences()
             if preferences.enable_blend_file_logging:
                 # Save Version History
-                bl_info = sys.modules[installation_utils.get_module_name()].bl_info
+                if vcu.is_blender_42():
+                    bl_info_dict = bl_info
+                else:
+                    bl_info_dict = sys.modules[installation_utils.get_module_name()].bl_info
+
                 vdata = self.version_history.add()
                 vdata.blender_version = bpy.app.version_string
-                vdata.flip_fluids_version = str(bl_info.get('version', (-1, -1, -1)))
-                vdata.flip_fluids_label = bl_info.get('description', "-1")
+                vdata.flip_fluids_version = str(bl_info_dict.get('version', (-1, -1, -1)))
+                vdata.flip_fluids_label = bl_info_dict.get('description', "-1")
                 vdata.operating_system = platform.system()
                 if len(self.version_history) > 250:
                     self.version_history.remove(0)

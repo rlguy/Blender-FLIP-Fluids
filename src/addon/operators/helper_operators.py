@@ -2789,6 +2789,8 @@ class FlipFluidEnableAddonInBlendFile(bpy.types.Operator):
         return {'FINISHED'}
         
 
+# List for objects
+# Operator to add items to object list
 class FlipFluidPassesAddItemToList(bpy.types.Operator):
     """Add selected items to the list of objects for rendering"""
     bl_idname = "flip_fluid_operators.add_item_to_list"
@@ -2804,7 +2806,7 @@ class FlipFluidPassesAddItemToList(bpy.types.Operator):
 
         return {'FINISHED'}
 
-
+# Operator to remove items from object list
 class FlipFluidPassesRemoveItemFromList(bpy.types.Operator):
     """Remove an item from the list of objects for rendering"""
     bl_idname = "flip_fluid_operators.remove_item_from_list"
@@ -2814,31 +2816,38 @@ class FlipFluidPassesRemoveItemFromList(bpy.types.Operator):
     
     def execute(self, context):
         hprops = context.scene.flip_fluid_helper
-        hprops.render_passes_objectlist_index = self.index
-        hprops.render_passes_objectlist.remove(self.index)
-
-        if hprops.render_passes_objectlist_index < 0:
-            hprops.render_passes_objectlist_index = 0
-        if hprops.render_passes_objectlist_index >= len(hprops.render_passes_objectlist):
-            hprops.render_passes_objectlist_index = len(hprops.render_passes_objectlist) - 1
-
+        if 0 <= self.index < len(hprops.render_passes_objectlist):
+            hprops.render_passes_objectlist.remove(self.index)
+            hprops.render_passes_objectlist_index = min(max(0, self.index - 1), len(hprops.render_passes_objectlist) - 1)
         return {'FINISHED'}
 
 
-# Subclass of bpy.types.UIList is required to have an all uppercase prefix before _UL_
-# to prevent these types of warnings when registering the addon classes:
-#    Warning: 'FlipFluidPasses_UL_items' doesn't have upper case alpha-numeric prefix
-class FLIPFLUID_UL_passes_items(bpy.types.UIList):
-    """Custom UI List to display objects"""
-    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        split = layout.split(factor=0.80, align=True)
-        column1 = split.column(align=True)
-        column1.label(text=item.name, icon='MESH_CUBE')
-        column2 = split.column(align=True)
-        column2.alignment = "RIGHT"
-        remove_op = column2.operator("flip_fluid_operators.remove_item_from_list", text="", icon='X')
-        remove_op.index = index 
+# Operator to toggle the catcher status
+class FlipFluidPassesToggleCatcher(bpy.types.Operator):
+    """Toggle catcher status for an item in the list"""
+    bl_idname = "flip_fluid_operators.toggle_catcher"
+    bl_label = "Toggle Catcher"
     
+    index: bpy.props.IntProperty()
+    
+    def execute(self, context):
+        hprops = context.scene.flip_fluid_helper
+        if 0 <= self.index < len(hprops.render_passes_objectlist):
+            item = hprops.render_passes_objectlist[self.index]
+            item.catcher = not item.catcher
+        return {'FINISHED'}
+
+# Custom UI List for objects
+class FLIPFLUID_UL_passes_items(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        if self.layout_type in {'DEFAULT', 'COMPACT'}:
+            split = layout.split(factor=0.75, align=True)
+            column1 = split.column(align=True)
+            column1.label(text=item.name, icon='MESH_CUBE')
+            column2 = split.column(align=True)
+            column2.prop(item, "catcher", text="Catcher", toggle=True)
+            #column2.operator("flip_fluid_operators.remove_item_from_list", text="", icon='REMOVE').index = index
+
 
 # Runs every time the scene changes
 def update_camera_screen_scale(bl_camera_screen, bl_camera):
@@ -2924,9 +2933,14 @@ class FlipFluidPassesAddCameraScreen(bpy.types.Operator, ImportHelper):
         return bl_camera_screen
 
 
-    def initialize_image_texture_material(self, bl_camera_screen):
+    def initialize_image_texture_material(self, bl_camera_screen, image_filepaths):
+        # Check if material already exists and remove it
+        mat_name = "ff_camera_screen"
+        if mat_name in bpy.data.materials:
+            bpy.data.materials.remove(bpy.data.materials[mat_name])
+
         # Initialize material and nodes
-        mat = bpy.data.materials.new(name="ff_camera_screen")
+        mat = bpy.data.materials.new(name=mat_name)
         mat.use_nodes = True
         nodes = mat.node_tree.nodes
         nodes.remove(nodes.get('Principled BSDF'))
@@ -2941,6 +2955,10 @@ class FlipFluidPassesAddCameraScreen(bpy.types.Operator, ImportHelper):
         texture.location.x = emission.location.x - 300
         texture.location.y = output.location.y
 
+        # Set the name and label of the texture node
+        texture.name = "ff_camera_screen"
+        texture.label = "ff_camera_screen"
+        
         mat.node_tree.links.new(emission.inputs['Color'], texture.outputs['Color'])
         mat.node_tree.links.new(output.inputs['Surface'], emission.outputs['Emission'])
         bl_camera_screen.data.materials.append(mat)
@@ -2953,12 +2971,9 @@ class FlipFluidPassesAddCameraScreen(bpy.types.Operator, ImportHelper):
         is_frame_sequence_found = False
         frame_start = 2**32
         frame_start_filepath = None
-        image_filepaths = []
-        for f in self.files:
-            filepath = os.path.join(self.directory, f.name)
-            image_filepaths.append(filepath)
 
-            basename = pathlib.Path(f.name).stem
+        for filepath in image_filepaths:
+            basename = pathlib.Path(filepath).stem
             frame_number = get_trailing_number_from_string(basename)
             if frame_number is not None and frame_number < frame_start:
                 is_frame_sequence_found = True
@@ -2986,24 +3001,113 @@ class FlipFluidPassesAddCameraScreen(bpy.types.Operator, ImportHelper):
         else:
             texture.image = frame_start_image
 
+        return texture.image
+
+
+
+    def set_camera_background_image(self, context, image):
+        hprops = context.scene.flip_fluid_helper
+        bl_camera = bpy.data.objects.get(hprops.render_passes_cameraselection)
+        
+        if bl_camera:
+            # Remove existing background images
+            bl_camera.data.background_images.clear()
+            
+            # Add new background image
+            bg = bl_camera.data.background_images.new()
+            bg.image = image
+            bg.display_depth = 'BACK'
+
 
     def invoke(self, context, event):
         self.filepath = ""  # Clear the filepath field
+        hprops = context.scene.flip_fluid_helper
+        bl_camera = bpy.data.objects.get(hprops.render_passes_cameraselection)
+        
+        # Check if the camera already has a background image assigned
+        if bl_camera and bl_camera.data.background_images:
+            bg_images = bl_camera.data.background_images
+            image_filepaths = [bg_image.image.filepath for bg_image in bg_images if bg_image.image is not None]
+            if image_filepaths:
+                self.execute_with_existing_images(context, image_filepaths)
+                return {'FINISHED'}
+        
         if 'ff_camera_screen' in context.scene.objects:
             self.report({'ERROR'}, "ff_camera_screen object already exists.")
             return {'CANCELLED'}
         return context.window_manager.fileselect_add(self) or {'RUNNING_MODAL'}
 
+    def execute_with_existing_images(self, context, image_filepaths):
+        bl_camera_screen = self.initialize_camera_screen_object(context)
+        image = self.initialize_image_texture_material(bl_camera_screen, image_filepaths)
+        self.set_camera_background_image(context, image)
+        return {'FINISHED'}
 
     def execute(self, context):
         error_return = self.check_and_report_operator_context_errors(context)
         if error_return:
             return error_return
 
+        image_filepaths = [os.path.join(self.directory, f.name) for f in self.files]
         bl_camera_screen = self.initialize_camera_screen_object(context)
-        self.initialize_image_texture_material(bl_camera_screen)
+        image = self.initialize_image_texture_material(bl_camera_screen, image_filepaths)
+        self.set_camera_background_image(context, image)
         return {'FINISHED'}
 
+class FlipFluidPassesFixCompositingTextures(bpy.types.Operator):
+    """Fixes all ff_camera_screen textures to match your background"""
+    bl_idname = "flip_fluid_operators.helper_fix_compositingtextures"
+    bl_label = "Fix Compositing Textures"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        # Find the ff_camera_screen object
+        screen_obj = bpy.data.objects.get("ff_camera_screen")
+        if not screen_obj:
+            self.report({'ERROR'}, "There is no ff_camera_screen object. Please add the CameraScreen first.")
+            return {'CANCELLED'}
+
+        # Ensure the ff_camera_screen object has the correct material
+        if "ff_camera_screen" not in [mat.name for mat in screen_obj.material_slots]:
+            self.report({'ERROR'}, "ff_camera_screen object does not have a material named 'ff_camera_screen'.")
+            return {'CANCELLED'}
+
+        # Find the ff_camera_screen material
+        screen_material = bpy.data.materials.get("ff_camera_screen")
+        if not screen_material or not screen_material.use_nodes:
+            self.report({'ERROR'}, "Material 'ff_camera_screen' not found or it does not use nodes.")
+            return {'CANCELLED'}
+
+        # Find the ff_camera_screen texture node in the ff_camera_screen material
+        screen_texture_node = None
+        for node in screen_material.node_tree.nodes:
+            if node.type == 'TEX_IMAGE' and node.name == "ff_camera_screen":
+                screen_texture_node = node
+                break
+
+        if not screen_texture_node or not screen_texture_node.image:
+            self.report({'ERROR'}, "No valid ff_camera_screen texture node found in the material 'ff_camera_screen'.")
+            return {'CANCELLED'}
+
+        # Get the image from the ff_camera_screen texture node
+        screen_image = screen_texture_node.image
+
+        # Iterate over all objects and materials to update the ff_camera_screen texture nodes
+        for obj in bpy.data.objects:
+            if obj.name == "ff_camera_screen":
+                continue
+
+            for material_slot in obj.material_slots:
+                material = material_slot.material
+                if not material or not material.use_nodes:
+                    continue
+
+                for node in material.node_tree.nodes:
+                    if node.type == 'TEX_IMAGE' and node.name == "ff_camera_screen":
+                        node.image = screen_image
+
+        self.report({'INFO'}, "All compositing textures have been updated.")
+        return {'FINISHED'}
 
 def register():
     classes = [
@@ -3068,10 +3172,12 @@ def register():
         FlipFluidClearMeasureObjectSpeed,
         FlipFluidDisableAddonInBlendFile,
         FlipFluidEnableAddonInBlendFile,
+        FlipFluidPassesToggleCatcher,
         FlipFluidPassesAddItemToList,
         FlipFluidPassesRemoveItemFromList,
         FLIPFLUID_UL_passes_items,
         FlipFluidPassesAddCameraScreen,
+        FlipFluidPassesFixCompositingTextures,
         ]
 
     # Workaround for a bug in FLIP Fluids 1.6.0
@@ -3149,8 +3255,11 @@ def unregister():
     bpy.utils.unregister_class(FlipFluidClearMeasureObjectSpeed)
     bpy.utils.unregister_class(FlipFluidDisableAddonInBlendFile)
     bpy.utils.unregister_class(FlipFluidEnableAddonInBlendFile)
+    bpy.utils.unregister_class(FlipFluidPassesToggleCatcher)
     bpy.utils.unregister_class(FlipFluidPassesAddItemToList)
     bpy.utils.unregister_class(FlipFluidPassesRemoveItemFromList)
     bpy.utils.unregister_class(FLIPFLUID_UL_passes_items)
     bpy.utils.unregister_class(FlipFluidPassesAddCameraScreen)
+    bpy.utils.unregister_class(FlipFluidPassesFixCompositingTextures)
+    
 

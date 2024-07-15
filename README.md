@@ -28,8 +28,8 @@ See any of our [market place product pages](https://github.com/rlguy/Blender-FLI
 
 ## System Requirements
 
-- Windows, MacOS, or Linux operating system
-- Blender 3.1 to 4.1 compatible
+- Windows, macOS, or Linux operating system
+- Blender 3.1 to 4.2 compatible
 - CPU 64-bit Intel® or AMD® or Apple Silicon multi-core processor
 - 8 GB RAM minimum, 16 GB of RAM or more is highly recommended
 
@@ -49,23 +49,21 @@ Source code files will state their license at the top of the file. Assets will i
 
 ## Building
 
-To build the FLIP Fluids addon, some programming experience or prior experience building C/C++ applications is recommended. The basics of navigation and executing commands using the command line is also recommended.
+To build the FLIP Fluids addon, some programming experience or prior experience building C/C++ applications is strongly recommended. The basics of navigation and executing commands using the command line is also recommended.
 
 Like our FLIP Fluids addon? If you can afford, please consider purchasing a license on an [official marketplace](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Official-Marketplaces-of-the-FLIP-Fluids-Addon) to help support our continued development of the project. Development of the FLIP Fluids addon is funded solely through sales through marketplaces, and as a small team we truly appreciate your support.
 
 ### Source Code Dependencies
 
-There is one dependency to build this program:
+Installations of the following programs will be needed to build and compile the FLIP Fluids addon:
 
 1. A compiler that supports C++11.
-
-_WINDOWS OS WARNING: Compilation using MSVC (Microsoft Visual Studio Compiler) is not supported. Building with MSVC will result in errors, performance issues, and incorrect simulation behaviour. The MinGW compiler is the only supported Windows compiler._
-
-Aside from a C++11 compiler, you will also require installations of: 
-
-1. [CMake](https://cmake.org/) to generate the appropriate solution, project, or Makefiles, for your system.
-2. [GNU Make](https://www.gnu.org/software/make/) to compile/build the FLIP Fluids simulation engine.
-3. (optional) [Python 3.3+](https://www.python.org/) to use the automated build script.
+    - Windows: **MinGW** is the only supported compiler for Windows OS.
+    - macOS: **Clang** (recommended)
+    - Linux: **GCC** (recommended)
+2. [CMake](https://cmake.org/) to generate the appropriate solution, project, or Makefiles, for your system.
+3. [GNU Make](https://www.gnu.org/software/make/) to compile/build the FLIP Fluids simulation engine.
+4. (optional) [Python 3.3+](https://www.python.org/) to use the automated build script.
 
 ### Building with automated script
 

@@ -441,14 +441,15 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
             
             ### Prepare Compositing Passes Rendering Panel ###
 
-            # Disabled by default for the release of FLIP Fluids 1.8.0
+            # Disabled by default for the release of FLIP Fluids 1.8.1
             # Can be enabled in a Blend file by running the following script:
             """
             import bpy
             bpy.context.scene.flip_fluid_helper.display_compositing_tools_in_ui = True
             """
             
-            if hprops.display_compositing_tools_in_ui:
+            override_preferences = False # UI display override for development purposes
+            if hprops.display_compositing_tools_in_ui or override_preferences:
                 subbox = box.box()
                 row = subbox.row(align=True)
                 row.prop(hprops, "command_line_render_passes_expanded",
@@ -463,37 +464,53 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                     row.operator("flip_fluid_operators.helper_cmd_render_pass_anim_clipboard", text="", icon='COPYDOWN')
 
                 if hprops.command_line_render_passes_expanded:
-                    
-                    row = subbox.row(align=True)
-                    row.prop(hprops, "render_passes")
-
                     is_render_passes_active = hprops.render_passes
 
-                    row = subbox.row()
-                    row.active = is_render_passes_active
-                    row.alignment = 'LEFT'
-                    row.prop(hprops, "render_passes_fluid_only")
-                    row.prop(hprops, "render_passes_fluid_shadows_only")
-                    row.prop(hprops, "render_passes_fluidparticles_only")
+                    row = subbox.row(align=True)
+                    row.prop(hprops, "render_passes")
+                    # Check if Cycles is the active render engine
+                    if context.scene.render.engine == 'CYCLES':
+                        row.prop(context.scene.render, "film_transparent", text="Film Transparency")
 
                     row = subbox.row()
                     row.active = is_render_passes_active
                     row.alignment = 'LEFT'
-                    row.prop(hprops, "render_passes_objects_only")
-                    #row.prop(hprops, "render_passes_object_shadows_only")
-                    row.prop(hprops, "render_passes_reflr_only")
 
-                    row = subbox.row()
-                    row.active = is_render_passes_active
-                    row.alignment = 'LEFT'
-                    row.prop(hprops, "render_passes_foamandspray_only")
-                    row.prop(hprops, "render_passes_bubblesanddust_only")
+                    # Helper function to add prop with fixed width
+                    def add_fixed_width_prop(row, prop_name):
+                        box = row.box()
+                        col = box.column()
+                        col.scale_x = 1.5  # Adjust the scale to make the props the same width
+                        col.prop(hprops, prop_name)
+
+                    # First row of checkboxes
+                    row1 = subbox.row(align=True)
+                    row1.active = is_render_passes_active
+                    add_fixed_width_prop(row1, "render_passes_fluid_only")
+                    add_fixed_width_prop(row1, "render_passes_objects_only")
+                    add_fixed_width_prop(row1, "render_passes_catchers_only")
+
+                    # Second row of checkboxes
+                    row2 = subbox.row(align=True)
+                    row2.active = is_render_passes_active
+                    add_fixed_width_prop(row2, "render_passes_fluid_shadows_only")
+                    add_fixed_width_prop(row2, "render_passes_reflr_only")
+
+                    # Third row of checkboxes
+                    row3 = subbox.row(align=True)
+                    row3.active = is_render_passes_active
+                    add_fixed_width_prop(row3, "render_passes_fluidparticles_only")
+                    add_fixed_width_prop(row3, "render_passes_foamandspray_only")
+                    add_fixed_width_prop(row3, "render_passes_bubblesanddust_only")
+
+
+
                     
                     column = subbox.column()
                     row = column.row(align=True)
                     row.operator("flip_fluid_operators.reset_passes_settings", text="Reset Settings", icon='FILE_REFRESH')
                     
-                    # Hier fügen wir die neue Liste und die Bedienelemente für die Objekte hinzu
+                    # Add some objects to list
                     row = subbox.row()
                     row.label(text="Objects to render (no fluid objects):")
                     row = subbox.row()
@@ -506,13 +523,33 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                     column = subbox.column()
                     row = column.row(align=True)
                     row = subbox.row()
-                    row.label(text="Generate Background Plane (CameraScreen):")
+                    row.label(text="Generate Background Plane (ff_camera_screen):")
                     row = subbox.row()
-                    row.prop(hprops, 'render_passes_cameraselection', text="Select Camera")
+                    row.prop(hprops, 'render_passes_cameraselection', text="")
                     row.operator("flip_fluid_operators.add_camera_screen", text="Add CameraScreen", icon='IMAGE_BACKGROUND')
                     row.prop(hprops, 'render_passes_camerascreen_distance', text="")
                   
+                    camera = context.scene.camera
+                    if camera and camera.type == 'CAMERA':
+                        column = subbox.column()
+                        row = column.row(align=True)
+                        row.prop(camera.data, "show_background_images", text="Show Background Image")
+                        
+                        if camera.data.show_background_images:
+                            # Ensure there's at least one background image
+                            if not camera.data.background_images:
+                                bg_image = camera.data.background_images.new()
+                            else:
+                                bg_image = camera.data.background_images[0]
 
+                            # Ensure the background image has an image assigned
+                            if bg_image and bg_image.image:
+                                row.prop(bg_image, "alpha", text="Opacity")
+
+                    column = subbox.column()
+                    row = column.row(align=True)
+                    row.operator("flip_fluid_operators.helper_fix_compositingtextures", text="Fix Textures")
+                    
                     column = subbox.column()
                     row = column.row(align=True)
                     row.operator("flip_fluid_operators.helper_cmd_render_pass_animation", text="Launch Render Passes")

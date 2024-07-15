@@ -2265,7 +2265,15 @@ void DiffuseParticleSimulation::_advanceSprayParticlesThread(int startidx, int e
         vmath::vec3 dragvec = -dragCoefficient * dp.velocity * (float)dt;
         vmath::vec3 nextv = dp.velocity + bodyForce * (float)dt + dragvec;
         vmath::vec3 nextp = dp.position + nextv * (float)dt;
-        nextp = _resolveCollision(dp.position, nextp, dp, boundary);
+
+        vmath::vec3 resolvedPosition;
+        vmath::vec3 resolvedVelocity;
+        bool collisionFound = _resolveSprayCollision(dp.position, nextp, dp, boundary,
+                                                     resolvedPosition, resolvedVelocity);
+        nextp = resolvedPosition;
+        if (collisionFound) {
+            nextv = resolvedVelocity + bodyForce * (float)dt;
+        }
 
         float maxv  = (float)_maxVelocityFactor * vmath::length(nextv);
         if (vmath::length(nextp - dp.position) * invdt > maxv) {
@@ -2472,6 +2480,118 @@ vmath::vec3 DiffuseParticleSimulation::_resolveCollision(vmath::vec3 oldp,
     }
 
     return resolvedPosition;
+}
+
+bool DiffuseParticleSimulation::_resolveSprayCollision(vmath::vec3 oldp, 
+                                                       vmath::vec3 newp,
+                                                       DiffuseParticle &dp,
+                                                       AABB &boundary,
+                                                       vmath::vec3 &nextp,
+                                                       vmath::vec3 &nextv) {
+    vmath::vec3 origp = newp;
+    LimitBehaviour b = _getLimitBehaviour(dp);
+    if (b == LimitBehaviour::ballistic || b == LimitBehaviour::kill) {
+        if (boundary.isPointInside(oldp) && !boundary.isPointInside(newp)) {
+            std::vector<bool> *active = _getActiveSides(dp);
+            int sideidx = _getNearestSideIndex(newp, boundary);
+            if (active->at(sideidx)) {
+                nextp = newp;
+                return false;
+            }
+        } else if (!boundary.isPointInside(newp)) {
+            nextp = newp;
+            return false;
+        }
+    }
+
+    GridIndex oldg = Grid3d::positionToGridIndex(oldp, _nearSolidGridCellSize);
+    GridIndex newg = Grid3d::positionToGridIndex(newp, _nearSolidGridCellSize);
+    if (!_nearSolidGrid->isIndexInRange(oldg) || !_nearSolidGrid->isIndexInRange(newg)) {
+        nextp = newp;
+        return false;
+    }
+
+    if (_nearSolidGrid->isIndexInRange(newg) && (!_nearSolidGrid->get(oldg) && !_nearSolidGrid->get(newg))) {
+        nextp = newp;
+        return false;
+    }
+
+    float eps = 1e-6;
+    float stepDistance = _diffuseParticleStepDistanceFactor * (float)_dx;
+    float travelDistance = (newp - oldp).length();
+    if (travelDistance < eps) {
+        nextp = newp;
+        return false;
+    }
+
+    int numSteps = (int)std::ceil(travelDistance / stepDistance);
+    vmath::vec3 stepdir = (newp - oldp).normalize();
+
+    vmath::vec3 lastPosition = oldp;
+    vmath::vec3 currentPosition;
+    bool foundCollision = false;
+    float collisionPhi = 0.0f;
+    for (int stepidx = 0; stepidx < numSteps; stepidx++) {
+        if (stepidx == numSteps - 1) {
+            currentPosition = newp;
+        } else {
+            currentPosition = oldp + (float)(stepidx + 1) * stepDistance * stepdir;
+        }
+
+        float phi = _solidSDF->trilinearInterpolate(currentPosition);
+        if (phi < 0.0f || !boundary.isPointInside(currentPosition)) {
+            collisionPhi = phi;
+            foundCollision = true;
+            break;
+        }
+
+        lastPosition = currentPosition;
+    }
+
+    if (!foundCollision) {
+        nextp = newp;
+        return false;
+    }
+
+    bool reportedCollision = true;
+    vmath::vec3 resolvedPosition;
+    float maxResolvedDistance = _CFLConditionNumber * _dx;
+    vmath::vec3 grad = _solidSDF->trilinearInterpolateGradient(currentPosition);
+    if (vmath::length(grad) > eps) {
+        grad = vmath::normalize(grad);
+        resolvedPosition = currentPosition - (collisionPhi - _solidBufferWidth * _dx) * grad;
+        float resolvedPhi = _solidSDF->trilinearInterpolate(resolvedPosition);
+        float resolvedDistance = vmath::length(resolvedPosition - currentPosition);
+        if (resolvedPhi < 0 || resolvedDistance > maxResolvedDistance) {
+            resolvedPosition = lastPosition;
+        }
+
+        // Compute velocity after collision
+        float friction = (float)_sprayCollisionFriction;
+        float frictionCoefficient = 1.0f - friction;
+        float restitutionCoefficient = (float)_sprayCollisionRestitution;
+
+        vmath::vec3 v = dp.velocity;
+        vmath::vec3 u = vmath::dot(v, grad) * grad;
+        vmath::vec3 w = v - u;
+        nextv = frictionCoefficient * w - restitutionCoefficient * u;
+    } else {
+        reportedCollision = false;
+        resolvedPosition = lastPosition;
+    }
+
+    if (!boundary.isPointInside(resolvedPosition)) {
+        vmath::vec3 origPosition = resolvedPosition;
+        resolvedPosition = boundary.getNearestPointInsideAABB(resolvedPosition);
+        float resolvedPhi = _solidSDF->trilinearInterpolate(resolvedPosition);
+        float resolvedDistance = vmath::length(resolvedPosition - origPosition);
+        if (resolvedPhi < 0.0f || resolvedDistance > maxResolvedDistance) {
+            resolvedPosition = lastPosition;
+        }
+    }
+
+    nextp = resolvedPosition;
+    return reportedCollision;
 }
 
 LimitBehaviour DiffuseParticleSimulation::_getLimitBehaviour(DiffuseParticle &dp) {
