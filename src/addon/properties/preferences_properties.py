@@ -26,6 +26,8 @@ from bpy.props import (
         EnumProperty
         )
 
+from .. import __package__ as base_package
+
 from ..objects import flip_fluid_map
 from ..ui import helper_ui
 from ..utils import installation_utils
@@ -46,12 +48,17 @@ FAKE_PREFERENCES = flip_fluid_map.Map({})
 def get_addon_preferences(context=None):
     if context is None:
         context = bpy.context
-    id_name = __name__.split(".")[0]
+
     prefs = vcu.get_blender_preferences(context)
-    if id_name not in prefs.addons:
-        global FAKE_PREFERENCES
-        return FAKE_PREFERENCES
-    return prefs.addons[id_name].preferences
+    if vcu.is_blender_42():
+        id_name = base_package
+        return prefs.addons[id_name].preferences
+    else:
+        id_name = __name__.split(".")[0]
+        if id_name not in prefs.addons:
+            global FAKE_PREFERENCES
+            return FAKE_PREFERENCES
+        return prefs.addons[id_name].preferences
 
 
 class FLIPFluidGPUDevice(bpy.types.PropertyGroup):
@@ -90,7 +97,11 @@ def update_helper_category_name(self, context):
 
 class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
     global FAKE_PREFERENCES
-    bl_idname = __name__.split(".")[0]
+    if vcu.is_blender_42():
+        bl_idname = base_package
+    else:
+        bl_idname = __name__.split(".")[0]
+    
 
     preferences_menu_view_mode = EnumProperty(
             name="Preferences Menu View",
@@ -142,17 +153,6 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
             ); 
     exec(vcu.convert_attribute_to_28("engine_debug_mode"))
     FAKE_PREFERENCES.engine_debug_mode = False
-
-    enable_addon_directory_renaming = BoolProperty(
-            name="Allow Addon Directory Renaming", 
-            description="For advanced installation. Enable to allow renaming of the default flip_fluids_addon"
-                " folder in the Blender addons directory. Use to install multiple versions of the FLIP Fluids addon."
-                " Ensure that only one version of the FLIP Fluids addon is enabled at any time and restart Blender"
-                " after switching to another version. Do not use any special characters when renaming, including periods", 
-            default=False,
-            ); 
-    exec(vcu.convert_attribute_to_28("enable_addon_directory_renaming"))
-    FAKE_PREFERENCES.enable_addon_directory_renaming = False
 
     enable_blend_file_logging = BoolProperty(
             name="Save Blender Installation and Simulation Info to Blend File", 
@@ -855,7 +855,6 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Preferences-Menu-Settings#developer-tools"
 
         helper_column.prop(self, "engine_debug_mode")
-        helper_column.prop(self, "enable_addon_directory_renaming")
         helper_column.prop(self, "enable_blend_file_logging")
         helper_column.prop(self, "enable_support_tools")
 

@@ -1,0 +1,17 @@
+schema_version = "1.0.0"
+
+id = "flip_fluids_addon"
+type = "add-on"
+version = "@FLUIDENGINE_VERSION_MAJOR@.@FLUIDENGINE_VERSION_MINOR@.@FLUIDENGINE_VERSION_REVISION@"
+name = "FLIP Fluids"
+tagline = "A FLIP Fluid Simulation Tool for Blender (v@FLUIDENGINE_VERSION_LABEL@)"
+maintainer = "Ryan Guy & Dennis Fassbaender // support@flipfluids.com"
+website = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki"
+tags = ["Animation", "Physics"]
+blender_version_min = "4.2.0"
+license = ["SPDX:GPL-3.0-or-later"]
+platforms = ["windows-x64", "macos-x64", "macos-arm64", "linux-x64"]
+
+[permissions]
+files = "Read and write simulation cache files to the filesystem"
+clipboard = "Copy and paste render and bake commands"

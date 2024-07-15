@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ]]
 
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.5)
 
 function(set_output_directories DIR)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${DIR} PARENT_SCOPE)
@@ -33,7 +33,7 @@ endfunction(set_output_directories)
 
 set(BUILD_DEBUG OFF CACHE BOOL "Turn on to build a debug release")
 
-# Disable distribute source (ON -> OFF) to speed up copying files. Remember to
+# Disable distribute source (ON -> OFF) to speed up build. Remember to
 # turn back on before distribution!
 option(DISTRIBUTE_SOURCE "Include source code in addon" ON)
 
@@ -53,8 +53,8 @@ set(CMAKE_BUILD_TYPE Release)
 set(FLUIDENGINE_VERSION_TYPE_IS_STABLE_BUILD TRUE)
 set(FLUIDENGINE_VERSION_MAJOR 0)
 set(FLUIDENGINE_VERSION_MINOR 8)
-set(FLUIDENGINE_VERSION_REVISION 0)
-set(FLUIDENGINE_VERSION_DATE "21-MAY-2024")
+set(FLUIDENGINE_VERSION_REVISION 1)
+set(FLUIDENGINE_VERSION_DATE "16-JUL-2024")
 
 if(FLUIDENGINE_VERSION_TYPE_IS_STABLE_BUILD)
     set(FLUIDENGINE_VERSION_TYPE_LABEL "Demo")
@@ -144,6 +144,10 @@ configure_file(
   "${PROJECT_SOURCE_DIR}/src/addon/__init__.py"
 )
 configure_file(
+  "${PROJECT_SOURCE_DIR}/src/addon/blender_manifest.toml.in"
+  "${PROJECT_SOURCE_DIR}/src/addon/blender_manifest.toml"
+)
+configure_file(
   "${PROJECT_SOURCE_DIR}/src/addon/utils/installation_utils.py.in"
   "${PROJECT_SOURCE_DIR}/src/addon/utils/installation_utils.py"
 )
@@ -204,17 +208,18 @@ file(COPY "${CMAKE_SOURCE_DIR}/src/addon/" DESTINATION "${BLENDER_ADDON_DIR}")
 file(COPY "${CMAKE_SOURCE_DIR}/src/engine/pyfluid/" DESTINATION "${BLENDER_ADDON_DIR}/pyfluid")
 
 if(DISTRIBUTE_SOURCE)
-    set(SOURCE_COPY_PATHS
-        "${CMAKE_SOURCE_DIR}/src"
+    set(SOURCES_ARCHIVE_ROOT
+        "${CMAKE_SOURCE_DIR}/__init__.py"
+        "${CMAKE_SOURCE_DIR}/build.py"
         "${CMAKE_SOURCE_DIR}/.gitignore"
         "${CMAKE_SOURCE_DIR}/LICENSE_GPLv3.md"
         "${CMAKE_SOURCE_DIR}/LICENSE_MIT.md"
         "${CMAKE_SOURCE_DIR}/LICENSE_Standard_Royalty_Free.md"
         "${CMAKE_SOURCE_DIR}/README.md"
-        "${CMAKE_SOURCE_DIR}/__init__.py"
     )
 
-    foreach(SOURCE_PATH ${SOURCE_COPY_PATHS})
-        file(COPY "${SOURCE_PATH}" DESTINATION "${BLENDER_ADDON_DIR}/source/")
-    endforeach(SOURCE_PATH)
+    file(GLOB_RECURSE SOURCES_ARCHIVE "${CMAKE_SOURCE_DIR}/src/*" "${CMAKE_SOURCE_DIR}/cmake/*")
+    list (APPEND SOURCES_ARCHIVE ${SOURCES_ARCHIVE_ROOT})
+    file(MAKE_DIRECTORY ${BLENDER_ADDON_DIR}/source)
+    file(ARCHIVE_CREATE OUTPUT "${BLENDER_ADDON_DIR}/source/flip_fluids_addon_source.zip" PATHS ${SOURCES_ARCHIVE} FORMAT "zip")
 endif()

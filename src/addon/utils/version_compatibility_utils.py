@@ -68,8 +68,13 @@ def is_blender_35():
 def is_blender_36():
     return bpy.app.version >= (3, 6, 0)
 
+
 def is_blender_40():
     return bpy.app.version >= (4, 0, 0)
+
+
+def is_blender_42():
+    return bpy.app.version >= (4, 2, 0)
     
 
 def register_dict_property(dict_object, name_str, prop):

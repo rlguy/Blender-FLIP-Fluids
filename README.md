@@ -11,11 +11,12 @@ Want to try the FLIP Fluids addon before buying the [full marketplace product](h
 
 ### Getting Started
 
-Download the latest FLIP Fluids Demo installation file here: [FLIP_Fluids_addon_0.7.5_demo_(12_mar_2024.zip)](https://github.com/rlguy/Blender-FLIP-Fluids/releases/download/v0.7.5/FLIP_Fluids_addon_0.7.5_demo_.12_mar_2024.zip)
-
-After downloading the demo addon, follow our [Installation Instructions](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Addon-Installation-and-Uninstallation). The instructions are similar to installing any other Blender addon.
-
-Get started creating your first simulation with our [beginners guide](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Creating-Your-First-FLIP-Fluids-Simulation) or [video learning series](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Video-Learning-Series)!
+1. **Download** the latest FLIP Fluids Demo: [FLIP_Fluids_addon_0.8.1_demo_(16_jul_2024.zip)](https://github.com/rlguy/Blender-FLIP-Fluids/releases/download/v0.8.1/FLIP_Fluids_addon_0.8.1_demo_.16_jul_2024.zip)
+2. **Install** the FLIP Fluids Demo: [Installation Instructions](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Addon-Installation-and-Uninstallation)
+3. **Get Started** with creating your first FLIP Fluids addon simulation: 
+    - [Video Learning Series](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Video-Learning-Series)
+    - [Written Beginners Guide](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Creating-Your-First-FLIP-Fluids-Simulation)
+    - [Documentation and Wiki](https://github.com/rlguy/Blender-FLIP-Fluids/wiki)
 
 ### Have any questions?
 

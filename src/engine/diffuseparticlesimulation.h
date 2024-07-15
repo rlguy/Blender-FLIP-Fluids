@@ -379,6 +379,9 @@ private:
     void _advanceDustParticlesThread(int startidx, int endidx, double dt);
     vmath::vec3 _resolveCollision(vmath::vec3 oldp, vmath::vec3 newp, 
                                   DiffuseParticle &dp, AABB &boundary);
+    bool _resolveSprayCollision(vmath::vec3 oldp, vmath::vec3 newp,
+                                DiffuseParticle &dp, AABB &boundary,
+                                vmath::vec3 &nextp, vmath::vec3 &nextv);
     LimitBehaviour _getLimitBehaviour(DiffuseParticle &dp);
     std::vector<bool>* _getActiveSides(DiffuseParticle &dp);
     int _getNearestSideIndex(vmath::vec3 p, AABB &boundary);
@@ -487,6 +490,8 @@ private:
     double _sprayDragCoefficient = 0.0;
     double _sprayDragVarianceFactor = 0.25;
     double _sprayEmissionSpeedFactor = 1.0;
+    double _sprayCollisionFriction = 0.0;
+    double _sprayCollisionRestitution = 0.2;
     double _maxDiffuseParticlesPerCell = 5000;
     double _emitterRadiusFactor = 8.0;            // in multiples of _markerParticleRadius
     double _particleJitterFactor = 1.0;
