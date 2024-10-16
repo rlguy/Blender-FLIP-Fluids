@@ -422,6 +422,11 @@ hprops = bpy.context.scene.flip_fluid_helper
 
 print("\n*** Preparing Alembic Export ***\n")
 
+if bpy.context.mode != 'OBJECT':
+    # Meshes can only be exported in Object Mode
+    bpy.ops.object.mode_set(mode='OBJECT')
+    print("Viewport set to Object Mode.\n")
+
 retval = check_cache_exists()
 if not retval:
     exit()

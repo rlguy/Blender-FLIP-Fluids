@@ -222,6 +222,8 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
     def get_simulation_objects(self, skip_hide_viewport=False):
         objects = []
         for obj in vcu.get_all_scene_objects():
+            if obj.flip_fluid.object_type == 'TYPE_NONE':
+                continue
             if not obj.flip_fluid.is_active:
                 continue
             if skip_hide_viewport and obj.hide_viewport:

@@ -6,12 +6,21 @@ def play_sound(json_audio_filepath, block=False):
         return
 
     try:
-    	prefs = bpy.context.preferences.addons["flip_fluids_addon"].preferences
+        if bpy.app.version >= (4, 2, 0):
+            for module in bpy.context.preferences.addons:
+                module_name = module.module
+                if module_name.endswith("flip_fluids_addon"):
+                    prefs = bpy.context.preferences.addons[module_name].preferences
+                    print(prefs)
+                    break
+        else:
+            prefs = bpy.context.preferences.addons["flip_fluids_addon"].preferences
     except:
-    	print("FLIP Fluids: Unable to locate addon preferences")
-    	return
+        print("FLIP Fluids: Unable to locate addon preferences")
+        return
+        
     if not prefs.enable_bake_alarm:
-    	return
+        return
 
     import aud
 

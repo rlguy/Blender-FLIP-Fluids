@@ -601,7 +601,7 @@ class GeometryDatabase():
 
 
     def get_mesh_geometry_data_dict_for_frame(self, simulation_data, frameno):
-        cmd = """ SELECT object_id, object_slug, object_motion_type FROM object"""
+        cmd = """ SELECT object_id, object_slug, object_motion_type, export_mesh FROM object"""
         self._cursor.execute(cmd)
         result = self._cursor.fetchall()
 
@@ -611,6 +611,13 @@ class GeometryDatabase():
             object_id = row[0]
             name_slug = row[1]
             object_motion_type = row[2]
+            export_mesh = row[3]
+
+            if not export_mesh:
+                # Object could be a centroid, vertices, axis, or curve
+                # This method is only for retrieving mesh type data
+                continue
+
             is_static = object_motion_type == 'STATIC'
             is_dynamic = not is_static
 

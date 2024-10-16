@@ -266,7 +266,7 @@ class FLIPFluidInstallMixboxPlugin(bpy.types.Operator, ImportHelper):
 
     filename_ext = "*.plugin"
     filter_glob = StringProperty(
-            default="*.plugin",
+            default="*.plugin;*.zip",
             options={'HIDDEN'},
             maxlen=255,
             )
