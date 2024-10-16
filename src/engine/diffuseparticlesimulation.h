@@ -466,6 +466,7 @@ private:
     double _maxDustTurbulenceFactor = 1.0;
     double _emitterGenerationRate = 1.0;
     unsigned int _maxNumDiffuseParticles = 10e6;
+    unsigned int _maxNumDiffuseParticlesLimit = 357e6;
     double _minDiffuseParticleLifetime = 0.0;
     double _maxDiffuseParticleLifetime = 7.0;
     double _lifetimeVariance = 3.0;

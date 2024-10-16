@@ -242,7 +242,7 @@ void DiffuseParticleSimulation::setMaxNumDiffuseParticles(int n) {
     FLUIDSIM_ASSERT(n >= 0);
     _maxNumDiffuseParticles = n;
     if (n == 0) {
-        _maxNumDiffuseParticles = std::numeric_limits<unsigned int>::max();
+        _maxNumDiffuseParticles = _maxNumDiffuseParticlesLimit;
     }
 }
 
@@ -759,6 +759,7 @@ void DiffuseParticleSimulation::getSprayParticleFileDataWWP(std::vector<char> &d
     std::vector<vmath::vec3> *particlePositions;
     std::vector<unsigned char> *particleIds;
     std::vector<char> *particleTypes;
+
     _diffuseParticles.getAttributeValues("POSITION", particlePositions);
     _diffuseParticles.getAttributeValues("ID", particleIds);
     _diffuseParticles.getAttributeValues("TYPE", particleTypes);
@@ -2896,13 +2897,14 @@ void DiffuseParticleSimulation::_getDiffuseParticleFileDataWWP(std::vector<vmath
                                                                std::vector<char> &data) {
     FLUIDSIM_ASSERT(positions.size() == ids.size())
 
-    std::vector<int> idcounts(_diffuseParticleIDLimit, 0);
+    std::vector<unsigned int> idcounts(_diffuseParticleIDLimit, 0);
     for (size_t i = 0; i < ids.size(); i++) {
         idcounts[(int)ids[i]]++;
     }
 
-    std::vector<int> idBinIndices(_diffuseParticleIDLimit, 0);
-    std::vector<int> idData(_diffuseParticleIDLimit, 0);
+    std::vector<unsigned int> idBinIndices(_diffuseParticleIDLimit, 0);
+    std::vector<unsigned int> idData(_diffuseParticleIDLimit, 0);
+
     int currentBinIndex = 0;
     for (size_t i = 0; i < idcounts.size(); i++) {
         idBinIndices[i] = currentBinIndex;
@@ -2916,16 +2918,16 @@ void DiffuseParticleSimulation::_getDiffuseParticleFileDataWWP(std::vector<vmath
         idBinIndices[ids[i]]++;
     }
 
-    int idDataSize = (int)idData.size() * sizeof(int);
-    int numVertices = (int)positions.size();
-    int vertexDataSize = 3 * numVertices * sizeof(float);
-    int dataSize = idDataSize + vertexDataSize;
+    unsigned int idDataSize = (unsigned int)idData.size() * sizeof(int);
+    unsigned int numVertices = (unsigned int)positions.size();
+    unsigned int vertexDataSize = 3 * numVertices * sizeof(float);
+    unsigned int dataSize = idDataSize + vertexDataSize;
 
     data.clear();
     data.resize(dataSize);
     data.shrink_to_fit();
 
-    int byteOffset = 0;
+    unsigned int byteOffset = 0;
     std::memcpy(data.data() + byteOffset, (char *)idData.data(), idDataSize);
     byteOffset += idDataSize;
 
@@ -2938,13 +2940,13 @@ void DiffuseParticleSimulation::_getDiffuseParticleFileDataWWI(std::vector<int> 
                                                                std::vector<char> &data) {
     FLUIDSIM_ASSERT(intvalues.size() == ids.size())
 
-    std::vector<int> idcounts(_diffuseParticleIDLimit, 0);
+    std::vector<unsigned int> idcounts(_diffuseParticleIDLimit, 0);
     for (size_t i = 0; i < ids.size(); i++) {
-        idcounts[(int)ids[i]]++;
+        idcounts[(unsigned int)ids[i]]++;
     }
 
-    std::vector<int> idBinIndices(_diffuseParticleIDLimit, 0);
-    std::vector<int> idData(_diffuseParticleIDLimit, 0);
+    std::vector<unsigned int> idBinIndices(_diffuseParticleIDLimit, 0);
+    std::vector<unsigned int> idData(_diffuseParticleIDLimit, 0);
     int currentBinIndex = 0;
     for (size_t i = 0; i < idcounts.size(); i++) {
         idBinIndices[i] = currentBinIndex;
@@ -2952,22 +2954,22 @@ void DiffuseParticleSimulation::_getDiffuseParticleFileDataWWI(std::vector<int> 
         idData[i] = currentBinIndex - 1;
     }
 
-    std::vector<int> intData(intvalues.size());
+    std::vector<unsigned int> intData(intvalues.size());
     for (size_t i = 0; i < intvalues.size(); i++) {
         intData[idBinIndices[ids[i]]] = intvalues[i];
         idBinIndices[ids[i]]++;
     }
 
-    int idDataSize = (int)idData.size() * sizeof(int);
-    int numVertices = (int)intvalues.size();
-    int intDataSize = numVertices * sizeof(int);
-    int dataSize = idDataSize + intDataSize;
+    unsigned int idDataSize = (unsigned int)idData.size() * sizeof(int);
+    unsigned int numVertices = (unsigned int)intvalues.size();
+    unsigned int intDataSize = numVertices * sizeof(int);
+    unsigned int dataSize = idDataSize + intDataSize;
 
     data.clear();
     data.resize(dataSize);
     data.shrink_to_fit();
 
-    int byteOffset = 0;
+    unsigned int byteOffset = 0;
     std::memcpy(data.data() + byteOffset, (char *)idData.data(), idDataSize);
     byteOffset += idDataSize;
 
@@ -2980,13 +2982,13 @@ void DiffuseParticleSimulation::_getDiffuseParticleFileDataWWF(std::vector<float
                                                                std::vector<char> &data) {
     FLUIDSIM_ASSERT(floatvalues.size() == ids.size())
 
-    std::vector<int> idcounts(_diffuseParticleIDLimit, 0);
+    std::vector<unsigned int> idcounts(_diffuseParticleIDLimit, 0);
     for (size_t i = 0; i < ids.size(); i++) {
-        idcounts[(int)ids[i]]++;
+        idcounts[(unsigned int)ids[i]]++;
     }
 
-    std::vector<int> idBinIndices(_diffuseParticleIDLimit, 0);
-    std::vector<int> idData(_diffuseParticleIDLimit, 0);
+    std::vector<unsigned int> idBinIndices(_diffuseParticleIDLimit, 0);
+    std::vector<unsigned int> idData(_diffuseParticleIDLimit, 0);
     int currentBinIndex = 0;
     for (size_t i = 0; i < idcounts.size(); i++) {
         idBinIndices[i] = currentBinIndex;
@@ -3000,16 +3002,16 @@ void DiffuseParticleSimulation::_getDiffuseParticleFileDataWWF(std::vector<float
         idBinIndices[ids[i]]++;
     }
 
-    int idDataSize = (int)idData.size() * sizeof(int);
-    int numVertices = (int)floatvalues.size();
-    int intDataSize = numVertices * sizeof(int);
-    int dataSize = idDataSize + intDataSize;
+    unsigned int idDataSize = (int)idData.size() * sizeof(int);
+    unsigned int numVertices = (int)floatvalues.size();
+    unsigned int intDataSize = numVertices * sizeof(int);
+    unsigned int dataSize = idDataSize + intDataSize;
 
     data.clear();
     data.resize(dataSize);
     data.shrink_to_fit();
 
-    int byteOffset = 0;
+    unsigned int byteOffset = 0;
     std::memcpy(data.data() + byteOffset, (char *)idData.data(), idDataSize);
     byteOffset += idDataSize;
 

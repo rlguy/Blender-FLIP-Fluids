@@ -277,6 +277,36 @@ def get_blender_app_binary_path_windows():
     return blender_exe_path
 
 
+def launch_command_windows(command_list, command_text, script_prefix_string, keep_window_open=True):
+    # Launch command on Windows OS using subprocess.call().
+    # If the command list contains an argument with a special character that
+    # subprocess.call cannot handle, write the command to a batch file and
+    # launch using os.startfile.
+
+    special_characters = ["&"]
+    valid_command_list = True
+    for arg in command_list:
+        for ch in special_characters:
+            if ch in arg:
+                valid_command_list = False
+                break
+
+    if valid_command_list:
+        subprocess.call(command_list, shell=True)
+    else:
+        bat_text = "echo off\nchcp 65001\n"
+        bat_text += command_text + "\n"
+        if keep_window_open:
+            bat_text += "cmd /k\n"
+
+        script_name = script_prefix_string + bpy.path.basename(bpy.context.blend_data.filepath) + ".bat"
+        script_filepath = os.path.join(os.path.dirname(bpy.data.filepath), script_name)
+        with open(script_filepath, 'w') as f:
+            f.write(bat_text)
+
+        os.startfile(script_filepath)
+
+
 def launch_command_darwin_or_linux(command_text, script_prefix_string):
     script_text = "#!/bin/bash\n" + command_text
     script_name = script_prefix_string + bpy.path.basename(bpy.context.blend_data.filepath) + ".sh"
@@ -442,7 +472,7 @@ class FlipFluidHelperCommandLineBake(bpy.types.Operator):
         if system == "Windows":
             if vcu.get_addon_preferences().cmd_bake_max_attempts == 0:
                 # Launch with a single command
-                subprocess.call(command_list, shell=True)
+                launch_command_windows(command_list, command_text, "BAKE_")
             else:
                 cmd_bake_script_filepath = self.generate_bake_batch_file()
                 os.startfile(cmd_bake_script_filepath)
@@ -546,7 +576,7 @@ class FlipFluidHelperCommandLineRender(bpy.types.Operator):
 
         system = platform.system()
         if system == "Windows":
-            subprocess.call(command_list, shell=True)
+            launch_command_windows(command_list, command_text, "RENDER_ANIMATION_")
         elif system == "Darwin" or system == "Linux":
             launch_command_darwin_or_linux(command_text, "RENDER_ANIMATION_")
 
@@ -655,7 +685,7 @@ class FlipFluidHelperCommandLineRenderFrame(bpy.types.Operator):
 
         system = platform.system()
         if system == "Windows":
-            subprocess.call(command_list, shell=True)
+            launch_command_windows(command_list, command_text, "RENDER_FRAME_", keep_window_open=not hprops.cmd_close_window_after_render)
         elif system == "Darwin" or system == "Linux":
             command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" --python \"" + script_path + "\"" + " -- " + frame_string + " " + open_image_after
             launch_command_darwin_or_linux(command_text, "RENDER_FRAME_")
@@ -734,7 +764,7 @@ class FlipFluidHelperCommandLineAlembicExport(bpy.types.Operator):
 
         system = platform.system()
         if system == "Windows":
-            subprocess.call(command_list, shell=True)
+            launch_command_windows(command_list, command_text, "ALEMBIC_EXPORT_")
         elif system == "Darwin" or system == "Linux":
             command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" --python \"" + script_path + "\""
             launch_command_darwin_or_linux(command_text, "ALEMBIC_EXPORT_")
@@ -1106,7 +1136,7 @@ class FlipFluidHelperCommandLineRenderPassAnimation(bpy.types.Operator):
 
         system = platform.system()
         if system == "Windows":
-            subprocess.call(command_list, shell=True)
+            launch_command_windows(command_list, command_text, "RENDER_PASS_ANIMATION")
         elif system == "Darwin" or system == "Linux":
             command_text = "\"" + bpy.app.binary_path + "\" --background \"" + bpy.data.filepath + "\" --python \"" + script_path + "\""
             launch_command_darwin_or_linux(command_text, "RENDER_PASS_ANIMATION_")
