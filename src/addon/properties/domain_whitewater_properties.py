@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2024 Ryan L. Guy
+# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -109,7 +109,7 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
                 " Node or in Geometry Nodes with the name 'flip_id'. Use where consistent"
                 " particle attributes are needed between frames, such as for varying particle"
                 " size or color. Not supported on instanced particles, only supported on pointclouds",
-            default=False,
+            default=True,
             options={'HIDDEN'},
             ); exec(conv("enable_id_attribute"))
     enable_lifetime_attribute = BoolProperty(

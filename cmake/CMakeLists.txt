@@ -1,5 +1,5 @@
 #[[
-Copyright (C) 2024 Ryan L. Guy
+Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -53,8 +53,8 @@ set(CMAKE_BUILD_TYPE Release)
 set(FLUIDENGINE_VERSION_TYPE_IS_STABLE_BUILD TRUE)
 set(FLUIDENGINE_VERSION_MAJOR 0)
 set(FLUIDENGINE_VERSION_MINOR 8)
-set(FLUIDENGINE_VERSION_REVISION 2)
-set(FLUIDENGINE_VERSION_DATE "18-OCT-2024")
+set(FLUIDENGINE_VERSION_REVISION 3)
+set(FLUIDENGINE_VERSION_DATE "21-MAR-2025")
 
 if(FLUIDENGINE_VERSION_TYPE_IS_STABLE_BUILD)
     set(FLUIDENGINE_VERSION_TYPE_LABEL "Demo")

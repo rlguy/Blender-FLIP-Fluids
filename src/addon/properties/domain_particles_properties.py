@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2024 Ryan L. Guy
+# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,6 +47,7 @@ class DomainParticlesProperties(bpy.types.PropertyGroup):
             default=1.0,
             precision=5,
             subtype='FACTOR',
+            options={'HIDDEN'},
             ); exec(conv("fluid_particle_output_amount"))
     enable_fluid_particle_surface_output = BoolProperty(
             name="Export Surface Particles",
@@ -153,6 +154,28 @@ class DomainParticlesProperties(bpy.types.PropertyGroup):
             default=False,
             options={'HIDDEN'},
             ); exec(conv("enable_fluid_particle_source_id_attribute"))
+    enable_fluid_particle_uid_attribute = BoolProperty(
+            name="Generate UID Attributes",
+            description="Generate Unique IDs for fluid particles. After"
+                " baking, the UID values can be accessed in a Cycles Attribute Node or in Geometry nodes with the name"
+                " 'flip_uid' from the Fac output. This can be used to uniquely identify particles which can be useful"
+                " for attribute storage and tracking in simulation nodes. Warning: this attribute can require a larger"
+                " amount of cache storage compared to the built-in 'flip_id' attribute. If unique IDs are not required,"
+                " leave this attribute disabled",
+            default=False,
+            options={'HIDDEN'},
+            ); exec(conv("enable_fluid_particle_uid_attribute"))
+    enable_fluid_particle_uid_attribute_reuse = BoolProperty(
+            name="Reuse UIDs",
+            description="Reuse UID attribute vaules. If enabled, particles that are removed from the simulation may have"
+                " their UID reused in a later frame. If a particle is removed from the simulation, the UID will not be"
+                " reused until at least a 1 frame gap has passed. UID values will only be unique to a single frame."
+                " Enabling is recommended for use in simulation nodes to reduce resource usage. If disabled, UID values"
+                " will be unique to the entire simulation. Disabling is recommended for tracking individual particles"
+                " in geometry nodes",
+            default=True,
+            options={'HIDDEN'},
+            ); exec(conv("enable_fluid_particle_uid_attribute_reuse"))
 
     fluid_particles_expanded = BoolProperty(default=True); exec(conv("fluid_particles_expanded"))
     fluid_particle_generation_expanded = BoolProperty(default=False); exec(conv("fluid_particle_generation_expanded"))
@@ -179,6 +202,8 @@ class DomainParticlesProperties(bpy.types.PropertyGroup):
         add(path + ".enable_fluid_particle_lifetime_attribute",             "Lifetime Attribute",           group_id=0)
         add(path + ".enable_fluid_particle_whitewater_proximity_attribute", "Lifetime Attribute",           group_id=0)
         add(path + ".enable_fluid_particle_source_id_attribute",            "Source ID Attribute",          group_id=0)
+        add(path + ".enable_fluid_particle_uid_attribute",                  "UID Attribute",                group_id=0)
+        add(path + ".enable_fluid_particle_uid_attribute_reuse",            "Reuse UIDs",                group_id=0)
 
 
     def _update_enable_fluid_particle_output(self, context):

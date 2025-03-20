@@ -1,5 +1,3 @@
-echo off
-chcp 65001
 set /a launch_attempts = MAX_LAUNCH_ATTEMPTS
 set /a launch_counter = %launch_attempts%
 :DoWhile
@@ -20,4 +18,3 @@ set /a launch_counter = %launch_attempts%
     set /a launch_counter = %launch_counter% - 1
     if %launch_counter% gtr 0 goto DoWhile
 :EndDoWhile
-cmd /k

@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2024 Ryan L. Guy
+# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -92,6 +92,7 @@ class FlipFluidLoadedMeshData(bpy.types.PropertyGroup):
     enable_source_id_attribute =             BoolProperty(default=False);           exec(conv("enable_source_id_attribute"))
     enable_viscosity_attribute =             BoolProperty(default=False);           exec(conv("enable_viscosity_attribute"))
     enable_id_attribute =                    BoolProperty(default=False);           exec(conv("enable_id_attribute"))
+    enable_uid_attribute =                   BoolProperty(default=False);           exec(conv("enable_uid_attribute"))
     enable_lifetime_attribute =              BoolProperty(default=False);           exec(conv("enable_lifetime_attribute"))
     enable_whitewater_proximity_attribute =  BoolProperty(default=False);           exec(conv("enable_whitewater_proximity_attribute"))
     wwp_import_percentage =                  IntProperty(default=0);                exec(conv("wwp_import_percentage"))
@@ -114,6 +115,7 @@ class FlipFluidLoadedMeshData(bpy.types.PropertyGroup):
         self.property_unset("enable_source_id_attribute")
         self.property_unset("enable_viscosity_attribute")
         self.property_unset("enable_id_attribute")
+        self.property_unset("enable_uid_attribute")
         self.property_unset("enable_lifetime_attribute")
         self.property_unset("enable_whitewater_proximity_attribute")
         self.property_unset("wwp_import_percentage")
@@ -141,6 +143,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
     enable_source_id_attribute =             BoolProperty(default=False);                      exec(conv("enable_source_id_attribute"))
     enable_viscosity_attribute =             BoolProperty(default=False);                      exec(conv("enable_viscosity_attribute"))
     enable_id_attribute =                    BoolProperty(default=False);                      exec(conv("enable_id_attribute"))
+    enable_uid_attribute =                   BoolProperty(default=False);                      exec(conv("enable_uid_attribute"))
     enable_lifetime_attribute =              BoolProperty(default=False);                      exec(conv("enable_lifetime_attribute"))
     enable_whitewater_proximity_attribute =  BoolProperty(default=False);                      exec(conv("enable_whitewater_proximity_attribute"))
     cache_object_default_name =              StringProperty(default="");                       exec(conv("cache_object_default_name"))
@@ -159,6 +162,29 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
     bounds =            PointerProperty(type=FLIPFluidMeshBounds);     exec(conv("bounds"))
 
 
+    def _initialize_cache_object_fluid_surface(self, bl_cache_object):
+        parent_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        blend_resource_filename = "geometry_nodes_library.blend"
+        resource_filepath = os.path.join(parent_path, "resources", "geometry_nodes", blend_resource_filename)
+        gn_modifier = helper_operators.add_geometry_node_modifier(bl_cache_object, resource_filepath, "FF_MotionBlurSurface")
+
+        # Depending on FLIP Fluids version, the GN set up may not
+        # have these inputs. Available in FLIP Fluids 1.7.2 or later.
+        key_value_pairs = [
+            ("Input_2_use_attribute",   1),                               # Input flip_velocity
+            ("Input_2_attribute_name",  'flip_velocity'),                 # Input flip_velocity
+            ("Output_3_attribute_name", 'velocity'),                      # Output velocity
+            ("Input_6",                 True), # Enable Motion Blur
+            ]
+
+        for (key, value) in key_value_pairs:
+            try:
+                # Input flip_velocity
+                gn_modifier[key] = value
+            except:
+                pass
+
+
     def _initialize_cache_object_fluid_particles(self, bl_cache_object):
         parent_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         blend_resource_filename = "geometry_nodes_library.blend"
@@ -167,36 +193,22 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
         # Depending on FLIP Fluids version, the GN set up may not
         # have these inputs. Available in FLIP Fluids 1.7.2 or later.
-        try:
-            # Input flip_velocity
-            gn_modifier["Input_2_use_attribute"] = 1
-            gn_modifier["Input_2_attribute_name"] = 'flip_velocity'
-        except:
-            pass
+        key_value_pairs = [
+            ("Input_2_use_attribute",   1),                               # Input flip_velocity
+            ("Input_2_attribute_name",  'flip_velocity'),                 # Input flip_velocity
+            ("Output_3_attribute_name", 'velocity'),                      # Output velocity
+            ("Input_5",                 bl_cache_object.active_material), # Material
+            ("Input_8",                 True),                            # Enable Motion Blur
+            ("Input_9",                 True),                            # Enable Point Cloud
+            ("Input_10",                False),                           # Enable Instancing
+            ]
 
-        try:
-            # Output velocity
-            gn_modifier["Output_3_attribute_name"] = 'velocity'
-        except:
-            pass
-
-        try:
-            # Material
-            gn_modifier["Input_5"] = bl_cache_object.active_material
-        except:
-            pass
-
-        try:
-            # Enable Motion Blur
-            gn_modifier["Input_8"] = False
-        except:
-            pass
-
-        try:
-            # Enable Point Cloud
-            gn_modifier["Input_9"] = True
-        except:
-            pass
+        for (key, value) in key_value_pairs:
+            try:
+                # Input flip_velocity
+                gn_modifier[key] = value
+            except:
+                pass
 
 
     def _initialize_cache_object_whitewater_particles(self, bl_cache_object):
@@ -217,42 +229,22 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
         # Depending on FLIP Fluids version, the GN set up may not
         # have these inputs. Available in FLIP Fluids 1.7.2 or later.
-        try:
-            # Input flip_velocity
-            gn_modifier["Input_2_use_attribute"] = 1
-            gn_modifier["Input_2_attribute_name"] = 'flip_velocity'
-        except:
-            pass
+        key_value_pairs = [
+            ("Input_2_use_attribute",   1),                               # Input flip_velocity
+            ("Input_2_attribute_name",  'flip_velocity'),                 # Input flip_velocity
+            ("Output_3_attribute_name", 'velocity'),                      # Output velocity
+            ("Input_5",                 bl_cache_object.active_material), # Material
+            ("Input_8",                 True),                            # Enable Motion Blur
+            ("Input_9",                 True),                            # Enable Point Cloud
+            ("Input_10",                False),                           # Enable Instancing
+            ]
 
-        try:
-            # Output velocity
-            gn_modifier["Output_3_attribute_name"] = 'velocity'
-        except:
-            pass
-
-        try:
-            # Material
-            gn_modifier["Input_5"] = bl_cache_object.active_material
-        except:
-            pass
-
-        try:
-            # Enable Motion Blur
-            gn_modifier["Input_8"] = False
-        except:
-            pass
-
-        try:
-            # Enable Point Cloud
-            gn_modifier["Input_9"] = True
-        except:
-            pass
-
-        try:
-            # Enable Instancing
-            gn_modifier["Input_10"] = False
-        except:
-            pass
+        for (key, value) in key_value_pairs:
+            try:
+                # Input flip_velocity
+                gn_modifier[key] = value
+            except:
+                pass
 
 
     def initialize_cache_object(self):
@@ -272,8 +264,10 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         cache_object.lock_scale = (True, True, True)
         vcu.link_fluid_mesh_object(cache_object)
 
-        smooth_mod = cache_object.modifiers.new("Smooth", "SMOOTH")
-        smooth_mod.iterations = 0
+        if self.cache_object_type in ('CACHE_OBJECT_TYPE_SURFACE', 'CACHE_OBJECT_TYPE_OBSTACLE'):
+            smooth_mod = cache_object.modifiers.new("FF_Smooth", "SMOOTH")
+            smooth_mod.factor = 1.5
+            smooth_mod.iterations = 0
 
         # Motion blur not supported. Leaving motion blur enabled can cause
         # slow render in versions of Blender 2.91+. Workaround is to
@@ -285,6 +279,9 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
             pass
 
         self._initialize_cache_object_octane(cache_object)
+
+        if self.cache_object_type == 'CACHE_OBJECT_TYPE_SURFACE' and vcu.is_blender_31():
+            self._initialize_cache_object_fluid_surface(cache_object)
 
         if self.cache_object_type == 'CACHE_OBJECT_TYPE_FLUID_PARTICLES' and vcu.is_blender_31():
             self._initialize_cache_object_fluid_particles(cache_object)
@@ -302,6 +299,9 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         cache_object = self.get_cache_object()
         if cache_object is None:
             return
+
+        if self.cache_object_type == 'CACHE_OBJECT_TYPE_SURFACE' and vcu.is_blender_31():
+            self._initialize_cache_object_fluid_surface(cache_object)
 
         if self.cache_object_type == 'CACHE_OBJECT_TYPE_FLUID_PARTICLES' and vcu.is_blender_31():
             self._initialize_cache_object_fluid_particles(cache_object)
@@ -381,6 +381,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
                     self.enable_source_id_attribute             != d.enable_source_id_attribute or
                     self.enable_viscosity_attribute             != d.enable_viscosity_attribute or
                     self.enable_id_attribute                    != d.enable_id_attribute or
+                    self.enable_uid_attribute                   != d.enable_uid_attribute or
                     self.enable_lifetime_attribute              != d.enable_lifetime_attribute or
                     self.enable_whitewater_proximity_attribute  != d.enable_whitewater_proximity_attribute or
                     self.wwp_import_percentage                  != d.wwp_import_percentage or
@@ -404,6 +405,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         d.enable_source_id_attribute             = self.enable_source_id_attribute
         d.enable_viscosity_attribute             = self.enable_viscosity_attribute
         d.enable_id_attribute                    = self.enable_id_attribute
+        d.enable_uid_attribute                   = self.enable_uid_attribute
         d.enable_lifetime_attribute              = self.enable_lifetime_attribute
         d.enable_whitewater_proximity_attribute  = self.enable_whitewater_proximity_attribute
         d.wwp_import_percentage                  = self.wwp_import_percentage
@@ -601,6 +603,28 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         attribute.data.foreach_set("value", source_id_data)
 
 
+    def _update_uid_attribute(self, frameno):
+        if not vcu.is_blender_293() or not self.enable_uid_attribute:
+            return
+
+        cache_object = self.get_cache_object()
+        frame_string = self._frame_number_to_string(frameno)
+        uid_data, _ = self._import_uid_attribute_data(frameno)
+
+        if not uid_data:
+            return
+
+        attribute_name = "flip_uid"
+        mesh = cache_object.data
+        try:
+            mesh.attributes.remove(mesh.attributes.get(attribute_name))
+        except:
+            pass
+
+        attribute = mesh.attributes.new(attribute_name, "INT", "POINT")
+        attribute.data.foreach_set("value", uid_data)
+
+
     def _update_viscosity_attribute(self, frameno):
         if not vcu.is_blender_293() or not self.enable_viscosity_attribute:
             return
@@ -740,6 +764,56 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         spray_attribute.data.foreach_set("value", spray_proximity_data)
 
 
+    # Cache values unrelated to geometry will be stored on the domain vertices
+    # to minimize memory usage
+    def _update_domain_data_storage_attributes(self, current_frame):
+        if not vcu.is_blender_293():
+            return
+
+        domain_object = self._get_domain_object()
+        if not domain_object:
+            return
+
+        # Store the max UID value from the cache on the domain vertices
+        if self.enable_uid_attribute:
+            bakefiles_directory = self._get_bakefiles_directory()
+            if os.path.isdir(bakefiles_directory):
+                bakefiles = os.listdir(bakefiles_directory)
+                bakefiles = [name for name in bakefiles if name.startswith("finished")]
+
+                max_frameno = -1
+                max_frameno_filename = None
+                for fname in bakefiles:
+                    base = fname.split(".")[0]
+                    try:
+                        frame_number = int(base[-6:])
+                        if frame_number > max_frameno:
+                            max_frameno = frame_number
+                            frame_str = self._frame_number_to_string(max_frameno)
+                            max_frameno_filename = "fluidparticlesuidmax" + frame_str + ".txt"
+                    except ValueError:
+                        # In the case that there is a bakefile without a number
+                        pass
+
+                max_uid_value = None
+                if max_frameno_filename:
+                    filepath = os.path.join(bakefiles_directory, max_frameno_filename)
+                    with open(filepath, "r") as max_uid_file:
+                        file_text = max_uid_file.read()
+                        max_uid_value = int(file_text)
+
+                if max_uid_value:
+                    attribute_name = "flip_uid_max"
+                    mesh = domain_object.data
+                    try:
+                        mesh.attributes.remove(mesh.attributes.get(attribute_name))
+                    except:
+                        pass
+
+                    attribute = mesh.attributes.new(attribute_name, "INT", "POINT")
+                    attribute.data.foreach_set("value", [max_uid_value] * len(attribute.data))
+
+
     def load_frame(self, frameno, force_load=False, depsgraph=None):
         if not self._is_load_frame_valid(frameno, force_load):
             return
@@ -781,8 +855,10 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         self._update_source_id_attribute(frameno)
         self._update_viscosity_attribute(frameno)
         self._update_id_attribute(frameno)
+        self._update_uid_attribute(frameno)
         self._update_lifetime_attribute(frameno)
         self._update_whitewater_proximity_attribute(frameno)
+        self._update_domain_data_storage_attributes(frameno)
 
         self.current_loaded_frame = render.get_current_render_frame()
         self._commit_loaded_frame_data(frameno)
@@ -911,6 +987,9 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         elif attribute_type == 'ATTRIBUTE_TYPE_UINT16':
             sizeof_attribute = 2
             attribute_struct_format_str = '{0}H'
+        elif attribute_type == 'ATTRIBUTE_TYPE_ULONGLONG':
+            sizeof_attribute = 8
+            attribute_struct_format_str = '{0}Q'
 
         sizeof_uint = 4
         num_surface_particles  = struct.unpack_from('I', attribute_data, 0 * sizeof_uint)[0]
@@ -1213,6 +1292,14 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
     def _get_fluid_particle_source_id_attribute_filepath(self, frameno):
         filename = (self.mesh_prefix + "sourceid" +
+                    self._frame_number_to_string(frameno) + 
+                    ".ffp3")
+        bakefiles_directory = self._get_bakefiles_directory()
+        return os.path.join(bakefiles_directory, filename)
+
+
+    def _get_fluid_particle_uid_attribute_filepath(self, frameno):
+        filename = (self.mesh_prefix + "uid" +
                     self._frame_number_to_string(frameno) + 
                     ".ffp3")
         bakefiles_directory = self._get_bakefiles_directory()
@@ -1597,6 +1684,42 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
             source_id_data = self.import_ints(filepath)
 
         return source_id_data, header_info
+
+
+    def _import_uid_attribute_data(self, frameno):
+        header_info = None
+        uid_data = []
+        if not self._is_domain_set() or not self._is_frame_cached(frameno):
+            return uid_data, header_info
+
+        if self.cache_object_type == 'CACHE_OBJECT_TYPE_FLUID_PARTICLES':
+            filepath = self._get_fluid_particle_uid_attribute_filepath(frameno)
+        else:
+            # Not supported for fluid surface or whitewater
+            filepath = ""
+
+        if not os.path.exists(filepath):
+            return uid_data, header_info
+
+
+        import_function = getattr(self, self.import_function_name)
+        if import_function == self.import_wwp:
+            # Not supported
+            uid_data, _ = import_function(filepath, self.wwp_import_percentage)
+        elif import_function == self.import_ffp3:
+            # uid is only supported on fluid particles
+            uid_data, _, header_info = self.import_ffp3(
+                    filepath,
+                    pct_surface=self.ffp3_surface_import_percentage,
+                    pct_boundary=self.ffp3_boundary_import_percentage,
+                    pct_interior=self.ffp3_interior_import_percentage,
+                    attribute_type='ATTRIBUTE_TYPE_INT'
+                    )
+        else:
+            # Not supported
+            uid_data = self.import_ints(filepath)
+
+        return uid_data, header_info
 
 
     def _import_viscosity_attribute_data(self, frameno):

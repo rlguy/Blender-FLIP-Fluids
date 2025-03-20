@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2024 Ryan L. Guy
+# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -617,6 +617,15 @@ def __load_save_state_marker_particle_data(fluidsim, save_state_directory, autos
             source_id_data_file = os.path.join(d, autosave_info['marker_particle_source_id_filedata'])
             load_source_id_data = True
 
+    is_uid_attribute_enabled = data.domain_data.particles.enable_fluid_particle_uid_attribute.data
+    load_uid_data = False
+    if is_uid_attribute_enabled:
+        uid_path = 'marker_particle_uid_filedata'
+        is_uid_data_available = (uid_path in autosave_info) and autosave_info[uid_path]
+        if is_uid_data_available:
+            uid_data_file = os.path.join(d, autosave_info['marker_particle_uid_filedata'])
+            load_uid_data = True
+
     is_viscosity_attribute_enabled = data.domain_data.surface.enable_viscosity_attribute.data
     load_viscosity_data = False
     if is_viscosity_attribute_enabled:
@@ -639,20 +648,24 @@ def __load_save_state_marker_particle_data(fluidsim, save_state_directory, autos
     bytes_per_vector = 12
     bytes_per_float = 4
     bytes_per_int = 4
+    bytes_per_ulong_long_int = 8
     bytes_per_short = 2
     max_vector_byte = bytes_per_vector * num_particles
     max_float_byte = bytes_per_float * num_particles
     max_int_byte = bytes_per_int * num_particles
+    max_ulong_long_int_byte = bytes_per_ulong_long_int * num_particles
     max_short_byte = bytes_per_short * num_particles
     num_reads = int((num_particles // particles_per_read) + 1)
     for i in range(num_reads):
         start_vector_byte = i * bytes_per_vector * particles_per_read
         start_float_byte = i * bytes_per_float * particles_per_read
         start_int_byte = i * bytes_per_int * particles_per_read
+        start_ulong_long_int_byte = i * bytes_per_ulong_long_int * particles_per_read
         start_short_byte = i * bytes_per_short * particles_per_read
         end_vector_byte = min((i + 1) * bytes_per_vector * particles_per_read, max_vector_byte)
         end_float_byte = min((i + 1) * bytes_per_float * particles_per_read, max_float_byte)
         end_int_byte = min((i + 1) * bytes_per_int * particles_per_read, max_int_byte)
+        end_ulong_long_int_byte = min((i + 1) * bytes_per_ulong_long_int * particles_per_read, max_ulong_long_int_byte)
         end_short_byte = min((i + 1) * bytes_per_short * particles_per_read, max_short_byte)
         particle_count = int((end_vector_byte - start_vector_byte) // bytes_per_vector)
 
@@ -681,6 +694,10 @@ def __load_save_state_marker_particle_data(fluidsim, save_state_directory, autos
         if load_source_id_data:
             source_id_data = __read_save_state_file_data(source_id_data_file, start_int_byte, end_int_byte)
             fluidsim.load_marker_particle_source_id_data(particle_count, source_id_data)
+
+        if load_uid_data:
+            uid_data = __read_save_state_file_data(uid_data_file, start_int_byte, end_int_byte)
+            fluidsim.load_marker_particle_uid_data(particle_count, uid_data)
 
         if load_viscosity_data:
             viscosity_data = __read_save_state_file_data(viscosity_data_file, start_float_byte, end_float_byte)
@@ -741,6 +758,10 @@ def __load_save_state_diffuse_particle_data(fluidsim, save_state_directory, auto
 def __load_save_state_simulator_data(fluidsim, autosave_info):
     next_frame = autosave_info["frame_id"] + 1
     fluidsim.set_current_frame(next_frame)
+
+    if "current_fluid_particle_uid" in autosave_info:
+        current_uid = int(autosave_info["current_fluid_particle_uid"])
+        fluidsim.set_current_fluid_particle_uid(current_uid)
 
 
 def __delete_outdated_savestates(cache_directory, savestate_id):
@@ -1151,6 +1172,12 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
     enable_source_id_attribute = __get_parameter_data(particles.enable_fluid_particle_source_id_attribute, frameno)
     fluidsim.enable_fluid_particle_source_id_attribute = enable_source_id_attribute
 
+    enable_uid_attribute = __get_parameter_data(particles.enable_fluid_particle_uid_attribute, frameno)
+    fluidsim.enable_fluid_particle_uid_attribute = enable_uid_attribute
+
+    reused_uid_attribute = __get_parameter_data(particles.enable_fluid_particle_uid_attribute_reuse, frameno)
+    fluidsim.enable_fluid_particle_uid_attribute_reuse = reused_uid_attribute
+
     # Surface Settings
 
     surface = dprops.surface
@@ -1184,10 +1211,11 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
     meshing_offset = __get_obstacle_meshing_offset(meshing_mode)
     fluidsim.obstacle_meshing_offset = meshing_offset
 
-    fluidsim.enable_remove_surface_near_domain = \
-        __get_parameter_data(surface.remove_mesh_near_domain, frameno)
-    fluidsim.remove_surface_near_domain_distance = \
-        __get_parameter_data(surface.remove_mesh_near_domain_distance, frameno) - 1
+    fluidsim.enable_remove_surface_near_domain = __get_parameter_data(surface.remove_mesh_near_domain, frameno)
+    fluidsim.remove_surface_near_domain_distance = __get_parameter_data(surface.remove_mesh_near_domain_distance, frameno) - 1
+
+    domain_sides = __get_parameter_data(surface.remove_mesh_near_domain_sides, frameno)
+    fluidsim.remove_surface_near_domain_sides = domain_sides
 
     fluidsim.enable_inverted_contact_normals = \
         __get_parameter_data(surface.invert_contact_normals, frameno)
@@ -1239,8 +1267,7 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
         else:
             fluidsim.enable_mixbox = False
 
-    fluidsim.enable_surface_source_id_attribute = \
-        __get_parameter_data(surface.enable_source_id_attribute, frameno)
+    fluidsim.enable_surface_source_id_attribute =  __get_parameter_data(surface.enable_source_id_attribute, frameno)
 
     is_viscosity_enabled = __get_parameter_data(world.enable_viscosity, frameno)
     if is_viscosity_enabled:
@@ -2146,6 +2173,9 @@ def __update_animatable_domain_properties(fluidsim, data, frameno):
     __set_property(fluidsim, 'enable_remove_surface_near_domain', remove_near_domain)
     __set_property(fluidsim, 'remove_surface_near_domain_distance', near_domain_distance)
 
+    domain_sides = __get_parameter_data(surface.remove_mesh_near_domain_sides, frameno)
+    __set_property(fluidsim, 'remove_surface_near_domain_sides', domain_sides)
+
     invert_contact = __get_parameter_data(surface.invert_contact_normals, frameno)
     __set_property(fluidsim, 'enable_inverted_contact_normals', invert_contact)
 
@@ -2588,6 +2618,19 @@ def __write_fluid_particle_data(cache_directory, fluidsim, frameno):
         with open(source_id_filepath, 'wb') as f:
             f.write(filedata)
 
+    if fluidsim.enable_fluid_particle_uid_attribute:
+        uid_filename = "fluidparticlesuid" + fstring + ".ffp3"
+        uid_filepath = os.path.join(cache_directory, "bakefiles", uid_filename)
+        filedata = fluidsim.get_fluid_particle_uid_attribute_data()
+        with open(uid_filepath, 'wb') as f:
+            f.write(filedata)
+
+        uid_max_filename = "fluidparticlesuidmax" + fstring + ".txt"
+        uid_max_filepath = os.path.join(cache_directory, "bakefiles", uid_max_filename)
+        max_uid_value = fluidsim.get_current_fluid_particle_uid() - 1
+        with open(uid_max_filepath, 'w') as f:
+            f.write(str(max_uid_value))
+
 
 def __write_fluid_particle_debug_data(cache_directory, fluidsim, frameno):
     fstring = __frame_number_to_string(frameno)
@@ -2701,6 +2744,7 @@ def __get_frame_stats_dict(cstats):
     stats["dustlifetime"] = __get_mesh_stats_dict(cstats.dustlifetime)
     stats["fluidparticles"] = __get_mesh_stats_dict(cstats.fluidparticles)
     stats["fluidparticlesid"] = __get_mesh_stats_dict(cstats.fluidparticlesid)
+    stats["fluidparticlesuid"] = __get_mesh_stats_dict(cstats.fluidparticlesuid)
     stats["fluidparticlesvelocity"] = __get_mesh_stats_dict(cstats.fluidparticlesvelocity)
     stats["fluidparticlesspeed"] = __get_mesh_stats_dict(cstats.fluidparticlesspeed)
     stats["fluidparticlesvorticity"] = __get_mesh_stats_dict(cstats.fluidparticlesvorticity)
@@ -2745,6 +2789,7 @@ def __write_autosave_data(domain_data, cache_directory, fluidsim, frameno):
     lifetime_data_path = os.path.join(autosave_dir, "marker_particle_lifetime.data")
     color_data_path = os.path.join(autosave_dir, "marker_particle_color.data")
     source_id_data_path = os.path.join(autosave_dir, "marker_particle_source_id.data")
+    uid_data_path = os.path.join(autosave_dir, "marker_particle_uid.data")
     viscosity_data_path = os.path.join(autosave_dir, "marker_particle_viscosity.data")
     id_data_path = os.path.join(autosave_dir, "marker_particle_id.data")
 
@@ -2777,6 +2822,9 @@ def __write_autosave_data(domain_data, cache_directory, fluidsim, frameno):
             ]
     autosave_source_id_filepaths = [
             source_id_data_path
+            ]
+    autosave_uid_filepaths = [
+            uid_data_path
             ]
     autosave_viscosity_filepaths = [
             viscosity_data_path
@@ -2831,6 +2879,10 @@ def __write_autosave_data(domain_data, cache_directory, fluidsim, frameno):
                 data = fluidsim.get_marker_particle_source_id_data_range(start_idx, end_idx)
                 __write_save_state_file_data(source_id_data_path + temp_extension, data, is_appending_data=is_appending)
 
+            if fluidsim.enable_fluid_particle_uid_attribute:
+                data = fluidsim.get_marker_particle_uid_data_range(start_idx, end_idx)
+                __write_save_state_file_data(uid_data_path + temp_extension, data, is_appending_data=is_appending)
+
             if fluidsim.enable_surface_viscosity_attribute:
                 data = fluidsim.get_marker_particle_viscosity_data_range(start_idx, end_idx)
                 __write_save_state_file_data(viscosity_data_path + temp_extension, data, is_appending_data=is_appending)
@@ -2873,6 +2925,8 @@ def __write_autosave_data(domain_data, cache_directory, fluidsim, frameno):
         autosave_info['frame_id'] = fluidsim.get_current_frame() - 1
         autosave_info['last_frame_id'] = frame_end - frame_start
         autosave_info['num_marker_particles'] = fluidsim.get_num_marker_particles()
+        autosave_info['current_fluid_particle_uid'] = str(fluidsim.get_current_fluid_particle_uid())
+
         autosave_info['marker_particle_position_filedata'] = "marker_particle_position.data"
         autosave_info['marker_particle_velocity_filedata'] = "marker_particle_velocity.data"
         autosave_info['num_diffuse_particles'] = fluidsim.get_num_diffuse_particles()
@@ -2885,6 +2939,7 @@ def __write_autosave_data(domain_data, cache_directory, fluidsim, frameno):
         autosave_info['marker_particle_lifetime_filedata'] = ""
         autosave_info['marker_particle_color_filedata'] = ""
         autosave_info['marker_particle_source_id_filedata'] = ""
+        autosave_info['marker_particle_uid_filedata'] = ""
         autosave_info['marker_particle_viscosity_filedata'] = ""
         autosave_info['marker_particle_id_filedata'] = ""
 
@@ -2910,6 +2965,9 @@ def __write_autosave_data(domain_data, cache_directory, fluidsim, frameno):
 
         if fluidsim.enable_surface_source_id_attribute or fluidsim.enable_fluid_particle_source_id_attribute:
             autosave_info['marker_particle_source_id_filedata'] = "marker_particle_source_id.data"
+
+        if fluidsim.enable_fluid_particle_uid_attribute:
+            autosave_info['marker_particle_uid_filedata'] = "marker_particle_uid.data"
 
         if fluidsim.enable_surface_viscosity_attribute:
             autosave_info['marker_particle_viscosity_filedata'] = "marker_particle_viscosity.data"
@@ -2942,6 +3000,7 @@ def __write_autosave_data(domain_data, cache_directory, fluidsim, frameno):
                           autosave_lifetime_filepaths + 
                           autosave_color_filepaths + 
                           autosave_source_id_filepaths + 
+                          autosave_uid_filepaths + 
                           autosave_viscosity_filepaths + 
                           autosave_id_filepaths + 
                           autosave_diffuse_filepaths
@@ -2972,6 +3031,9 @@ def __write_autosave_data(domain_data, cache_directory, fluidsim, frameno):
                 os.rename(filepath + temp_extension, filepath)
         if fluidsim.enable_surface_source_id_attribute or fluidsim.enable_fluid_particle_source_id_attribute:
             for filepath in autosave_source_id_filepaths:
+                os.rename(filepath + temp_extension, filepath)
+        if fluidsim.enable_fluid_particle_uid_attribute:
+            for filepath in autosave_uid_filepaths:
                 os.rename(filepath + temp_extension, filepath)
         if fluidsim.enable_surface_viscosity_attribute:
             for filepath in autosave_viscosity_filepaths:

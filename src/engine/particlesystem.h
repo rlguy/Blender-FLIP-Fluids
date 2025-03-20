@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2024 Ryan L. Guy
+Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -37,14 +37,15 @@ SOFTWARE.
 
 enum class AttributeDataType : char { 
     UNDEFINED = 0x00,
-    CHAR = 0x01, 
-    UCHAR = 0x02, 
-    BOOL = 0x03,
-    INT = 0x04,
-    ID = 0x05,
-    FLOAT = 0x06, 
-    VECTOR3 = 0x07,
-    UINT16 = 0x08
+    CHAR      = 0x01, 
+    UCHAR     = 0x02, 
+    BOOL      = 0x03,
+    INT       = 0x04,
+    ID        = 0x05,
+    FLOAT     = 0x06, 
+    VECTOR3   = 0x07,
+    UINT16    = 0x08,
+    ULONGLONG = 0x09
 };
 
 
@@ -89,6 +90,7 @@ public:
     ParticleSystemAttribute addAttributeInt(std::string name, int defaultValue=0);
     ParticleSystemAttribute addAttributeID(std::string name, size_t defaultValue=-1);
     ParticleSystemAttribute addAttributeUInt16(std::string name, uint16_t defaultValue=0);
+    ParticleSystemAttribute addAttributeULongLong(std::string name, unsigned long long int defaultValue=0);
     ParticleSystemAttribute addAttributeFloat(std::string name, float defaultValue=0.0f);
     ParticleSystemAttribute addAttributeVector3(std::string name, vmath::vec3 defaultValue=vmath::vec3());
 
@@ -109,6 +111,9 @@ public:
 
     std::vector<uint16_t> *getAttributeValuesUInt16(ParticleSystemAttribute &att);
     std::vector<uint16_t> *getAttributeValuesUInt16(std::string name);
+
+    std::vector<unsigned long long int> *getAttributeValuesULongLong(ParticleSystemAttribute &att);
+    std::vector<unsigned long long int> *getAttributeValuesULongLong(std::string name);
 
     std::vector<float> *getAttributeValuesFloat(ParticleSystemAttribute &att);
     std::vector<float> *getAttributeValuesFloat(std::string name);
@@ -138,6 +143,9 @@ public:
                 break;
             case AttributeDataType::UINT16:
                 values = (std::vector<T>*)getAttributeValuesUInt16(att);
+                break;
+            case AttributeDataType::ULONGLONG:
+                values = (std::vector<T>*)getAttributeValuesULongLong(att);
                 break;
             case AttributeDataType::FLOAT:
                 values = (std::vector<T>*)getAttributeValuesFloat(att);
@@ -179,6 +187,9 @@ public:
                 break;
             case AttributeDataType::UINT16:
                 value = (T*)&(_uint16Defaults[att.id]);
+                break;
+            case AttributeDataType::ULONGLONG:
+                value = (T*)&(_uLongLongDefaults[att.id]);
                 break;
             case AttributeDataType::FLOAT:
                 value = (T*)&(_floatDefaults[att.id]);
@@ -300,6 +311,7 @@ private:
     std::vector<std::vector<int> > _intAttributes;
     std::vector<std::vector<size_t> > _idAttributes;
     std::vector<std::vector<uint16_t> > _uint16Attributes;
+    std::vector<std::vector<unsigned long long int> > _uLongLongAttributes;
     std::vector<std::vector<float> > _floatAttributes;
     std::vector<std::vector<vmath::vec3> > _vector3Attributes;
 
@@ -309,6 +321,7 @@ private:
     std::vector<int> _intDefaults;
     std::vector<size_t> _idDefaults;
     std::vector<uint16_t> _uint16Defaults;
+    std::vector<unsigned long long int> _uLongLongDefaults;
     std::vector<float> _floatDefaults;
     std::vector<vmath::vec3> _vector3Defaults;
 

@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2024 Ryan L. Guy
+# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -264,7 +264,7 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
             row = column.row(align=True)
             row.prop(wprops, "enable_viscosity")
 
-            if vcu.get_addon_preferences().is_developer_tools_enabled():
+            if vcu.get_addon_preferences().is_extra_features_enabled():
                 row = row.row(align=True)
                 row.enabled = wprops.enable_viscosity
                 row.prop(attrprops, "enable_viscosity_attribute", text="Variable Viscosity")

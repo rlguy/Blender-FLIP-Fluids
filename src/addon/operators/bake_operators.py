@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2024 Ryan L. Guy
+# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -144,7 +144,8 @@ class BakeFluidSimulation(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.timer = None
         self.thread = None
         self.is_export_operator_launched = False
@@ -372,7 +373,8 @@ class BakeFluidSimulationCommandLine(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.thread = None
         self.mesh_data = {}
         self.data = BakeData()

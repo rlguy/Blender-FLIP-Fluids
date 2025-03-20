@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2024 Ryan L. Guy
+Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -998,6 +998,54 @@ extern "C" {
         );
     }
 
+    EXPORTDLL void FluidSimulation_enable_fluid_particle_uid_attribute(FluidSimulation* obj, int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableFluidParticleUIDAttribute, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_fluid_particle_uid_attribute(FluidSimulation* obj, int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableFluidParticleUIDAttribute, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_fluid_particle_uid_attribute_enabled(FluidSimulation* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isFluidParticleUIDAttributeEnabled, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_enable_fluid_particle_uid_attribute_reuse(FluidSimulation* obj, int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableFluidParticleUIDAttributeReuse, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_fluid_particle_uid_attribute_reuse(FluidSimulation* obj, int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableFluidParticleUIDAttributeReuse, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_fluid_particle_uid_attribute_reuse_enabled(FluidSimulation* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isFluidParticleUIDAttributeReuseEnabled, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_get_current_fluid_particle_uid(FluidSimulation* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getCurrentFluidParticleUID, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_set_current_fluid_particle_uid(FluidSimulation* obj, int uid, int *err) {
+        return CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setCurrentFluidParticleUID, uid, err
+        );
+    }
+
     EXPORTDLL void FluidSimulation_enable_surface_velocity_attribute(FluidSimulation* obj,
                                                                      int *err) {
         CBindings::safe_execute_method_void_0param(
@@ -1371,6 +1419,29 @@ extern "C" {
                                                                            int *err) {
         CBindings::safe_execute_method_void_1param(
             obj, &FluidSimulation::setRemoveSurfaceNearDomainDistance, n, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_get_remove_surface_near_domain_sides(FluidSimulation* obj, 
+                                                                        int *result, int *err) {
+        std::vector<bool> boolvect = CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getRemoveSurfaceNearDomainSides, err
+        );
+
+        for (int i = 0; i < 6; i++) {
+            result[i] = boolvect[i];
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_set_remove_surface_near_domain_sides(FluidSimulation* obj, 
+                                                                        int *active, int *err) {
+        std::vector<bool> boolvect;
+        for (int i = 0; i < 6; i++) {
+            boolvect.push_back(active[i] != 0);
+        }
+
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setRemoveSurfaceNearDomainSides, boolvect, err
         );
     }
 
@@ -3824,6 +3895,19 @@ extern "C" {
         return 0;
     }
 
+    EXPORTDLL int FluidSimulation_get_fluid_particle_uid_attribute_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getFluidParticleUIDAttributeData();
+            return (int)data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
     EXPORTDLL int FluidSimulation_get_fluid_particle_debug_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
@@ -4448,6 +4532,18 @@ extern "C" {
         }
     }
 
+    EXPORTDLL void FluidSimulation_get_fluid_particle_uid_attribute_data(FluidSimulation* obj, 
+                                                                         char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getFluidParticleUIDAttributeData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
     EXPORTDLL void FluidSimulation_get_fluid_particle_debug_data(FluidSimulation* obj, 
                                                                  char *c_data, int *err) {
         *err = CBindings::SUCCESS;
@@ -4592,10 +4688,21 @@ extern "C" {
     }
 
     EXPORTDLL void FluidSimulation_get_marker_particle_source_id_data_range(FluidSimulation* obj, 
-                                                                      int start_idx, int end_idx, char *c_data, int *err) {
+                                                                            int start_idx, int end_idx, char *c_data, int *err) {
         *err = CBindings::SUCCESS;
         try {
             obj->getMarkerParticleSourceIDDataRange(start_idx, end_idx, c_data);
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_marker_particle_uid_data_range(FluidSimulation* obj, 
+                                                                      int start_idx, int end_idx, char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            obj->getMarkerParticleUIDDataRange(start_idx, end_idx, c_data);
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -4773,6 +4880,14 @@ extern "C" {
                                                                  int *err) {
         CBindings::safe_execute_method_void_1param(
             obj, &FluidSimulation::loadMarkerParticleSourceIDData, data, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_load_marker_particle_uid_data(FluidSimulation* obj, 
+                                                                 FluidSimulationMarkerParticleUIDData data, 
+                                                                 int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::loadMarkerParticleUIDData, data, err
         );
     }
 

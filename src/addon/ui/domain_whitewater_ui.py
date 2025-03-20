@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2024 Ryan L. Guy
+# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,15 +44,15 @@ def _draw_geometry_attributes_menu(self, context):
     row.label(text="Whitewater Attributes:")
 
     if wprops.geometry_attributes_expanded:
-        if not prefs.is_developer_tools_enabled():
+        if not prefs.is_extra_features_enabled():
             warn_box = box.box()
             warn_column = warn_box.column(align=True)
             warn_column.enabled = True
             warn_column.label(text="     This feature is affected by a current bug in Blender.", icon='ERROR')
-            warn_column.label(text="     The Developer Tools option must be enabled in preferences")
+            warn_column.label(text="     The Extra Features option must be enabled in preferences")
             warn_column.label(text="     to use this feature.")
             warn_column.separator()
-            warn_column.prop(prefs, "enable_developer_tools", text="Enable Developer Tools in Preferences")
+            warn_column.prop(prefs, "enable_extra_features", text="Enable Extra Features in Preferences")
             warn_column.separator()
             warn_column.operator(
                 "wm.url_open", 
@@ -81,7 +81,7 @@ def _draw_geometry_attributes_menu(self, context):
             row.alignment = 'RIGHT'
             row.label(text="(Blender 3.1 or later required)")
             return
-        if not prefs.is_developer_tools_enabled():
+        if not prefs.is_extra_features_enabled():
             return
         row = row.row(align=True)
         row.alignment = 'RIGHT'

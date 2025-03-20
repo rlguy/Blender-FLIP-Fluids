@@ -1,0 +1,1020 @@
+{
+    "description": "Default Settings",
+    "identifier": "PRESET_DEFAULT",
+    "name": "Default",
+    "properties": [
+        {
+            "path": "domain.render.render_display",
+            "value": "DISPLAY_FINAL"
+        },
+        {
+            "path": "domain.render.viewport_display",
+            "value": "DISPLAY_FINAL"
+        },
+        {
+            "path": "domain.render.fluid_particle_render_display",
+            "value": "DISPLAY_FINAL"
+        },
+        {
+            "path": "domain.render.fluid_particle_viewport_display",
+            "value": "DISPLAY_PREVIEW"
+        },
+        {
+            "path": "domain.render.whitewater_render_display",
+            "value": "DISPLAY_FINAL"
+        },
+        {
+            "path": "domain.render.whitewater_viewport_display",
+            "value": "DISPLAY_FINAL"
+        },
+        {
+            "path": "domain.render.render_surface_motion_blur",
+            "value": true
+        },
+        {
+            "path": "domain.render.override_frame",
+            "value": 1.0
+        },
+        {
+            "path": "domain.render.whitewater_view_settings_mode",
+            "value": "VIEW_SETTINGS_WHITEWATER"
+        },
+        {
+            "path": "domain.render.whitewater_particle_object_settings_mode",
+            "value": "WHITEWATER_OBJECT_SETTINGS_WHITEWATER"
+        },
+        {
+            "path": "domain.render.render_whitewater_pct",
+            "value": 100
+        },
+        {
+            "path": "domain.render.viewport_whitewater_pct",
+            "value": 5
+        },
+        {
+            "path": "domain.render.render_foam_pct",
+            "value": 100
+        },
+        {
+            "path": "domain.render.render_bubble_pct",
+            "value": 100
+        },
+        {
+            "path": "domain.render.render_spray_pct",
+            "value": 100
+        },
+        {
+            "path": "domain.render.render_dust_pct",
+            "value": 100
+        },
+        {
+            "path": "domain.render.viewport_foam_pct",
+            "value": 5
+        },
+        {
+            "path": "domain.render.viewport_bubble_pct",
+            "value": 5
+        },
+        {
+            "path": "domain.render.viewport_spray_pct",
+            "value": 5
+        },
+        {
+            "path": "domain.render.viewport_dust_pct",
+            "value": 5
+        },
+        {
+            "path": "domain.render.whitewater_particle_scale",
+            "value": 0.00800000037997961
+        },
+        {
+            "path": "domain.render.foam_particle_scale",
+            "value": 0.00800000037997961
+        },
+        {
+            "path": "domain.render.bubble_particle_scale",
+            "value": 0.00800000037997961
+        },
+        {
+            "path": "domain.render.spray_particle_scale",
+            "value": 0.00800000037997961
+        },
+        {
+            "path": "domain.render.dust_particle_scale",
+            "value": 0.00800000037997961
+        },
+        {
+            "path": "domain.simulation.resolution",
+            "value": 65
+        },
+        {
+            "path": "domain.simulation.preview_resolution",
+            "value": 45
+        },
+        {
+            "path": "domain.simulation.auto_preview_resolution",
+            "value": true
+        },
+        {
+            "path": "domain.simulation.lock_cell_size",
+            "value": false
+        },
+        {
+            "path": "domain.simulation.frame_rate_mode",
+            "value": "FRAME_RATE_MODE_SCENE"
+        },
+        {
+            "path": "domain.simulation.frame_rate_custom",
+            "value": 25.0
+        },
+        {
+            "path": "domain.simulation.time_scale_mode",
+            "value": "TIME_SCALE_MODE_CUSTOM"
+        },
+        {
+            "path": "domain.simulation.time_scale",
+            "value": 1.0
+        },
+        {
+            "path": "domain.simulation.fluid_boundary_collisions",
+            "value": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+            ]
+        },
+        {
+            "path": "domain.simulation.fluid_open_boundary_width",
+            "value": 4
+        },
+        {
+            "path": "domain.simulation.frame_range_mode",
+            "value": "FRAME_RANGE_TIMELINE"
+        },
+        {
+            "path": "domain.simulation.frame_range_custom",
+            "value": [
+                1,
+                250
+            ]
+        },
+        {
+            "path": "domain.simulation.update_settings_on_resume",
+            "value": true
+        },
+        {
+            "path": "domain.simulation.enable_savestates",
+            "value": true
+        },
+        {
+            "path": "domain.simulation.savestate_interval",
+            "value": 50
+        },
+        {
+            "path": "domain.simulation.delete_outdated_savestates",
+            "value": true
+        },
+        {
+            "path": "domain.simulation.delete_outdated_meshes",
+            "value": true
+        },
+        {
+            "path": "domain.particles.enable_fluid_particle_output",
+            "value": false
+        },
+        {
+            "path": "domain.particles.fluid_particle_output_amount",
+            "value": 1.0
+        },
+        {
+            "path": "domain.particles.enable_fluid_particle_surface_output",
+            "value": true
+        },
+        {
+            "path": "domain.particles.enable_fluid_particle_boundary_output",
+            "value": true
+        },
+        {
+            "path": "domain.particles.enable_fluid_particle_interior_output",
+            "value": true
+        },
+        {
+            "path": "domain.particles.fluid_particle_source_id_blacklist",
+            "value": -1
+        },
+        {
+            "path": "domain.particles.enable_fluid_particle_velocity_vector_attribute",
+            "value": false
+        },
+        {
+            "path": "domain.particles.enable_fluid_particle_speed_attribute",
+            "value": false
+        },
+        {
+            "path": "domain.particles.enable_fluid_particle_vorticity_vector_attribute",
+            "value": false
+        },
+        {
+            "path": "domain.particles.enable_fluid_particle_color_attribute",
+            "value": false
+        },
+        {
+            "path": "domain.particles.enable_fluid_particle_age_attribute",
+            "value": false
+        },
+        {
+            "path": "domain.particles.enable_fluid_particle_lifetime_attribute",
+            "value": false
+        },
+        {
+            "path": "domain.particles.enable_fluid_particle_whitewater_proximity_attribute",
+            "value": false
+        },
+        {
+            "path": "domain.particles.enable_fluid_particle_source_id_attribute",
+            "value": false
+        },
+        {
+            "path": "domain.particles.enable_fluid_particle_uid_attribute",
+            "value": false
+        },
+        {
+            "path": "domain.particles.enable_fluid_particle_uid_attribute_reuse",
+            "value": true
+        },
+        {
+            "path": "domain.surface.enable_surface_mesh_generation",
+            "value": true
+        },
+        {
+            "path": "domain.surface.subdivisions",
+            "value": 1
+        },
+        {
+            "path": "domain.surface.particle_scale",
+            "value": 1.0
+        },
+        {
+            "path": "domain.surface.compute_chunk_mode",
+            "value": "COMPUTE_CHUNK_MODE_AUTO"
+        },
+        {
+            "path": "domain.surface.compute_chunks_fixed",
+            "value": 1
+        },
+        {
+            "path": "domain.surface.meshing_volume_mode",
+            "value": "MESHING_VOLUME_MODE_DOMAIN"
+        },
+        {
+            "path": "domain.surface.export_animated_meshing_volume_object",
+            "value": false
+        },
+        {
+            "path": "domain.surface.enable_meshing_offset",
+            "value": true
+        },
+        {
+            "path": "domain.surface.obstacle_meshing_mode",
+            "value": "MESHING_MODE_INSIDE_SURFACE"
+        },
+        {
+            "path": "domain.surface.remove_mesh_near_domain",
+            "value": false
+        },
+        {
+            "path": "domain.surface.remove_mesh_near_domain_distance",
+            "value": 1
+        },
+        {
+            "path": "domain.surface.smoothing_value",
+            "value": 0.5
+        },
+        {
+            "path": "domain.surface.smoothing_iterations",
+            "value": 2
+        },
+        {
+            "path": "domain.surface.invert_contact_normals",
+            "value": false
+        },
+        {
+            "path": "domain.surface.generate_motion_blur_data",
+            "value": false
+        },
+        {
+            "path": "domain.surface.enable_velocity_vector_attribute",
+            "value": false
+        },
+        {
+            "path": "domain.surface.enable_velocity_vector_attribute_against_obstacles",
+            "value": true
+        },
+        {
+            "path": "domain.surface.enable_speed_attribute",
+            "value": false
+        },
+        {
+            "path": "domain.surface.enable_vorticity_vector_attribute",
+            "value": false
+        },
+        {
+            "path": "domain.surface.enable_age_attribute",
+            "value": false
+        },
+        {
+            "path": "domain.surface.age_attribute_radius",
+            "value": 3.0
+        },
+        {
+            "path": "domain.surface.enable_lifetime_attribute",
+            "value": false
+        },
+        {
+            "path": "domain.surface.lifetime_attribute_radius",
+            "value": 3.0
+        },
+        {
+            "path": "domain.surface.lifetime_attribute_death_time",
+            "value": 0.0
+        },
+        {
+            "path": "domain.surface.enable_whitewater_proximity_attribute",
+            "value": false
+        },
+        {
+            "path": "domain.surface.whitewater_proximity_attribute_radius",
+            "value": 2.0
+        },
+        {
+            "path": "domain.surface.enable_color_attribute",
+            "value": false
+        },
+        {
+            "path": "domain.surface.color_attribute_radius",
+            "value": 3.0
+        },
+        {
+            "path": "domain.surface.enable_color_attribute_mixing",
+            "value": false
+        },
+        {
+            "path": "domain.surface.color_attribute_mixing_rate",
+            "value": 12.0
+        },
+        {
+            "path": "domain.surface.color_attribute_mixing_radius",
+            "value": 1.0
+        },
+        {
+            "path": "domain.surface.color_attribute_mixing_mode",
+            "value": "COLOR_MIXING_MODE_MIXBOX"
+        },
+        {
+            "path": "domain.surface.enable_source_id_attribute",
+            "value": false
+        },
+        {
+            "path": "domain.surface.enable_viscosity_attribute",
+            "value": false
+        },
+        {
+            "path": "domain.whitewater.enable_whitewater_simulation",
+            "value": false
+        },
+        {
+            "path": "domain.whitewater.enable_foam",
+            "value": true
+        },
+        {
+            "path": "domain.whitewater.enable_bubbles",
+            "value": true
+        },
+        {
+            "path": "domain.whitewater.enable_spray",
+            "value": true
+        },
+        {
+            "path": "domain.whitewater.enable_dust",
+            "value": false
+        },
+        {
+            "path": "domain.whitewater.generate_whitewater_motion_blur_data",
+            "value": false
+        },
+        {
+            "path": "domain.whitewater.enable_velocity_vector_attribute",
+            "value": false
+        },
+        {
+            "path": "domain.whitewater.enable_id_attribute",
+            "value": true
+        },
+        {
+            "path": "domain.whitewater.enable_lifetime_attribute",
+            "value": false
+        },
+        {
+            "path": "domain.whitewater.enable_whitewater_emission",
+            "value": true
+        },
+        {
+            "path": "domain.whitewater.whitewater_emitter_generation_rate",
+            "value": 100
+        },
+        {
+            "path": "domain.whitewater.wavecrest_emission_rate",
+            "value": 175.0
+        },
+        {
+            "path": "domain.whitewater.turbulence_emission_rate",
+            "value": 175.0
+        },
+        {
+            "path": "domain.whitewater.dust_emission_rate",
+            "value": 175.0
+        },
+        {
+            "path": "domain.whitewater.spray_emission_speed",
+            "value": 1.2000000476837158
+        },
+        {
+            "path": "domain.whitewater.min_max_whitewater_energy_speed",
+            "value": [
+                0.20000000298023224,
+                3.0
+            ]
+        },
+        {
+            "path": "domain.whitewater.min_max_whitewater_wavecrest_curvature",
+            "value": [
+                0.4000000059604645,
+                1.0
+            ]
+        },
+        {
+            "path": "domain.whitewater.min_max_whitewater_turbulence",
+            "value": [
+                100.0,
+                200.0
+            ]
+        },
+        {
+            "path": "domain.whitewater.max_whitewater_particles",
+            "value": 12.0
+        },
+        {
+            "path": "domain.whitewater.enable_whitewater_emission_near_boundary",
+            "value": false
+        },
+        {
+            "path": "domain.whitewater.enable_dust_emission_near_boundary",
+            "value": false
+        },
+        {
+            "path": "domain.whitewater.min_max_whitewater_lifespan",
+            "value": [
+                0.5,
+                6.0
+            ]
+        },
+        {
+            "path": "domain.whitewater.whitewater_lifespan_variance",
+            "value": 3.0
+        },
+        {
+            "path": "domain.whitewater.foam_lifespan_modifier",
+            "value": 1.0
+        },
+        {
+            "path": "domain.whitewater.bubble_lifespan_modifier",
+            "value": 4.0
+        },
+        {
+            "path": "domain.whitewater.spray_lifespan_modifier",
+            "value": 5.0
+        },
+        {
+            "path": "domain.whitewater.dust_lifespan_modifier",
+            "value": 2.0
+        },
+        {
+            "path": "domain.whitewater.foam_advection_strength",
+            "value": 1.0
+        },
+        {
+            "path": "domain.whitewater.foam_layer_depth",
+            "value": 0.4000000059604645
+        },
+        {
+            "path": "domain.whitewater.foam_layer_offset",
+            "value": 0.25
+        },
+        {
+            "path": "domain.whitewater.preserve_foam",
+            "value": true
+        },
+        {
+            "path": "domain.whitewater.foam_preservation_rate",
+            "value": 0.75
+        },
+        {
+            "path": "domain.whitewater.min_max_foam_density",
+            "value": [
+                20,
+                45
+            ]
+        },
+        {
+            "path": "domain.whitewater.bubble_drag_coefficient",
+            "value": 0.800000011920929
+        },
+        {
+            "path": "domain.whitewater.bubble_bouyancy_coefficient",
+            "value": 2.5
+        },
+        {
+            "path": "domain.whitewater.spray_drag_coefficient",
+            "value": 3.0
+        },
+        {
+            "path": "domain.whitewater.dust_drag_coefficient",
+            "value": 0.75
+        },
+        {
+            "path": "domain.whitewater.dust_bouyancy_coefficient",
+            "value": -3.0
+        },
+        {
+            "path": "domain.whitewater.foam_boundary_behaviour",
+            "value": "BEHAVIOUR_COLLIDE"
+        },
+        {
+            "path": "domain.whitewater.bubble_boundary_behaviour",
+            "value": "BEHAVIOUR_COLLIDE"
+        },
+        {
+            "path": "domain.whitewater.spray_boundary_behaviour",
+            "value": "BEHAVIOUR_COLLIDE"
+        },
+        {
+            "path": "domain.whitewater.foam_boundary_active",
+            "value": [
+                true,
+                true,
+                true,
+                true,
+                false,
+                true
+            ]
+        },
+        {
+            "path": "domain.whitewater.bubble_boundary_active",
+            "value": [
+                true,
+                true,
+                true,
+                true,
+                false,
+                true
+            ]
+        },
+        {
+            "path": "domain.whitewater.spray_boundary_active",
+            "value": [
+                true,
+                true,
+                true,
+                true,
+                false,
+                true
+            ]
+        },
+        {
+            "path": "domain.whitewater.whitewater_boundary_collisions_mode",
+            "value": "BOUNDARY_COLLISIONS_MODE_INHERIT"
+        },
+        {
+            "path": "domain.whitewater.foam_boundary_collisions",
+            "value": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+            ]
+        },
+        {
+            "path": "domain.whitewater.bubble_boundary_collisions",
+            "value": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+            ]
+        },
+        {
+            "path": "domain.whitewater.spray_boundary_collisions",
+            "value": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+            ]
+        },
+        {
+            "path": "domain.whitewater.dust_boundary_collisions",
+            "value": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+            ]
+        },
+        {
+            "path": "domain.whitewater.obstacle_influence_base_level",
+            "value": 1.0
+        },
+        {
+            "path": "domain.whitewater.obstacle_influence_decay_rate",
+            "value": 5.0
+        },
+        {
+            "path": "domain.world.world_scale_mode",
+            "value": "WORLD_SCALE_MODE_RELATIVE"
+        },
+        {
+            "path": "domain.world.world_scale_relative",
+            "value": 1.0
+        },
+        {
+            "path": "domain.world.world_scale_absolute",
+            "value": 10.0
+        },
+        {
+            "path": "domain.world.gravity_type",
+            "value": "GRAVITY_TYPE_SCENE"
+        },
+        {
+            "path": "domain.world.gravity",
+            "value": [
+                0.0,
+                0.0,
+                -9.8100004196167
+            ]
+        },
+        {
+            "path": "domain.world.force_field_resolution",
+            "value": "FORCE_FIELD_RESOLUTION_ULTRA"
+        },
+        {
+            "path": "domain.world.force_field_weight_fluid_particles",
+            "value": 1.0
+        },
+        {
+            "path": "domain.world.force_field_weight_whitewater_foam",
+            "value": 1.0
+        },
+        {
+            "path": "domain.world.force_field_weight_whitewater_bubble",
+            "value": 1.0
+        },
+        {
+            "path": "domain.world.force_field_weight_whitewater_spray",
+            "value": 1.0
+        },
+        {
+            "path": "domain.world.force_field_weight_whitewater_dust",
+            "value": 1.0
+        },
+        {
+            "path": "domain.world.enable_viscosity",
+            "value": false
+        },
+        {
+            "path": "domain.world.viscosity",
+            "value": 5.0
+        },
+        {
+            "path": "domain.world.viscosity_exponent",
+            "value": 0
+        },
+        {
+            "path": "domain.world.viscosity_solver_error_tolerance",
+            "value": 4
+        },
+        {
+            "path": "domain.world.enable_surface_tension",
+            "value": false
+        },
+        {
+            "path": "domain.world.surface_tension",
+            "value": 0.25
+        },
+        {
+            "path": "domain.world.surface_tension_exponent",
+            "value": 0
+        },
+        {
+            "path": "domain.world.surface_tension_accuracy",
+            "value": 95
+        },
+        {
+            "path": "domain.world.surface_tension_solver_method",
+            "value": "SURFACE_TENSION_SOLVER_METHOD_REGULAR"
+        },
+        {
+            "path": "domain.world.enable_sheet_seeding",
+            "value": false
+        },
+        {
+            "path": "domain.world.sheet_fill_rate",
+            "value": 0.5
+        },
+        {
+            "path": "domain.world.sheet_fill_threshold",
+            "value": 0.10000000149011612
+        },
+        {
+            "path": "domain.world.boundary_friction",
+            "value": 0.0
+        },
+        {
+            "path": "domain.materials.surface_material",
+            "value": "MATERIAL_NONE"
+        },
+        {
+            "path": "domain.materials.fluid_particles_material",
+            "value": "MATERIAL_NONE"
+        },
+        {
+            "path": "domain.materials.whitewater_foam_material",
+            "value": "MATERIAL_NONE"
+        },
+        {
+            "path": "domain.materials.whitewater_bubble_material",
+            "value": "MATERIAL_NONE"
+        },
+        {
+            "path": "domain.materials.whitewater_spray_material",
+            "value": "MATERIAL_NONE"
+        },
+        {
+            "path": "domain.materials.whitewater_dust_material",
+            "value": "MATERIAL_NONE"
+        },
+        {
+            "path": "domain.advanced.min_max_time_steps_per_frame",
+            "value": [
+                1,
+                24
+            ]
+        },
+        {
+            "path": "domain.advanced.enable_adaptive_obstacle_time_stepping",
+            "value": false
+        },
+        {
+            "path": "domain.advanced.enable_adaptive_force_field_time_stepping",
+            "value": false
+        },
+        {
+            "path": "domain.advanced.particle_jitter_factor",
+            "value": 1.0
+        },
+        {
+            "path": "domain.advanced.jitter_surface_particles",
+            "value": false
+        },
+        {
+            "path": "domain.advanced.pressure_solver_max_iterations",
+            "value": 900
+        },
+        {
+            "path": "domain.advanced.viscosity_solver_max_iterations",
+            "value": 900
+        },
+        {
+            "path": "domain.advanced.velocity_transfer_method",
+            "value": "VELOCITY_TRANSFER_METHOD_FLIP"
+        },
+        {
+            "path": "domain.advanced.PICFLIP_ratio",
+            "value": 0.05000000074505806
+        },
+        {
+            "path": "domain.advanced.PICAPIC_ratio",
+            "value": 0.0
+        },
+        {
+            "path": "domain.advanced.CFL_condition_number",
+            "value": 5
+        },
+        {
+            "path": "domain.advanced.enable_extreme_velocity_removal",
+            "value": true
+        },
+        {
+            "path": "domain.advanced.enable_gpu_features",
+            "value": true
+        },
+        {
+            "path": "domain.advanced.threading_mode",
+            "value": "THREADING_MODE_AUTO_DETECT"
+        },
+        {
+            "path": "domain.advanced.num_threads_fixed",
+            "value": 4
+        },
+        {
+            "path": "domain.advanced.enable_asynchronous_meshing",
+            "value": true
+        },
+        {
+            "path": "domain.advanced.enable_fracture_optimization",
+            "value": false
+        },
+        {
+            "path": "domain.advanced.precompute_static_obstacles",
+            "value": true
+        },
+        {
+            "path": "domain.advanced.reserve_temporary_grids",
+            "value": true
+        },
+        {
+            "path": "domain.advanced.disable_changing_topology_warning",
+            "value": false
+        },
+        {
+            "path": "domain.debug.display_simulation_grid",
+            "value": false
+        },
+        {
+            "path": "domain.debug.grid_display_mode",
+            "value": "GRID_DISPLAY_SIMULATION"
+        },
+        {
+            "path": "domain.debug.grid_display_scale",
+            "value": 1
+        },
+        {
+            "path": "domain.debug.enabled_debug_grids",
+            "value": [
+                true,
+                true,
+                true
+            ]
+        },
+        {
+            "path": "domain.debug.x_grid_color",
+            "value": [
+                0.5,
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "path": "domain.debug.y_grid_color",
+            "value": [
+                0.0,
+                0.5,
+                0.0
+            ]
+        },
+        {
+            "path": "domain.debug.z_grid_color",
+            "value": [
+                0.0,
+                0.0,
+                0.5
+            ]
+        },
+        {
+            "path": "domain.debug.debug_grid_offsets",
+            "value": [
+                0.0,
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "path": "domain.debug.snap_offsets_to_grid",
+            "value": true
+        },
+        {
+            "path": "domain.debug.enable_fluid_particle_debug_output",
+            "value": false
+        },
+        {
+            "path": "domain.debug.fluid_particles_visibility",
+            "value": true
+        },
+        {
+            "path": "domain.debug.low_speed_particle_color",
+            "value": [
+                0.0,
+                0.0,
+                1.0
+            ]
+        },
+        {
+            "path": "domain.debug.high_speed_particle_color",
+            "value": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "path": "domain.debug.min_gradient_speed",
+            "value": 0.0
+        },
+        {
+            "path": "domain.debug.max_gradient_speed",
+            "value": 5.0
+        },
+        {
+            "path": "domain.debug.fluid_particle_gradient_mode",
+            "value": "GRADIENT_RGB"
+        },
+        {
+            "path": "domain.debug.particle_size",
+            "value": 1
+        },
+        {
+            "path": "domain.debug.low_force_field_color",
+            "value": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "path": "domain.debug.high_force_field_color",
+            "value": [
+                1.0,
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "path": "domain.debug.min_gradient_force",
+            "value": 0.0
+        },
+        {
+            "path": "domain.debug.max_gradient_force",
+            "value": 15.0
+        },
+        {
+            "path": "domain.debug.force_field_gradient_mode",
+            "value": "GRADIENT_RGB"
+        },
+        {
+            "path": "domain.debug.export_force_field",
+            "value": false
+        },
+        {
+            "path": "domain.debug.force_field_visibility",
+            "value": true
+        },
+        {
+            "path": "domain.debug.force_field_line_size",
+            "value": 2
+        },
+        {
+            "path": "domain.debug.export_internal_obstacle_mesh",
+            "value": false
+        },
+        {
+            "path": "domain.debug.internal_obstacle_mesh_visibility",
+            "value": true
+        },
+        {
+            "path": "domain.debug.display_console_output",
+            "value": true
+        },
+        {
+            "path": "domain.stats.cache_info_type",
+            "value": "CACHE_INFO"
+        },
+        {
+            "path": "domain.stats.lock_info_frame_to_timeline",
+            "value": true
+        },
+        {
+            "path": "domain.stats.csv_region_format",
+            "value": "CSV_REGION_US"
+        }
+    ]
+}
