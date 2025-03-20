@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2024 Ryan L. Guy
+# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -918,7 +918,7 @@ def get_system_info_dict():
     developer_tools_string = "Uknown"
     try:
         preferences = vcu.get_addon_preferences()
-        developer_tools_string = "Enabled" if preferences.enable_developer_tools else "Disabled"
+        developer_tools_string = "Enabled" if preferences.enable_extra_features else "Disabled"
     except Exception as e:
         print(traceback.format_exc())
         print(e)

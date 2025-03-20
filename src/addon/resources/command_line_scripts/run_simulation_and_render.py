@@ -6,12 +6,19 @@ def play_sound(json_audio_filepath, block=False):
         return
 
     try:
-    	prefs = bpy.context.preferences.addons["flip_fluids_addon"].preferences
+        if bpy.app.version >= (4, 2, 0):
+            for module in bpy.context.preferences.addons:
+                module_name = module.module
+                if module_name.endswith("flip_fluids_addon"):
+                    prefs = bpy.context.preferences.addons[module_name].preferences
+                    break
+        else:
+            prefs = bpy.context.preferences.addons["flip_fluids_addon"].preferences
     except:
-    	print("FLIP Fluids: Unable to locate addon preferences")
-    	return
+        return
+        
     if not prefs.enable_bake_alarm:
-    	return
+        return
 
     import aud
 
@@ -34,7 +41,7 @@ def play_sound(json_audio_filepath, block=False):
 
 bpy.ops.flip_fluid_operators.bake_fluid_simulation_cmd()
 bpy.ops.wm.revert_mainfile()
-bpy.ops.render.render(animation=True)
+bpy.ops.flip_fluid_operators.helper_command_line_render()
 
 resources_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 audio_json_filepath = os.path.join(resources_directory, "sounds", "alarm", "sound_data.json")

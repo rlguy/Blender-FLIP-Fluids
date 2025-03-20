@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2024 Ryan L. Guy
+# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,6 +50,9 @@ def frame_change_post_apply_T71908_workaround(context, depsgraph=None):
     for p in render_paths:
         setattr(dprops.render, p, getattr(dprops_eval.render, p))
 
+    # Apply to FLIP Fluids sidebar
+    dprops.render.override_frame = dprops_eval.render.override_frame
+
     # Apply to any Ocean Modifer's 'Time' value on the mesh objects, a common issue for this bug
 
     cache_objects = [
@@ -78,6 +81,10 @@ def frame_change_post_apply_T71908_workaround(context, depsgraph=None):
         "Input_8",  # Enable Motion Blur
         "Input_9",  # Enable Point Cloud
         "Input_10", # Enable Instancing
+        "Socket_0", # Fading Strength / Blur Velocity For Fading
+        "Socket_1", # Fading Width
+        "Socket_2", # Particle Scale Random
+        "Socket_4", # Fading Density
     ]
 
     for obj in cache_objects:
@@ -195,8 +202,14 @@ def get_enabled_features_affected_by_T88811(domain_properties=None):
 
     if dprops.whitewater.enable_velocity_vector_attribute:
         data_dict["attributes"]["whitewater"].append("Velocity")
+
+    # Disabled to prevent the warning popup from displaying on default settings (Whitewater ID enabled by default)
+    # TODO: Rework this warning to be less intrusive
+    """
     if dprops.whitewater.enable_id_attribute:
         data_dict["attributes"]["whitewater"].append("ID")
+    """
+
     if dprops.whitewater.enable_lifetime_attribute:
         data_dict["attributes"]["whitewater"].append("Lifetime")
 

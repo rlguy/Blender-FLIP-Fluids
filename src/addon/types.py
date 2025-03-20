@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2024 Ryan L. Guy
+# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -227,6 +227,16 @@ cmd_bake_and_render_mode = (
 cmd_render_after_bake_mode = (
     ('CMD_RENDER_MODE_NORMAL', "Normal", "Launch normal command line render. This is equivalent to executing the 'Launch Render' operator."),
     ('CMD_RENDER_MODE_BATCH',  "Batch",  "Launch batch file command line render. This is equivalent to executing the 'Generate Batch File' operator followed by the 'Launch Batch File Render' operator."),
+    )
+
+cmd_render_animation_mode = (
+    ('CMD_RENDER_MODE_NORMAL',          "Normal",          "Launch a normal command line animation render. This is equivalent to the Blender 'Render Animation' operator."),
+    ('CMD_RENDER_MODE_BATCH',           "Batch",           "Launch a batch command line animation render that renders each frame one by one, closing Blender after each frame. Useful for freeing system resources between frames and for automatically continuing the render if a crash is encountered."),
+    ('CMD_RENDER_MODE_MULTI_INSTANCE',  "Multi Instance",  "Launch multiple command line instances of Blender to render the animation. Each render instance will render separate frames simultaneously."),
+    )
+
+cmd_render_passes_animation_mode = (
+    ('CMD_RENDER_MODE_RENDER_PASSES', "Passes Rendering", "Compositing tools passes rendering is enabled. Launch a command line process to render each compositing pass."),
     )
 
 color_mixing_modes = (

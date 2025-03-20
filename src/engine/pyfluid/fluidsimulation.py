@@ -1,6 +1,6 @@
 # MIT License
 # 
-# Copyright (C) 2024 Ryan L. Guy
+# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,7 @@
 # SOFTWARE.
 
 import ctypes
-from ctypes import c_void_p, c_char_p, c_char, c_int, c_uint, c_float, c_double, byref
+from ctypes import c_void_p, c_char_p, c_char, c_int, c_ulonglong, c_uint, c_float, c_double, byref
 import numbers
 
 from .pyfluid import pyfluid as lib
@@ -835,6 +835,46 @@ class FluidSimulation(object):
         pb.execute_lib_func(libfunc, [self()])
 
     @property
+    def enable_fluid_particle_uid_attribute(self):
+        libfunc = lib.FluidSimulation_is_fluid_particle_uid_attribute_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_fluid_particle_uid_attribute.setter
+    def enable_fluid_particle_uid_attribute(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_fluid_particle_uid_attribute
+        else:
+            libfunc = lib.FluidSimulation_disable_fluid_particle_uid_attribute
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_fluid_particle_uid_attribute_reuse(self):
+        libfunc = lib.FluidSimulation_is_fluid_particle_uid_attribute_reuse_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_fluid_particle_uid_attribute_reuse.setter
+    def enable_fluid_particle_uid_attribute_reuse(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_fluid_particle_uid_attribute_reuse
+        else:
+            libfunc = lib.FluidSimulation_disable_fluid_particle_uid_attribute_reuse
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    def get_current_fluid_particle_uid(self):
+        libfunc = lib.FluidSimulation_get_current_fluid_particle_uid
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    def set_current_fluid_particle_uid(self, uid):
+        libfunc = lib.FluidSimulation_set_current_fluid_particle_uid
+        pb.init_lib_func(libfunc, [c_void_p, c_int, c_void_p], None)
+        return pb.execute_lib_func(libfunc, [self(), uid])
+
+    @property
     def enable_surface_velocity_attribute(self):
         libfunc = lib.FluidSimulation_is_surface_velocity_attribute_enabled
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
@@ -1131,6 +1171,29 @@ class FluidSimulation(object):
         libfunc = lib.FluidSimulation_set_remove_surface_near_domain_distance
         pb.init_lib_func(libfunc, [c_void_p, c_int, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), int(n)])
+
+    @property
+    def remove_surface_near_domain_sides(self):
+        active = (c_int * 6)()
+        libfunc = lib.FluidSimulation_get_remove_surface_near_domain_sides
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p, c_void_p], c_int)
+        pb.execute_lib_func(libfunc, [self(), active])
+
+        result = []
+        for v in active:
+            result.append(bool(v))
+
+        return result
+
+    @remove_surface_near_domain_sides.setter
+    def remove_surface_near_domain_sides(self, active):
+        c_active = (c_int * 6)()
+        for i in range(6):
+            c_active[i] = int(active[i])
+
+        libfunc = lib.FluidSimulation_set_remove_surface_near_domain_sides
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), c_active])
 
     @property
     def enable_fluid_particle_debug_output(self):
@@ -2844,6 +2907,10 @@ class FluidSimulation(object):
         return self._get_output_data(lib.FluidSimulation_get_fluid_particle_source_id_attribute_data_size,
                                      lib.FluidSimulation_get_fluid_particle_source_id_attribute_data)
 
+    def get_fluid_particle_uid_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_fluid_particle_uid_attribute_data_size,
+                                     lib.FluidSimulation_get_fluid_particle_uid_attribute_data)
+
     def get_fluid_particle_debug_data(self):
         return self._get_output_data(lib.FluidSimulation_get_fluid_particle_debug_data_size,
                                      lib.FluidSimulation_get_fluid_particle_debug_data)
@@ -2951,6 +3018,11 @@ class FluidSimulation(object):
     def get_marker_particle_source_id_data_range(self, start_idx, end_idx):
         size_of_int = 4
         return self._get_output_data_range(lib.FluidSimulation_get_marker_particle_source_id_data_range,
+                                           start_idx, end_idx, size_of_int)
+
+    def get_marker_particle_uid_data_range(self, start_idx, end_idx):
+        size_of_int = 4
+        return self._get_output_data_range(lib.FluidSimulation_get_marker_particle_uid_data_range,
                                            start_idx, end_idx, size_of_int)
 
     def get_marker_particle_viscosity_data_range(self, start_idx, end_idx):
@@ -3087,6 +3159,17 @@ class FluidSimulation(object):
         pb.init_lib_func(libfunc, [c_void_p, FluidSimulationMarkerParticleSourceIDData_t, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), pdata])
 
+    def load_marker_particle_uid_data(self, num_particles, id_data):
+        c_id_data = (c_char * len(id_data)).from_buffer_copy(id_data)
+
+        pdata = FluidSimulationMarkerParticleUIDData_t()
+        pdata.size = c_int(num_particles)
+        pdata.uid = ctypes.cast(c_id_data, c_char_p)
+
+        libfunc = lib.FluidSimulation_load_marker_particle_uid_data
+        pb.init_lib_func(libfunc, [c_void_p, FluidSimulationMarkerParticleUIDData_t, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), pdata])
+
     def load_marker_particle_viscosity_data(self, num_particles, viscosity_data):
         c_viscosity_data = (c_char * len(viscosity_data)).from_buffer_copy(viscosity_data)
 
@@ -3208,6 +3291,7 @@ class FluidSimulationFrameStats_t(ctypes.Structure):
                 ("dustlifetime", FluidSimulationMeshStats_t),
                 ("fluidparticles", FluidSimulationMeshStats_t),
                 ("fluidparticlesid", FluidSimulationMeshStats_t),
+                ("fluidparticlesuid", FluidSimulationMeshStats_t),
                 ("fluidparticlesvelocity", FluidSimulationMeshStats_t),
                 ("fluidparticlesspeed", FluidSimulationMeshStats_t),
                 ("fluidparticlesvorticity", FluidSimulationMeshStats_t),
@@ -3248,6 +3332,10 @@ class FluidSimulationMarkerParticleColorData_t(ctypes.Structure):
 class FluidSimulationMarkerParticleSourceIDData_t(ctypes.Structure):
     _fields_ = [("size", c_int),
                 ("sourceid", c_char_p)]
+
+class FluidSimulationMarkerParticleUIDData_t(ctypes.Structure):
+    _fields_ = [("size", c_int),
+                ("uid", c_char_p)]
 
 class FluidSimulationMarkerParticleViscosityData_t(ctypes.Structure):
     _fields_ = [("size", c_int),

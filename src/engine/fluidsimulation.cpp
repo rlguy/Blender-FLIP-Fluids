@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2024 Ryan L. Guy
+Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -1240,6 +1240,86 @@ void FluidSimulation::disableFluidParticleSourceIDAttribute() {
 bool FluidSimulation::isFluidParticleSourceIDAttributeEnabled() {
     return _isFluidParticleSourceIDAttributeEnabled;
 }
+
+void FluidSimulation::enableFluidParticleUIDAttribute() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " enableFluidParticleUIDAttribute" << std::endl);
+
+    _isFluidParticleUIDAttributeEnabled = true;
+}
+
+void FluidSimulation::disableFluidParticleUIDAttribute() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " disableFluidParticleUIDAttribute" << std::endl);
+
+    _isFluidParticleUIDAttributeEnabled = false;
+}
+
+bool FluidSimulation::isFluidParticleUIDAttributeEnabled() {
+    return _isFluidParticleUIDAttributeEnabled;
+}
+
+void FluidSimulation::enableFluidParticleUIDAttributeReuse() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " enableFluidParticleUIDAttributeReuse" << std::endl);
+
+    _isFluidParticleUIDAttributeReuseEnabled = true;
+}
+
+void FluidSimulation::disableFluidParticleUIDAttributeReuse() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " disableFluidParticleUIDAttributeReuse" << std::endl);
+
+    _isFluidParticleUIDAttributeReuseEnabled = false;
+}
+
+bool FluidSimulation::isFluidParticleUIDAttributeReuseEnabled() {
+    return _isFluidParticleUIDAttributeReuseEnabled;
+}
+
+int FluidSimulation::getCurrentFluidParticleUID() {
+    return _currentFluidParticleUID;
+}
+
+void FluidSimulation::setCurrentFluidParticleUID(int uid) {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " setCurrentFluidParticleUID: " << uid << std::endl);
+
+    _currentFluidParticleUID = uid;
+}
+
+
+
+std::vector<bool> FluidSimulation::getRemoveSurfaceNearDomainSides() {
+    std::vector<bool> removedSides{
+        _removeSurfaceNearDomainXNeg, _removeSurfaceNearDomainXPos,
+        _removeSurfaceNearDomainYNeg, _removeSurfaceNearDomainYPos,
+        _removeSurfaceNearDomainZNeg, _removeSurfaceNearDomainZPos,
+    };
+    return removedSides;
+}
+
+void FluidSimulation::setRemoveSurfaceNearDomainSides(std::vector<bool> active) {
+    if (active.size() != 6) {
+        std::string msg = "Error: removed sides vector must be of length 6.\n";
+        msg += "length: " + _toString(active.size()) + "\n";
+        throw std::domain_error(msg);
+    }
+
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " setRemoveSurfaceNearDomainSides: " << 
+                 active[0] << " " << active[1] << " " << active[2] << " " << 
+                 active[3] << " " << active[4] << " " << active[5] << std::endl);
+
+    _removeSurfaceNearDomainXNeg = active[0];
+    _removeSurfaceNearDomainXPos = active[1];
+    _removeSurfaceNearDomainYNeg = active[2];
+    _removeSurfaceNearDomainYPos = active[3];
+    _removeSurfaceNearDomainZNeg = active[4];
+    _removeSurfaceNearDomainZPos = active[5];
+}
+
+
 
 void FluidSimulation::enableRemoveSurfaceNearDomain() {
     _logfile.log(std::ostringstream().flush() << 
@@ -3350,6 +3430,10 @@ std::vector<char>* FluidSimulation::getFluidParticleSourceIDAttributeData() {
     return &_outputData.fluidParticleSourceIDAttributeData;
 }
 
+std::vector<char>* FluidSimulation::getFluidParticleUIDAttributeData() {
+    return &_outputData.fluidParticleUIDAttributeData;
+}
+
 std::vector<char>* FluidSimulation::getFluidParticleData() {
     return &_outputData.fluidParticleData;
 }
@@ -3511,6 +3595,22 @@ void FluidSimulation::getMarkerParticleSourceIDDataRange(int start_idx, int end_
 
     std::vector<int> *values;
     _markerParticles.getAttributeValues("SOURCEID", values);
+
+    int *dataValues = (int*)data;
+    for (int i = start_idx; i < end_idx; i++) {
+        dataValues[i - start_idx] = values->at(i);
+    }
+}
+
+void FluidSimulation::getMarkerParticleUIDDataRange(int start_idx, int end_idx, char *data) {
+    if (start_idx < 0 || end_idx > (int)_markerParticles.size() || start_idx > end_idx) {
+        std::string msg = "Error: invalid range.\n";
+        msg += "range: [" + _toString(start_idx) + ", " + _toString(end_idx) + "]\n";
+        throw std::domain_error(msg);
+    }
+
+    std::vector<int> *values;
+    _markerParticles.getAttributeValues("UID", values);
 
     int *dataValues = (int*)data;
     for (int i = start_idx; i < end_idx; i++) {
@@ -3869,6 +3969,28 @@ void FluidSimulation::loadMarkerParticleSourceIDData(FluidSimulationMarkerPartic
     _isMarkerParticleLoadPending = true;
 }
 
+void FluidSimulation::loadMarkerParticleUIDData(FluidSimulationMarkerParticleUIDData data) {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " loadMarkerParticleUIDData: " << data.size << std::endl);
+
+    if (data.size == 0) {
+        return;
+    }
+
+    int *uid = (int*)(data.uid);
+
+    MarkerParticleUIDLoadData loadData;
+    loadData.particles.reserve(data.size);
+
+    for (unsigned int i = 0; i < (unsigned int)data.size; i++) {
+        loadData.particles.push_back(MarkerParticleUID(uid[i]));
+    }
+
+    _markerParticleUIDLoadQueue.push_back(loadData);
+
+    _isMarkerParticleLoadPending = true;
+}
+
 void FluidSimulation::loadMarkerParticleViscosityData(FluidSimulationMarkerParticleViscosityData data) {
     _logfile.log(std::ostringstream().flush() << 
                  _logfile.getTime() << " loadMarkerParticleViscosityData: " << data.size << std::endl);
@@ -3893,7 +4015,7 @@ void FluidSimulation::loadMarkerParticleViscosityData(FluidSimulationMarkerParti
 
 void FluidSimulation::loadMarkerParticleIDData(FluidSimulationMarkerParticleIDData data) {
     _logfile.log(std::ostringstream().flush() << 
-                 _logfile.getTime() << " FluidSimulationMarkerParticleIDData: " << data.size << std::endl);
+                 _logfile.getTime() << " loadMarkerParticleIDData: " << data.size << std::endl);
 
     if (data.size == 0) {
         return;
@@ -4051,6 +4173,10 @@ void FluidSimulation::_initializeParticleSystems() {
     if (_isFluidParticleIDAttributeEnabled) {
         _markerParticles.addAttributeUInt16("ID");
     }
+
+    if (_isFluidParticleUIDAttributeEnabled) {
+        _markerParticles.addAttributeInt("UID", -1);
+    }
 }
 
 void FluidSimulation::_initializeForceFieldGrid(int isize, int jsize, int ksize, double dx) {
@@ -4123,6 +4249,8 @@ void FluidSimulation::_addMarkerParticles(std::vector<MarkerParticle> &particles
     _markerParticles.getAttributeValues("POSITION", positions);
     _markerParticles.getAttributeValues("VELOCITY", velocities);
 
+    int idLimit = _getFluidParticleOutputIDLimit();
+
     std::vector<int> *sourceids = nullptr;
     if (_isSurfaceSourceIDAttributeEnabled || _isFluidParticleSourceIDAttributeEnabled) {
         _markerParticles.getAttributeValues("SOURCEID", sourceids);
@@ -4146,6 +4274,11 @@ void FluidSimulation::_addMarkerParticles(std::vector<MarkerParticle> &particles
     std::vector<uint16_t> *ids = nullptr;
     if (_isFluidParticleIDAttributeEnabled) {
         _markerParticles.getAttributeValues("ID", ids);
+    }
+
+    std::vector<int> *uids = nullptr;
+    if (_isFluidParticleUIDAttributeEnabled) {
+        _markerParticles.getAttributeValues("UID", uids);
     }
 
     for (size_t i = 0; i < particles.size(); i++) {
@@ -4173,9 +4306,15 @@ void FluidSimulation::_addMarkerParticles(std::vector<MarkerParticle> &particles
                 sourcecolors->push_back(attributes.sourceColor);
             }
 
+            uint16_t id = 0;
             if (_isFluidParticleIDAttributeEnabled) {
-                uint16_t id = _generateRandomFluidParticleID();
+                id = _generateRandomFluidParticleID();
                 ids->push_back(id);
+            }
+
+            if (_isFluidParticleUIDAttributeEnabled) {
+                int uid = id < idLimit ? (int)UIDAttribute::unset : (int)UIDAttribute::ignore;
+                uids->push_back(uid);
             }
         }
     }
@@ -4224,6 +4363,14 @@ void FluidSimulation::_initializeSimulation() {
         _loadParticles();
         loadTimer.stop();
         _logfile.log("Loading Particle Data:       \t", loadTimer.getTime(), 4, 1);
+    }
+
+    if (_isFluidParticleUIDAttributeEnabled && _isFluidParticleUIDAttributeReuseEnabled) {
+        StopWatch uidTimer;
+        uidTimer.start();
+        _initializeFluidParticleUIDAttributeReuseData();
+        uidTimer.stop();
+        _logfile.log("Initializing UID Data:       \t", uidTimer.getTime(), 4, 1);
     }
 
     _isSimulationInitialized = true;
@@ -4321,6 +4468,25 @@ void FluidSimulation::_upscaleParticleData() {
         }
     }
 
+    bool isUIDDataAvailable = false;
+    std::vector<int> *uids;
+    if (_isFluidParticleUIDAttributeEnabled) {
+        if (_markerParticleUIDLoadQueue.size() == _markerParticleLoadQueue.size()) {
+            isUIDDataAvailable = true;
+            for (size_t i = 0; i < _markerParticleLoadQueue.size(); i++) {
+                if (_markerParticleUIDLoadQueue[i].particles.size() != _markerParticleLoadQueue[i].particles.size()) {
+                    isUIDDataAvailable = false;
+                    break;
+                }
+            }
+        }
+
+        if (isUIDDataAvailable) {
+            markerParticles.addAttributeInt("UID");
+            markerParticles.getAttributeValues("UID", uids);
+        }
+    }
+
     bool isColorDataAvailable = false;
     std::vector<vmath::vec3> *colors;
     if (_isSurfaceSourceColorAttributeEnabled || _isFluidParticleSourceColorAttributeEnabled) {
@@ -4367,6 +4533,11 @@ void FluidSimulation::_upscaleParticleData() {
                 if (isIDDataAvailable) {
                     MarkerParticleID mid = _markerParticleIDLoadQueue[j].particles[i];
                     ids->push_back(mid.id);
+                }
+
+                if (isUIDDataAvailable) {
+                    MarkerParticleUID muid = _markerParticleUIDLoadQueue[j].particles[i];
+                    uids->push_back(muid.uid);
                 }
 
                 if (isColorDataAvailable) {
@@ -4536,6 +4707,7 @@ void FluidSimulation::_upscaleParticleData() {
         vmath::vec3( q,  q,  q)
     };
 
+    int idLimit = _getFluidParticleOutputIDLimit();
     double jitter = _getMarkerParticleJitter();
     double currentParticleRadius = 0.5 * _liquidSDFParticleScale * _dx * sqrt(3.0); 
     vmath::vec3 goffset(0.5f * dx, 0.5f * dx, 0.5f * dx);
@@ -4544,6 +4716,7 @@ void FluidSimulation::_upscaleParticleData() {
     MarkerParticleLifetimeLoadData loadLifetimeData;
     MarkerParticleViscosityLoadData loadViscosityData;
     MarkerParticleIDLoadData loadIDData;
+    MarkerParticleUIDLoadData loadUIDData;
     MarkerParticleColorLoadData loadColorData;
     for (int k = 0; k < _ksize; k++) {
         for (int j = 0; j < _jsize; j++) {
@@ -4582,10 +4755,17 @@ void FluidSimulation::_upscaleParticleData() {
                             loadViscosityData.particles.push_back(mvisc);
                         }
 
+                        uint16_t idval = 0;
                         if (isIDDataAvailable) {
-                            uint16_t idval = _generateRandomFluidParticleID();
+                            idval = _generateRandomFluidParticleID();
                             MarkerParticleID mid(idval);
                             loadIDData.particles.push_back(mid);
+                        }
+
+                        if (isUIDDataAvailable) {
+                            int uidval = idval < idLimit ? (int)UIDAttribute::unset : (int)UIDAttribute::ignore;
+                            MarkerParticleUID muid(uidval);
+                            loadUIDData.particles.push_back(muid);
                         }
 
                         if (isColorDataAvailable) {
@@ -4625,6 +4805,10 @@ void FluidSimulation::_upscaleParticleData() {
         _markerParticleIDLoadQueue.push_back(loadIDData);
     }
 
+    if (isUIDDataAvailable) {
+        _markerParticleUIDLoadQueue.push_back(loadUIDData);
+    }
+
     if (isColorDataAvailable) {
         _markerParticleColorLoadQueue.push_back(loadColorData);
     }
@@ -4639,7 +4823,8 @@ void FluidSimulation::_loadMarkerParticles(MarkerParticleLoadData &particleData,
                                            MarkerParticleColorLoadData &colorData,
                                            MarkerParticleSourceIDLoadData &sourceIDData,
                                            MarkerParticleViscosityLoadData &viscosityData,
-                                           MarkerParticleIDLoadData &idData) {
+                                           MarkerParticleIDLoadData &idData,
+                                           MarkerParticleUIDLoadData &uidData) {
 
     if (particleData.particles.empty()) {
         return;
@@ -4669,6 +4854,9 @@ void FluidSimulation::_loadMarkerParticles(MarkerParticleLoadData &particleData,
 
     bool loadIDData = _isFluidParticleIDAttributeEnabled && 
                       idData.particles.size() == particleData.particles.size();
+
+    bool loadUIDData = _isFluidParticleUIDAttributeEnabled && 
+                       uidData.particles.size() == particleData.particles.size();
 
     _markerParticles.reserve(_markerParticles.size() + particleData.particles.size());
 
@@ -4715,6 +4903,11 @@ void FluidSimulation::_loadMarkerParticles(MarkerParticleLoadData &particleData,
         _markerParticles.getAttributeValues("ID", id);
     }
 
+    std::vector<int> *uid = nullptr;
+    if (loadUIDData) {
+        _markerParticles.getAttributeValues("UID", uid);
+    }
+
     AABB bounds(0.0, 0.0, 0.0, _isize * _dx, _jsize * _dx, _ksize * _dx);
     for (size_t i = 0; i < particleData.particles.size(); i++) {
         MarkerParticle mp = particleData.particles[i];
@@ -4759,6 +4952,11 @@ void FluidSimulation::_loadMarkerParticles(MarkerParticleLoadData &particleData,
                 MarkerParticleID mpid = idData.particles[i];
                 id->push_back(mpid.id);
             }
+
+            if (loadUIDData) {
+                MarkerParticleUID mpuid = uidData.particles[i];
+                uid->push_back(mpuid.uid);
+            }
         }
     }
 
@@ -4777,6 +4975,7 @@ void FluidSimulation::_loadParticles() {
     bool isSourceIDDataAvailable = _markerParticleSourceIDLoadQueue.size() == _markerParticleLoadQueue.size();
     bool isViscosityDataAvailable = _markerParticleViscosityLoadQueue.size() == _markerParticleLoadQueue.size();
     bool isIDDataAvailable = _markerParticleIDLoadQueue.size() == _markerParticleLoadQueue.size();
+    bool isUIDDataAvailable = _markerParticleUIDLoadQueue.size() == _markerParticleLoadQueue.size();
 
     MarkerParticleAffineLoadData emptyAffineData;
     MarkerParticleAgeLoadData emptyAgeData;
@@ -4785,6 +4984,7 @@ void FluidSimulation::_loadParticles() {
     MarkerParticleSourceIDLoadData emptySourceIDData;
     MarkerParticleViscosityLoadData emptyViscosityData;
     MarkerParticleIDLoadData emptyIDData;
+    MarkerParticleUIDLoadData emptyUIDData;
     for (size_t i = 0; i < _markerParticleLoadQueue.size(); i++) {
         MarkerParticleAffineLoadData affineData = isAffineDataAvailable ? _markerParticleAffineLoadQueue[i] : emptyAffineData;
         MarkerParticleAgeLoadData ageData = isAgeDataAvailable ? _markerParticleAgeLoadQueue[i] : emptyAgeData;
@@ -4793,7 +4993,8 @@ void FluidSimulation::_loadParticles() {
         MarkerParticleSourceIDLoadData sourceIDData = isSourceIDDataAvailable ? _markerParticleSourceIDLoadQueue[i] : emptySourceIDData;
         MarkerParticleViscosityLoadData viscosityData = isViscosityDataAvailable ? _markerParticleViscosityLoadQueue[i] : emptyViscosityData;
         MarkerParticleIDLoadData idData = isIDDataAvailable ? _markerParticleIDLoadQueue[i] : emptyIDData;
-        _loadMarkerParticles(_markerParticleLoadQueue[i], affineData, ageData, lifetimeData, colorData, sourceIDData, viscosityData, idData);
+        MarkerParticleUIDLoadData uidData = isUIDDataAvailable ? _markerParticleUIDLoadQueue[i] : emptyUIDData;
+        _loadMarkerParticles(_markerParticleLoadQueue[i], affineData, ageData, lifetimeData, colorData, sourceIDData, viscosityData, idData, uidData);
     }
     _markerParticleLoadQueue.clear();
     _markerParticleAffineLoadQueue.clear();
@@ -4803,6 +5004,7 @@ void FluidSimulation::_loadParticles() {
     _markerParticleSourceIDLoadQueue.clear();
     _markerParticleViscosityLoadQueue.clear();
     _markerParticleIDLoadQueue.clear();
+    _markerParticleUIDLoadQueue.clear();
     _isMarkerParticleLoadPending = false;
     
     for (size_t i = 0; i < _diffuseParticleLoadQueue.size(); i++) {
@@ -4810,6 +5012,24 @@ void FluidSimulation::_loadParticles() {
     }
     _diffuseParticleLoadQueue.clear();
     _isDiffuseParticleLoadPending = false;
+}
+
+// When resuming, UID status for the previous frame needs to be initialized
+// so that reused UIDs can be tracks, if reusable UIDs are enabled.
+void FluidSimulation::_initializeFluidParticleUIDAttributeReuseData() {
+    std::vector<int> *uids;
+    _markerParticles.getAttributeValues("UID", uids);
+
+    int uidmax = getCurrentFluidParticleUID();
+    int uidTableSize = std::max(uidmax, 1);
+    _uidStatusFramePrevious = std::vector<UIDAttributeStatus>(uidTableSize, UIDAttributeStatus::unused);
+    _uidStatusFramePrevious[0] = UIDAttributeStatus::invalid;
+    for (size_t i = 0; i < uids->size(); i++) {
+        int uid = uids->at(i);
+        if (uid > 0) {
+            _uidStatusFramePrevious[uid] = UIDAttributeStatus::reserved;
+        }
+    }
 }
 
 /********************************************************************************
@@ -6257,6 +6477,11 @@ void FluidSimulation::_updateSheetSeeding() {
             _markerParticles.getAttributeValues("ID", ids);
         }
 
+        std::vector<int> *uids;
+        if (_isFluidParticleUIDAttributeEnabled) {
+            _markerParticles.getAttributeValues("UID", uids);
+        }
+
         std::vector<vmath::vec3> *colors;
         Array3d<float> tempColorAttributeGridR;
         Array3d<float> tempColorAttributeGridG;
@@ -6274,6 +6499,7 @@ void FluidSimulation::_updateSheetSeeding() {
                                                     tempColorAttributeValidGrid);
         }
 
+        int idLimit = _getFluidParticleOutputIDLimit();
         vmath::vec3 goffset(0.5f * _dx, 0.5f * _dx, 0.5f * _dx);
         float solidSheetingWidth = 2.0f * _dx;
         for (size_t i = 0; i < sheetParticles.size(); i++) {
@@ -6312,9 +6538,15 @@ void FluidSimulation::_updateSheetSeeding() {
                 viscosities->push_back(viscosity);
             }
 
+            uint16_t idval = 0;
             if (_isFluidParticleIDAttributeEnabled) {
-                uint16_t idval = _generateRandomFluidParticleID();
+                idval = _generateRandomFluidParticleID();
                 ids->push_back(idval);
+            }
+
+            if (_isFluidParticleUIDAttributeEnabled) {
+                int uidval = idval < idLimit ? (int)UIDAttribute::unset : (int)UIDAttribute::ignore;
+                uids->push_back(uidval);
             }
 
             if (_isSurfaceSourceColorAttributeEnabled || _isFluidParticleSourceColorAttributeEnabled) {
@@ -7097,8 +7329,88 @@ void FluidSimulation::_updateMarkerParticleColorAttribute(double dt) {
     _updateMarkerParticleColorAttributeMixing(dt);
 }
 
+void FluidSimulation::_updateMarkerParticleUIDAttribute() {
+    if (!_isFluidParticleUIDAttributeEnabled || _currentFrameTimeStepNumber != 0) {
+        return;
+    }
+
+    std::vector<int> *uids;
+    _markerParticles.getAttributeValues("UID", uids);
+
+    if (!_isFluidParticleUIDAttributeReuseEnabled) {
+        // Simple case: If not reusing UIDs, generate a new UID for each unset particle
+        for (size_t i = 0; i < uids->size(); i++) {
+            if (uids->at(i) == (int)UIDAttribute::unset) {
+                uids->at(i) = _generateFluidParticleUID();
+            }
+        }
+    } else {
+        // Initialize current frame UID status
+        int uidmax = getCurrentFluidParticleUID();
+        int uidTableSize = std::max(uidmax, 1);
+        _uidStatusFrameCurrent = std::vector<UIDAttributeStatus>(uidTableSize, UIDAttributeStatus::unused);
+        _uidStatusFrameCurrent[0] = UIDAttributeStatus::invalid;
+        for (size_t i = 0; i < uids->size(); i++) {
+            int uid = uids->at(i);
+            if (uid > 0) {
+                _uidStatusFrameCurrent[uid] = UIDAttributeStatus::reserved;
+            }
+        }
+
+        // Handle case for first frame where previous frame UID status has not been initialized
+        if (_uidStatusFramePrevious.empty()) {
+            _uidStatusFramePrevious = _uidStatusFrameCurrent;
+        }
+
+        // Find reusable UIDs
+        std::vector<int> availableUIDs;
+        for (size_t i = 1; i < _uidStatusFrameCurrent.size(); i++) {
+            UIDAttributeStatus uidPrevious = _uidStatusFramePrevious[i];
+            UIDAttributeStatus uidCurrent = _uidStatusFrameCurrent[i];
+            if (uidPrevious == UIDAttributeStatus::reserved && uidCurrent == UIDAttributeStatus::unused) {
+                _uidStatusFrameCurrent[i] = UIDAttributeStatus::waiting;
+            }
+
+            if (_uidStatusFrameCurrent[i] == UIDAttributeStatus::unused) {
+                availableUIDs.push_back((int)i);
+            }
+        }
+
+        // Assign unset UIDs
+        size_t currentIdx = 0;
+        for (size_t i = 0; i < uids->size(); i++) {
+            int uid = uids->at(i);
+            if (uid == (int)UIDAttribute::unset) {
+
+                int nextUID = (int)UIDAttribute::invalid;
+                if (currentIdx < availableUIDs.size()) {
+                    nextUID = availableUIDs[currentIdx];
+                    currentIdx++;
+                } else {
+                    nextUID = _generateFluidParticleUID();
+                }
+
+                uids->at(i) = nextUID;
+            }
+        }
+
+        // Update previous frame UID status for next frame
+        int uidmaxNext = getCurrentFluidParticleUID();
+        int uidTableSizeNext = std::max(uidmaxNext, 1);
+        _uidStatusFramePrevious = std::vector<UIDAttributeStatus>(uidTableSizeNext, UIDAttributeStatus::unused);
+        _uidStatusFramePrevious[0] = UIDAttributeStatus::invalid;
+        for (size_t i = 0; i < uids->size(); i++) {
+            int uid = uids->at(i);
+            if (uid > 0) {
+                _uidStatusFramePrevious[uid] = UIDAttributeStatus::reserved;
+            }
+        }
+    }
+
+}
+
 void FluidSimulation::_updateMarkerParticleAttributes(double dt) {
-    _logfile.logString(_logfile.getTime() + " BEGIN       Update Marker Particle Attributes");
+    _logfile.logString(_logfile.getTime() + " BEGIN       Update Marker Particle Attributes Post");
 
     StopWatch t;
     t.start();
@@ -7110,12 +7422,13 @@ void FluidSimulation::_updateMarkerParticleAttributes(double dt) {
         _updateMarkerParticleWhitewaterProximityAttribute();
         _updateMarkerParticleViscosityAttribute();
         _updateMarkerParticleColorAttribute(dt);
+        _updateMarkerParticleUIDAttribute();
     }
 
     t.stop();
     _timingData.updateMarkerParticleVelocities += t.getTime();
 
-    _logfile.logString(_logfile.getTime() + " COMPLETE    Update Marker Particle Attributes");
+    _logfile.logString(_logfile.getTime() + " COMPLETE    Update Marker Particle Attributes Post");
 }
 
 /********************************************************************************
@@ -8097,9 +8410,17 @@ void FluidSimulation::_removeMeshNearDomain(TriangleMesh &mesh) {
 
     Array3d<bool> validCells(_isize, _jsize, _ksize, false);
     int width = 2 + _removeSurfaceNearDomainDistance;
-    for (int k = 0 + width; k < _ksize - width; k++) {
-        for (int j = 0 + width; j < _jsize - width; j++) {
-            for (int i = 0 + width; i < _isize - width; i++) {
+
+    int imin = _removeSurfaceNearDomainXNeg ? width : 0;
+    int jmin = _removeSurfaceNearDomainYNeg ? width : 0;
+    int kmin = _removeSurfaceNearDomainZNeg ? width : 0;
+    int imax = _removeSurfaceNearDomainXPos ? _isize - width : _isize;
+    int jmax = _removeSurfaceNearDomainYPos ? _jsize - width : _jsize;
+    int kmax = _removeSurfaceNearDomainZPos ? _ksize - width : _ksize;
+
+    for (int k = kmin; k < kmax; k++) {
+        for (int j = jmin; j < jmax; j++) {
+            for (int i = imin; i < imax; i++) {
                 validCells.set(i, j, k, true);
             }
         }
@@ -9048,7 +9369,7 @@ void FluidSimulation::_generateFluidParticleDataFFP3(ParticleSystem &fluidPartic
 
     std::vector<uint16_t> *particle_ids;
     _markerParticles.getAttributeValues("ID", particle_ids);
-    int idLimit = (int)std::round(_fluidParticleIDLimit * _fluidParticleOutputAmount);
+    int idLimit = _getFluidParticleOutputIDLimit();
 
     std::vector<int> *source_ids = NULL;
     if (isSourceIDEnabled) {
@@ -9204,6 +9525,20 @@ void FluidSimulation::_outputFluidParticles() {
     _outputData.frameData.fluidparticlesid.vertices = dataFFP3.numFluidParticles;
     _outputData.frameData.fluidparticlesid.triangles = 0;
     _outputData.frameData.fluidparticlesid.bytes = (unsigned int)_outputData.fluidParticleIDAttributeData.size();
+
+    /*
+        Fluid Particle UID
+    */
+    if (_isFluidParticleUIDAttributeEnabled) {
+        std::vector<int> *uids;
+        _markerParticles.getAttributeValues("UID", uids);
+        _generateFluidParticleFFP3FileData(uids, dataFFP3, _outputData.fluidParticleUIDAttributeData);
+
+        _outputData.frameData.fluidparticlesuid.enabled = 1;
+        _outputData.frameData.fluidparticlesuid.vertices = dataFFP3.numFluidParticles;
+        _outputData.frameData.fluidparticlesuid.triangles = 0;
+        _outputData.frameData.fluidparticlesuid.bytes = (unsigned int)_outputData.fluidParticleUIDAttributeData.size();
+    }
 
     /*
         Fluid Particle Velocity

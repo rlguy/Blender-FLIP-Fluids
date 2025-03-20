@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2024 Ryan L. Guy
+# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -79,7 +79,12 @@ class FLIPFluidColorRGB(bpy.types.PropertyGroup):
 
 
 def update_helper_category_name(self, context):
-    panel_ids = ['FLIPFLUID_PT_HelperPanelMain', 'FLIPFLUID_PT_HelperPanelDisplay', 'FLIPFLUID_PT_HelperTechnicalSupport']
+    panel_ids = [
+        'FLIPFLUID_PT_HelperPanelMain', 
+        'FLIPFLUID_PT_HelperPanelCompositingTools', 
+        'FLIPFLUID_PT_HelperPanelDisplay', 
+        'FLIPFLUID_PT_HelperTechnicalSupport'
+        ]
     for pid in panel_ids:
         is_panel_registered = hasattr(bpy.types, pid)
         if is_panel_registered:
@@ -175,15 +180,15 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
     exec(vcu.convert_attribute_to_28("enable_experimental_build_warning"))
     FAKE_PREFERENCES.enable_experimental_build_warning = True
 
-    enable_developer_tools = BoolProperty(
-            name="Enable Developer Tools", 
-            description="Enable to unlock developer tools and hidden features. Enable to unlock features"
-                " that may be experimental or considered unstable for rendering due to current bugs in Blender."
+    enable_extra_features = BoolProperty(
+            name="Enable Extra Features", 
+            description="Enable to unlock extra features"
+                " that may be considered unstable for rendering, baking, and exporting due to current bugs in Blender."
                 " Rendering issues can be completely avoided by rendering from the command line", 
-            default=False,
+            default=True,
             ); 
-    exec(vcu.convert_attribute_to_28("enable_developer_tools"))
-    FAKE_PREFERENCES.enable_developer_tools = False
+    exec(vcu.convert_attribute_to_28("enable_extra_features"))
+    FAKE_PREFERENCES.enable_extra_features = False
 
     enable_support_tools = BoolProperty(
             name="Enable Technical Support Tools", 
@@ -390,8 +395,8 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
     FAKE_PREFERENCES.enable_tabbed_domain_settings_view = True
 
 
-    def is_developer_tools_enabled(self):
-        return self.enable_developer_tools or installation_utils.is_experimental_build()
+    def is_extra_features_enabled(self):
+        return self.enable_extra_features or installation_utils.is_experimental_build()
 
 
     def _update_enable_helper(self, context):
@@ -446,16 +451,16 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         column = box.column(align=True)
         column.label(text="Install Mixbox Color Blending Plugin:")
 
-        if not self.is_developer_tools_enabled():
+        if not self.is_extra_features_enabled():
             if installation_utils.is_mixbox_supported():
-                column.label(text="Activate the 'Enable Developer Tools' option to access this feature:", icon='INFO')
+                column.label(text="Activate the 'Enable Extra Features' option to access this feature:", icon='INFO')
 
                 row = column.row(align=True)
                 row.alignment = 'LEFT'
-                row.prop(self, "enable_developer_tools")
+                row.prop(self, "enable_extra_features")
                 row.operator(
                     "wm.url_open", 
-                    text="What are the developer tools and hidden features?", 
+                    text="What are the extra features?", 
                     icon="URL"
                 ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Preferences-Menu-Settings#developer-tools"
 
@@ -624,22 +629,6 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
 
         if not vcu.is_blender_33():
             box.label(text="Blender 3.3 or later is required for this feature", icon="ERROR")
-
-        is_preset_library_supported = False
-        if not is_preset_library_supported:
-            column = box.column(align=True)
-            column.label(text="Preset Library features are not supported in this version of the FLIP Fluids addon.", icon="ERROR")
-            column.label(text="These features are only available in the full version.", icon="ERROR")
-            row = column.row(align=True)
-            row.alignment = 'LEFT'
-            row.label(text="Learn more about the Preset Scenes Library here: ", icon='INFO')
-            row = row.row(align=True)
-            row.operator(
-                "wm.url_open", 
-                text="", 
-                icon="URL"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Preset-Library-Installation-and-Uninstallation"
-            return
 
         subbox = box.box()
         column = subbox.column(align=True)
@@ -847,10 +836,10 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
 
         row = helper_column.row(align=True)
         row.alignment = 'LEFT'
-        row.prop(self, "enable_developer_tools")
+        row.prop(self, "enable_extra_features")
         row.operator(
             "wm.url_open", 
-            text="What are the developer tools and hidden features?", 
+            text="What are the extra features?", 
             icon="URL"
         ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Preferences-Menu-Settings#developer-tools"
 
@@ -929,6 +918,7 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
                 text="Tutorials and Learning Resources", 
                 icon="URL"
             ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Video-Learning-Series"
+        column_left.separator()
 
         box = self.layout.box()
         column = box.column(align=True)

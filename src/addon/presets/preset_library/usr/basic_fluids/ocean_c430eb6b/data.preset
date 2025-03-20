@@ -1,0 +1,361 @@
+{
+    "description": "Cinematic ocean water with foam/bubbles/spray",
+    "identifier": "ocean_c430eb6b",
+    "is_system_preset": false,
+    "name": "Ocean",
+    "properties": [
+        {
+            "path": "domain.simulation.settings_export_mode",
+            "value": "EXPORT_DEFAULT"
+        },
+        {
+            "path": "domain.simulation.resolution",
+            "value": 300
+        },
+        {
+            "path": "domain.simulation.preview_resolution",
+            "value": 100
+        },
+        {
+            "path": "domain.simulation.lock_cell_size",
+            "value": false
+        },
+        {
+            "path": "domain.simulation.start_time",
+            "value": 0.0
+        },
+        {
+            "path": "domain.simulation.end_time",
+            "value": 8.333333015441895
+        },
+        {
+            "path": "domain.simulation.use_fps",
+            "value": true
+        },
+        {
+            "path": "domain.simulation.frames_per_second",
+            "value": 30.0
+        },
+        {
+            "path": "domain.simulation.time_scale",
+            "value": 1.0
+        },
+        {
+            "path": "domain.render.render_display",
+            "value": "DISPLAY_FINAL"
+        },
+        {
+            "path": "domain.render.viewport_display",
+            "value": "DISPLAY_FINAL"
+        },
+        {
+            "path": "domain.render.whitewater_render_display",
+            "value": "DISPLAY_FINAL"
+        },
+        {
+            "path": "domain.render.whitewater_viewport_display",
+            "value": "DISPLAY_FINAL"
+        },
+        {
+            "path": "domain.render.whitewater_view_settings_mode",
+            "value": "VIEW_SETTINGS_WHITEWATER"
+        },
+        {
+            "path": "domain.render.render_whitewater_pct",
+            "value": 100
+        },
+        {
+            "path": "domain.render.viewport_whitewater_pct",
+            "value": 25
+        },
+        {
+            "path": "domain.render.render_foam_pct",
+            "value": 100
+        },
+        {
+            "path": "domain.render.render_bubble_pct",
+            "value": 100
+        },
+        {
+            "path": "domain.render.render_spray_pct",
+            "value": 100
+        },
+        {
+            "path": "domain.render.viewport_foam_pct",
+            "value": 25
+        },
+        {
+            "path": "domain.render.viewport_bubble_pct",
+            "value": 25
+        },
+        {
+            "path": "domain.render.viewport_spray_pct",
+            "value": 25
+        },
+        {
+            "path": "domain.render.whitewater_particle_object_settings_mode",
+            "value": "WHITEWATER_OBJECT_SETTINGS_FOAM_BUBBLE_SPRAY"
+        },
+        {
+            "path": "domain.render.whitewater_use_icosphere_object",
+            "value": true
+        },
+        {
+            "path": "domain.render.only_display_whitewater_in_render",
+            "value": false
+        },
+        {
+            "path": "domain.render.whitewater_particle_scale",
+            "value": 0.007000000216066837
+        },
+        {
+            "path": "domain.render.foam_use_icosphere_object",
+            "value": true
+        },
+        {
+            "path": "domain.render.bubble_use_icosphere_object",
+            "value": true
+        },
+        {
+            "path": "domain.render.spray_use_icosphere_object",
+            "value": true
+        },
+        {
+            "path": "domain.render.only_display_foam_in_render",
+            "value": true
+        },
+        {
+            "path": "domain.render.only_display_bubble_in_render",
+            "value": true
+        },
+        {
+            "path": "domain.render.only_display_spray_in_render",
+            "value": true
+        },
+        {
+            "path": "domain.render.foam_particle_scale",
+            "value": 0.007000000216066837
+        },
+        {
+            "path": "domain.render.bubble_particle_scale",
+            "value": 0.019999999552965164
+        },
+        {
+            "path": "domain.render.spray_particle_scale",
+            "value": 0.006000000052154064
+        },
+        {
+            "path": "domain.surface.subdivisions",
+            "value": 1
+        },
+        {
+            "path": "domain.surface.particle_scale",
+            "value": 1.0
+        },
+        {
+            "path": "domain.surface.compute_chunk_mode",
+            "value": "COMPUTE_CHUNK_MODE_AUTO"
+        },
+        {
+            "path": "domain.surface.compute_chunks_fixed",
+            "value": 1
+        },
+        {
+            "path": "domain.surface.smoothing_value",
+            "value": 1.0
+        },
+        {
+            "path": "domain.surface.smoothing_iterations",
+            "value": 2
+        },
+        {
+            "path": "domain.surface.enable_smooth_interface_meshing",
+            "value": true
+        },
+        {
+            "path": "domain.whitewater.enable_whitewater_simulation",
+            "value": true
+        },
+        {
+            "path": "domain.whitewater.enable_foam",
+            "value": true
+        },
+        {
+            "path": "domain.whitewater.enable_bubbles",
+            "value": true
+        },
+        {
+            "path": "domain.whitewater.enable_spray",
+            "value": true
+        },
+        {
+            "path": "domain.whitewater.enable_whitewater_emission",
+            "value": true
+        },
+        {
+            "path": "domain.whitewater.whitewater_emitter_generation_rate",
+            "value": 100
+        },
+        {
+            "path": "domain.whitewater.wavecrest_emission_rate",
+            "value": 175.0
+        },
+        {
+            "path": "domain.whitewater.turbulence_emission_rate",
+            "value": 175.0
+        },
+        {
+            "path": "domain.whitewater.min_max_whitewater_energy_speed",
+            "value": [
+                0.5,
+                10.0
+            ]
+        },
+        {
+            "path": "domain.whitewater.min_max_whitewater_wavecrest_curvature",
+            "value": [
+                0.4000000059604645,
+                1.0
+            ]
+        },
+        {
+            "path": "domain.whitewater.min_max_whitewater_turbulence",
+            "value": [
+                100.0,
+                200.0
+            ]
+        },
+        {
+            "path": "domain.whitewater.max_whitewater_particles",
+            "value": 12.0
+        },
+        {
+            "path": "domain.whitewater.enable_whitewater_emission_near_boundary",
+            "value": true
+        },
+        {
+            "path": "domain.whitewater.min_max_whitewater_lifespan",
+            "value": [
+                0.5,
+                6.0
+            ]
+        },
+        {
+            "path": "domain.whitewater.whitewater_lifespan_variance",
+            "value": 3.0
+        },
+        {
+            "path": "domain.whitewater.foam_lifespan_modifier",
+            "value": 1.0
+        },
+        {
+            "path": "domain.whitewater.bubble_lifespan_modifier",
+            "value": 4.0
+        },
+        {
+            "path": "domain.whitewater.spray_lifespan_modifier",
+            "value": 5.0
+        },
+        {
+            "path": "domain.whitewater.foam_advection_strength",
+            "value": 1.0
+        },
+        {
+            "path": "domain.whitewater.foam_layer_depth",
+            "value": 1.0
+        },
+        {
+            "path": "domain.whitewater.foam_layer_offset",
+            "value": 0.5
+        },
+        {
+            "path": "domain.whitewater.preserve_foam",
+            "value": false
+        },
+        {
+            "path": "domain.whitewater.foam_preservation_rate",
+            "value": 0.75
+        },
+        {
+            "path": "domain.whitewater.min_max_foam_density",
+            "value": [
+                20,
+                45
+            ]
+        },
+        {
+            "path": "domain.whitewater.bubble_drag_coefficient",
+            "value": 0.800000011920929
+        },
+        {
+            "path": "domain.whitewater.bubble_bouyancy_coefficient",
+            "value": 2.5
+        },
+        {
+            "path": "domain.whitewater.spray_drag_coefficient",
+            "value": 0.5
+        },
+        {
+            "path": "domain.whitewater.foam_boundary_behaviour",
+            "value": "BEHAVIOUR_COLLIDE"
+        },
+        {
+            "path": "domain.whitewater.bubble_boundary_behaviour",
+            "value": "BEHAVIOUR_COLLIDE"
+        },
+        {
+            "path": "domain.whitewater.spray_boundary_behaviour",
+            "value": "BEHAVIOUR_COLLIDE"
+        },
+        {
+            "path": "domain.whitewater.foam_boundary_active",
+            "value": [
+                true,
+                true,
+                true,
+                true,
+                false,
+                true
+            ]
+        },
+        {
+            "path": "domain.whitewater.bubble_boundary_active",
+            "value": [
+                true,
+                true,
+                true,
+                true,
+                false,
+                true
+            ]
+        },
+        {
+            "path": "domain.whitewater.spray_boundary_active",
+            "value": [
+                true,
+                true,
+                true,
+                true,
+                false,
+                true
+            ]
+        },
+        {
+            "path": "domain.materials.surface_material",
+            "value": "FF Water (ocean 2)"
+        },
+        {
+            "path": "domain.materials.whitewater_foam_material",
+            "value": "FF Foam"
+        },
+        {
+            "path": "domain.materials.whitewater_bubble_material",
+            "value": "FF Bubble"
+        },
+        {
+            "path": "domain.materials.whitewater_spray_material",
+            "value": "FF Spray"
+        }
+    ],
+    "uid": 1695721
+}

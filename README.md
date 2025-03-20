@@ -2,7 +2,7 @@
 
 # FLIP Fluids
 
-The **[FLIP Fluids addon](https://blendermarket.com/products/flipfluids)** is a tool that helps you set up, run, and render liquid simulation effects. Our custom built fluid engine is based around the popular FLIP simulation technique that is also found in many other professional liquid simulation tools. The FLIP Fluids engine has been in constant development for over four years with a large focus on tightly integrating the simulator into Blender as an addon. It just feels like a native Blender tool!
+The **[FLIP Fluids addon](https://blendermarket.com/products/flipfluids?ref=2685)** is a tool that helps you set up, run, and render liquid simulation effects. Our custom built fluid engine is based around the popular FLIP simulation technique that is also found in many other professional liquid simulation tools. The FLIP Fluids engine has been in constant development for over four years with a large focus on tightly integrating the simulator into Blender as an addon. It just feels like a native Blender tool!
 
 With our reputation for delivering high quality software and outstanding customer support, the FLIP Fluids addon is one of the best selling products in the Blender community.
 
@@ -29,7 +29,7 @@ See any of our [market place product pages](https://github.com/rlguy/Blender-FLI
 ## System Requirements
 
 - Windows, macOS, or Linux operating system
-- Blender 3.1 to 4.3 compatible
+- Blender 3.6 to 4.4 compatible
 - CPU 64-bit Intel® or AMD® or Apple Silicon multi-core processor
 - 8 GB RAM minimum, 16 GB of RAM or more is highly recommended
 

@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2024 Ryan L. Guy
+# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@ from bpy.props import (
         FloatProperty,
         IntProperty,
         BoolProperty,
+        BoolVectorProperty,
         EnumProperty,
         PointerProperty
         )
@@ -124,6 +125,13 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
             min=1,
             default=1,
             ); exec(conv("remove_mesh_near_domain_distance"))
+    remove_mesh_near_domain_sides = BoolVectorProperty(
+            name="",
+            description="Remove mesh on the corresponding side of the domain."
+                " If disabled, this side of the mesh will not be removed",
+            default=(True, True, True, True, True, True),
+            size=6,
+            ); exec(conv("remove_mesh_near_domain_sides"))
     smoothing_value = FloatProperty(
             name="Factor", 
             description="Amount of surface smoothing. Tip: use a smooth modifier"
@@ -385,6 +393,7 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
         add(path + ".obstacle_meshing_mode",                              "Obstacle Meshing Mode",                          group_id=0)
         add(path + ".remove_mesh_near_domain",                            "Remove Mesh Near Domain",                        group_id=0)
         add(path + ".remove_mesh_near_domain_distance",                   "Distance",                                       group_id=0)
+        add(path + ".remove_mesh_near_domain_sides",                      "Remove Mesh Sides",                              group_id=0)
         add(path + ".smoothing_value",                                    "Smoothing Value",                                group_id=0)
         add(path + ".smoothing_iterations",                               "Smoothing Iterations",                           group_id=0)
         add(path + ".invert_contact_normals",                             "Invert Contact Normals",                         group_id=0)

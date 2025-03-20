@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2024 Ryan L. Guy
+# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -185,6 +185,22 @@ def get_current_simulation_frame():
     return current_frame - bpy.context.scene.flip_fluid_helper.playback_frame_offset
 
 
+def get_timeline_frame_from_simulation_frame(frameno):
+    dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+    if dprops is None:
+        return 0 
+
+    rprops = dprops.render
+    if rprops.simulation_playback_mode == 'PLAYBACK_MODE_TIMELINE':
+        current_frame = frameno
+    elif rprops.simulation_playback_mode == 'PLAYBACK_MODE_OVERRIDE_FRAME':
+        current_frame = math.floor(dprops.render.override_frame)
+    elif rprops.simulation_playback_mode == 'PLAYBACK_MODE_HOLD_FRAME':
+        current_frame = dprops.render.hold_frame_number
+
+    return current_frame + bpy.context.scene.flip_fluid_helper.playback_frame_offset
+
+
 def get_current_render_frame():
     dprops = bpy.context.scene.flip_fluid.get_domain_properties()
     if dprops is None:
@@ -351,6 +367,7 @@ def __update_fluid_particle_display_mode():
         particle_cache.enable_source_id_attribute = particle_props.enable_fluid_particle_source_id_attribute
         particle_cache.enable_viscosity_attribute =  dprops.surface.enable_viscosity_attribute
         particle_cache.enable_id_attribute = particle_props.enable_fluid_particle_output
+        particle_cache.enable_uid_attribute = particle_props.enable_fluid_particle_uid_attribute
     elif display_mode == 'DISPLAY_PREVIEW':
         particle_cache.mesh_prefix = "fluidparticles"
         particle_cache.mesh_display_name_prefix = "preview_"
@@ -364,6 +381,7 @@ def __update_fluid_particle_display_mode():
         particle_cache.enable_source_id_attribute = particle_props.enable_fluid_particle_source_id_attribute
         particle_cache.enable_viscosity_attribute = dprops.surface.enable_viscosity_attribute
         particle_cache.enable_id_attribute = particle_props.enable_fluid_particle_output
+        particle_cache.enable_uid_attribute = particle_props.enable_fluid_particle_uid_attribute
     elif display_mode == 'DISPLAY_NONE':
         particle_cache.mesh_prefix = "none"
         particle_cache.mesh_display_name_prefix = "none_"
@@ -377,6 +395,7 @@ def __update_fluid_particle_display_mode():
         particle_cache.enable_source_id_attribute = False
         particle_cache.enable_viscosity_attribute = False
         particle_cache.enable_id_attribute = False
+        particle_cache.enable_uid_attribute = False
 
     surface_pct, boundary_pct, bubble_pct = __get_fluid_particle_display_percentages()
     particle_cache.ffp3_surface_import_percentage = surface_pct

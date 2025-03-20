@@ -1,0 +1,10 @@
+{
+    "author": "Dennis Fassbaender & Ryan Guy",
+    "description": "Some presets for you to start with",
+    "identifier": "basic_fluids_a5b505ae",
+    "is_default_user_package": false,
+    "is_system_package": false,
+    "name": "Basic Fluids",
+    "uid": 1,
+    "use_custom_icons": true
+}

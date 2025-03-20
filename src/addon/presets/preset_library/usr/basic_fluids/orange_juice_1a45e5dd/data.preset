@@ -1,0 +1,193 @@
+{
+    "description": "Fresh and tasty",
+    "identifier": "orange_juice_1a45e5dd",
+    "is_system_preset": false,
+    "name": "Orange Juice",
+    "properties": [
+        {
+            "path": "domain.simulation.settings_export_mode",
+            "value": "EXPORT_DEFAULT"
+        },
+        {
+            "path": "domain.simulation.resolution",
+            "value": 300
+        },
+        {
+            "path": "domain.simulation.preview_resolution",
+            "value": 100
+        },
+        {
+            "path": "domain.simulation.lock_cell_size",
+            "value": false
+        },
+        {
+            "path": "domain.simulation.start_time",
+            "value": 0.0
+        },
+        {
+            "path": "domain.simulation.end_time",
+            "value": 8.333333015441895
+        },
+        {
+            "path": "domain.simulation.use_fps",
+            "value": true
+        },
+        {
+            "path": "domain.simulation.frames_per_second",
+            "value": 30.0
+        },
+        {
+            "path": "domain.simulation.time_scale",
+            "value": 1.0
+        },
+        {
+            "path": "domain.render.render_display",
+            "value": "DISPLAY_FINAL"
+        },
+        {
+            "path": "domain.render.viewport_display",
+            "value": "DISPLAY_FINAL"
+        },
+        {
+            "path": "domain.render.whitewater_render_display",
+            "value": "DISPLAY_FINAL"
+        },
+        {
+            "path": "domain.render.whitewater_viewport_display",
+            "value": "DISPLAY_FINAL"
+        },
+        {
+            "path": "domain.render.whitewater_view_settings_mode",
+            "value": "VIEW_SETTINGS_WHITEWATER"
+        },
+        {
+            "path": "domain.render.render_whitewater_pct",
+            "value": 100
+        },
+        {
+            "path": "domain.render.viewport_whitewater_pct",
+            "value": 25
+        },
+        {
+            "path": "domain.render.render_foam_pct",
+            "value": 100
+        },
+        {
+            "path": "domain.render.render_bubble_pct",
+            "value": 100
+        },
+        {
+            "path": "domain.render.render_spray_pct",
+            "value": 100
+        },
+        {
+            "path": "domain.render.viewport_foam_pct",
+            "value": 25
+        },
+        {
+            "path": "domain.render.viewport_bubble_pct",
+            "value": 25
+        },
+        {
+            "path": "domain.render.viewport_spray_pct",
+            "value": 25
+        },
+        {
+            "path": "domain.render.whitewater_particle_object_settings_mode",
+            "value": "WHITEWATER_OBJECT_SETTINGS_WHITEWATER"
+        },
+        {
+            "path": "domain.render.whitewater_use_icosphere_object",
+            "value": true
+        },
+        {
+            "path": "domain.render.only_display_whitewater_in_render",
+            "value": false
+        },
+        {
+            "path": "domain.render.whitewater_particle_scale",
+            "value": 0.007000000216066837
+        },
+        {
+            "path": "domain.render.foam_use_icosphere_object",
+            "value": true
+        },
+        {
+            "path": "domain.render.bubble_use_icosphere_object",
+            "value": true
+        },
+        {
+            "path": "domain.render.spray_use_icosphere_object",
+            "value": true
+        },
+        {
+            "path": "domain.render.only_display_foam_in_render",
+            "value": true
+        },
+        {
+            "path": "domain.render.only_display_bubble_in_render",
+            "value": true
+        },
+        {
+            "path": "domain.render.only_display_spray_in_render",
+            "value": true
+        },
+        {
+            "path": "domain.render.foam_particle_scale",
+            "value": 0.03999999910593033
+        },
+        {
+            "path": "domain.render.bubble_particle_scale",
+            "value": 0.03999999910593033
+        },
+        {
+            "path": "domain.render.spray_particle_scale",
+            "value": 0.03999999910593033
+        },
+        {
+            "path": "domain.surface.subdivisions",
+            "value": 1
+        },
+        {
+            "path": "domain.surface.particle_scale",
+            "value": 1.0
+        },
+        {
+            "path": "domain.surface.compute_chunk_mode",
+            "value": "COMPUTE_CHUNK_MODE_AUTO"
+        },
+        {
+            "path": "domain.surface.compute_chunks_fixed",
+            "value": 1
+        },
+        {
+            "path": "domain.surface.smoothing_value",
+            "value": 1.0
+        },
+        {
+            "path": "domain.surface.smoothing_iterations",
+            "value": 2
+        },
+        {
+            "path": "domain.surface.enable_smooth_interface_meshing",
+            "value": true
+        },
+        {
+            "path": "domain.materials.surface_material",
+            "value": "FF Orange Juice"
+        },
+        {
+            "path": "domain.materials.whitewater_foam_material",
+            "value": "MATERIAL_NONE"
+        },
+        {
+            "path": "domain.materials.whitewater_bubble_material",
+            "value": "MATERIAL_NONE"
+        },
+        {
+            "path": "domain.materials.whitewater_spray_material",
+            "value": "MATERIAL_NONE"
+        }
+    ],
+    "uid": 6526758
+}

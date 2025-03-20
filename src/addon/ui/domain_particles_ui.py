@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2024 Ryan L. Guy
+# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -159,6 +159,9 @@ def _draw_geometry_attributes_menu(self, context):
             row.prop(sprops, "lifetime_attribute_death_time")
             column.prop(pprops, "enable_fluid_particle_whitewater_proximity_attribute", text="Whitewater Proximity Attributes")
             column.prop(pprops, "enable_fluid_particle_source_id_attribute", text="Source ID Attributes")
+            row = column.row(align=True)
+            row.prop(pprops, "enable_fluid_particle_uid_attribute", text="UID Attributes")
+            row.prop(pprops, "enable_fluid_particle_uid_attribute_reuse", text="Reuse UIDs")
         else:
             row = row.row(align=True)
             row.alignment = 'RIGHT'
@@ -166,6 +169,7 @@ def _draw_geometry_attributes_menu(self, context):
             row.prop(pprops, "enable_fluid_particle_lifetime_attribute", text="Life")
             row.prop(pprops, "enable_fluid_particle_whitewater_proximity_attribute", text="WW Prox.")
             row.prop(pprops, "enable_fluid_particle_source_id_attribute", text="Source ID")
+            row.prop(pprops, "enable_fluid_particle_uid_attribute", text="UID")
 
         if show_documentation:
             column = box.column(align=True)
@@ -206,15 +210,15 @@ class FLIPFLUID_PT_DomainTypeFluidParticlesPanel(bpy.types.Panel):
         show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
 
         prefs = vcu.get_addon_preferences()
-        if not prefs.is_developer_tools_enabled():
+        if not prefs.is_extra_features_enabled():
             warn_box = self.layout.box()
             warn_column = warn_box.column(align=True)
             warn_column.enabled = True
             warn_column.label(text="     This feature is affected by a current bug in Blender.", icon='ERROR')
-            warn_column.label(text="     The Developer Tools option must be enabled in preferences")
+            warn_column.label(text="     The Extra Features option must be enabled in preferences")
             warn_column.label(text="     to use this feature.")
             warn_column.separator()
-            warn_column.prop(prefs, "enable_developer_tools", text="Enable Developer Tools in Preferences")
+            warn_column.prop(prefs, "enable_extra_features", text="Enable Extra Features in Preferences")
             warn_column.separator()
             warn_column.operator(
                 "wm.url_open", 

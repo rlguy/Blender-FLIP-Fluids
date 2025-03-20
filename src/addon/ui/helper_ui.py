@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2022 Ryan L. Guy
+# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,7 +36,14 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         return True
-
+        
+    # Find Domain-Object for compositing/passes
+    def get_domain_object():
+        """Find the first object in the scene with flip_fluid.object_type = 'TYPE_DOMAIN'."""
+        for obj in bpy.data.objects:
+            if hasattr(obj, "flip_fluid") and obj.flip_fluid.object_type == 'TYPE_DOMAIN':
+                return obj
+        return None  # No domain object found
 
     def draw_simulation_setup_panel(self, context):
         is_addon_disabled = context.scene.flip_fluid.is_addon_disabled_in_blend_file()
@@ -162,7 +169,7 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                 column.label(text="Blender 3.1 or later required")
 
             prefs = vcu.get_addon_preferences()
-            is_developer_mode = prefs.is_developer_tools_enabled()
+            is_developer_mode = prefs.is_extra_features_enabled()
             if is_developer_mode:
                 active_collection = context.view_layer.active_layer_collection.collection
                 is_active_collection_selected = False
@@ -200,10 +207,10 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                 warn_column = warn_box.column(align=True)
                 warn_column.enabled = True
                 warn_column.label(text="     This feature is affected by a current bug in Blender.", icon='ERROR')
-                warn_column.label(text="     The Developer Tools option must be enabled in preferences")
+                warn_column.label(text="     The Extra Features option must be enabled in preferences")
                 warn_column.label(text="     to use this feature.")
                 warn_column.separator()
-                warn_column.prop(prefs, "enable_developer_tools", text="Enable Developer Tools in Preferences")
+                warn_column.prop(prefs, "enable_extra_features", text="Enable Extra Features in Preferences")
                 warn_column.separator()
                 warn_column.operator(
                     "wm.url_open", 
@@ -372,12 +379,14 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
             emboss=False
         )
         row.label(text="Command Line Tools:")
-
+        
         if hprops.command_line_tools_expanded:
-            row = box.row(align=True)
-            row.alignment = 'LEFT'
-            row.label(text="Save before running CMD operators:")
-            row.operator("flip_fluid_operators.helper_save_blend_file", icon='FILE_TICK', text="Save").save_as_blend_file = False
+        
+            if hprops.render_passes:
+                subbox = box.box()
+                hint_row = subbox.row()
+                hint_row.alignment = 'CENTER'
+                hint_row.label(text="Passes Rendering is ENABLED", icon='RENDERLAYERS')
 
             ### Command Line Bake ###
 
@@ -395,165 +404,88 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                 row = column.row(align=True)
                 row.operator("flip_fluid_operators.helper_command_line_bake")
                 row.operator("flip_fluid_operators.helper_command_line_bake_to_clipboard", text="", icon='COPYDOWN')
+                row.operator("flip_fluid_operators.helper_open_cache_output_folder", text="", icon='FILE_FOLDER')
                 column.separator()
                 
-                column = subbox.column(align=True)
+                column = subbox.column()
                 row = column.row(align=True)
                 row.prop(hprops, "cmd_bake_and_render")
                 row = column.row(align=True)
                 row.enabled = hprops.cmd_bake_and_render
                 row.prop(hprops, "cmd_bake_and_render_mode", expand=True)
 
+                column = subbox.column(align=True)
+                column.enabled = hprops.cmd_bake_and_render
                 row = column.row(align=True)
                 row.enabled = hprops.cmd_bake_and_render
                 row.alignment = 'EXPAND'
                 if hprops.cmd_bake_and_render_mode == 'CMD_BAKE_AND_RENDER_MODE_SEQUENCE':
-                    system = platform.system()
-                    if system == "Windows":
-                        row.label(text="Render Mode:")
-                        row.prop(hprops, "cmd_launch_render_after_bake_mode", text="")
+                    row.label(text="Render After Bake Mode:")
+                    if hprops.render_passes:
+                        row.prop(hprops, "cmd_launch_render_passes_animation_mode", text="")
+                    else:
+                        row.prop(hprops, "cmd_launch_render_animation_mode", text="")
+
+                    if hprops.render_passes:
+                        row = column.row(align=True)
+                        row.label(text="")
+                        row.prop(hprops, "cmd_launch_render_passes_animation_instances")
+                        row = column.row(align=True)
+                        row.label(text="")
+                        row.prop(hprops, "cmd_launch_render_passes_animation_no_overwrite")
+                    elif hprops.cmd_launch_render_animation_mode == 'CMD_RENDER_MODE_BATCH':
+                        row = column.row(align=True)
+                        row.enabled = hprops.cmd_bake_and_render
+                        row.label(text="")
+                        row.prop(hprops, "cmd_launch_render_animation_no_overwrite")
                         column.label(text="")
+                    elif hprops.cmd_launch_render_animation_mode == 'CMD_RENDER_MODE_MULTI_INSTANCE':
+                        row = column.row(align=True)
+                        row.label(text="")
+                        row.prop(hprops, "cmd_launch_render_animation_instances")
+                        row = column.row(align=True)
+                        row.label(text="")
+                        row.prop(hprops, "cmd_launch_render_animation_no_overwrite")
                     else:
                         column.label(text="")
                         column.label(text="")
                 elif hprops.cmd_bake_and_render_mode == 'CMD_BAKE_AND_RENDER_MODE_INTERLEAVED':
-                    row.prop(hprops, "cmd_bake_and_render_interleaved_instances")
-                    row = column.row(align=True)
-                    row.enabled = hprops.cmd_bake_and_render
-                    row.alignment = 'RIGHT'
-                    row.prop(hprops, "cmd_bake_and_render_interleaved_no_overwrite")
+                    if hprops.render_passes:
+                        row = column.row(align=True)
+                        row.label(text="")
+                        row.label(text="Compositing Passes Rendering", icon="ERROR")
+                        row = column.row(align=True)
+                        row.label(text="")
+                        row.label(text="is not supported while in", icon="ERROR")
+                        row = column.row(align=True)
+                        row.label(text="")
+                        row.label(text="Render During Bake mode", icon="ERROR")
 
-                """
-                row = column.row(align=True)
-                row.prop(hprops, "cmd_launch_render_after_bake")
+                        """
+                        row = column.row(align=True)
+                        row.label(text="Render During Bake Mode:")
+                        row.prop(hprops, "cmd_launch_render_passes_animation_mode", text="")
+                        row = column.row(align=True)
+                        row.label(text="")
+                        row.prop(hprops, "cmd_launch_render_passes_animation_instances")
+                        row = column.row(align=True)
+                        row.label(text="")
+                        row.prop(hprops, "cmd_launch_render_passes_animation_no_overwrite", text="Skip rendered frames")
+                        """
+                    else:
+                        row = column.row(align=True)
+                        row.label(text="")
+                        row.prop(hprops, "cmd_bake_and_render_interleaved_instances")
+                        row = column.row(align=True)
+                        row.label(text="")
+                        row.prop(hprops, "cmd_bake_and_render_interleaved_no_overwrite", text="Skip rendered frames")
+                        column.label(text="")
 
-                system = platform.system()
-                if system == "Windows":
-                    row = row.row(align=True)
-                    row.enabled = hprops.cmd_launch_render_after_bake
-                    row.prop(hprops, "cmd_launch_render_after_bake_mode", text="")
-                """
             else:
                 row = row.row(align=True)
                 row.operator("flip_fluid_operators.helper_command_line_bake")
                 row.operator("flip_fluid_operators.helper_command_line_bake_to_clipboard", text="", icon='COPYDOWN')
-
-            
-            ### Prepare Compositing Passes Rendering Panel ###
-
-            # Disabled by default for the release of FLIP Fluids 1.8.1
-            # Can be enabled in a Blend file by running the following script:
-            """
-            import bpy
-            bpy.context.scene.flip_fluid_helper.display_compositing_tools_in_ui = True
-            """
-            
-            override_preferences = False # UI display override for development purposes
-            if hprops.display_compositing_tools_in_ui or override_preferences:
-                subbox = box.box()
-                row = subbox.row(align=True)
-                row.prop(hprops, "command_line_render_passes_expanded",
-                    icon="TRIA_DOWN" if hprops.command_line_render_passes_expanded else "TRIA_RIGHT",
-                    icon_only=True,
-                    emboss=False
-                )
-                row.label(text="Compositing Tools:")
-
-                if not hprops.command_line_render_passes_expanded:
-                    row.operator("flip_fluid_operators.helper_cmd_render_pass_animation", text="Launch Render Passes")
-                    row.operator("flip_fluid_operators.helper_cmd_render_pass_anim_clipboard", text="", icon='COPYDOWN')
-
-                if hprops.command_line_render_passes_expanded:
-                    is_render_passes_active = hprops.render_passes
-
-                    row = subbox.row(align=True)
-                    row.prop(hprops, "render_passes")
-                    # Check if Cycles is the active render engine
-                    if context.scene.render.engine == 'CYCLES':
-                        row.prop(context.scene.render, "film_transparent", text="Film Transparency")
-
-                    row = subbox.row()
-                    row.active = is_render_passes_active
-                    row.alignment = 'LEFT'
-
-                    # Helper function to add prop with fixed width
-                    def add_fixed_width_prop(row, prop_name):
-                        box = row.box()
-                        col = box.column()
-                        col.scale_x = 1.5  # Adjust the scale to make the props the same width
-                        col.prop(hprops, prop_name)
-
-                    # First row of checkboxes
-                    row1 = subbox.row(align=True)
-                    row1.active = is_render_passes_active
-                    add_fixed_width_prop(row1, "render_passes_fluid_only")
-                    add_fixed_width_prop(row1, "render_passes_objects_only")
-                    add_fixed_width_prop(row1, "render_passes_catchers_only")
-
-                    # Second row of checkboxes
-                    row2 = subbox.row(align=True)
-                    row2.active = is_render_passes_active
-                    add_fixed_width_prop(row2, "render_passes_fluid_shadows_only")
-                    add_fixed_width_prop(row2, "render_passes_reflr_only")
-
-                    # Third row of checkboxes
-                    row3 = subbox.row(align=True)
-                    row3.active = is_render_passes_active
-                    add_fixed_width_prop(row3, "render_passes_fluidparticles_only")
-                    add_fixed_width_prop(row3, "render_passes_foamandspray_only")
-                    add_fixed_width_prop(row3, "render_passes_bubblesanddust_only")
-
-
-
-                    
-                    column = subbox.column()
-                    row = column.row(align=True)
-                    row.operator("flip_fluid_operators.reset_passes_settings", text="Reset Settings", icon='FILE_REFRESH')
-                    
-                    # Add some objects to list
-                    row = subbox.row()
-                    row.label(text="Objects to render (no fluid objects):")
-                    row = subbox.row()
-                    row.template_list("FLIPFLUID_UL_passes_items", "", hprops, "render_passes_objectlist", hprops, "render_passes_objectlist_index")
-                                    
-                    col = row.column(align=True)
-                    col.operator("flip_fluid_operators.add_item_to_list", icon='ADD', text="")
-                    col.operator("flip_fluid_operators.remove_item_from_list", icon='REMOVE', text="").index = hprops.render_passes_objectlist_index
-                    
-                    column = subbox.column()
-                    row = column.row(align=True)
-                    row = subbox.row()
-                    row.label(text="Generate Background Plane (ff_camera_screen):")
-                    row = subbox.row()
-                    row.prop(hprops, 'render_passes_cameraselection', text="")
-                    row.operator("flip_fluid_operators.add_camera_screen", text="Add CameraScreen", icon='IMAGE_BACKGROUND')
-                    row.prop(hprops, 'render_passes_camerascreen_distance', text="")
-                  
-                    camera = context.scene.camera
-                    if camera and camera.type == 'CAMERA':
-                        column = subbox.column()
-                        row = column.row(align=True)
-                        row.prop(camera.data, "show_background_images", text="Show Background Image")
-                        
-                        if camera.data.show_background_images:
-                            # Ensure there's at least one background image
-                            if not camera.data.background_images:
-                                bg_image = camera.data.background_images.new()
-                            else:
-                                bg_image = camera.data.background_images[0]
-
-                            # Ensure the background image has an image assigned
-                            if bg_image and bg_image.image:
-                                row.prop(bg_image, "alpha", text="Opacity")
-
-                    column = subbox.column()
-                    row = column.row(align=True)
-                    row.operator("flip_fluid_operators.helper_fix_compositingtextures", text="Fix Textures")
-                    
-                    column = subbox.column()
-                    row = column.row(align=True)
-                    row.operator("flip_fluid_operators.helper_cmd_render_pass_animation", text="Launch Render Passes")
-                    row.operator("flip_fluid_operators.helper_cmd_render_pass_anim_clipboard", text="", icon='COPYDOWN')
+                row.operator("flip_fluid_operators.helper_open_cache_output_folder", text="", icon='FILE_FOLDER')
 
             ### Command Line Render Animation ###
 
@@ -567,21 +499,48 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
             row.label(text="Render Animation:")
             
             if hprops.command_line_render_expanded:
-                column = subbox.column(align=True)
+                column = subbox.column()
                 row = column.row(align=True)
                 row.operator("flip_fluid_operators.helper_command_line_render").use_turbo_tools = False
                 row.operator("flip_fluid_operators.helper_command_line_render_to_clipboard", text="", icon='COPYDOWN').use_turbo_tools = False
+                row.operator("flip_fluid_operators.helper_open_render_output_folder", text="", icon='FILE_FOLDER')
 
-                system = platform.system()
-                if system == "Windows":
+                column = subbox.column(align=True)
+                row = column.row(align=True)
+                row.label(text="Render Mode:")
+                if hprops.render_passes:
+                    row.prop(hprops, "cmd_launch_render_passes_animation_mode", text="")
+                else:
+                    row.prop(hprops, "cmd_launch_render_animation_mode", text="")
+
+                if hprops.render_passes:
                     row = column.row(align=True)
-                    row.operator("flip_fluid_operators.helper_cmd_render_to_scriptfile")
-                    row.operator("flip_fluid_operators.helper_run_batch_render_scriptfile", text="", icon='PLAY').regenerate_batch_file=False
-                    row.operator("flip_fluid_operators.helper_open_outputfolder", text="", icon='FILE_FOLDER')
+                    row.label(text="")
+                    row.prop(hprops, "cmd_launch_render_passes_animation_instances")
+                    row = column.row(align=True)
+                    row.label(text="")
+                    row.prop(hprops, "cmd_launch_render_passes_animation_no_overwrite")
+                elif hprops.cmd_launch_render_animation_mode == 'CMD_RENDER_MODE_BATCH':
+                    row = column.row(align=True)
+                    row.label(text="")
+                    row.prop(hprops, "cmd_launch_render_animation_no_overwrite")
+                    column.label(text="")
+                elif hprops.cmd_launch_render_animation_mode == 'CMD_RENDER_MODE_MULTI_INSTANCE':
+                    row = column.row(align=True)
+                    row.label(text="")
+                    row.prop(hprops, "cmd_launch_render_animation_instances")
+                    row = column.row(align=True)
+                    row.label(text="")
+                    row.prop(hprops, "cmd_launch_render_animation_no_overwrite")
+                else:
+                    column.label(text="")
+                    column.label(text="")
+
             else:
                 row = row.row(align=True)
                 row.operator("flip_fluid_operators.helper_command_line_render").use_turbo_tools = False
                 row.operator("flip_fluid_operators.helper_command_line_render_to_clipboard", text="", icon='COPYDOWN').use_turbo_tools = False
+                row.operator("flip_fluid_operators.helper_open_render_output_folder", text="", icon='FILE_FOLDER')
 
             ### Command Line Render Frame ###
 
@@ -599,8 +558,12 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                 row = column.row(align=True)
                 row.operator("flip_fluid_operators.helper_command_line_render_frame")
                 row.operator("flip_fluid_operators.helper_cmd_render_frame_to_clipboard", text="", icon='COPYDOWN')
+                row.operator("flip_fluid_operators.helper_open_render_output_folder", text="", icon='FILE_FOLDER')
                 row = column.row(align=True)
+                row.enabled = not hprops.render_passes
                 row.prop(hprops, "cmd_open_image_after_render")
+                if hprops.render_passes:
+                    row.label(text="Option not available for passes rendering")
 
                 system = platform.system()
                 if system == "Windows":
@@ -610,6 +573,7 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                 row = row.row(align=True)
                 row.operator("flip_fluid_operators.helper_command_line_render_frame")
                 row.operator("flip_fluid_operators.helper_cmd_render_frame_to_clipboard", text="", icon='COPYDOWN')
+                row.operator("flip_fluid_operators.helper_open_render_output_folder", text="", icon='FILE_FOLDER')
 
 
             ### Turbo Tools Command Line Render ###
@@ -665,6 +629,7 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                 row = column.row(align=True)
                 row.operator("flip_fluid_operators.helper_command_line_alembic_export")
                 row.operator("flip_fluid_operators.helper_cmd_alembic_export_to_clipboard", text="", icon='COPYDOWN')
+                row.operator("flip_fluid_operators.helper_open_alembic_output_folder", text="", icon='FILE_FOLDER')
                 column.separator()
 
                 column.label(text="Mesh and Data Export:")
@@ -706,6 +671,7 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                 row = row.row(align=True)
                 row.operator("flip_fluid_operators.helper_command_line_alembic_export")
                 row.operator("flip_fluid_operators.helper_cmd_alembic_export_to_clipboard", text="", icon='COPYDOWN')
+                row.operator("flip_fluid_operators.helper_open_alembic_output_folder", text="", icon='FILE_FOLDER')
 
         #
         # Geometry Node Tools
@@ -721,7 +687,7 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
         row.label(text="Geometry Node Tools:")
 
         prefs = vcu.get_addon_preferences()
-        is_developer_mode = prefs.is_developer_tools_enabled()
+        is_developer_mode = prefs.is_extra_features_enabled()
         if hprops.geometry_node_tools_expanded:
             column = box.column(align=True)
 
@@ -733,10 +699,10 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                 warn_column = warn_box.column(align=True)
                 warn_column.enabled = True
                 warn_column.label(text="     This feature is affected by a current bug in Blender.", icon='ERROR')
-                warn_column.label(text="     The Developer Tools option must be enabled in preferences")
+                warn_column.label(text="     The Extra Features option must be enabled in preferences")
                 warn_column.label(text="     to use this feature.")
                 warn_column.separator()
-                warn_column.prop(prefs, "enable_developer_tools", text="Enable Developer Tools in Preferences")
+                warn_column.prop(prefs, "enable_extra_features", text="Enable Extra Features in Preferences")
                 warn_column.separator()
                 warn_column.operator(
                     "wm.url_open", 
@@ -1009,6 +975,416 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
         self.draw_disable_addon_submenu(context)
         
 
+class FLIPFLUID_PT_HelperPanelCompositingTools(bpy.types.Panel):
+    bl_label = "Compositing Tools"
+    bl_category = "FLIP Fluids"
+    bl_space_type = 'VIEW_3D'
+    bl_options = {'DEFAULT_CLOSED'}
+    if vcu.is_blender_28():
+        bl_region_type = 'UI'
+    else:
+        bl_region_type = 'TOOLS'
+
+    @classmethod
+    def poll(cls, context):
+        return not context.scene.flip_fluid.is_addon_disabled_in_blend_file()
+
+    def draw(self, context):
+        layout = self.layout
+        if not installation_utils.is_installation_complete():
+            return
+
+        hprops = context.scene.flip_fluid_helper
+
+        # Domain-Check
+        domain_obj = context.scene.flip_fluid.get_domain_object()
+        has_domain = domain_obj is not None
+
+        # Finished initialize?
+        initialize_all_conditions_met = False
+        if domain_obj:
+            initialize_all_conditions_met = (
+                domain_obj.flip_fluid.domain.particles.enable_fluid_particle_velocity_vector_attribute and
+                domain_obj.flip_fluid.domain.whitewater.enable_velocity_vector_attribute and
+                domain_obj.flip_fluid.domain.surface.enable_velocity_vector_attribute and
+                #domain_obj.flip_fluid.domain.surface.remove_mesh_near_domain and # Disabled testwise
+                #context.scene.render.engine == 'CYCLES' and # Disabled testwise
+                context.scene.render.film_transparent and
+                domain_obj.flip_fluid.domain.whitewater.enable_id_attribute
+            )
+
+        # CameraScreen-Check
+        camera_screen_exists = bpy.data.objects.get("ff_camera_screen") is not None
+
+        box = self.layout.box()
+
+        # 1. Missing Domain
+        if not has_domain:
+            row = box.row()
+            row.label(text="Missing FLIP Fluids Domain", icon='ERROR')
+            return
+
+        # 2. Initialize not finished
+        if not initialize_all_conditions_met:
+            row = box.row()
+            row.label(text="Compositing setup is incomplete", icon='ERROR')
+
+            # Initialize All Button
+            row = box.row(align=True)
+            row.operator(
+                "flip_fluid_operators.helper_initialize_compositing", 
+                text="Initialize All", 
+                icon='SETTINGS'
+            )
+            return
+
+        # 3. Missing CameraScreen
+        if not camera_screen_exists:
+            # Hinweis und Add Camera Screen Button im aufgeklappten Zustand
+            row = box.row()
+            row.label(text="Add CameraScreen to continue", icon='INFO')
+
+            # Add Camera Screen Button
+            row = box.row(align=True)
+            row.operator("flip_fluid_operators.add_camera_screen", text="Add CameraScreen", icon='IMAGE_BACKGROUND')
+            return
+
+        # 4. Everything was setup. Continue:
+
+        row = box.row(align=True)
+        row.active = hprops.render_passes and hprops.render_passes_is_any_pass_enabled and not hprops.render_passes_stillimagemode_toggle
+        row.operator("flip_fluid_operators.helper_command_line_render", text="Launch Render Passes").use_turbo_tools = False
+        row.operator("flip_fluid_operators.helper_command_line_render_to_clipboard", text="", icon='COPYDOWN').use_turbo_tools = False
+        row.operator("flip_fluid_operators.helper_open_render_output_folder", text="", icon='FILE_FOLDER')
+
+        # Render Passes Checkbox
+        row = box.row(align=True)
+        row.prop(hprops, "render_passes")
+
+        row = box.row()
+        row.alignment = 'LEFT'
+        row.prop(context.scene.render, "film_transparent", text="Film Transparency")
+
+        # Checkboxes for render passes with aligned width
+        def add_fixed_width_prop(row, prop_name, enabled):
+            box = row.box()
+            col = box.column()
+            col.scale_x = 1.5
+            col.enabled = enabled  # Deaktiviert Checkbox wenn nicht verfügbar
+            col.prop(hprops, prop_name)
+
+        def add_fixed_width_placeholder(row):
+            box = row.box()
+            col = box.column()
+            col.scale_x = 1.5
+            col.label(text="")
+
+        # ---------------------------------
+        # Aktivitätsbedingungen ermitteln
+        # ---------------------------------
+
+        # 1) Fluid Surface
+        has_fluid_surface = ("fluid_surface" in bpy.data.objects)
+
+        # 2) Objekte ohne Flag (ungetagged)
+        has_unflagged_objects = hprops.render_passes_has_unflagged_objects
+
+        # 3) Elements
+        has_elements = any(
+            item.fg_elements or item.bg_elements or item.ref_elements
+            for item in hprops.render_passes_objectlist
+        )
+
+        # 4) Fluid Particles/Whitewater -> gezielt Domain-Objekt abfragen
+        has_fluid_particles = False
+        has_whitewater = False
+        if domain_obj is not None:
+            has_fluid_particles = domain_obj.flip_fluid.domain.particles.enable_fluid_particle_output
+            has_whitewater = domain_obj.flip_fluid.domain.whitewater.enable_whitewater_simulation
+
+        # ---------------------------------
+        # First row of checkboxes
+        # ---------------------------------
+        column = box.column(align=True)
+        row1 = column.row(align=True)
+
+        add_fixed_width_prop(row1, "render_passes_fluid_only", has_fluid_surface)
+        add_fixed_width_prop(row1, "render_passes_objects_only", has_unflagged_objects)
+        add_fixed_width_prop(row1, "render_passes_elements_only", has_elements)
+
+        # ---------------------------------
+        # Second row of checkboxes
+        # ---------------------------------
+        # row2 = column.row(align=True)
+        # add_fixed_width_prop(row2, "render_passes_fluid_shadows_only", is_render_passes_active)
+        # add_fixed_width_prop(row2, "render_passes_reflr_only", has_fluid_surface)
+        # add_fixed_width_placeholder(row2)
+        # DISABLED REFLECTIONS - NEED TO FIND A BETTER WORKFLOW
+
+        # ---------------------------------
+        # Third row of checkboxes
+        # ---------------------------------
+        row3 = column.row(align=True)
+        add_fixed_width_prop(row3, "render_passes_fluidparticles_only", has_fluid_particles)
+        add_fixed_width_prop(row3, "render_passes_foamandspray_only", has_whitewater)
+        add_fixed_width_prop(row3, "render_passes_bubblesanddust_only", has_whitewater)
+
+        box.separator()
+
+        # Add separator and group elements for Camera, Alignment, and Background Image Settings
+        settings_box = box.box()
+
+        # Group Alignment and Camera Screen Settings
+        camera_screen_exists = bpy.data.objects.get("ff_camera_screen") is not None
+        alignment_grid_exists = bpy.data.objects.get("ff_alignment_grid") is not None
+        
+        row = settings_box.row(align=True)
+
+        row1 = row.row()
+        row1.enabled = camera_screen_exists
+        row1.prop(hprops, "render_passes_camerascreen_visibility", text="Show CameraScreen")
+
+        row2 = row.row()
+        row2.enabled = alignment_grid_exists
+        row2.prop(hprops, "render_passes_alignmentgrid_visibility", text="Show Alignment Grid")
+
+        # Show Background Image checkbox and Opacity slider
+        camera = context.scene.camera
+        if camera and camera.type == 'CAMERA':
+            row = settings_box.row(align=True)
+            row.prop(camera.data, "show_background_images", text="Show Background Image")
+
+            if not camera.data.background_images:
+                bg_image = camera.data.background_images.new()
+            else:
+                bg_image = camera.data.background_images[0]
+
+            if bg_image and bg_image.image:
+                row.prop(bg_image, "alpha", text="Opacity")
+
+        # Camera screen settings in compact layout
+        column = settings_box.column(align=True)
+
+        # First row for camera selection and camera screen distance
+        row = column.row(align=True)
+        row.prop(hprops, 'render_passes_cameraselection', text="")
+        row.operator("flip_fluid_operators.add_camera_screen", text="CameraScreen", icon='IMAGE_BACKGROUND')
+        row.prop(hprops, 'render_passes_camerascreen_distance', text="")
+
+        # Second row for still image mode toggle
+        row = column.row(align=True)
+        row.prop(hprops, 'render_passes_stillimagemode_toggle', text="Still Image Mode", toggle=True, icon='IMAGE_DATA')
+
+        # View Transform settings
+        row = box.row(align=True)
+        row.prop(context.scene.view_settings, "view_transform", text="View Transform")
+
+        # Objects to render list
+        row = box.row()
+        row.label(text="Objects to render (no fluid objects):")
+        row = box.row()
+        row.template_list("FLIPFLUID_UL_passes_items", "", hprops, "render_passes_objectlist", hprops, "render_passes_objectlist_index")
+
+        col = row.column(align=True)
+        col.operator("flip_fluid_operators.add_item_to_list", icon='ADD', text="")
+        col.operator("flip_fluid_operators.remove_item_from_list", icon='REMOVE', text="").index = hprops.render_passes_objectlist_index
+
+        box.separator()
+
+
+        column = box.column(align=True)
+
+        # Import Media Button:
+        row = column.row(align=True)
+        row.enabled = hprops.render_passes_stillimagemode_toggle
+        row.operator("flip_fluid.passes_import_media", text="Import Images as Elements", icon='FILE_IMAGE')
+
+        # Foreground and Background Buttons:
+        row = column.row(align=True)
+        row.operator("flip_fluid_operators.quick_foregroundcatcher", text="FG Element", icon='IMAGE_REFERENCE')
+        row.operator("flip_fluid_operators.quick_backgroundcatcher", text="BG Element", icon='IMAGE_BACKGROUND')
+        row.operator("flip_fluid_operators.quick_reflectivecatcher", text="REF Element", icon='IMAGE_BACKGROUND')
+
+        # Ground and Alignment Grid Buttons:
+        row = column.row(align=True)
+        row.operator("flip_fluid_operators.quick_ground", text="Ground Object", icon='ALIGN_BOTTOM')
+        row.operator("flip_fluid_operators.duplicate_item_in_list", text="Duplicate Object", icon='DUPLICATE')
+        row.operator("flip_fluid_operators.add_alignment_grid", text="Alignment Grid", icon='GRID')
+
+        box.separator()
+
+        # Fader area
+        fader_box = box.box()
+        fader_box.label(text="Fading Settings:")
+
+        # Row for the "Show Faders" and "Blend Testcolor" checkboxes
+        row_1 = fader_box.row(align=True)
+        row_1.prop(hprops, "render_passes_faderobjects_visibility", text="Show Faders")
+        row_1.prop(hprops, "render_passes_faderobjectnames_visibility", text="Fader Names")
+        row_1.prop(hprops, "render_passes_objectnames_visibility", text="Object Names")
+
+        # Row for the other three checkboxes
+        row_2 = fader_box.row(align=True)
+        row_2.prop(hprops, "render_passes_toggle_fader_fluidsurface", text="Fader")
+        row_2.prop(hprops, "render_passes_toggle_speed_fluidsurface", text="Speed")
+        row_2.prop(hprops, "render_passes_toggle_domain_fluidsurface", text="Domain")
+
+        # Buttons and Sliders in compact layout using column
+        column = fader_box.column(align=True)
+
+        # Row for Buttons
+        row_3 = column.row(align=True)
+
+        # Row for Buttons (Velocity / Invert)
+        row_3 = column.row(align=True)
+        velocity_button = row_3.row(align=True)
+        velocity_button.scale_x = 1.0
+        velocity_button.enabled = hprops.render_passes_toggle_speed_fluidsurface == 1
+        velocity_button.prop(hprops, "render_passes_toggle_velocity_fluidsurface", text="Velocity", icon='MOD_WAVE')
+
+        invert_button = row_3.row(align=True)
+        invert_button.scale_x = 1.0
+        invert_button.enabled = hprops.render_passes_toggle_velocity_fluidsurface == 1
+        invert_button.prop(hprops, "render_passes_toggle_velocity_invert", text="Invert", icon='ARROW_LEFTRIGHT')
+
+        # Row for Sliders (Fade Footage / Footage / Normal)
+        row_4 = column.row(align=True)
+        row_4.prop(hprops, "render_passes_toggle_projectionfader", text="Fade Footage", icon='IMAGE_ALPHA')
+        row_4.prop(hprops, "render_passes_blend_footage_to_fluidsurface", text="Footage")
+        row_4.prop(hprops, "render_passes_blend_normalmap_to_fluidsurface", text="Normal")
+
+        # Row for "Find Fluid" and "Find Reflections"
+        row_find = column.row(align=True)
+        row_find.prop(hprops, "render_passes_toggle_projectiontester", text="Find Fluid", icon='ZOOM_SELECTED')
+        # row_find.prop(hprops, "render_passes_toggle_findreflections", text="Find Reflections", icon='ZOOM_SELECTED')
+        # DISABLED TILL I FOUND A BETTER WORKFLOW FOR RENDERING
+
+
+        # Collapsible Fader Panel (ColorRamps)
+        def draw_fader_details(parent_layout, context):
+            """Draws a collapsible section for ColorRamp settings and Fading controls within the Fading area."""
+            hprops = context.scene.flip_fluid_helper
+
+            # Collapsible Toggle (row with icon and text)
+            row_toggle = parent_layout.row()
+            icon = 'TRIA_DOWN' if hprops.render_passes_show_fader_details else 'TRIA_RIGHT'
+            row_toggle.prop(hprops, "render_passes_show_fader_details", icon=icon, emboss=False, text="Advanced Fader Settings")
+
+            # If the section is collapsed, don't draw the details
+            if not hprops.render_passes_show_fader_details:
+                return
+
+            # Add ColorRamp nodes directly within the Fader Panel
+            parent_layout.label(text="fluid_surface Fading Controls", icon='NODE_MATERIAL')
+
+            material_name = "FF ClearWater_Passes"
+            node_names = [
+                "ff_fader_colorramp",
+                "ff_objects_colorramp",
+                "ff_speed_colorramp",
+                "ff_domain_colorramp",
+                "ff_footage_colorramp"
+            ]
+
+            mat = bpy.data.materials.get(material_name)
+            if not mat:
+                parent_layout.label(text=f"Material '{material_name}' not found.", icon='ERROR')
+            elif not mat.use_nodes or not mat.node_tree:
+                parent_layout.label(text="Material has no node setup.", icon='ERROR')
+            else:
+                node_tree = mat.node_tree
+                # Loop through relevant ColorRamp nodes
+                for node_name in node_names:
+                    node = node_tree.nodes.get(node_name)
+                    if node and node.type == 'VALTORGB':
+                        # Draw each ColorRamp in the existing layout
+                        row = parent_layout.row(align=True)
+                        row.label(text=node_name)
+                        row.template_color_ramp(node, "color_ramp", expand=False)
+                    else:
+                        parent_layout.label(text=f"'{node_name}' not found or not a ColorRamp.", icon='INFO')
+
+            # Row for Object-Based Fading Width on fluid_surface
+            row = parent_layout.row(align=True)
+            row.prop(hprops, "render_passes_object_fading_width_fluid_surface", slider=True, text="Object Fading Width (fluid_surface)")
+
+            # Row for Object-Based Fading Softness on fluid_surface
+            row = parent_layout.row(align=True)
+            row.prop(hprops, "render_passes_object_fading_softness_fluid_surface", slider=True, text="Object Fading Softness (fluid_surface)")
+
+            # Add Sliders for GeometryNode Modifiers
+            parent_layout.separator()
+            parent_layout.label(text="Particle Fading Controls", icon='MODIFIER')
+
+            # Row for Object-Based Fading Width
+            row = parent_layout.row(align=True)
+            row.prop(hprops, "render_passes_object_fading_width", slider=True, text="Object Fading Width (Particles)")
+
+            # Row for Object-Based Fading Softness
+            row = parent_layout.row(align=True)
+            row.prop(hprops, "render_passes_object_fading_softness", slider=True, text="Object Fading Softness (Particles)")
+
+            # Row for General Fading Width
+            row = parent_layout.row(align=True)
+            row.prop(hprops, "render_passes_general_fading_width", slider=True, text="General Fading Width")
+
+
+        # Draw the collapsible Fader Details section directly in the Fader Panel
+        draw_fader_details(fader_box, context)
+
+        box.separator()
+
+        # Reset and Apply buttons in compact layout
+        column = box.column(align=True)
+
+        if context.scene.flip_fluid.is_domain_object_set():
+            row = column.row(align=True)
+            
+            # Select Domain Button
+            row.operator("flip_fluid_operators.helper_select_domain", text="Select Domain Object", icon="MESH_GRID")
+
+            # Unsaved File Warning
+            is_saved = bool(bpy.data.filepath)
+            if not is_saved:
+                row.prop(hprops, "unsaved_blend_file_tooltip", icon="ERROR", emboss=False, text="")
+                row.alert = True
+                row.label(text="Unsaved File")
+                row.operator("flip_fluid_operators.helper_save_blend_file", icon='FILE_TICK', text="Save")
+                row.alert = False  # Reset alert state
+
+            # Resolution Setting
+            dprops = context.scene.flip_fluid.get_domain_properties()
+            resolution_text = "Resolution"
+            if dprops.simulation.lock_cell_size:
+                resolution_text += " (voxel size locked)"
+
+            row.enabled = not dprops.simulation.lock_cell_size and not dprops.bake.is_simulation_running
+            row.prop(dprops.simulation, "resolution", text=resolution_text)
+
+            # Bake Operator UI Element
+            domain_simulation_ui.draw_bake_operator_UI_element(context, column)
+
+        column.separator()
+
+        # Row for Reset settings (separate row)
+        row = column.row(align=True)
+        row.operator("flip_fluid_operators.reset_passes_settings", text="Set Visibility Options", icon='HIDE_OFF')
+
+        # Row for Apply Materials and Refresh/Fix All (in the same row)
+        row = column.row(align=True)
+        row.operator("flip_fluid_operators.apply_all_materials", text="Apply All Materials", icon='MATERIAL')
+        row.operator("flip_fluid_operators.helper_fix_compositingtextures", text="Refresh / Fix All", icon='FILE_REFRESH')
+
+        # Render Passes Launch buttons (separate row)
+        row = column.row(align=True)
+        row.active = hprops.render_passes and hprops.render_passes_is_any_pass_enabled and not hprops.render_passes_stillimagemode_toggle
+        row.operator("flip_fluid_operators.helper_command_line_render", text="Launch Render Passes").use_turbo_tools = False
+        row.operator("flip_fluid_operators.helper_command_line_render_to_clipboard", text="", icon='COPYDOWN').use_turbo_tools = False
+        row.operator("flip_fluid_operators.helper_open_render_output_folder", text="", icon='FILE_FOLDER')
+
+        #maybe later:
+        #row = column.row(align=True)
+        #row.operator("flip_fluid_operators.create_resolve_project", text="Export Video Editor File", icon='FILE_MOVIE')
 
 class FLIPFLUID_PT_HelperPanelDisplay(bpy.types.Panel):
     bl_label = "Display and Playback"
@@ -1183,6 +1559,7 @@ def register():
 def unregister():
     try:
         bpy.utils.unregister_class(FLIPFLUID_PT_HelperPanelMain)
+        bpy.utils.unregister_class(FLIPFLUID_PT_HelperPanelCompositingTools)
         bpy.utils.unregister_class(FLIPFLUID_PT_HelperPanelDisplay)
         bpy.utils.unregister_class(FLIPFLUID_PT_HelperTechnicalSupport)
 

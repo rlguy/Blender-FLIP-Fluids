@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2024 Ryan L. Guy
+# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -279,6 +279,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
     fluid_particle_viscosity_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("fluid_particle_viscosity_mesh"))
     fluid_particle_whitewater_proximity_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("fluid_particle_whitewater_proximity_mesh"))
     fluid_particle_source_id_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("fluid_particle_source_id_mesh"))
+    fluid_particle_uid_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("fluid_particle_uid_mesh"))
     debug_particle_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("debug_particle_mesh"))
     obstacle_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("obstacle_mesh"))
 
@@ -389,6 +390,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             "fluid_particle_viscosity_mesh",
             "fluid_particle_whitewater_proximity_mesh",
             "fluid_particle_source_id_mesh",
+            "fluid_particle_uid_mesh",
             "debug_particle_mesh",
             "obstacle_mesh",
             "time_mesh",
@@ -660,6 +662,10 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             # If statement to support older caches that do not have a fluidparticlessourceid entry
             self._set_mesh_stats_data(self.fluid_particle_source_id_mesh, data['fluidparticlessourceid'])
 
+        if 'fluidparticlesuid' in data:
+            # If statement to support older caches that do not have a fluidparticlesuid entry
+            self._set_mesh_stats_data(self.fluid_particle_uid_mesh, data['fluidparticlesuid'])
+
         self._set_mesh_stats_data(self.debug_particle_mesh, data['particles'])
         self._set_mesh_stats_data(self.obstacle_mesh, data['obstacle'])
 
@@ -814,6 +820,8 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
                 cache_size += fdata['fluidparticleswhitewaterproximity']['bytes']
             if 'fluidparticlessourceid' in fdata and fdata['fluidparticlessourceid']['enabled']:
                 cache_size += fdata['fluidparticlessourceid']['bytes']
+            if 'fluidparticlesuid' in fdata and fdata['fluidparticlesuid']['enabled']:
+                cache_size += fdata['fluidparticlesuid']['bytes']
             if fdata['particles']['enabled']:
                 cache_size += fdata['particles']['bytes']
             if fdata['obstacle']['enabled']:
@@ -886,6 +894,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         is_fluid_particles_viscosity_enabled = False
         is_fluid_particles_whitewater_proximity_enabled = False
         is_fluid_particles_source_id_enabled = False
+        is_fluid_particles_uid_enabled = False
         is_debug_particles_enabled = False
         is_obstacle_enabled = False
         surface_bytes = 0
@@ -931,6 +940,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         fluid_particles_viscosity_bytes = 0
         fluid_particles_whitewater_proximity_bytes = 0
         fluid_particles_source_id_bytes = 0
+        fluid_particles_uid_bytes = 0
         debug_particles_bytes = 0
         obstacle_bytes = 0
 
@@ -1091,6 +1101,9 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             if 'fluidparticlessourceid' in fdata and fdata['fluidparticlessourceid']['enabled']:
                 is_fluid_particles_source_id_enabled = True
                 fluid_particles_source_id_bytes += fdata['fluidparticlessourceid']['bytes']
+            if 'fluidparticlesuid' in fdata and fdata['fluidparticlesuid']['enabled']:
+                is_fluid_particles_uid_enabled = True
+                fluid_particles_uid_bytes += fdata['fluidparticlesuid']['bytes']
             if fdata['particles']['enabled']:
                 is_debug_particles_enabled = True
                 debug_particles_bytes += fdata['particles']['bytes']
@@ -1165,6 +1178,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.fluid_particle_viscosity_mesh.enabled = is_fluid_particles_viscosity_enabled
         self.fluid_particle_whitewater_proximity_mesh.enabled = is_fluid_particles_whitewater_proximity_enabled
         self.fluid_particle_source_id_mesh.enabled = is_fluid_particles_source_id_enabled
+        self.fluid_particle_uid_mesh.enabled = is_fluid_particles_uid_enabled
         self.debug_particle_mesh.enabled = is_debug_particles_enabled
         self.obstacle_mesh.enabled = is_obstacle_enabled
 
@@ -1211,6 +1225,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.fluid_particle_viscosity_mesh.bytes.set(fluid_particles_viscosity_bytes)
         self.fluid_particle_whitewater_proximity_mesh.bytes.set(fluid_particles_whitewater_proximity_bytes)
         self.fluid_particle_source_id_mesh.bytes.set(fluid_particles_source_id_bytes)
+        self.fluid_particle_uid_mesh.bytes.set(fluid_particles_uid_bytes)
         self.debug_particle_mesh.bytes.set(debug_particles_bytes)
         self.obstacle_mesh.bytes.set(obstacle_bytes)
 

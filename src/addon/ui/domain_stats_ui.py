@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2024 Ryan L. Guy
+# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -522,6 +522,13 @@ def draw_frame_info_mesh_stats(self, context, box):
             column4.label(text=format_bytes(sprops.fluid_particle_id_mesh.bytes.get()))
             total_bytes += sprops.fluid_particle_id_mesh.bytes.get()
 
+        if sprops.fluid_particle_uid_mesh.enabled:
+            column1.label(text="Fluid Particles UID")
+            column2.label(text=format_number(sprops.fluid_particle_uid_mesh.verts))
+            column3.label(text="")
+            column4.label(text=format_bytes(sprops.fluid_particle_uid_mesh.bytes.get()))
+            total_bytes += sprops.fluid_particle_uid_mesh.bytes.get()
+
         if sprops.fluid_particle_velocity_mesh.enabled:
             column1.label(text="Fluid Particles Velocity")
             column2.label(text=format_number(sprops.fluid_particle_velocity_mesh.verts))
@@ -899,6 +906,7 @@ def draw_cache_info_mesh_stats(self, context, box):
                        sprops.fluid_particle_viscosity_mesh.enabled or
                        sprops.fluid_particle_whitewater_proximity_mesh.enabled or
                        sprops.fluid_particle_source_id_mesh.enabled or
+                       sprops.fluid_particle_uid_mesh.enabled or
                        sprops.debug_particle_mesh.enabled or
                        sprops.obstacle_mesh.enabled)
 
@@ -1111,6 +1119,12 @@ def draw_cache_info_mesh_stats(self, context, box):
             column2.label(text=format_bytes(sprops.fluid_particle_id_mesh.bytes.get()))
             row_count += 1
             total_size += sprops.fluid_particle_id_mesh.bytes.get()
+
+        if sprops.fluid_particle_uid_mesh.enabled:
+            column1.label(text="Fluid Particles UID")
+            column2.label(text=format_bytes(sprops.fluid_particle_uid_mesh.bytes.get()))
+            row_count += 1
+            total_size += sprops.fluid_particle_uid_mesh.bytes.get()
 
         if sprops.fluid_particle_velocity_mesh.enabled:
             column1.label(text="Fluid Particles Velocity")

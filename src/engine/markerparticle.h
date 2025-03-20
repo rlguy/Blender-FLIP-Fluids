@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2024 Ryan L. Guy
+Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -77,6 +77,12 @@ struct MarkerParticleSourceID {
     int sourceid;
 
     MarkerParticleSourceID(int id) : sourceid(id) {}
+};
+
+struct MarkerParticleUID {
+    int uid = -1;
+
+    MarkerParticleUID(int id) : uid(id) {}
 };
 
 struct MarkerParticleViscosity {

@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2024 Ryan L. Guy
+# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ IS_INSTALLATION_UTILS_INITIALIZED = False
 IS_INSTALLATION_COMPLETE = False
 IS_STABLE_BUILD = True
 
-IS_MIXBOX_SUPPORTED = True
+IS_MIXBOX_SUPPORTED = False
 IS_MIXBOX_INSTALLATION_COMPLETE = False
 MIXBOX_BOOST_FACTOR = 1.2
 

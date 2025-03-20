@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2024 Ryan L. Guy
+# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -74,8 +74,8 @@ def __get_domain_data_dict(context, dobj):
         errmsg += "to complete installation of the FLIP Fluids addon. Save, restart Blender, and "
         errmsg += "try again. Or (2) This version of the FLIP Fluids addon is not compatible "
         errmsg += "with the Blender version. Update to the latest version of the FLIP Fluids "
-        errmsg += "addon and try again. Or (3) This version of the FLIP Fluids addon has been "
-        errmsg += "compiled incorrectly or not fully compiled."
+        errmsg += "addon and try again. Contact the developers at support@flipfluids.com for "
+        errmsg += "assistance."
         bpy.ops.flip_fluid_operators.display_error(
                 'INVOKE_DEFAULT',
                 error_message="Installation or Compatibility Error",

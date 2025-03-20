@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2024 Ryan L. Guy
+# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,8 +38,8 @@ class FLIPFLUID_PT_DomainTypeMaterialsPanel(bpy.types.Panel):
 
     def draw(self, context):
         if not material_library.is_material_library_available():
-            self.layout.label(text="This feature is missing data and will be disabled.")
-            self.layout.label(text="Please contact the developers if you think this is an error.")
+            self.layout.label(text="This feature is not supported in this version of the FLIP Fluids addon.")
+            self.layout.label(text="These features are only available in the full version.")
             return
 
         obj = vcu.get_active_object(context)
