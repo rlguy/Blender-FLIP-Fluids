@@ -1786,7 +1786,7 @@ class FlipFluidHelperInitializeMotionBlur(bpy.types.Operator):
 
 
     def apply_modifier_settings(self, target_object, gn_modifier):
-        gn_modifier["Input_2_use_attribute"] = 1
+        gn_modifier["Input_2_use_attribute"] = True
         gn_modifier["Input_2_attribute_name"] = 'flip_velocity'
         gn_modifier["Output_3_attribute_name"] = 'velocity'
 

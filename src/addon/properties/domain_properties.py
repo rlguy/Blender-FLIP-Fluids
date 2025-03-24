@@ -359,7 +359,7 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
 
                 try:
                     # Input flip_velocity
-                    gn_modifier["Input_2_use_attribute"] = 1
+                    gn_modifier["Input_2_use_attribute"] = True
                     gn_modifier["Input_2_attribute_name"] = 'flip_velocity'
                 except:
                     pass

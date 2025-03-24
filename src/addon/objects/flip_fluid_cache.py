@@ -171,7 +171,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         # Depending on FLIP Fluids version, the GN set up may not
         # have these inputs. Available in FLIP Fluids 1.7.2 or later.
         key_value_pairs = [
-            ("Input_2_use_attribute",   1),                               # Input flip_velocity
+            ("Input_2_use_attribute",   True),                               # Input flip_velocity
             ("Input_2_attribute_name",  'flip_velocity'),                 # Input flip_velocity
             ("Output_3_attribute_name", 'velocity'),                      # Output velocity
             ("Input_6",                 True), # Enable Motion Blur
@@ -194,7 +194,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         # Depending on FLIP Fluids version, the GN set up may not
         # have these inputs. Available in FLIP Fluids 1.7.2 or later.
         key_value_pairs = [
-            ("Input_2_use_attribute",   1),                               # Input flip_velocity
+            ("Input_2_use_attribute",   True),                               # Input flip_velocity
             ("Input_2_attribute_name",  'flip_velocity'),                 # Input flip_velocity
             ("Output_3_attribute_name", 'velocity'),                      # Output velocity
             ("Input_5",                 bl_cache_object.active_material), # Material
@@ -230,7 +230,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         # Depending on FLIP Fluids version, the GN set up may not
         # have these inputs. Available in FLIP Fluids 1.7.2 or later.
         key_value_pairs = [
-            ("Input_2_use_attribute",   1),                               # Input flip_velocity
+            ("Input_2_use_attribute",   True),                               # Input flip_velocity
             ("Input_2_attribute_name",  'flip_velocity'),                 # Input flip_velocity
             ("Output_3_attribute_name", 'velocity'),                      # Output velocity
             ("Input_5",                 bl_cache_object.active_material), # Material
