@@ -1070,7 +1070,7 @@ class FLIPFLUID_PT_HelperPanelCompositingTools(bpy.types.Panel):
             box = row.box()
             col = box.column()
             col.scale_x = 1.5
-            col.enabled = enabled  # Deaktiviert Checkbox wenn nicht verfügbar
+            col.enabled = enabled  # Deaktiviert Checkbox wenn nicht verfÃ¼gbar
             col.prop(hprops, prop_name)
 
         def add_fixed_width_placeholder(row):
@@ -1080,7 +1080,7 @@ class FLIPFLUID_PT_HelperPanelCompositingTools(bpy.types.Panel):
             col.label(text="")
 
         # ---------------------------------
-        # Aktivitätsbedingungen ermitteln
+        # AktivitÃ¤tsbedingungen ermitteln
         # ---------------------------------
 
         # 1) Fluid Surface
@@ -1552,7 +1552,7 @@ class FLIPFLUID_PT_HelperTechnicalSupport(bpy.types.Panel):
 
 def register():
     # These panels will be registered in properties.preferences_properties.py
-    # Small fix: It´s properties.helper_properties.py
+    # Small fix: ItÂ´s properties.helper_properties.py
     pass
 
 
