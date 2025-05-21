@@ -534,12 +534,12 @@ def launch_command_universal_os(command_text, script_prefix_string, keep_window_
         elif system == "Darwin":
             subprocess.call(["open", "-a", "Terminal", script_filepath])
         elif system == "Linux":
-            if shutil.which("gnome-terminal") is not None and shutil.which("bash") is not None:
-                subprocess.call(["gnome-terminal", "--", "bash", "-c", shlex.quote(script_filepath) + "; exec bash"])
+            if shutil.which("gnome-terminal") is not None:
+                subprocess.call(["gnome-terminal", "--", "/bin/sh", "-c", shlex.quote(script_filepath) + '; exec "${SHELL:-/bin/sh}"'])
             elif shutil.which("xterm") is not None:
                 subprocess.call(["xterm", "-hold", "-e", script_filepath])
             else:
-                errmsg = "This feature requires the (GNOME Terminal and Bash Shell), or the XTERM terminal emulator to be"
+                errmsg = "This feature requires the GNOME Terminal or XTERM terminal emulator to be"
                 errmsg += " installed and to be accessible on the system path. Either install these programs, restart Blender, and try again or use the"
                 errmsg += " Copy Command to Clipboard operator and paste into a terminal program of your choice."
                 bpy.ops.flip_fluid_operators.display_error(
