@@ -508,7 +508,7 @@ def launch_command_universal_os(command_text, script_prefix_string, keep_window_
     else:
         # Darwin or Linux
         script_extension = ".sh"
-        script_header = "#!/bin/bash\n\n"
+        script_header = "#!/bin/sh\n\n"
         script_footer = ""
 
     blend_basename = bpy.path.basename(bpy.context.blend_data.filepath)
