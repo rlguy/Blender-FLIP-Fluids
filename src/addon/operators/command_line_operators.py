@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, os, pathlib, stat, subprocess, platform, random, shutil, traceback
+import bpy, os, pathlib, stat, subprocess, platform, random, shlex, shutil, traceback
 from bpy.props import (
         BoolProperty,
         )
@@ -535,9 +535,7 @@ def launch_command_universal_os(command_text, script_prefix_string, keep_window_
             subprocess.call(["open", "-a", "Terminal", script_filepath])
         elif system == "Linux":
             if shutil.which("gnome-terminal") is not None and shutil.which("bash") is not None:
-                # Required to escape spaces for the script_filepath + "; exec bash" command to run
-                script_filepath = script_filepath.replace(" ", "\\ ")
-                subprocess.call(["gnome-terminal", "--", "bash", "-c", script_filepath + "; exec bash"])
+                subprocess.call(["gnome-terminal", "--", "bash", "-c", shlex.quote(script_filepath) + "; exec bash"])
             elif shutil.which("xterm") is not None:
                 subprocess.call(["xterm", "-hold", "-e", script_filepath])
             else:
