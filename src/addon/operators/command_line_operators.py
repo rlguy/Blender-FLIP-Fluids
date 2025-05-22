@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, os, pathlib, stat, subprocess, platform, random, shutil, traceback
+import bpy, os, pathlib, stat, subprocess, platform, random, shlex, shutil, traceback
 from bpy.props import (
         BoolProperty,
         )
@@ -508,7 +508,7 @@ def launch_command_universal_os(command_text, script_prefix_string, keep_window_
     else:
         # Darwin or Linux
         script_extension = ".sh"
-        script_header = "#!/bin/bash\n\n"
+        script_header = "#!/bin/sh\n\n"
         script_footer = ""
 
     blend_basename = bpy.path.basename(bpy.context.blend_data.filepath)
@@ -534,14 +534,12 @@ def launch_command_universal_os(command_text, script_prefix_string, keep_window_
         elif system == "Darwin":
             subprocess.call(["open", "-a", "Terminal", script_filepath])
         elif system == "Linux":
-            if shutil.which("gnome-terminal") is not None and shutil.which("bash") is not None:
-                # Required to escape spaces for the script_filepath + "; exec bash" command to run
-                script_filepath = script_filepath.replace(" ", "\\ ")
-                subprocess.call(["gnome-terminal", "--", "bash", "-c", script_filepath + "; exec bash"])
+            if shutil.which("gnome-terminal") is not None:
+                subprocess.call(["gnome-terminal", "--", "/bin/sh", "-c", shlex.quote(script_filepath) + '; exec "${SHELL:-/bin/sh}"'])
             elif shutil.which("xterm") is not None:
                 subprocess.call(["xterm", "-hold", "-e", script_filepath])
             else:
-                errmsg = "This feature requires the (GNOME Terminal and Bash Shell), or the XTERM terminal emulator to be"
+                errmsg = "This feature requires the GNOME Terminal or XTERM terminal emulator to be"
                 errmsg += " installed and to be accessible on the system path. Either install these programs, restart Blender, and try again or use the"
                 errmsg += " Copy Command to Clipboard operator and paste into a terminal program of your choice."
                 bpy.ops.flip_fluid_operators.display_error(
