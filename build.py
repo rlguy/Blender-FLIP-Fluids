@@ -84,6 +84,8 @@ def main():
     parser.add_argument("-make-path", help="Specify path to GNU Make binary (www.gnu.org/software/make)")
     parser.add_argument('--clean', action="store_true", help="Clear generated files in the build directory before building")
     parser.add_argument('-no-compile', action="store_true", help="Do not compile libraries")
+    # for backwards compatibility
+    parser.add_argument('-zip', action="store_true", help="After building, package the add-on folder into a zip for Blender Install")
     args = parser.parse_args()
 
     root_dir = os.path.dirname(os.path.abspath(__file__))
@@ -156,6 +158,18 @@ def main():
     print("\n" + "-"*80)
     print("FLIP Fluids addon successfully built and compiled to:")
     print("\t<" + addon_dir + ">")
+
+    # To create a .zip whose name is ".../flip_fluids_addon.zip".
+    parent_dir, folder_name = os.path.split(addon_dir)
+    # shutil.make_archive(base_name, format, root_dir, base_dir)
+    zip_base = os.path.join(parent_dir, folder_name)
+    archive_path = shutil.make_archive(
+        zip_base,              # e.g. ".../flip_fluids_addon"
+        "zip",                 # create a .zip
+        root_dir=parent_dir,   # start zipping from the "build/bl_flip_fluids" folder
+        base_dir=folder_name   # include only "flip_fluids_addon" folder in that zip
+    )
+    print(f"Packaged zip archive at: {archive_path}")
 
 
 if __name__ == "__main__":
