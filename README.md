@@ -69,13 +69,13 @@ Installations of the following programs will be needed to build and compile the 
 
 This repository includes an automated build script to help you build and compile the FLIP Fluids addon. Use of this script requires an installation of Python 3.3+. The script will work best if CMake and GNU Make are located in your system PATH variable, but if not, you may also specify their locations when executing the script (run ```python build.py --help``` for help).
 
-To build and compile the FLIP Fluids addon, navigate to the root of the project directory and run:
+To build, compile, and package the FLIP Fluids addon, navigate to the root of the project directory and run:
 
 ```
 python build.py
 ```
 
-Once successfully built, the FLIP Fluids addon will be located in the ```build/bl_flip_fluids/``` directory.
+Once successfully built, the FLIP Fluids addon and installation .zip file will be located in the ```build/bl_flip_fluids/``` directory.
 
 ### Building without automated script
 
