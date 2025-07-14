@@ -35,12 +35,14 @@ class DomainAdvancedProperties(bpy.types.PropertyGroup):
     min_max_time_steps_per_frame = NewMinMaxIntProperty(
             name_min="Min Substeps",
             description_min="Minimum number of substeps per frame calculation",
-            min_min=1, max_min=100,
+            min_min=1, max_min=1000000,
+            soft_max_min=100,
             default_min=1,
 
             name_max="Max Substeps",
             description_max="Maximum number of substeps per frame calculation",
-            min_max=1, max_max=100,
+            min_max=1, max_max=1000000,
+            soft_max_max=100,
             default_max=24,
             ); exec(conv("min_max_time_steps_per_frame"))
     enable_adaptive_obstacle_time_stepping = BoolProperty(

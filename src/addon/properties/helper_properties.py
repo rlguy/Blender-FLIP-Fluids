@@ -33,6 +33,8 @@ from .. import types
 from ..operators import helper_operators
 from ..utils import version_compatibility_utils as vcu
 
+from ..operators.command_line_operators import print_render_pass_debug
+
 DISABLE_FRAME_CHANGE_POST_HANDLER = False
 
 # Compositing:
@@ -44,13 +46,13 @@ def _update_render_passes_camera_screen(self, context):
         # Retrieve the camera screen object
         bl_camera_screen = bpy.data.objects.get("ff_camera_screen")
         if bl_camera_screen is None:
-            #print("Camera screen not found.")
+            #print_render_pass_debug("Camera screen not found.")
             return
 
         # Retrieve the camera object
         bl_camera = bpy.data.objects.get(hprops.render_passes_cameraselection)
         if bl_camera is None:
-            #print("Camera not found.")
+            #print_render_pass_debug("Camera not found.")
             return
 
         # Default image aspect ratio
@@ -61,7 +63,7 @@ def _update_render_passes_camera_screen(self, context):
         if dimensions.x > 0 and dimensions.y > 0:
             image_aspect_ratio = dimensions.x / dimensions.y
         else:
-            print("Warning: Invalid Plane dimensions. Defaulting to aspect ratio of 1.0.")
+            print_render_pass_debug("Warning: Invalid Plane dimensions. Defaulting to aspect ratio of 1.0.")
 
         # Update the camera screen scale
         helper_operators.update_camera_screen_scale(
@@ -213,7 +215,7 @@ def update_velocity_fluidsurface_toggle(self, context):
     # Update the Shader Node in the material
     material = bpy.data.materials.get("FF ClearWater_Passes")
     if not material or not material.use_nodes:
-        print("Material 'FF ClearWater_Passes' not found or it does not use nodes.")
+        print_render_pass_debug("Material 'FF ClearWater_Passes' not found or it does not use nodes.")
     else:
         node_tree = material.node_tree
 
@@ -224,15 +226,15 @@ def update_velocity_fluidsurface_toggle(self, context):
                 node.inputs[0].default_value = 0.0 if not self.render_passes_toggle_velocity_fluidsurface else 1.0
                 break
         else:
-            print("Node 'ff_use_velocity_for_blending' not found in material 'FF ClearWater_Passes'.")
+            print_render_pass_debug("Node 'ff_use_velocity_for_blending' not found in material 'FF ClearWater_Passes'.")
 
     # Update the Geometry Nodes in the networks
     geonode_networks = [
-        "FF_MotionBlurFluidParticles",
-        "FF_MotionBlurWhitewaterBubble",
-        "FF_MotionBlurWhitewaterSpray",
-        "FF_MotionBlurWhitewaterFoam",
-        "FF_MotionBlurWhitewaterDust"
+        "FF_GeometryNodesFluidParticles",
+        "FF_GeometryNodesWhitewaterBubble",
+        "FF_GeometryNodesWhitewaterSpray",
+        "FF_GeometryNodesWhitewaterFoam",
+        "FF_GeometryNodesWhitewaterDust"
     ]
 
     for network_name in geonode_networks:
@@ -247,9 +249,9 @@ def update_velocity_fluidsurface_toggle(self, context):
             if "Factor" in node.inputs:
                 node.inputs[0].default_value = 0.0 if not self.render_passes_toggle_velocity_fluidsurface else 1.0
             else:
-                print(f"Node '{node.name}' in Geometry Node group '{network_name}' does not have a 'Factor' input.")
+                print_render_pass_debug(f"Node '{node.name}' in Geometry Node group '{network_name}' does not have a 'Factor' input.")
         else:
-            print(f"Node 'ff_use_velocity_for_blending' not found in Geometry Node group '{network_name}'.")
+            print_render_pass_debug(f"Node 'ff_use_velocity_for_blending' not found in Geometry Node group '{network_name}'.")
 
 def update_velocity_invert_toggle(self, context):
     """
@@ -258,7 +260,7 @@ def update_velocity_invert_toggle(self, context):
     # Update the Shader Node in the material
     material = bpy.data.materials.get("FF ClearWater_Passes")
     if not material or not material.use_nodes:
-        print("Material 'FF ClearWater_Passes' not found or it does not use nodes.")
+        print_render_pass_debug("Material 'FF ClearWater_Passes' not found or it does not use nodes.")
     else:
         node_tree = material.node_tree
         target_node = node_tree.nodes.get("ff_invert_velocity")
@@ -269,17 +271,17 @@ def update_velocity_invert_toggle(self, context):
 
     # Update the Geometry Nodes in the networks
     geonode_networks = [
-        "FF_MotionBlurFluidParticles",
-        "FF_MotionBlurWhitewaterBubble",
-        "FF_MotionBlurWhitewaterSpray",
-        "FF_MotionBlurWhitewaterFoam",
-        "FF_MotionBlurWhitewaterDust"
+        "FF_GeometryNodesFluidParticles",
+        "FF_GeometryNodesWhitewaterBubble",
+        "FF_GeometryNodesWhitewaterSpray",
+        "FF_GeometryNodesWhitewaterFoam",
+        "FF_GeometryNodesWhitewaterDust"
     ]
 
     for network_name in geonode_networks:
         geo_node_group = bpy.data.node_groups.get(network_name)
         if not geo_node_group:
-            print(f"Geometry Node group '{network_name}' not found.")
+            print_render_pass_debug(f"Geometry Node group '{network_name}' not found.")
             continue
 
         # Search for the node 'ff_invert_velocity'
@@ -290,9 +292,9 @@ def update_velocity_invert_toggle(self, context):
                 multiply_input = target_node.inputs[1]  # Direktzugriff auf den zweiten Input
                 multiply_input.default_value = 1 if not self.render_passes_toggle_velocity_invert else -1
             except IndexError:
-                print(f"Node '{target_node.name}' in Geometry Node group '{network_name}' does not have enough inputs.")
+                print_render_pass_debug(f"Node '{target_node.name}' in Geometry Node group '{network_name}' does not have enough inputs.")
         else:
-            print(f"Node 'ff_invert_velocity' not found in Geometry Node group '{network_name}'.")
+            print_render_pass_debug(f"Node 'ff_invert_velocity' not found in Geometry Node group '{network_name}'.")
 
 
 def update_testcolor_toggle(self, context):
@@ -312,10 +314,10 @@ def update_testcolor_toggle(self, context):
 
 
 def update_projectionfader_toggle(self, context):
-    print("Update function triggered!")
+    print_render_pass_debug("Update function triggered!")
     material = bpy.data.materials.get("FF ClearWater_Passes")
     if not material or not material.use_nodes:
-        print("Material not found or does not use nodes.")
+        print_render_pass_debug("Material not found or does not use nodes.")
         return
 
     node_tree = material.node_tree
@@ -328,16 +330,16 @@ def update_projectionfader_toggle(self, context):
     ]
 
     for node in relevant_nodes:
-        print(f"Node Name: {node.name}")
-        print(f"Node Type: {node.type}")
-        print(f"Node Inputs: {[input.name for input in node.inputs]}")
+        print_render_pass_debug(f"Node Name: {node.name}")
+        print_render_pass_debug(f"Node Type: {node.type}")
+        print_render_pass_debug(f"Node Inputs: {[input.name for input in node.inputs]}")
 
         # Prüfen, ob der Factor-Socket (Input 0) nicht verlinkt ist
         if not node.inputs[0].is_linked:
             node.inputs[0].default_value = float(self.render_passes_toggle_projectionfader)
-            print(f"Updated Node '{node.name}' Factor to {node.inputs[0].default_value}")
+            print_render_pass_debug(f"Updated Node '{node.name}' Factor to {node.inputs[0].default_value}")
         else:
-            print(f"Input[0] of Node '{node.name}' is linked. Skipping update.")
+            print_render_pass_debug(f"Input[0] of Node '{node.name}' is linked. Skipping update.")
 
 
 def update_object_fading_width(self, context):
@@ -408,7 +410,7 @@ def update_general_fading_width(self, context):
         if obj:
             # Find the correct MotionBlur modifier
             for modifier in obj.modifiers:
-                if modifier.name.startswith("FF_MotionBlur") and "Socket_1" in modifier.keys():
+                if modifier.name.startswith("FF_GeometryNodes") and "Socket_1" in modifier.keys():
                     # Direkt auf die Property zugreifen
                     modifier["Socket_1"] = context.scene.flip_fluid_helper.render_passes_general_fading_width
 
@@ -547,6 +549,12 @@ class FlipFluidHelperPropertiesShadowCatcherState(bpy.types.PropertyGroup):
 class FlipFluidHelperProperties(bpy.types.PropertyGroup):
     conv = vcu.convert_attribute_to_28
 
+    option_path_supports_blend_relative = set()
+    if vcu.is_blender_45():
+        # required for relative path support in Blender 4.5+
+        # https://docs.blender.org/api/4.5/bpy_types_enum_items/property_flag_items.html#rna-enum-property-flag-items
+        option_path_supports_blend_relative = {'PATH_SUPPORTS_BLEND_RELATIVE'}
+
     enable_auto_frame_load = BoolProperty(
             name="Auto-Load Baked Frames",
             description="Automatically load frames as they finish baking",
@@ -594,7 +602,7 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             ); exec(conv("cmd_bake_and_render_interleaved_instances"))
     cmd_bake_and_render_interleaved_no_overwrite = BoolProperty(
             name="Continue render from last rendered frame",
-            description="Skip rendering frames that already exist in the render output directory. Useful for continuing a render from the last completed frame",
+            description="Skip rendering frames that already exist in the render output directory. Useful for continuing a render from the last completed frame. If disabled, rendered frames will be overwritten",
             default=True,
             ); exec(conv("cmd_bake_and_render_interleaved_no_overwrite"))
     cmd_launch_render_animation_mode = EnumProperty(
@@ -611,14 +619,19 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             default='CMD_RENDER_MODE_RENDER_PASSES',
             options={'HIDDEN'},
             ); exec(conv("cmd_launch_render_passes_animation_mode"))
+    cmd_launch_render_normal_animation_no_overwrite = BoolProperty(
+            name="Skip rendered frames",
+            description="Skip rendering frames that already exist in the render output directory. Useful for continuing a render from the last completed frame. If disabled, rendered frames will be overwritten",
+            default=False,
+            ); exec(conv("cmd_launch_render_normal_animation_no_overwrite"))
     cmd_launch_render_animation_no_overwrite = BoolProperty(
             name="Skip rendered frames",
-            description="Skip rendering frames that already exist in the render output directory. Useful for continuing a render from the last completed frame",
+            description="Skip rendering frames that already exist in the render output directory. Useful for continuing a render from the last completed frame. If disabled, rendered frames will be overwritten",
             default=True,
             ); exec(conv("cmd_launch_render_animation_no_overwrite"))
     cmd_launch_render_passes_animation_no_overwrite = BoolProperty(
             name="Skip rendered frames",
-            description="Skip rendering compositing pass frames that already exist in the render output directory. Useful for continuing a render from the last completed compositing pass frame",
+            description="Skip rendering compositing pass frames that already exist in the render output directory. Useful for continuing a render from the last completed compositing pass frame. If disabled, rendered frames will be overwritten",
             default=True,
             ); exec(conv("cmd_launch_render_passes_animation_no_overwrite"))
     cmd_launch_render_animation_instances = IntProperty(
@@ -1019,11 +1032,19 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
     alembic_export_velocity = BoolProperty(
             name="Export Velocity",
             description="Include velocity data in the Alembic export. This data will be available"
-                " under the 'velocity' attribute of the Alembic export and can be used for motion"
+                " under the 'velocity' point attribute of the Alembic export and can be used for motion"
                 " blur rendering. Velocity attributes for the surface, fluid particles, and/or whitewater are required to"
                 " be baked before export",
             default=False,
             ); exec(conv("alembic_export_velocity"))
+    alembic_export_color = BoolProperty(
+            name="Export Color",
+            description="Include color attribute data in the Alembic export. This data will be available"
+                " under the 'color' face-corner attribute of the Alembic export and can be used for material shading."
+                " This attribute is only supported for the Surface mesh."
+                " Color attributes for the surface are required to be baked before export",
+            default=False,
+            ); exec(conv("alembic_export_color"))
     alembic_global_scale = FloatProperty(
             name="Scale", 
             description="Scale value by which to enlarge or shrink the simulation meshes with respect to the world's origin", 
@@ -1058,6 +1079,7 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
                 " starting the Alembic export",
             default="//untitled.abc", 
             subtype='FILE_PATH',
+            options=option_path_supports_blend_relative,
             update=lambda self, context: self._update_alembic_output_filepath(context),
             ); exec(conv("alembic_output_filepath"))
     is_alembic_output_filepath_set = BoolProperty(default=False); exec(conv("is_alembic_output_filepath_set"))
@@ -1181,7 +1203,8 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
 
     def load_post(self):
         self.is_auto_frame_load_cmd_operator_running = False
-        if self.is_auto_frame_load_cmd_enabled():
+        is_background_mode = bpy.app.background
+        if self.is_auto_frame_load_cmd_enabled() and not is_background_mode:
             bpy.ops.flip_fluid_operators.auto_load_baked_frames_cmd('INVOKE_DEFAULT')
 
         self.check_alembic_output_filepath()
@@ -1199,7 +1222,7 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
         if self.update_object_speed_data_on_frame_change:
             try:
                 if bpy.ops.flip_fluid_operators.measure_object_speed.poll():
-                    print("Measure Object Speed: Update on frame change option is enabled.")
+                    print_render_pass_debug("Measure Object Speed: Update on frame change option is enabled.")
                     bpy.ops.flip_fluid_operators.measure_object_speed('INVOKE_DEFAULT')
                 else:
                     bpy.ops.flip_fluid_operators.clear_measure_object_speed('INVOKE_DEFAULT')
@@ -1234,7 +1257,8 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             return
 
         is_auto_load_cmd_enabled = self.is_auto_frame_load_cmd_enabled()
-        if is_auto_load_cmd_enabled and not self.is_auto_frame_load_cmd_operator_running:
+        is_background_mode = bpy.app.background
+        if is_auto_load_cmd_enabled and not self.is_auto_frame_load_cmd_operator_running and not is_background_mode:
             bpy.ops.flip_fluid_operators.auto_load_baked_frames_cmd('INVOKE_DEFAULT')
 
 

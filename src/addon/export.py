@@ -21,7 +21,7 @@ from .objects import flip_fluid_map
 from .objects.flip_fluid_geometry_exporter import GeometryExportObject, MotionExportType, GeometryExportType
 from .utils import export_utils as utils
 from .objects.flip_fluid_aabb import AABB
-from .pyfluid import TriangleMesh
+from .ffengine import TriangleMesh
 from .utils import version_compatibility_utils as vcu
 from .utils import cache_utils, export_utils, installation_utils
 
@@ -120,14 +120,7 @@ def __get_domain_data_dict(context, dobj):
     initialize_properties['savestate_interval'] = dprops.simulation.savestate_interval
     initialize_properties['delete_outdated_savestates'] = dprops.simulation.delete_outdated_savestates
     initialize_properties['delete_outdated_meshes'] = dprops.simulation.delete_outdated_meshes
-
-    preferences = vcu.get_addon_preferences()
-    if len(preferences.gpu_devices) > 0:
-        initialize_properties['gpu_device'] = preferences.selected_gpu_device
-    else:
-        initialize_properties['gpu_device'] = ""
-
-    initialize_properties['enable_engine_debug_mode'] = preferences.engine_debug_mode
+        
     initialize_properties['geometry_database_filepath'] = dprops.cache.get_geometry_database_abspath()
 
     d['initialize'] = initialize_properties

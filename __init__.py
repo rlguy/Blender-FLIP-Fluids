@@ -57,8 +57,8 @@ class FLIPFluidInfoAddonPreferences(bpy.types.AddonPreferences):
             ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/FLIP-Fluids-Demo-Addon"
         column.operator(
                 "wm.url_open", 
-                text="Purchase the FLIP Fluids addon on the Blender Market", 
-            ).url = "https://blendermarket.com/products/flipfluids?ref=2685"
+                text="Purchase the FLIP Fluids addon on Superhive", 
+            ).url = "https://superhivemarket.com/products/flipfluids?ref=2685"
         column.operator(
                 "wm.url_open", 
                 text="Purchase the FLIP Fluids addon on Gumroad", 

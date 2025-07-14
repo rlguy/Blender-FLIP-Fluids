@@ -45,7 +45,6 @@ enum class DiffuseParticleType : char;
 class MeshLevelSet;
 class MACVelocityField;
 class ParticleLevelSet;
-class ParticleAdvector;
 class ForceFieldGrid;
 
 struct DiffuseParticleSimulationParameters {

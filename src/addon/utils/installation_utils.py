@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, os, sys, json
+import bpy, os, sys, json, datetime
 
 from . import version_compatibility_utils as vcu
 
@@ -22,7 +22,7 @@ IS_INSTALLATION_UTILS_INITIALIZED = False
 IS_INSTALLATION_COMPLETE = False
 IS_STABLE_BUILD = True
 
-IS_MIXBOX_SUPPORTED = True
+IS_MIXBOX_SUPPORTED = False
 IS_MIXBOX_INSTALLATION_COMPLETE = False
 MIXBOX_BOOST_FACTOR = 1.2
 
@@ -207,6 +207,48 @@ def is_turbo_tools_addon_enabled():
     # Used for command line tools to launch Turbo Tools Render processes
     #     https://blendermarket.com/products/turbo-tools-v3---turbo-render-turbo-comp-temporal-stabilizer
     return "Turbo Tools" in vcu.get_blender_preferences().addons
+
+
+def get_compiler_info_list():
+    addon_directory = os.path.dirname(os.path.dirname(__file__))
+    compiler_data_directory = os.path.join(addon_directory, "resources", "compiler_data")
+    if not os.path.isdir(compiler_data_directory):
+        return []
+
+    compiler_info = []
+    for filename in os.listdir(compiler_data_directory):
+        filepath = os.path.join(compiler_data_directory, filename)
+        if not os.path.isfile(filepath):
+            continue
+        if filename == "empty_file":
+            continue
+
+        with open(filepath, 'r') as f:
+            file_text = f.read()
+            file_text = file_text.replace("%z", "local")
+            compiler_info.append(file_text)
+
+    return compiler_info
+
+
+def get_library_list():
+    addon_directory = os.path.dirname(os.path.dirname(__file__))
+    library_directory = os.path.join(addon_directory, "ffengine", "lib")
+    if not os.path.isdir(library_directory):
+        return []
+
+    library_list = []
+    for filename in os.listdir(library_directory):
+        filepath = os.path.join(library_directory, filename)
+        if not os.path.isfile(filepath):
+            continue
+        date_modified = os.path.getmtime(filepath)
+        date_modified = datetime.datetime.fromtimestamp(date_modified, tz=datetime.timezone.utc)
+        date_string = date_modified.strftime("%Y-%m-%d %H:%M:%S %Z")
+        library_entry = filename + " <" + date_string + ">"
+        library_list.append(library_entry)
+
+    return library_list
 
 
 def __load_post_update_is_addon_active():

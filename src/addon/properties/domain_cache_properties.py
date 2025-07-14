@@ -31,6 +31,13 @@ class DomainCacheProperties(bpy.types.PropertyGroup):
     conv = vcu.convert_attribute_to_28
     temp_directory = vcu.get_blender_preferences_temporary_directory()
     default_cache_directory_str = os.path.join(temp_directory, "untitled_flip_fluid_cache")
+
+    option_path_supports_blend_relative = set()
+    if vcu.is_blender_45():
+        # required for relative path support in Blender 4.5+
+        # https://docs.blender.org/api/4.5/bpy_types_enum_items/property_flag_items.html#rna-enum-property-flag-items
+        option_path_supports_blend_relative = {'PATH_SUPPORTS_BLEND_RELATIVE'}
+
     
     cache_directory = StringProperty(
             name="",
@@ -38,17 +45,20 @@ class DomainCacheProperties(bpy.types.PropertyGroup):
                 " It is recommended to save your .blend file before beginning a simulation",
             default=default_cache_directory_str, 
             subtype='DIR_PATH',
+            options=option_path_supports_blend_relative,
             update=lambda self, context: self._update_cache_directory(context),
             ); exec(conv("cache_directory"))
     default_cache_directory = StringProperty(
             default=default_cache_directory_str, 
             subtype='DIR_PATH',
+            options=option_path_supports_blend_relative,
             ); exec(conv("default_cache_directory"))
     move_cache_directory = StringProperty(
             name="",
             description="Cache directory will be moved to this location",
             default=temp_directory, 
             subtype='DIR_PATH',
+            options=option_path_supports_blend_relative,
             ); exec(conv("move_cache_directory"))
     rename_cache_directory = StringProperty(
             name="",
@@ -60,6 +70,7 @@ class DomainCacheProperties(bpy.types.PropertyGroup):
             description="Cache directory contents will be copied to this location",
             default=default_cache_directory_str, 
             subtype='DIR_PATH',
+            options=option_path_supports_blend_relative,
             ); exec(conv("copy_cache_directory"))
     clear_cache_directory_logs = BoolProperty(
             name="Clear log files",
@@ -82,6 +93,7 @@ class DomainCacheProperties(bpy.types.PropertyGroup):
                 " lot of geometry in your scene that you do not want to re-export",
             default="", 
             subtype='DIR_PATH',
+            options=option_path_supports_blend_relative,
             ); exec(conv("linked_geometry_directory"))
 
     is_cache_directory_set = BoolProperty(default=False); exec(conv("is_cache_directory_set"))

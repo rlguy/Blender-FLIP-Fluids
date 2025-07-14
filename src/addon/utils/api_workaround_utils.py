@@ -71,32 +71,46 @@ def frame_change_post_apply_T71908_workaround(context, depsgraph=None):
             if obj.modifiers[i].type == 'OCEAN':
                 obj.modifiers[i].time = obj_eval.modifiers[i].time
 
-    # Apply to any FF_MotionBlur geometry node 'Motion Blur Scale' value on the mesh objects, another issue 
+    # Apply to any FF_GeometryNodes geometry node 'Motion Blur Scale' value on the mesh objects, another issue 
     # for this bug when adjusting motion blur for slow motion simulations.
-    # Also apply to other FF_MotionBlur inputs in case the user wants to keyframe these values.
+    # Also apply to other FF_GeometryNodes inputs in case the user wants to keyframe these values.
 
-    input_name_list = [
+    input_name_list_surface = [
         "Input_4",  # Motion Blur Scale
+        "Input_6",  # Enable Motion Blur
+        "Socket_0", # Blur Velocity For Fading
+        "Socket_5", # Shade Smooth Surface
+        "Socket_6", # Blur Iterations
+    ]
+
+    input_name_list_particles = [
+        "Input_4",  # Motion Blur Scale
+        "Input_5",  # Material
         "Input_6",  # Particle Scale
         "Input_8",  # Enable Motion Blur
         "Input_9",  # Enable Point Cloud
         "Input_10", # Enable Instancing
-        "Socket_0", # Fading Strength / Blur Velocity For Fading
+        "Socket_0", # Fading Strength
         "Socket_1", # Fading Width
         "Socket_2", # Particle Scale Random
         "Socket_4", # Fading Density
+        "Socket_9", # Shade Smooth Instancing
     ]
 
     for obj in cache_objects:
         obj_eval = obj.evaluated_get(depsgraph)
         for i in range(len(obj.modifiers)):
-            if obj.modifiers[i].type == 'NODES' and obj.modifiers[i].name.startswith("FF_MotionBlur"):
+            if obj.modifiers[i].type == 'NODES' and obj.modifiers[i].name.startswith("FF_GeometryNodes"):
+                mod_name = obj.modifiers[i].name
+                if   mod_name.startswith("FF_GeometryNodesSurface"):
+                    input_name_list = input_name_list_surface
+                elif mod_name.startswith("FF_GeometryNodesFluidParticles") or mod_name.startswith("FF_GeometryNodesWhitewater"):
+                    input_name_list = input_name_list_particles
+                else:
+                    continue
+
                 for input_name in input_name_list:
-                    if obj.modifiers[i].name.startswith("FF_MotionBlurSurface") and input_name in obj.modifiers[i]:
-                        obj.modifiers[i][input_name] = obj_eval.modifiers[i][input_name]
-                    if obj.modifiers[i].name.startswith("FF_MotionBlurFluidParticles") and input_name in obj.modifiers[i]:
-                        obj.modifiers[i][input_name] = obj_eval.modifiers[i][input_name]
-                    elif obj.modifiers[i].name.startswith("FF_MotionBlurWhitewater") and input_name in obj.modifiers[i]:
+                    if input_name in obj.modifiers[i]:
                         obj.modifiers[i][input_name] = obj_eval.modifiers[i][input_name]
 
 

@@ -167,7 +167,7 @@ class DomainParticlesProperties(bpy.types.PropertyGroup):
             ); exec(conv("enable_fluid_particle_uid_attribute"))
     enable_fluid_particle_uid_attribute_reuse = BoolProperty(
             name="Reuse UIDs",
-            description="Reuse UID attribute vaules. If enabled, particles that are removed from the simulation may have"
+            description="Reuse UID attribute values. If enabled, particles that are removed from the simulation may have"
                 " their UID reused in a later frame. If a particle is removed from the simulation, the UID will not be"
                 " reused until at least a 1 frame gap has passed. UID values will only be unique to a single frame."
                 " Enabling is recommended for use in simulation nodes to reduce resource usage. If disabled, UID values"

@@ -450,36 +450,13 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                         column.label(text="")
                         column.label(text="")
                 elif hprops.cmd_bake_and_render_mode == 'CMD_BAKE_AND_RENDER_MODE_INTERLEAVED':
-                    if hprops.render_passes:
-                        row = column.row(align=True)
-                        row.label(text="")
-                        row.label(text="Compositing Passes Rendering", icon="ERROR")
-                        row = column.row(align=True)
-                        row.label(text="")
-                        row.label(text="is not supported while in", icon="ERROR")
-                        row = column.row(align=True)
-                        row.label(text="")
-                        row.label(text="Render During Bake mode", icon="ERROR")
-
-                        """
-                        row = column.row(align=True)
-                        row.label(text="Render During Bake Mode:")
-                        row.prop(hprops, "cmd_launch_render_passes_animation_mode", text="")
-                        row = column.row(align=True)
-                        row.label(text="")
-                        row.prop(hprops, "cmd_launch_render_passes_animation_instances")
-                        row = column.row(align=True)
-                        row.label(text="")
-                        row.prop(hprops, "cmd_launch_render_passes_animation_no_overwrite", text="Skip rendered frames")
-                        """
-                    else:
-                        row = column.row(align=True)
-                        row.label(text="")
-                        row.prop(hprops, "cmd_bake_and_render_interleaved_instances")
-                        row = column.row(align=True)
-                        row.label(text="")
-                        row.prop(hprops, "cmd_bake_and_render_interleaved_no_overwrite", text="Skip rendered frames")
-                        column.label(text="")
+                    row = column.row(align=True)
+                    row.label(text="")
+                    row.prop(hprops, "cmd_bake_and_render_interleaved_instances")
+                    row = column.row(align=True)
+                    row.label(text="")
+                    row.prop(hprops, "cmd_bake_and_render_interleaved_no_overwrite", text="Skip rendered frames")
+                    column.label(text="")
 
             else:
                 row = row.row(align=True)
@@ -533,7 +510,9 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                     row.label(text="")
                     row.prop(hprops, "cmd_launch_render_animation_no_overwrite")
                 else:
-                    column.label(text="")
+                    row = column.row(align=True)
+                    row.label(text="")
+                    row.prop(hprops, "cmd_launch_render_normal_animation_no_overwrite")
                     column.label(text="")
 
             else:
@@ -627,49 +606,19 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
             if hprops.command_line_alembic_export_expanded:
                 column = subbox.column(align=True)
                 row = column.row(align=True)
-                row.operator("flip_fluid_operators.helper_command_line_alembic_export")
+                row.operator("flip_fluid_operators.flip_fluids_alembic_exporter", text="FLIP Fluids Alembic Export", icon="EXPORT")
                 row.operator("flip_fluid_operators.helper_cmd_alembic_export_to_clipboard", text="", icon='COPYDOWN')
                 row.operator("flip_fluid_operators.helper_open_alembic_output_folder", text="", icon='FILE_FOLDER')
-                column.separator()
-
-                column.label(text="Mesh and Data Export:")
-                row = column.row(align=True)
-                row.alignment = 'LEFT'
-                row.prop(hprops, "alembic_export_surface")
-                row.prop(hprops, "alembic_export_fluid_particles")
-                row.prop(hprops, "alembic_export_foam")
-                row.prop(hprops, "alembic_export_bubble")
-                row.prop(hprops, "alembic_export_spray")
-                row.prop(hprops, "alembic_export_dust")
-                row = column.row(align=True)
-                row.prop(hprops, "alembic_export_velocity")
+                
                 column.separator()
                 row = column.row(align=True)
-                row.prop(hprops, "alembic_global_scale")
-                column.separator()
-
-                column.label(text="Frame Range:")
-                row = column.row()
-                row.prop(hprops, "alembic_frame_range_mode", expand=True)
-                row = column.row(align=True)
-                if hprops.alembic_frame_range_mode == 'FRAME_RANGE_TIMELINE':
-                    row_left = row.row(align=True)
-                    row_right = row.row(align=True)
-                    row_left.prop(context.scene, "frame_start")
-                    row_right.prop(context.scene, "frame_end")
-                else:
-                    row_left = row.row(align=True)
-                    row_right = row.row(align=True)
-                    row_left.prop(hprops.alembic_frame_range_custom, "value_min")
-                    row_right.prop(hprops.alembic_frame_range_custom, "value_max")
-
-                column.separator()
-                column.label(text="Alembic Output:")
-                column.prop(hprops, "alembic_output_filepath")
+                row.operator("flip_fluid_operators.flip_fluids_alembic_importer", text="FLIP Fluids Alembic Import", icon="IMPORT")
+                row.label(text="", icon='BLANK1')
+                row.label(text="", icon='BLANK1')
 
             else:
                 row = row.row(align=True)
-                row.operator("flip_fluid_operators.helper_command_line_alembic_export")
+                row.operator("flip_fluid_operators.flip_fluids_alembic_exporter", text="Launch Alembic Export", icon="EXPORT")
                 row.operator("flip_fluid_operators.helper_cmd_alembic_export_to_clipboard", text="", icon='COPYDOWN')
                 row.operator("flip_fluid_operators.helper_open_alembic_output_folder", text="", icon='FILE_FOLDER')
 
@@ -861,59 +810,6 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                 footer_text += "FPS: " + '{0:.2f}'.format(frame_rate)
                 column.separator()
                 column.label(text=footer_text)
-            
-
-        #
-        # Beginner Tools
-        #
-
-        box = self.layout.box()
-        row = box.row(align=True)
-        row.prop(hprops, "beginner_tools_expanded",
-            icon="TRIA_DOWN" if hprops.beginner_tools_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
-        row.label(text="Beginner Tips:")
-
-        if hprops.beginner_tools_expanded:
-            column = box.column(align=True)
-            column.prop(preferences, "show_documentation_in_ui")
-            column.separator()
-
-            if preferences.show_documentation_in_ui:
-                column.operator(
-                    "wm.url_open", 
-                    text="Helper Menu Documentation", 
-                    icon="WORLD"
-                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Helper-Menu-Settings"
-                column.separator()
-
-            column.operator(
-                "wm.url_open", 
-                text="Video Learning Series", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Video-Learning-Series"
-            column.operator(
-                "wm.url_open", 
-                text="Documentation and Wiki", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki"
-            column.operator(
-                "wm.url_open", 
-                text="Recommended Topics", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki#the-most-important-documentation-topics"
-            column.operator(
-                "wm.url_open", 
-                text="Frequently Asked Questions", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Frequently-Asked-Questions"
-            column.operator(
-                "wm.url_open", 
-                text="Scene Troubleshooting", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Scene-Troubleshooting"
 
 
     def draw_disable_addon_submenu(self, context):

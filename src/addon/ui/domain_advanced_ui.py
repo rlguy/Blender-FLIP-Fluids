@@ -39,15 +39,6 @@ class FLIPFLUID_PT_DomainTypeAdvancedPanel(bpy.types.Panel):
         obj = vcu.get_active_object(context)
         aprops = obj.flip_fluid.domain.advanced
         wprops = obj.flip_fluid.domain.world
-        show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
-
-        if show_documentation:
-            column = self.layout.column(align=True)
-            column.operator(
-                "wm.url_open", 
-                text="Advanced Settings Documentation", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Advanced-Settings"
 
         box = self.layout.box()
         column = box.column(align=True)
@@ -83,14 +74,6 @@ class FLIPFLUID_PT_DomainTypeAdvancedPanel(bpy.types.Panel):
             column.prop(aprops, "enable_adaptive_obstacle_time_stepping")
             column.prop(aprops, "enable_adaptive_force_field_time_stepping")
 
-            if show_documentation:
-                column = box.column(align=True)
-                column.operator(
-                        "wm.url_open", 
-                        text="What are substeps?", 
-                        icon="WORLD"
-                    ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Advanced-Settings#what-are-substeps-and-how-do-the-min-max-and-cfl-parameters-relate-to-each-other"
-
         box = self.layout.box()
         column = box.column(align=True)
         split = vcu.ui_split(column, factor=0.5)
@@ -117,19 +100,6 @@ class FLIPFLUID_PT_DomainTypeAdvancedPanel(bpy.types.Panel):
                 column.prop(aprops, "PICFLIP_ratio", slider=True)
             else:
                 column.label(text="")
-
-            if show_documentation:
-                column = box.column(align=True)
-                column.operator(
-                    "wm.url_open", 
-                    text="What are applications of the PIC/FLIP Ratio?", 
-                    icon="WORLD"
-                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Advanced-Settings#simulation-stability"
-                column.operator(
-                    "wm.url_open", 
-                    text="FLIP vs APIC", 
-                    icon="WORLD"
-                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Advanced-Settings#flip-vs-apic"
 
         box = self.layout.box()
         row = box.row(align=True)
@@ -188,14 +158,6 @@ class FLIPFLUID_PT_DomainTypeAdvancedPanel(bpy.types.Panel):
 
             column = box.column()
             column.prop(aprops, "enable_fracture_optimization")
-
-            if show_documentation:
-                column = box.column(align=True)
-                column.operator(
-                    "wm.url_open", 
-                    text="CPU usage is under 100%, is this normal?", 
-                    icon="WORLD"
-                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Performance-Notes-and-Tips"
         
         # Performance and optimization settings are hidden from the UI.
         # These should always be enabled for performance.

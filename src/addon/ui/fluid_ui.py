@@ -39,7 +39,6 @@ class FLIPFLUID_PT_FluidTypePanel(bpy.types.Panel):
         obj_props = obj.flip_fluid
         fluid_props = obj_props.fluid
         dprops = context.scene.flip_fluid.get_domain_properties()
-        show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
 
         show_disabled_in_viewport_warning = True
         if show_disabled_in_viewport_warning and obj.hide_viewport:
@@ -56,19 +55,6 @@ class FLIPFLUID_PT_FluidTypePanel(bpy.types.Panel):
         column = self.layout.column()
         column.prop(obj_props, "object_type")
         column.separator()
-
-        if show_documentation:
-            column = self.layout.column(align=True)
-            column.operator(
-                "wm.url_open", 
-                text="Fluid Object Documentation", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Fluid-Object-Settings"
-            column.operator(
-                "wm.url_open", 
-                text="Fluid objects must have manifold/watertight geometry", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Manifold-Meshes"
 
         column.label(text="Trigger:")
         row = column.row(align= True)
@@ -126,7 +112,18 @@ class FLIPFLUID_PT_FluidTypePanel(bpy.types.Panel):
             column_right = split.column(align=True)
             column_right.label(text="Target Object:")
             column_right.prop_search(fluid_props, "target_object", target_collection, search_group, text="")
-            column_right.prop(fluid_props, "export_animated_target")
+            
+            target_object = fluid_props.get_target_object()
+            if target_object is not None:
+                is_target_domain = target_object.flip_fluid.is_domain()
+                target_props = target_object.flip_fluid.get_property_group()
+                if target_props is not None and not is_target_domain:
+                    column_right.prop(target_props, "export_animated_mesh", text="Export Animated Target")
+                else:
+                    column_right.prop(fluid_props, "export_animated_target")
+            else:
+                column_right.prop(fluid_props, "export_animated_target")
+
 
         column = box.column(align=True)
         split = vcu.ui_split(column, factor=0.66)

@@ -36,7 +36,6 @@ class FLIPFLUID_PT_ForceFieldTypePanel(bpy.types.Panel):
         obj = vcu.get_active_object(context)
         obj_props = obj.flip_fluid
         force_field_props = obj_props.force_field
-        show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
 
         show_disabled_in_viewport_warning = True
         if show_disabled_in_viewport_warning and obj.hide_viewport:
@@ -97,25 +96,7 @@ class FLIPFLUID_PT_ForceFieldTypePanel(bpy.types.Panel):
                 icon="WORLD"
             ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Experimental-Builds"
             return
-
-        if show_documentation:
-            column = self.layout.column(align=True)
-            column.operator(
-                "wm.url_open", 
-                text="Force Field Object Settings", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Force-Field-Object-Settings"
-            column.operator(
-                    "wm.url_open", 
-                    text="Force Fields Video Tutorial", 
-                    icon="WORLD"
-                ).url = "https://youtu.be/bXhMpzERHpk"
-            column.operator(
-                "wm.url_open", 
-                text="Force Field Example Scenes", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Example-Scene-Descriptions#force-field-examples"
-
+            
         column = self.layout.column()
         column.prop(force_field_props, "is_enabled")
 

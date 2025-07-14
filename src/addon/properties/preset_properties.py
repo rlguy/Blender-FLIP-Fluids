@@ -813,6 +813,12 @@ class DeletePresetSettings(bpy.types.PropertyGroup):
 class ExportPresetPackageSettings(bpy.types.PropertyGroup):
     conv = vcu.convert_attribute_to_28
 
+    option_path_supports_blend_relative = set()
+    if vcu.is_blender_45():
+        # required for relative path support in Blender 4.5+
+        # https://docs.blender.org/api/4.5/bpy_types_enum_items/property_flag_items.html#rna-enum-property-flag-items
+        option_path_supports_blend_relative = {'PATH_SUPPORTS_BLEND_RELATIVE'}
+
     package = EnumProperty(
             name="Export Package",
             description="Select a package to export",
@@ -824,6 +830,7 @@ class ExportPresetPackageSettings(bpy.types.PropertyGroup):
             description="Preset package will be exported to this directory",
             default=vcu.get_blender_preferences_temporary_directory(), 
             subtype='DIR_PATH',
+            options=option_path_supports_blend_relative,
             ); exec(conv("export_directory"))
     export_filename = StringProperty(
             name="",
@@ -836,6 +843,7 @@ class ExportPresetPackageSettings(bpy.types.PropertyGroup):
             description="",
             default="",
             subtype='FILE_PATH',
+            options=option_path_supports_blend_relative,
             ); exec(conv("export_filepath"))
     create_subdirectories = BoolProperty(
             name="Create Missing Subdirectories",

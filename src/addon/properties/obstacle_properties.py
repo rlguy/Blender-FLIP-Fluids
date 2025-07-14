@@ -38,7 +38,10 @@ class FlipFluidObstacleProperties(bpy.types.PropertyGroup):
             description="Turn the obstacle 'inside-out'. Enabling this option will make the inside solid parts"
                 " of this obstacle empty while everything outside of the obstacle will become solid."
                 " This option is useful for turning a closed shape into a perfect container to hold"
-                " liquid without leakage",
+                " liquid without leakage. This option is not suitable for containing fluid inside of an open"
+                " shape such as a glass or bottle where the fluid needs to exit into the domain. Enabling this"
+                " option on non-manifold geometry or when not appropriate can result in incorrect collisions or"
+                " can prevent fluid from generating",
             default=False,
             options={'HIDDEN'},
             ); exec(conv("is_inversed"))

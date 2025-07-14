@@ -23,8 +23,8 @@ from .filesystem import filesystem_protection_layer as fpl
 from .utils import version_compatibility_utils as vcu
 from . import bl_info
 
-from .pyfluid import (
-        pyfluid,
+from .ffengine import (
+        ffengine,
         mixbox,
         FluidSimulation,
         TriangleMesh,
@@ -1320,13 +1320,6 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
         num_threads = __get_parameter_data(advanced.num_threads_fixed, frameno)
     fluidsim.max_thread_count = num_threads
 
-    fluidsim.enable_opencl_scalar_field = \
-        __get_parameter_data(advanced.enable_gpu_features, frameno)
-    fluidsim.enable_opencl_particle_advection = \
-        __get_parameter_data(advanced.enable_gpu_features, frameno)
-
-    fluidsim.preferred_gpu_device = dprops.initialize.gpu_device
-
     fluidsim.enable_asynchronous_meshing = \
         __get_parameter_data(advanced.enable_asynchronous_meshing, frameno)
 
@@ -2251,11 +2244,6 @@ def __update_animatable_domain_properties(fluidsim, data, frameno):
     elif threading_mode == 'THREADING_MODE_FIXED':
         num_threads = __get_parameter_data(advanced.num_threads_fixed, frameno)
     __set_property(fluidsim, 'max_thread_count', num_threads)
-
-    enable_cl_scalar_field = __get_parameter_data(advanced.enable_gpu_features, frameno)
-    enable_cl_advection = __get_parameter_data(advanced.enable_gpu_features, frameno)
-    __set_property(fluidsim, 'enable_opencl_scalar_field', enable_cl_scalar_field)
-    __set_property(fluidsim, 'enable_opencl_particle_advection', enable_cl_advection)
 
     enable_async_meshing = __get_parameter_data(advanced.enable_asynchronous_meshing, frameno)
     __set_property(fluidsim, 'enable_asynchronous_meshing', enable_async_meshing)
@@ -3183,11 +3171,6 @@ def __launch_bake(datafile, cache_directory, bakedata, savestate_id=None):
     __set_cache_directory(cache_directory)
 
     data = __extract_data(datafile)
-
-    if data.domain_data.initialize.enable_engine_debug_mode:
-        pyfluid.enable_debug_mode()
-    else:
-        pyfluid.disable_debug_mode()
 
     __set_simulation_data(data)
 

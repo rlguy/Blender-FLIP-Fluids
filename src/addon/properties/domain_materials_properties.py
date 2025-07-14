@@ -164,7 +164,7 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
             'fluid_particles_material', 'last_fluid_particles_material'
         )
 
-        helper_operators.update_geometry_node_material(particles_object, "FF_MotionBlurFluidParticles")
+        helper_operators.update_geometry_node_material(particles_object, "FF_GeometryNodesFluidParticles")
 
 
     def _update_whitewater_foam_material(self, context):
@@ -179,7 +179,7 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
             'whitewater_foam_material', 'last_whitewater_foam_material'
         )
 
-        helper_operators.update_geometry_node_material(foam_object, "FF_MotionBlurWhitewaterFoam")
+        helper_operators.update_geometry_node_material(foam_object, "FF_GeometryNodesWhitewaterFoam")
 
 
     def _update_whitewater_bubble_material(self, context):
@@ -194,7 +194,7 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
             'whitewater_bubble_material', 'last_whitewater_bubble_material'
         )
 
-        helper_operators.update_geometry_node_material(bubble_object, "FF_MotionBlurWhitewaterBubble")
+        helper_operators.update_geometry_node_material(bubble_object, "FF_GeometryNodesWhitewaterBubble")
 
 
     def _update_whitewater_spray_material(self, context):
@@ -209,7 +209,7 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
             'whitewater_spray_material', 'last_whitewater_spray_material'
         )
 
-        helper_operators.update_geometry_node_material(spray_object, "FF_MotionBlurWhitewaterSpray")
+        helper_operators.update_geometry_node_material(spray_object, "FF_GeometryNodesWhitewaterSpray")
 
 
     def _update_whitewater_dust_material(self, context):
@@ -224,7 +224,7 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
             'whitewater_dust_material', 'last_whitewater_dust_material'
         )
 
-        helper_operators.update_geometry_node_material(dust_object, "FF_MotionBlurWhitewaterDust")
+        helper_operators.update_geometry_node_material(dust_object, "FF_GeometryNodesWhitewaterDust")
 
 
     def _remove_cache_object_material(self, cache_object, enum_ident):

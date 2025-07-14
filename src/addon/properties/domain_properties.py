@@ -159,6 +159,9 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
     is_updated_to_flip_fluids_version_180 = BoolProperty(default=False)
     exec(conv("is_updated_to_flip_fluids_version_180"));
 
+    is_updated_to_flip_fluids_version_184 = BoolProperty(default=False)
+    exec(conv("is_updated_to_flip_fluids_version_184"));
+
 
     def initialize(self):
         self.simulation.initialize()
@@ -170,6 +173,7 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
         self.presets.initialize()
 
         self.is_updated_to_flip_fluids_version_180 = True
+        self.is_updated_to_flip_fluids_version_184 = True
 
 
     def dummy_initialize(self):
@@ -334,10 +338,10 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
         mesh_caches = [mesh_cache_foam, mesh_cache_bubble, mesh_cache_spray, mesh_cache_dust]
 
         resource_names = [
-            "FF_MotionBlurWhitewaterFoam", 
-            "FF_MotionBlurWhitewaterBubble", 
-            "FF_MotionBlurWhitewaterSpray", 
-            "FF_MotionBlurWhitewaterDust"
+            "FF_GeometryNodesWhitewaterFoam", 
+            "FF_GeometryNodesWhitewaterBubble", 
+            "FF_GeometryNodesWhitewaterSpray", 
+            "FF_GeometryNodesWhitewaterDust"
             ]
 
         for idx, mesh_cache in enumerate(mesh_caches):
@@ -393,6 +397,52 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
         self.is_updated_to_flip_fluids_version_180 = True
 
 
+    def _update_to_flip_fluids_version_184(self):
+        dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+        if dprops is None:
+            return
+
+        if self.is_updated_to_flip_fluids_version_184:
+            return
+
+        print("\n*** Begin updating FLIP Domain to FLIP Fluids version 1.8.4+ ***")
+
+        mesh_cache_surface = dprops.mesh_cache.surface.get_cache_object()
+        mesh_cache_particles = dprops.mesh_cache.particles.get_cache_object()
+        mesh_cache_foam = dprops.mesh_cache.foam.get_cache_object()
+        mesh_cache_bubble = dprops.mesh_cache.bubble.get_cache_object()
+        mesh_cache_spray = dprops.mesh_cache.spray.get_cache_object()
+        mesh_cache_dust = dprops.mesh_cache.dust.get_cache_object()
+        mesh_caches = [mesh_cache_surface, mesh_cache_particles, mesh_cache_foam, mesh_cache_bubble, mesh_cache_spray, mesh_cache_dust]
+
+        for mcache in mesh_caches:
+            if mcache is None:
+                continue
+            for mod in mcache.modifiers:
+                if mod.type != 'NODES':
+                    continue
+                if mod.name.startswith("FF_MotionBlur"):
+                    old_name = mod.name
+                    new_name = old_name.replace("FF_MotionBlur", "FF_GeometryNodes", 1)
+                    mod.name = new_name
+                    print("\tUpdated modifier name on <" + mcache.name + "> from <" + old_name + ">" + " to <" + new_name + ">")
+
+        for mcache in mesh_caches:
+            if mcache is None:
+                continue
+            for mod in mcache.modifiers:
+                if mod.type != 'NODES':
+                    continue
+                if mod.node_group.name.startswith("FF_MotionBlur"):
+                    old_name = mod.node_group.name
+                    new_name = old_name.replace("FF_MotionBlur", "FF_GeometryNodes", 1)
+                    mod.node_group.name = new_name
+                    print("\tUpdated modifier node group name  on <" + mcache.name + "> from <" + old_name + ">" + " to <" + new_name + ">")
+
+        print("*** Finished updating FLIP Domain to FLIP Fluids version 1.8.4+ ***\n")
+        self.is_updated_to_flip_fluids_version_184 = True
+
+
     def scene_update_post(self, scene):
         self.render.scene_update_post(scene)
         self.simulation.scene_update_post(scene)
@@ -428,6 +478,7 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
 
         api_workaround_utils.load_post_update_cycles_visibility_forward_compatibility_from_blender_3()
         self._update_to_flip_fluids_version_180()
+        self._update_to_flip_fluids_version_184()
 
 
     def save_pre(self):

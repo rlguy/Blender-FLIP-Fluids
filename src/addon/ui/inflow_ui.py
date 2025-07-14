@@ -38,7 +38,6 @@ class FLIPFLUID_PT_InflowTypePanel(bpy.types.Panel):
         obj_props = obj.flip_fluid
         inflow_props = obj_props.inflow
         dprops = context.scene.flip_fluid.get_domain_properties()
-        show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
 
         show_disabled_in_viewport_warning = True
         if show_disabled_in_viewport_warning and obj.hide_viewport:
@@ -54,36 +53,6 @@ class FLIPFLUID_PT_InflowTypePanel(bpy.types.Panel):
 
         column = self.layout.column()
         column.prop(obj_props, "object_type")
-
-        if show_documentation:
-            column = self.layout.column(align=True)
-            column.operator(
-                "wm.url_open", 
-                text="Inflow Object Documentation", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Inflow-Object-Settings"
-            column.operator(
-                "wm.url_open", 
-                text="How to use the Constrain Fluid Velocity option", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Inflow-Constrain-Fluid-Velocity-Additional-Notes"
-            column.operator(
-                "wm.url_open", 
-                text="Inflow stops emitting fluid when submerged", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Scene-Troubleshooting#inflow-will-not-fill-up-a-tank-when-submerged"
-            column.operator(
-                "wm.url_open", 
-                text="Small inflow does not emit fluid", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Scene-Troubleshooting#small-inflow-not-emitting-fluid-low-resolution-simulation"
-            column.operator(
-                "wm.url_open", 
-                text="Inflow objects must have manifold/watertight geometry", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Manifold-Meshes"
-
-
 
         column = self.layout.column()
         column.prop(inflow_props, "is_enabled")
@@ -136,7 +105,17 @@ class FLIPFLUID_PT_InflowTypePanel(bpy.types.Panel):
             column_right = split.column(align=True)
             column_right.label(text="Target Object:")
             column_right.prop_search(inflow_props, "target_object", target_collection, search_group, text="")
-            column_right.prop(inflow_props, "export_animated_target")
+
+            target_object = inflow_props.get_target_object()
+            if target_object is not None:
+                is_target_domain = target_object.flip_fluid.is_domain()
+                target_props = target_object.flip_fluid.get_property_group()
+                if target_props is not None and not is_target_domain:
+                    column_right.prop(target_props, "export_animated_mesh", text="Export Animated Target")
+                else:
+                    column_right.prop(inflow_props, "export_animated_target")
+            else:
+                column_right.prop(inflow_props, "export_animated_target")
 
         box.separator()
         column = box.column(align=True)

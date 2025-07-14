@@ -47,18 +47,8 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
         attrprops = obj.flip_fluid.domain.surface
         wprops = obj.flip_fluid.domain.world
         aprops = obj.flip_fluid.domain.advanced
-        show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
-
-        if show_documentation:
-            column = self.layout.column(align=True)
-            column.operator(
-                "wm.url_open", 
-                text="World Panel Documentation", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-World-Settings"
 
         box = self.layout.box()
-
         row = box.row(align=True)
         row.prop(wprops, "world_scale_settings_expanded",
             icon="TRIA_DOWN" if wprops.world_scale_settings_expanded else "TRIA_RIGHT",
@@ -116,29 +106,6 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
             column_right.label(text=xdims_str)
             column_right.label(text=ydims_str)
             column_right.label(text=zdims_str)
-
-        if show_documentation:
-            column = box.column(align=True)
-            column.operator(
-                "wm.url_open", 
-                text="World Scaling Documentation", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-World-Settings#world-size"
-            column.operator(
-                "wm.url_open", 
-                text="How to use relative and absolute scaling modes", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-World-Settings#how-to-use-relative-and-absolute-world-scaling-in-your-workflow"
-            column.operator(
-                "wm.url_open", 
-                text="The Importance of Scale", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-World-Settings#the-importance-of-scale"
-            column.operator(
-                "wm.url_open", 
-                text="Tips on simulating small scale fluids", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-World-Settings#tips-on-simulating-small-world-sizes"
 
         box = self.layout.box()
         row = box.row(align=True)
@@ -220,24 +187,6 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
             column.prop(wprops, "force_field_weight_whitewater_spray", slider=True)
             column.prop(wprops, "force_field_weight_whitewater_dust", slider=True)
 
-        if show_documentation:
-            column = subbox.column(align=True)
-            column.operator(
-                "wm.url_open", 
-                text="Force Field Resolution", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-World-Settings#force-field-resolution"
-            column.operator(
-                "wm.url_open", 
-                text="Force Fields Example Scenes", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Example-Scene-Descriptions#force-field-examples"
-            column.operator(
-                "wm.url_open", 
-                text="Force Fields Video Tutorial", 
-                icon="WORLD"
-            ).url = "https://youtu.be/bXhMpzERHpk"
-                
         box = self.layout.box()
         row = box.row(align=True)
         row.prop(wprops, "viscosity_settings_expanded",
@@ -287,14 +236,6 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
                 total_viscosity = wprops.viscosity * (10**(-wprops.viscosity_exponent))
                 total_viscosity_str = "Total viscosity   =   " + format_number_precision(self, total_viscosity)
                 column.label(text=total_viscosity_str)
-
-        if show_documentation:
-            column = box.column(align=True)
-            column.operator(
-                "wm.url_open", 
-                text="Viscosity Documentation", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-World-Settings#viscosity"
 
         box = self.layout.box()
         row = box.row(align=True)
@@ -352,14 +293,6 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
                 row.prop(wprops, "surface_tension_substeps_exceeded_tooltip", icon="QUESTION", emboss=False, text="")
                 row.label(text="  Warning: Too Many Substeps")
 
-        if show_documentation:
-            column = box.column(align=True)
-            column.operator(
-                "wm.url_open", 
-                text="Surface Tension Documentation", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-World-Settings#surface-tension"
-
         box = self.layout.box()
         row = box.row(align=True)
         row.prop(wprops, "sheeting_settings_expanded",
@@ -395,15 +328,7 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
                     pgroup = ob.flip_fluid.get_property_group()
                     column_left.label(text=ob.name, icon="OBJECT_DATA")
                     column_right.prop(pgroup, "sheeting_strength", text="Strength Scale")
-
-        if show_documentation:
-            column = box.column(align=True)
-            column.operator(
-                "wm.url_open", 
-                text="Sheeting Effects Documentation", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-World-Settings#sheeting-effects"
-
+                    
         box = self.layout.box()
         row = box.row(align=True)
         row.prop(wprops, "friction_settings_expanded",

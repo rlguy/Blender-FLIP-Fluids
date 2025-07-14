@@ -33,8 +33,9 @@ if "bpy" in locals():
         'draw_force_field_operators',
         'helper_operators',
         'command_line_operators',
-        'support_operators'
- 
+        'support_operators',
+        'alembic_io_operators',
+        'add_flip_objects'
     ]
     for module_name in reloadable_modules:
         if module_name in locals():
@@ -59,8 +60,9 @@ from . import (
         draw_force_field_operators,
         helper_operators,
         command_line_operators,
-        support_operators
-
+        support_operators,
+        alembic_io_operators,
+        add_flip_objects
         )
 
 
@@ -82,6 +84,8 @@ def register():
     helper_operators.register()
     command_line_operators.register()
     support_operators.register()
+    alembic_io_operators.register()
+    add_flip_objects.register()
 
 
 def unregister():
@@ -102,3 +106,5 @@ def unregister():
     helper_operators.unregister()
     command_line_operators.unregister()
     support_operators.unregister()
+    alembic_io_operators.unregister()
+    add_flip_objects.unregister()

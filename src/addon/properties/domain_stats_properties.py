@@ -128,6 +128,12 @@ class SolverStressProperties(bpy.types.PropertyGroup):
 
 class DomainStatsProperties(bpy.types.PropertyGroup):
     conv = vcu.convert_attribute_to_28
+
+    option_path_supports_blend_relative = set()
+    if vcu.is_blender_45():
+        # required for relative path support in Blender 4.5+
+        # https://docs.blender.org/api/4.5/bpy_types_enum_items/property_flag_items.html#rna-enum-property-flag-items
+        option_path_supports_blend_relative = {'PATH_SUPPORTS_BLEND_RELATIVE'}
     
     cache_info_type = EnumProperty(
             name="Cache Info Display Mode",
@@ -153,7 +159,8 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
     csv_save_filepath = StringProperty(
             name="",
             default=os.path.join(temp_directory, "flip_fluid_stats.csv"), 
-            subtype='FILE_PATH'
+            subtype='FILE_PATH',
+            options=option_path_supports_blend_relative,
             ); exec(conv("csv_save_filepath"))
     csv_region_format = EnumProperty(
             name="Region Format",

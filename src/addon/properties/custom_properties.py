@@ -81,13 +81,15 @@ def NewMinMaxFloatProperty(**args):
 
 
 def _format_min_max_properties(args):
+    min_str_suffix = "_min"
+    max_str_suffix = "_max"
     dmin, dmax = {}, {}
     for k,v in args.items():
-        if k.endswith("_min"):
-            k = k.replace("_min", "")
+        if k.endswith(min_str_suffix):
+            k = k[:-len(min_str_suffix)]
             dmin[k] = v
-        elif k.endswith("_max"):
-            k = k.replace("_max", "")
+        elif k.endswith(max_str_suffix):
+            k = k[:-len(max_str_suffix)]
             dmax[k] = v
     return dmin, dmax
 

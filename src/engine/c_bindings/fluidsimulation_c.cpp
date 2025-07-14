@@ -2538,81 +2538,7 @@ extern "C" {
         );
     }
 
-    EXPORTDLL void FluidSimulation_enable_opencl_particle_advection(FluidSimulation* obj, 
-                                                   int *err) {
-        CBindings::safe_execute_method_void_0param(
-            obj, &FluidSimulation::enableOpenCLParticleAdvection, err
-        );
-    }
-
-    EXPORTDLL void FluidSimulation_disable_opencl_particle_advection(FluidSimulation* obj,
-                                                    int *err) {
-        CBindings::safe_execute_method_void_0param(
-            obj, &FluidSimulation::disableOpenCLParticleAdvection, err
-        );
-    }
-
-    EXPORTDLL int FluidSimulation_is_opencl_particle_advection_enabled(FluidSimulation* obj,
-                                                      int *err) {
-        return CBindings::safe_execute_method_ret_0param(
-            obj, &FluidSimulation::isOpenCLParticleAdvectionEnabled, err
-        );
-    }
-
-    EXPORTDLL void FluidSimulation_enable_opencl_scalar_field(FluidSimulation* obj, 
-                                                   int *err) {
-        CBindings::safe_execute_method_void_0param(
-            obj, &FluidSimulation::enableOpenCLScalarField, err
-        );
-    }
-
-    EXPORTDLL int FluidSimulation_get_particle_advection_kernel_workload_size(
-            FluidSimulation* obj, int *err) {
-
-        return CBindings::safe_execute_method_ret_0param(
-            obj, &FluidSimulation::getParticleAdvectionKernelWorkLoadSize, err
-        );
-    }
-
-    EXPORTDLL void FluidSimulation_set_particle_advection_kernel_workload_size(
-            FluidSimulation* obj, int size, int *err) {
-
-        CBindings::safe_execute_method_void_1param(
-            obj, &FluidSimulation::setParticleAdvectionKernelWorkLoadSize, size, err
-        );
-    }
-
-    EXPORTDLL int FluidSimulation_get_scalar_field_kernel_workload_size(
-            FluidSimulation* obj, int *err) {
-
-        return CBindings::safe_execute_method_ret_0param(
-            obj, &FluidSimulation::getScalarFieldKernelWorkLoadSize, err
-        );
-    }
-
-    EXPORTDLL void FluidSimulation_set_scalar_field_kernel_workload_size(
-            FluidSimulation* obj, int size, int *err) {
-        
-        CBindings::safe_execute_method_void_1param(
-            obj, &FluidSimulation::setScalarFieldKernelWorkLoadSize, size, err
-        );
-    }
-
-    EXPORTDLL void FluidSimulation_disable_opencl_scalar_field(FluidSimulation* obj,
-                                                    int *err) {
-        CBindings::safe_execute_method_void_0param(
-            obj, &FluidSimulation::disableOpenCLScalarField, err
-        );
-    }
-
-    EXPORTDLL int FluidSimulation_is_opencl_scalar_field_enabled(FluidSimulation* obj,
-                                                      int *err) {
-        return CBindings::safe_execute_method_ret_0param(
-            obj, &FluidSimulation::isOpenCLScalarFieldEnabled, err
-        );
-    }
-
-     EXPORTDLL int FluidSimulation_get_max_thread_count(
+    EXPORTDLL int FluidSimulation_get_max_thread_count(
             FluidSimulation* obj, int *err) {
 
         return CBindings::safe_execute_method_ret_0param(
@@ -3053,26 +2979,6 @@ extern "C" {
                                                      double ratio, int *err) {
         CBindings::safe_execute_method_void_1param(
             obj, &FluidSimulation::setPICAPICRatio, ratio, err
-        );
-    }
-
-    EXPORTDLL void FluidSimulation_get_preferred_gpu_device(FluidSimulation* obj, 
-                                                            char *device_name, int *err) {
-        *err = CBindings::SUCCESS;
-        try {
-            std::string name = obj->getPreferredGPUDevice();
-            name.copy(device_name, 4096);
-        } catch (std::exception &ex) {
-            CBindings::set_error_message(ex);
-            *err = CBindings::FAIL;
-        }
-    }
-
-    EXPORTDLL void FluidSimulation_set_preferred_gpu_device(FluidSimulation* obj, 
-                                                            char *device_name, int *err) {
-        std::string str_device_name = device_name;
-        CBindings::safe_execute_method_void_1param(
-            obj, &FluidSimulation::setPreferredGPUDevice, str_device_name, err
         );
     }
 

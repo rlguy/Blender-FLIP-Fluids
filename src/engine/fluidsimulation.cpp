@@ -26,10 +26,10 @@ SOFTWARE.
 
 #include <cstring>
 #include <iomanip>
+#include <algorithm>
 
 #include "threadutils.h"
 #include "stopwatch.h"
-#include "openclutils.h"
 #include "viscositysolver.h"
 #include "particlemesher.h"
 #include "polygonizer3d.h"
@@ -976,7 +976,7 @@ double FluidSimulation::getSurfaceColorAttributeMixingRate() {
 }
 
 void FluidSimulation::setSurfaceColorAttributeMixingRate(double r) {
-    if (r <= 0.0) {
+    if (r < 0.0) {
         std::string msg = "Error: Rate must be greater than or equal to 0.0.\n";
         msg += "rate: " + _toString(r) + "\n";
         throw std::domain_error(msg);
@@ -2383,78 +2383,6 @@ void FluidSimulation::setDiffuseObstacleInfluenceDecayRate(double decay) {
     _diffuseObstacleInfluenceDecayRate = decay;
 }
 
-void FluidSimulation::enableOpenCLParticleAdvection() {
-    _logfile.log(std::ostringstream().flush() << 
-                 _logfile.getTime() << " enableOpenCLParticleAdvection" << std::endl);
-
-    _particleAdvector.enableOpenCL();
-}
-
-void FluidSimulation::disableOpenCLParticleAdvection() {
-    _logfile.log(std::ostringstream().flush() << 
-                 _logfile.getTime() << " disableOpenCLParticleAdvection" << std::endl);
-
-    _particleAdvector.disableOpenCL();
-}
-
-bool FluidSimulation::isOpenCLParticleAdvectionEnabled() {
-    return _particleAdvector.isOpenCLEnabled();
-}
-
-void FluidSimulation::enableOpenCLScalarField() {
-    _logfile.log(std::ostringstream().flush() << 
-                 _logfile.getTime() << " enableOpenCLScalarField" << std::endl);
-
-    _mesherScalarFieldAccelerator.enableOpenCL();
-}
-
-void FluidSimulation::disableOpenCLScalarField() {
-    _logfile.log(std::ostringstream().flush() << 
-                 _logfile.getTime() << " disableOpenCLScalarField" << std::endl);
-
-    _mesherScalarFieldAccelerator.disableOpenCL();
-}
-
-bool FluidSimulation::isOpenCLScalarFieldEnabled() {
-    return _mesherScalarFieldAccelerator.isOpenCLEnabled();
-}
-
-int FluidSimulation::getParticleAdvectionKernelWorkLoadSize() {
-    return _particleAdvector.getKernelWorkLoadSize();
-}
-
-void FluidSimulation::setParticleAdvectionKernelWorkLoadSize(int n) {
-    if (n < 1) {
-        std::string msg = "Error: work load size must be greater than or equal to 1.\n";
-        msg += "size: " + _toString(n) + "\n";
-        throw std::domain_error(msg);
-    }
-
-    _logfile.log(std::ostringstream().flush() << 
-                 _logfile.getTime() << 
-                 " setParticleAdvectionKernelWorkLoadSize: " << n << std::endl);
-
-    _particleAdvector.setKernelWorkLoadSize(n);
-}
-
-int FluidSimulation::getScalarFieldKernelWorkLoadSize() {
-    return _mesherScalarFieldAccelerator.getKernelWorkLoadSize();
-}
-
-void FluidSimulation::setScalarFieldKernelWorkLoadSize(int n) {
-    if (n < 1) {
-        std::string msg = "Error: work load size must be greater than or equal to 1.\n";
-        msg += "size: " + _toString(n) + "\n";
-        throw std::domain_error(msg);
-    }
-
-    _logfile.log(std::ostringstream().flush() << 
-                 _logfile.getTime() << 
-                 " setScalarFieldKernelWorkLoadSize: " << n << std::endl);
-
-    _mesherScalarFieldAccelerator.setKernelWorkLoadSize(n);
-}
-
 int FluidSimulation::getMaxThreadCount() {
     return ThreadUtils::getMaxThreadCount();
 }
@@ -2925,18 +2853,6 @@ void FluidSimulation::setPICAPICRatio(double r) {
                  " setPICAPICRatio: " << r << std::endl);
 
     _ratioPICAPIC = r;
-}
-
-void FluidSimulation::setPreferredGPUDevice(std::string deviceName) {
-    _logfile.log(std::ostringstream().flush() << 
-                 _logfile.getTime() << 
-                 " setPreferredGPUDevice: " << deviceName << std::endl);
-
-    OpenCLUtils::setPreferredGPUDevice(deviceName);
-}
-
-std::string FluidSimulation::getPreferredGPUDevice() {
-    return OpenCLUtils::getPreferredGPUDevice();
 }
 
 void FluidSimulation::enableFractureOptimization() {
@@ -4855,6 +4771,13 @@ void FluidSimulation::_loadMarkerParticles(MarkerParticleLoadData &particleData,
     bool loadIDData = _isFluidParticleIDAttributeEnabled && 
                       idData.particles.size() == particleData.particles.size();
 
+    // If the simulation does not begin with the _isFluidParticleIDAttributeEnabled option activated,
+    // but is resumed after activating this option, the fluid particles will not have any
+    // ID attribute to load. In this case, loaded particles should have this attribute initialized
+    // with valid data so that the amount of particles that are exported is correct.
+    bool initializeNewIDData = _isFluidParticleIDAttributeEnabled && 
+                               idData.particles.size() != particleData.particles.size();
+
     bool loadUIDData = _isFluidParticleUIDAttributeEnabled && 
                        uidData.particles.size() == particleData.particles.size();
 
@@ -4899,7 +4822,7 @@ void FluidSimulation::_loadMarkerParticles(MarkerParticleLoadData &particleData,
     }
 
     std::vector<uint16_t> *id = nullptr;
-    if (loadIDData) {
+    if (loadIDData || initializeNewIDData) {
         _markerParticles.getAttributeValues("ID", id);
     }
 
@@ -4951,6 +4874,8 @@ void FluidSimulation::_loadMarkerParticles(MarkerParticleLoadData &particleData,
             if (loadIDData) {
                 MarkerParticleID mpid = idData.particles[i];
                 id->push_back(mpid.id);
+            } else if (initializeNewIDData) {
+                id->push_back(_generateRandomFluidParticleID());
             }
 
             if (loadUIDData) {
@@ -10017,7 +9942,7 @@ double FluidSimulation::_calculateNextTimeStep(double dt) {
     }
 
     if (_isFluidInSimulation() || _isFluidGeneratingThisFrame()) {
-        maxu = fmax(_getMaximumObstacleSpeed(dt), maxu);
+        maxu = std::max(_getMaximumObstacleSpeed(dt), maxu);
     }
 
     double eps = 1e-6;
@@ -10025,7 +9950,12 @@ double FluidSimulation::_calculateNextTimeStep(double dt) {
 
     if (_isSurfaceTensionEnabled && (_isFluidInSimulation() || _isFluidGeneratingThisFrame())) {
         double restriction = sqrt(_dx * _dx * _dx) * sqrt(1.0 / (_surfaceTensionConstant + eps));
-        timeStep = fmin(timeStep, _surfaceTensionConditionNumber * restriction);
+        timeStep = std::min(timeStep, _surfaceTensionConditionNumber * restriction);
+    }
+
+    if (_isSurfaceSourceColorAttributeEnabled && _isSurfaceSourceColorAttributeMixingEnabled) {
+        // Higher color mixing rates may require the simulator to run more substeps
+        timeStep = std::min(timeStep, 1.0 / (_colorAttributeMixingRate + eps));
     }
 
     int estimatedNumFrameSubsteps = std::max((int)std::ceil(dt / timeStep), 1);

@@ -16,7 +16,7 @@
 
 import bpy, enum
 from mathutils import Vector, Matrix, Quaternion, Euler, Color
-from ..pyfluid import TriangleMesh
+from ..ffengine import TriangleMesh
 from ..utils import export_utils
 from ..utils import version_compatibility_utils as vcu
 from ..utils import cache_utils

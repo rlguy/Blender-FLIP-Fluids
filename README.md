@@ -1,8 +1,17 @@
 ![image](https://github.com/rlguy/Blender-FLIP-Fluids/assets/4285191/53714857-6f04-45c8-8c97-694e37cfb6b9)
 
+- [FLIP Fluids](#flip-fluids)
+  * [Getting the FLIP Fluids Addon](#getting-the-flip-fluids-addon)
+  * [Key Features](#key-features)
+  * [System Requirements](#system-requirements)
+  * [Release Notes](#release-notes)
+  * [License](#license)
+  * [Building](#building)
+  * [Links](#links)
+
 # FLIP Fluids
 
-The **[FLIP Fluids addon](https://superhivemarket.com/products/flipfluids?ref=2685)** is a tool that helps you set up, run, and render liquid simulation effects. Our custom built fluid engine is based around the popular FLIP simulation technique that is also found in many other professional liquid simulation tools. The FLIP Fluids engine has been in constant development for over four years with a large focus on tightly integrating the simulator into Blender as an addon. It just feels like a native Blender tool!
+The **[FLIP Fluids addon](https://superhivemarket.com/products/flipfluids?ref=2685)** is a tool that helps you set up, run, and render liquid simulation effects. Our custom built fluid engine is based around the popular FLIP simulation technique that is also found in many other professional liquid simulation tools. The FLIP Fluids engine has been in constant development since 2016 with a large focus on tightly integrating the simulator into Blender as an addon. It just feels like a native Blender tool!
 
 With our reputation for delivering high quality software and outstanding customer support, the FLIP Fluids addon is one of the best selling products in the Blender community.
 
@@ -49,25 +58,30 @@ Source code files will state their license at the top of the file. Assets will i
 
 ## Building
 
-To build the FLIP Fluids addon, some programming experience or prior experience building C/C++ applications is strongly recommended. The basics of navigation and executing commands using the command line is also recommended.
+To build the FLIP Fluids addon and its external dependencies, some programming experience and prior experience in building C/C++ applications with CMake is strongly recommended. Some familiarity with the C/C++ compiling, linking, and building process is recommended for debugging and resolving any errors or warnings that are encountered.
 
-Like our FLIP Fluids addon? If you can afford, please consider purchasing a license on an [official marketplace](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Official-Marketplaces-of-the-FLIP-Fluids-Addon) to help support our continued development of the project. Development of the FLIP Fluids addon is funded solely through sales through marketplaces, and as a small team we truly appreciate your support.
+Do you like our FLIP Fluids addon? If you can afford, please consider purchasing a license on an [official marketplace](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Official-Marketplaces-of-the-FLIP-Fluids-Addon) to help support our continued development of the project. Development of the FLIP Fluids addon is funded solely through through marketplace sales, and as a small team we truly appreciate your support.
 
 ### Source Code Dependencies
 
-Installations of the following programs will be needed to build and compile the FLIP Fluids addon:
+Installations of the following programs and dependencies will be needed to build and compile the FLIP Fluids addon:
 
-1. A compiler that supports C++11.
+**Required**:
+1. A compiler that supports C++17.
     - Windows: **MinGW** is the only supported compiler for Windows OS.
     - macOS: **Clang** (recommended)
     - Linux: **GCC** (recommended)
 2. [CMake](https://cmake.org/) to generate the appropriate solution, project, or Makefiles, for your system.
 3. [GNU Make](https://www.gnu.org/software/make/) to compile/build the FLIP Fluids simulation engine.
-4. (optional) [Python 3.3+](https://www.python.org/) to use the automated build script.
+4. [Alembic](https://github.com/alembic/alembic) and its external dependencies:
+    - [Imath 3](https://github.com/AcademySoftwareFoundation/Imath)
+
+**Optional:**
+1. [Python 3.3+](https://www.python.org/) to use the automated build script.
 
 ### Building with automated script
 
-This repository includes an automated build script to help you build and compile the FLIP Fluids addon. Use of this script requires an installation of Python 3.3+. The script will work best if CMake and GNU Make are located in your system PATH variable, but if not, you may also specify their locations when executing the script (run ```python build.py --help``` for help).
+This repository includes an automated build script to help you build and compile the FLIP Fluids addon. Use of this script requires an installation of Python 3.3+. 
 
 To build, compile, and package the FLIP Fluids addon, navigate to the root of the project directory and run:
 
@@ -75,26 +89,40 @@ To build, compile, and package the FLIP Fluids addon, navigate to the root of th
 python build.py
 ```
 
-Once successfully built, the FLIP Fluids addon and installation .zip file will be located in the ```build/bl_flip_fluids/``` directory.
+Once successfully built, the FLIP Fluids addon and installation .zip file will be located in the ```build/bl_flip_fluids/``` directory. See [Addon Installation Guide](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Addon-Installation-and-Uninstallation).
+
+**Notes:**
+- The build script will work best if CMake and GNU Make are located in your system PATH variable, but if not, you may also specify their locations when executing the script with the ```-cmake-path path/to/cmake``` and ```-make-path path/to/make``` flags.
+- The simulator relies on the _**Alembic**_ and _**Imath 3**_ external dependencies. If these shared libraries are not in your system PATH variable, they should be packaged within the addon with the ```-package-alembic-library path/to/libAlembic``` and ```-package-imath-library path/to/libImath``` flags.
+- run ```python build.py --help``` for help.
 
 ### Building without automated script
 
-To build and compile the FLIP Fluids addon without the automated Python script, first copy the ```cmake/CMakeLists.txt``` file to the root of the project directory. The program can then be built and compiled using CMake and GNU Make. Example if your current working directory is located at the project root:
+To build and compile the FLIP Fluids addon, navigate to the root of the project directory and run:
+
+**Windows**
 
 ```
 mkdir build
 cd build
-cmake .. -DBUILD_DEBUG=ON
-make
-cmake .. -DBUILD_DEBUG=OFF
+cmake .. -G "MinGW Makefiles"
 make
 ```
 
-The above script uses CMake and GNU Make to build the FLIP Fluids engine twice: once for the debug version of the engine, and again for the optimized release version of the engine.
+**Linux/MacOS**
 
-The [CMake Generator](https://cmake.org/cmake/help/latest/manual/cmake-generators.7.html) can be specified by adding the ```-G "[generator]"``` flag. For example, to specify MinGW Makefiles on Windows OS, you can add the CMake flag ```-G "MinGW Makefiles"```.
+```
+mkdir build
+cd build
+cmake ..
+make
+```
 
 Once successfully built, the FLIP Fluids addon will be located in the ```build/bl_flip_fluids/``` directory.
+
+**Notes:**
+- To create an addon installation file, zip the ```build/bl_flip_fluids/flip_fluids_addon``` directory using an archive utility of your choice. See [Addon Installation Guide](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Addon-Installation-and-Uninstallation).
+- The simulator relies on the _**Alembic**_ and _**Imath 3**_ external dependencies. If these shared libraries are not in your system PATH variable, they should be packaged within the addon by copying the libraries to the ```build/bl_flip_fluids/flip_fluids_addon/ffengine/lib/``` directory.
 
 ## Links
 
