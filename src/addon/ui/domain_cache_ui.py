@@ -58,20 +58,6 @@ class FLIPFLUID_PT_DomainTypeCachePanel(bpy.types.Panel):
         domain_object = vcu.get_active_object(context)
         dprops = domain_object.flip_fluid.domain
         cprops = dprops.cache
-        show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
-
-        if show_documentation:
-            column = self.layout.column(align=True)
-            column.operator(
-                "wm.url_open", 
-                text="Cache Documentation", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Cache-Settings"
-            column.operator(
-                "wm.url_open", 
-                text="Exporting to Alemibc (.abc) cache", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Alembic-Export-Support"
 
         box = self.layout.box()
         row = box.row(align=True)
@@ -80,7 +66,6 @@ class FLIPFLUID_PT_DomainTypeCachePanel(bpy.types.Panel):
             icon_only=True, 
             emboss=False
         )
-        #row.alignment = 'LEFT'
         row.label(text="Cache Directory:")
 
         if not cprops.cache_directory_expanded:

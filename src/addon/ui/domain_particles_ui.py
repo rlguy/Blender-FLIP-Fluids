@@ -32,7 +32,6 @@ def _draw_geometry_attributes_menu(self, context):
     obj = vcu.get_active_object(context)
     pprops = obj.flip_fluid.domain.particles
     sprops = obj.flip_fluid.domain.surface
-    show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
     
     #
     # Geometry Attributes
@@ -106,7 +105,6 @@ def _draw_geometry_attributes_menu(self, context):
             column_left.prop(sprops, "enable_color_attribute_mixing", text="Enable Mixing")
             column_right.enabled = pprops.enable_fluid_particle_color_attribute and sprops.enable_color_attribute_mixing
             column_right.prop(sprops, "color_attribute_mixing_rate", text="Mix Rate", slider=True)
-            column_right.prop(sprops, "color_attribute_mixing_radius", text="Mix Radius", slider=True)
 
             column = subbox.column(align=True)
             column.enabled = pprops.enable_fluid_particle_color_attribute and sprops.enable_color_attribute_mixing
@@ -171,19 +169,6 @@ def _draw_geometry_attributes_menu(self, context):
             row.prop(pprops, "enable_fluid_particle_source_id_attribute", text="Source ID")
             row.prop(pprops, "enable_fluid_particle_uid_attribute", text="UID")
 
-        if show_documentation:
-            column = box.column(align=True)
-            column.operator(
-                "wm.url_open", 
-                text="Domain Attributes Documentation", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Attributes-and-Data-Settings"
-            column.operator(
-                "wm.url_open", 
-                text="Attributes and Motion Blur Example Scenes", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Example-Scene-Descriptions#attribute-and-motion-blur-examples"
-
     
 class FLIPFLUID_PT_DomainTypeFluidParticlesPanel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
@@ -207,7 +192,6 @@ class FLIPFLUID_PT_DomainTypeFluidParticlesPanel(bpy.types.Panel):
         dprops = obj.flip_fluid.domain
         pprops = obj.flip_fluid.domain.particles
         sprops = obj.flip_fluid.domain.surface
-        show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
 
         prefs = vcu.get_addon_preferences()
         if not prefs.is_extra_features_enabled():

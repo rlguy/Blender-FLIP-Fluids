@@ -106,6 +106,12 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         bl_idname = base_package
     else:
         bl_idname = __name__.split(".")[0]
+
+    option_path_supports_blend_relative = set()
+    if vcu.is_blender_45():
+        # required for relative path support in Blender 4.5+
+        # https://docs.blender.org/api/4.5/bpy_types_enum_items/property_flag_items.html#rna-enum-property-flag-items
+        option_path_supports_blend_relative = {'PATH_SUPPORTS_BLEND_RELATIVE'}
     
 
     preferences_menu_view_mode = EnumProperty(
@@ -135,16 +141,6 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
                 )
     exec(vcu.convert_attribute_to_28("helper_category_name"))
     FAKE_PREFERENCES.helper_category_name = "FLIP Fluids"
-
-    show_documentation_in_ui = BoolProperty(
-                name="Display documentation links in UI",
-                description="Display relevant documentation links within the UI. Documentation links will open in your browser."
-                    " This setting is also available from the FLIP Fluids sidebar menu",
-                default=False,
-                options={'HIDDEN'},
-                )
-    exec(vcu.convert_attribute_to_28("show_documentation_in_ui"))
-    FAKE_PREFERENCES.show_documentation_in_ui = False
 
     engine_debug_mode = BoolProperty(
             name="Engine Debug Mode", 
@@ -319,6 +315,7 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
                 " This should be a location on your system where you have read and write file permissions",
             default="", 
             subtype='DIR_PATH',
+            options=option_path_supports_blend_relative,
             ); 
     exec(vcu.convert_attribute_to_28("preset_library_install_location"))
     FAKE_PREFERENCES.preset_library_install_location = ""
@@ -619,7 +616,7 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         month_to_str[11] = "nov"
         month_to_str[12] = "dec"
 
-        date_str = "(" + str(dd).zfill(2) + "-" + month_to_str[int(mm)] + "-" + str(yyyy) + ")"
+        date_str = "(" + str(yyyy) + "-" + str(mm).zfill(2) + "-" + str(dd).zfill(2) + ")"
         return date_str
 
 
@@ -808,7 +805,6 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         helper_column = box.column(align=True)
         helper_column.label(text="UI Options:")
         helper_column.prop(self, "enable_tabbed_domain_settings_view")
-        helper_column.prop(self, "show_documentation_in_ui")
 
         row = helper_column.row()
         row.alignment = 'LEFT'
@@ -858,8 +854,7 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
             text="What are the extra features?", 
             icon="URL"
         ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Preferences-Menu-Settings#developer-tools"
-
-        helper_column.prop(self, "engine_debug_mode")
+        
         helper_column.prop(self, "enable_blend_file_logging")
         helper_column.prop(self, "enable_support_tools")
 

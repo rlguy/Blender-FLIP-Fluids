@@ -22,6 +22,7 @@ from ..utils import installation_utils
 __EXTENSION_WHITELIST = [
     ".backup",
     ".bat",
+    ".sh",
     ".bbox",
     ".bin",
     ".blend",
@@ -83,6 +84,10 @@ def get_directory_whitelist():
     preset_library_installations = installation_utils.get_preset_library_installations()
     for install in preset_library_installations:
         whitelist.append(install["path"])
+
+    if bpy.data.filepath:
+        compositing_tools_filepath = os.path.dirname(bpy.data.filepath)
+        whitelist.append(compositing_tools_filepath)
 
     return whitelist
 
@@ -227,7 +232,7 @@ def clear_cache_directory(cache_directory, clear_export=False, clear_logs=False,
     delete_files_in_directory(temp_dir, extensions, remove_directory=True)
 
     scripts_dir = os.path.join(cache_directory, "scripts")
-    extensions = [".bat"]
+    extensions = [".bat", ".sh", ".txt"]
     delete_files_in_directory(scripts_dir, extensions, remove_directory=True)
 
     savestates_dir = os.path.join(cache_directory, "savestates")

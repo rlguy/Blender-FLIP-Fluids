@@ -1,8 +1,6 @@
-src/engine/kernels/kernels.cpp
 src/engine/versionutils.cpp
 src/addon/__init__.py
 src/addon/blender_manifest.toml
 src/addon/utils/installation_utils.py
-CMakeLists.txt
-build
+/build
 .DS_Store

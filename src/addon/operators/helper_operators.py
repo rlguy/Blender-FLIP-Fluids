@@ -1706,8 +1706,8 @@ def is_geometry_node_point_cloud_detected(bl_mesh_cache_object=None):
 
         cache_objects = [c for c in cache_objects if c is not None]
 
-        search_string_start1 = "FF_MotionBlurWhitewater"
-        search_string_start2 = "FF_MotionBlurFluidParticles"
+        search_string_start1 = "FF_GeometryNodesWhitewater"
+        search_string_start2 = "FF_GeometryNodesFluidParticles"
         for cobj in cache_objects:
             for mod in cobj.modifiers:
                 is_name_correct = str(mod.name).startswith(search_string_start1) or str(mod.name).startswith(search_string_start2)
@@ -1776,7 +1776,7 @@ class FlipFluidHelperInitializeMotionBlur(bpy.types.Operator):
                       " This will be applied to the fluid surface, fluid particles, and whitewater particles if enabled." + 
                       " Node groups can be viewed in the geometry nodes editor and modifier")
 
-    resource_prefix = StringProperty(default="FF_MotionBlur")
+    resource_prefix = StringProperty(default="FF_GeometryNodes")
     exec(vcu.convert_attribute_to_28("resource_prefix"))
 
 
@@ -1786,12 +1786,12 @@ class FlipFluidHelperInitializeMotionBlur(bpy.types.Operator):
 
 
     def apply_modifier_settings(self, target_object, gn_modifier):
-        gn_modifier["Input_2_use_attribute"] = 1
+        gn_modifier["Input_2_use_attribute"] = True
         gn_modifier["Input_2_attribute_name"] = 'flip_velocity'
         gn_modifier["Output_3_attribute_name"] = 'velocity'
 
         gn_name = gn_modifier.name
-        if gn_name.startswith("FF_MotionBlurSurface"):
+        if gn_name.startswith("FF_GeometryNodesSurface"):
             # Depending on FLIP Fluids version, the GN set up may not
             # have these inputs. Available in FLIP Fluids 1.7.2 or later.
             try:
@@ -1800,7 +1800,7 @@ class FlipFluidHelperInitializeMotionBlur(bpy.types.Operator):
             except:
                 pass
 
-        if gn_name.startswith("FF_MotionBlurWhitewater") or gn_name.startswith("FF_MotionBlurFluidParticles"):
+        if gn_name.startswith("FF_GeometryNodesWhitewater") or gn_name.startswith("FF_GeometryNodesFluidParticles"):
             # Depending on FLIP Fluids version, the GN set up may not
             # have these inputs. Available in FLIP Fluids 1.7.2 or later.
             try:
@@ -1943,7 +1943,7 @@ class FlipFluidHelperRemoveMotionBlur(bpy.types.Operator):
             " operator will not disable the Domain surface/particles/whitewater velocity attribute settings")
 
 
-    resource_prefix = StringProperty(default="FF_MotionBlur")
+    resource_prefix = StringProperty(default="FF_GeometryNodes")
     exec(vcu.convert_attribute_to_28("resource_prefix"))
 
 
@@ -2032,7 +2032,7 @@ class FlipFluidHelperToggleMotionBlurRendering(bpy.types.Operator):
         if bl_object is None:
             return None
         for mod in bl_object.modifiers:
-            if mod.type == "NODES" and mod.node_group and mod.node_group.name.startswith("FF_MotionBlur"):
+            if mod.type == "NODES" and mod.node_group and mod.node_group.name.startswith("FF_GeometryNodes"):
                 return mod
 
 
@@ -4507,6 +4507,12 @@ class FlipFluidPassesImportMedia(bpy.types.Operator):
     bl_idname = "flip_fluid.passes_import_media"
     bl_label = "Import Media"
 
+    option_path_supports_blend_relative = set()
+    if vcu.is_blender_45():
+        # required for relative path support in Blender 4.5+
+        # https://docs.blender.org/api/4.5/bpy_types_enum_items/property_flag_items.html#rna-enum-property-flag-items
+        option_path_supports_blend_relative = {'PATH_SUPPORTS_BLEND_RELATIVE'}
+
     filter_glob: StringProperty(
         default="*.png;*.jpg;*.jpeg;*.bmp;*.tiff;*.tif;*.mp4;*.avi;*.mov",
         options={'HIDDEN'}
@@ -4515,7 +4521,7 @@ class FlipFluidPassesImportMedia(bpy.types.Operator):
         type=bpy.types.OperatorFileListElement,
         options={'HIDDEN', 'SKIP_SAVE'},
     )
-    directory: StringProperty(subtype='DIR_PATH')
+    directory: StringProperty(subtype='DIR_PATH', options=option_path_supports_blend_relative)
 
     def execute(self, context):
         hprops = context.scene.flip_fluid_helper
@@ -5306,12 +5312,12 @@ def ensure_modifier_order(obj):
         "FF_FadeNearDomain",
         "FF Subdiv. For Projection",
         "FF_FadeNearObjects",
-        "FF_MotionBlurSurface",
-        "FF_MotionBlurFluidParticles",
-        "FF_MotionBlurWhitewaterBubble",
-        "FF_MotionBlurWhitewaterDust",
-        "FF_MotionBlurWhitewaterFoam",
-        "FF_MotionBlurWhitewaterSpray",
+        "FF_GeometryNodesSurface",
+        "FF_GeometryNodesFluidParticles",
+        "FF_GeometryNodesWhitewaterBubble",
+        "FF_GeometryNodesWhitewaterDust",
+        "FF_GeometryNodesWhitewaterFoam",
+        "FF_GeometryNodesWhitewaterSpray",
         "FF Projection"
     ]
 

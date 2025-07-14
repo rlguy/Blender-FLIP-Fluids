@@ -235,7 +235,7 @@ def get_motion_blur_geometry_node_modifier(bl_object):
     if bl_object is None:
         return None
     for mod in bl_object.modifiers:
-        if mod.type == "NODES" and mod.node_group and mod.node_group.name.startswith("FF_MotionBlur"):
+        if mod.type == "NODES" and mod.node_group and mod.node_group.name.startswith("FF_GeometryNodes"):
             return mod
 
 
@@ -244,7 +244,7 @@ def draw_whitewater_particles_motion_blur_geometry_node_properties(ui_row, bl_mo
         ui_row.alert = True
         ui_row.operator(
             "flip_fluid_operators.helper_initialize_cache_objects", 
-            text="Initialize Geometry Nodes - Missing FF_MotionBlurWhitewater modifier",
+            text="Initialize Geometry Nodes - Missing FF_GeometryNodesWhitewater modifier",
             icon="ERROR"
             ).cache_object_type = 'CACHE_OBJECT_TYPE_WHITEWATER_PARTICLES'
         return
@@ -265,7 +265,7 @@ def draw_fluid_particles_motion_blur_geometry_node_properties(ui_row, bl_mod):
         ui_row.alert = True
         ui_row.operator(
             "flip_fluid_operators.helper_initialize_cache_objects", 
-            text="Initialize Geometry Nodes - Missing FF_MotionBlurFluidParticles modifier",
+            text="Initialize Geometry Nodes - Missing FF_GeometryNodesFluidParticles modifier",
             icon="ERROR"
             ).cache_object_type = 'CACHE_OBJECT_TYPE_FLUID_PARTICLES'
         return
@@ -449,36 +449,7 @@ class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):
     def draw(self, context):
         domain_object = vcu.get_active_object(context)
         rprops = domain_object.flip_fluid.domain.render
-        show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
-
-        if show_documentation:
-            column = self.layout.column(align=True)
-            column.operator(
-                "wm.url_open", 
-                text="Display and Render Settings Documentation", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Display-Settings"
-            column.operator(
-                "wm.url_open", 
-                text="Rendering from the command line", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Rendering-from-the-Command-Line"
-            column.operator(
-                "wm.url_open", 
-                text="Whitewater particles are rendered too large", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Scene-Troubleshooting#whitewater-particles-are-too-largesmall-when-rendered"
-            column.operator(
-                "wm.url_open", 
-                text="Whitewater particles are not rendered in preview render", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Scene-Troubleshooting#whitewater-particles-are-not-rendered-when-viewport-shading-is-set-to-rendered"
-            column.operator(
-                "wm.url_open", 
-                text="Simulation meshes not appearing in viewport/render", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Scene-Troubleshooting#simulation-meshes-are-not-appearing-in-the-viewport-andor-render"
-
+        
         draw_simulation_display_settings(self, context)
         draw_surface_display_settings(self, context, rprops)
         draw_fluid_particle_display_settings(self, context, rprops)

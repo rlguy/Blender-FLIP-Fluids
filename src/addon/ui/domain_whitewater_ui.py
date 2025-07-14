@@ -31,7 +31,6 @@ def _draw_geometry_attributes_menu(self, context):
     obj = vcu.get_active_object(context)
     dprops = obj.flip_fluid.domain
     wprops = dprops.whitewater
-    show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
     prefs = vcu.get_addon_preferences()
 
     box = self.layout.box()
@@ -90,20 +89,6 @@ def _draw_geometry_attributes_menu(self, context):
         row.prop(wprops, "enable_lifetime_attribute", text="Lifetime")
 
 
-    if show_documentation:
-        column = box.column(align=True)
-        column.operator(
-            "wm.url_open", 
-            text="Domain Attributes Documentation", 
-            icon="WORLD"
-        ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Attributes-and-Data-Settings"
-        column.operator(
-            "wm.url_open", 
-            text="Attributes and Motion Blur Example Scenes", 
-            icon="WORLD"
-        ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Example-Scene-Descriptions#attribute-and-motion-blur-examples"
-
-
 class FLIPFLUID_PT_DomainTypeWhitewaterPanel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
@@ -126,43 +111,8 @@ class FLIPFLUID_PT_DomainTypeWhitewaterPanel(bpy.types.Panel):
         dprops = obj.flip_fluid.domain
         wprops = dprops.whitewater
         is_whitewater_enabled = wprops.enable_whitewater_simulation
-        show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
         show_advanced_whitewater = (wprops.whitewater_ui_mode == 'WHITEWATER_UI_MODE_ADVANCED')
         highlight_advanced = wprops.highlight_advanced_settings
-
-        if show_documentation:
-            column = self.layout.column(align=True)
-            column.operator(
-                "wm.url_open", 
-                text="Whitewater Documentation", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Whitewater-Settings"
-            column.operator(
-                "wm.url_open", 
-                text="Simulation not generating enough whitewater", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Scene-Troubleshooting#simulation-not-generating-enough-whitewater-foambubblespray"
-            column.operator(
-                "wm.url_open", 
-                text="Whitewater particles are rendered too large", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Scene-Troubleshooting#whitewater-particles-are-too-largesmall-when-rendered"
-            column.operator(
-                "wm.url_open", 
-                text="Whitewater particles are not rendered in preview render", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Scene-Troubleshooting#whitewater-particles-are-not-rendered-when-viewport-shading-is-set-to-rendered"
-            column.operator(
-                "wm.url_open", 
-                text="Whitewater particles are not exported to Alembic", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Alembic-Export-Support#rendering-alembic-whitewater-on-a-render-farm"
-            column.operator(
-                "wm.url_open", 
-                text="Whitewater rendering tips", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Whitewater-Settings#whitewater-rendering-tips"
-
 
         column = self.layout.column(align=True)
         column.prop(wprops, "enable_whitewater_simulation")

@@ -31,7 +31,6 @@ def _draw_geometry_attributes_menu(self, context):
     obj = vcu.get_active_object(context)
     sprops = obj.flip_fluid.domain.surface
     rprops = obj.flip_fluid.domain.render
-    show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
 
     #
     # Geometry Attributes
@@ -155,7 +154,6 @@ def _draw_geometry_attributes_menu(self, context):
             column_left.prop(sprops, "enable_color_attribute_mixing", text="Enable Mixing")
             column_right.enabled = sprops.enable_color_attribute and sprops.enable_color_attribute_mixing
             column_right.prop(sprops, "color_attribute_mixing_rate", text="Mix Rate", slider=True)
-            column_right.prop(sprops, "color_attribute_mixing_radius", text="Mix Radius", slider=True)
 
             column = subbox.column(align=True)
             column.enabled = sprops.enable_color_attribute and sprops.enable_color_attribute_mixing
@@ -226,19 +224,6 @@ def _draw_geometry_attributes_menu(self, context):
             row.prop(sprops, "enable_whitewater_proximity_attribute", text="WW Prox.")
             row.prop(sprops, "enable_source_id_attribute", text="Source ID")
 
-        if show_documentation:
-            column = box.column(align=True)
-            column.operator(
-                "wm.url_open", 
-                text="Domain Attributes Documentation", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Attributes-and-Data-Settings"
-            column.operator(
-                "wm.url_open", 
-                text="Attributes and Motion Blur Example Scenes", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Example-Scene-Descriptions#attribute-and-motion-blur-examples"
-
     
 class FLIPFLUID_PT_DomainTypeFluidSurfacePanel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
@@ -260,26 +245,7 @@ class FLIPFLUID_PT_DomainTypeFluidSurfacePanel(bpy.types.Panel):
     def draw(self, context):
         obj = vcu.get_active_object(context)
         sprops = obj.flip_fluid.domain.surface
-        show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
-
-        if show_documentation:
-            column = self.layout.column(align=True)
-            column.operator(
-                "wm.url_open", 
-                text="Surface and Meshing Documentation", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Surface-Settings"
-            column.operator(
-                "wm.url_open", 
-                text="How do I make my surface smoother?", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Surface-Settings#mesh-smoothing"
-            column.operator(
-                "wm.url_open", 
-                text="Mesh banding against curved obstacles", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Scene-Troubleshooting#mesh-banding-artifacts-against-curved-obstacles"
-
+        
         column = self.layout.column(align=True)
         column.prop(sprops, "enable_surface_mesh_generation")
 
@@ -400,15 +366,7 @@ class FLIPFLUID_PT_DomainTypeFluidSurfacePanel(bpy.types.Panel):
             row = box.row(align=True)
             row.enabled = sprops.enable_meshing_offset
             row.prop(sprops, "obstacle_meshing_mode", expand=True)
-
-            if show_documentation:
-                column = box.column(align=True)
-                column.operator(
-                    "wm.url_open", 
-                    text="Which meshing offset mode to use?", 
-                    icon="WORLD"
-                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Surface-Settings#which-offset-mode-to-use"
-
+            
         # Removed surface smoothing options. These are better set
         # using a Blender smooth modifier.
         """

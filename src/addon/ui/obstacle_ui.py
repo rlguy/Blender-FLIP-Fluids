@@ -39,7 +39,6 @@ class FLIPFLUID_PT_ObstacleTypePanel(bpy.types.Panel):
         obj_props = obj.flip_fluid
         obstacle_props = obj_props.obstacle
         preferences = vcu.get_addon_preferences(context)
-        show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
 
         show_disabled_in_viewport_warning = True
         if show_disabled_in_viewport_warning and obj.hide_viewport:
@@ -55,52 +54,6 @@ class FLIPFLUID_PT_ObstacleTypePanel(bpy.types.Panel):
 
         column = self.layout.column()
         column.prop(obj_props, "object_type")
-
-        if show_documentation:
-            column = self.layout.column(align=True)
-            column.operator(
-                "wm.url_open", 
-                text="Obstacle Object Documentation", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Obstacle-Object-Settings"
-            column.operator(
-                "wm.url_open", 
-                text="Obstacle objects must have manifold/watertight geometry", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Manifold-Meshes"
-            column.operator(
-                "wm.url_open", 
-                text="Thin obstacles are leaking fluid", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Scene-Troubleshooting#thin-obstacles-leaking-fluid"
-            column.operator(
-                "wm.url_open", 
-                text="Animated obstacle is static in the simulation", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Scene-Troubleshooting#animated-obstacle-is-static-when-running-the-simulation"
-            column.operator(
-                "wm.url_open", 
-                text="How to debug issues with obstacle objects", 
-                icon="WORLD"
-            ).url = "https://blendermarket.com/posts/flip-fluids-10-tips-to-improve-your-blender-workflow"
-            column.operator(
-                "wm.url_open", 
-                text="Mesh banding against curved obstacles", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Scene-Troubleshooting#mesh-banding-artifacts-against-curved-obstacles"
-            column.operator(
-                "wm.url_open", 
-                text="Using the Inverse option to perfectly contain fluid", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Obstacle-Inverse-Workflow"
-            column.operator(
-                "wm.url_open", 
-                text="Liquid volume loss with animated obstacle", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Limitations-of-the-FLIP-Fluids-addon#volume-and-mass-preservation"
-
-
-
 
         column = self.layout.column()
         column.prop(obstacle_props, "is_enabled")

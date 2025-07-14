@@ -298,7 +298,6 @@ def draw_resolution_settings(self, context, master_column):
     sprops = dprops.simulation
     wprops = dprops.world
     aprops = dprops.advanced
-    show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
 
     box = master_column.box()
     column = box.column(align=True)
@@ -445,14 +444,6 @@ def draw_resolution_settings(self, context, master_column):
         column_right.label(text=voxel_size_str)
         column_right.label(text=voxel_count_str)
 
-        if show_documentation:
-            column = box.column(align=True)
-            column.operator(
-                    "wm.url_open", 
-                    text="What is the simulation grid?", 
-                    icon="WORLD"
-                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Simulation-Settings#what-is-the-domain-simulation-grid"
-
     box = master_column.box()
     column = box.column(align=True)
     split = column.split(align=True)
@@ -480,14 +471,6 @@ def draw_resolution_settings(self, context, master_column):
         else:
             row.label(text="")
 
-        if show_documentation:
-            column = box.column(align=True)
-            column.operator(
-                "wm.url_open", 
-                text="FLIP vs APIC", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Advanced-Settings#flip-vs-apic"
-    
     box = master_column.box()
     row = box.row(align=True)
     row.prop(sprops, "world_scale_expanded",
@@ -530,15 +513,6 @@ def draw_resolution_settings(self, context, master_column):
             row.alignment = 'RIGHT'
             row.label(text="Domain Length = ")
             column_right.prop(wprops, "world_scale_absolute")
-
-
-        if show_documentation:
-            column = box.column(align=True)
-            column.operator(
-                    "wm.url_open", 
-                    text="World Scaling Documentation", 
-                    icon="WORLD"
-                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-World-Settings#world-size"
 
     box = master_column.box()
     row = box.row(align=True)
@@ -709,7 +683,6 @@ class FLIPFLUID_PT_DomainTypePanel(bpy.types.Panel):
     def draw(self, context):
         obj = vcu.get_active_object(context)
         obj_props = vcu.get_active_object(context).flip_fluid
-        show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
 
         dprops = context.scene.flip_fluid.get_domain_properties()
         if dprops is None:
@@ -726,58 +699,12 @@ class FLIPFLUID_PT_DomainTypePanel(bpy.types.Panel):
         draw_bake_operator(self, context, box)
         draw_more_bake_settings(self, context, box)
 
-        if show_documentation:
-            column = box.column(align=True)
-            column.operator(
-                "wm.url_open", 
-                text="Simulation and Baking Documentation", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Simulation-Settings"
-            column.operator(
-                "wm.url_open", 
-                text="More Bake Settings Documentation", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Simulation-Settings#more-bake-settings"
-            column.operator(
-                "wm.url_open", 
-                text="Baking from the command line", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Baking-from-the-Command-Line"
-
         column = self.layout.column()
         draw_resolution_settings(self, context, column)
 
         box = self.layout.box()
         draw_time_settings(self, context, box)
-
-        if show_documentation:
-            column = self.layout.column(align=True)
-            column.operator(
-                "wm.url_open", 
-                text="Domain Documentation", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Object-Settings"
-            column.operator(
-                "wm.url_open", 
-                text="How large should I make my domain?", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Object-Settings#how-large-should-i-make-my-domain-object"
-            column.operator(
-                "wm.url_open", 
-                text="Simulation baking taking too long!", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Performance-Notes-and-Tips#simulation-optimization-tips"
-            column.operator(
-                "wm.url_open", 
-                text="CPU Usage Documentation", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Performance-Notes-and-Tips"
-            column.operator(
-                "wm.url_open", 
-                text="Tutorials and Learning Resources", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Video-Learning-Series"
-    
+        
 
 def register():
     bpy.utils.register_class(FLIPFLUID_PT_DomainTypePanel)

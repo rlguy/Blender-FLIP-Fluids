@@ -27,7 +27,6 @@ from bpy.props import (
         )
 
 from ..presets import preset_library
-from ..pyfluid import gpu_utils
 from ..utils import version_compatibility_utils as vcu
 from ..utils import installation_utils
 from ..utils import audio_utils
@@ -751,35 +750,6 @@ class FLIPFluidUninstallPresetLibrary(bpy.types.Operator):
         return context.window_manager.invoke_confirm(self, event)
 
 
-class FLIPFluidPreferencesFindGPUDevices(bpy.types.Operator):
-    bl_idname = "flip_fluid_operators.preferences_find_gpu_devices"
-    bl_label = "Find GPU Devices"
-    bl_description = "Search for GPU compute devices"
-
-    def execute(self, context):
-        preferences = vcu.get_addon_preferences()
-
-        devices = gpu_utils.find_gpu_devices()
-        preferences.gpu_devices.clear()
-        max_score = -1
-        max_name = ""
-        for d in devices:
-            new_device = preferences.gpu_devices.add()
-            new_device.name = d['name']
-            new_device.description = d['description']
-            new_device.score = d['score']
-
-            if new_device.score > max_score:
-                max_score = new_device.score
-                max_name = new_device.name
-
-        preferences.selected_gpu_device = max_name
-        preferences.is_gpu_devices_initialized = True
-
-        self.report({'INFO'}, "Found " + str(len(devices)) + " GPU compute device(s).")
-        return {'FINISHED'}
-
-
 class VersionDataTextEntry(bpy.types.PropertyGroup):
     text = StringProperty(default="")
     exec(vcu.convert_attribute_to_28("text"))
@@ -794,6 +764,34 @@ def get_gpu_string():
         except:
             pass
     return gpu_string
+
+
+def _anonymize_username_from_path(path):
+    # Try to remove/replace system username from filepath and replace with generic 'username'
+    split_path = path.split(os.sep)
+
+    # For correctly joining first element of path
+    if platform.system() == 'Windows':
+        split_path[0] += "\\"
+    else:
+        # MacOS/Linux
+        split_path[0] += "/" + split_path[0]
+
+    stripped_path = path
+    if "Users" in split_path:
+        # Windows/MacOS
+        users_index = split_path.index("Users")
+        if len(split_path) > users_index + 1:
+            stripped_parts = split_path[:users_index + 1] + ["username"] + split_path[users_index + 2:]
+            stripped_path = os.path.join(*stripped_parts)
+    elif "home" in split_path:
+        # Linux
+        home_index = split_path.index("home")
+        if len(split_path) > home_index + 1:
+            stripped_parts = split_path[:home_index + 1] + ["username"] + split_path[home_index + 2:]
+            stripped_path = os.path.join(*stripped_parts)
+
+    return stripped_path
 
 
 def get_system_info_dict():
@@ -861,7 +859,12 @@ def get_system_info_dict():
         print(traceback.format_exc())
         print(e)
 
-    addon_path_string = _get_addon_directory()
+    addon_path_string = "Unknown"
+    try:
+        addon_path_string = _anonymize_username_from_path(_get_addon_directory())
+    except Exception as e:
+        print(traceback.format_exc())
+        print(e)
 
     cache_path_string = "N/A"
     cache_path_exists_string = "N/A"
@@ -869,11 +872,12 @@ def get_system_info_dict():
     try:
         dprops = bpy.context.scene.flip_fluid.get_domain_properties()
         if dprops is not None:
-            cache_path_string = dprops.cache.get_cache_abspath()
-            cache_path_exists = os.path.isdir(cache_path_string)
+            cache_path_original = dprops.cache.get_cache_abspath()
+            cache_path_string = _anonymize_username_from_path(cache_path_original)
+            cache_path_exists = os.path.isdir(cache_path_original)
             cache_path_exists_string = str(cache_path_exists)
             if cache_path_exists:
-                logs_directory = os.path.join(cache_path_string, "logs")
+                logs_directory = os.path.join(cache_path_original, "logs")
                 if os.path.isdir(logs_directory):
                     log_files = [f for f in os.listdir(logs_directory) if os.path.isfile(os.path.join(logs_directory, f))]
                     log_files_string = str(len(log_files))
@@ -882,38 +886,32 @@ def get_system_info_dict():
         print(e)
 
     default_addons = [
-            "Pose Library",
-            "BioVision Motion Capture (BVH) format",
-            "FBX format",
-            "STL format",
-            "Scalable Vector Graphics (SVG) 1.1 format",
-            "Stanford PLY format",
-            "UV Layout",
-            "Wavefront OBJ format (legacy)",
-            "glTF 2.0 format",
-            "Cycles Render Engine",
-            "Web3D X3D/VRML2 format"
+            "io_anim_bvh",
+            "io_curve_svg",
+            "io_mesh_uv_layout",
+            "io_scene_fbx",
+            "io_scene_gltf2",
+            "cycles",
+            "pose_library",
+            "bl_pkg",
             ]
 
-    addons_string = ""
+    addons_list = []
+    addons_string = "Unknown"
     try:
         if vcu.is_blender_42():
-            # TODO find method to retrieve installed addons/extensions for Blender 4.2
-            addons_string = "Unknown (Blender 4.2)"
+            for addon in bpy.context.preferences.addons:
+                addon_name = addon.module
+                addon_name = addon_name.split('.')[-1]
+                if addon_name and addon_name not in default_addons:
+                    addons_list.append(addon_name)
+        if addons_list:
+            addons_string = ', '.join(addons_list)
         else:
-            for mod_name in bpy.context.preferences.addons.keys():
-                if mod_name not in sys.modules:
-                    continue
-                mod = sys.modules[mod_name]
-                addon_name = mod.bl_info.get("name")
-                if addon_name not in default_addons:
-                    addons_string += addon_name + ", "
-            addons_string = vcu.str_removesuffix(addons_string, ", ")
-
+            addons_string = None
     except Exception as e:
         print(traceback.format_exc())
         print(e)
-        addons_string = "Unknown"
 
     developer_tools_string = "Uknown"
     try:
@@ -990,7 +988,27 @@ def get_system_info_dict():
 
     blender_binary_string = "Unknown"
     try:
-        blender_binary_string  = bpy.app.binary_path
+        blender_binary_string  = _anonymize_username_from_path(bpy.app.binary_path)
+    except Exception as e:
+        print(traceback.format_exc())
+        print(e)
+
+    compiler_info_list = []
+    compiler_info_string = "Unknown"
+    try:
+        compiler_info_list = installation_utils.get_compiler_info_list()
+        if compiler_info_list:
+            compiler_info_string = "\n\t" + '\n\t'.join(compiler_info_list)
+    except Exception as e:
+        print(traceback.format_exc())
+        print(e)
+
+    library_list = []
+    library_info_string = "Unknown"
+    try:
+        library_list = installation_utils.get_library_list()
+        if library_list:
+            library_info_string = "\n\t" + '\n\t'.join(library_list)
     except Exception as e:
         print(traceback.format_exc())
         print(e)
@@ -1188,6 +1206,8 @@ def get_system_info_dict():
 
     d['addon_path'] = addon_path_string
     d['blender_binary'] = blender_binary_string
+    d['compiler_info'] = compiler_info_string
+    d['library_info'] = library_info_string
     d['renderer'] = renderer_string
     d['cycles_device'] = cycles_device_string
     d['viewport_modes'] = viewport_modes_string
@@ -1244,6 +1264,8 @@ class FlipFluidReportBugPrefill(bpy.types.Operator):
 
         user_info += "**Blender Binary:** " + sys_info['blender_binary'] + "\n"
         user_info += "**Addon Path:** " + sys_info['addon_path'] + "\n"
+        user_info += "**Compiler Info:** " + sys_info['compiler_info'] + "\n"
+        user_info += "**Library Info:** " + sys_info['library_info'] + "\n"
         user_info += "**Renderer:** " + sys_info['renderer'] + "\n"
         user_info += "**Cycles Device:** " + sys_info['cycles_device'] + "\n"
         user_info += "**Viewport Modes:** " + sys_info['viewport_modes'] + "\n"
@@ -1304,6 +1326,8 @@ def get_system_info_string():
 
     user_info += "Blender Binary: " + sys_info['blender_binary'] + "\n"
     user_info += "Addon Path: " + sys_info['addon_path'] + "\n"
+    user_info += "Compiler Info: " + sys_info['compiler_info'] + "\n"
+    user_info += "Library Info: " + sys_info['library_info'] + "\n"
     user_info += "Renderer: " + sys_info['renderer'] + "\n"
     user_info += "Cycles Device: " + sys_info['cycles_device'] + "\n"
     user_info += "Viewport Modes: " + sys_info['viewport_modes'] + "\n"
@@ -1424,7 +1448,6 @@ def draw_flip_fluids_help_menu(self, context):
 def register():
     bpy.utils.register_class(FLIPFluidPreferencesExportUserData)
     bpy.utils.register_class(FLIPFluidPreferencesImportUserData)
-    bpy.utils.register_class(FLIPFluidPreferencesFindGPUDevices)
 
     bpy.utils.register_class(FLIPFluidInstallMixboxPlugin)
     bpy.utils.register_class(FLIPFluidUninstallMixboxPlugin)
@@ -1460,7 +1483,6 @@ def register():
 def unregister():
     bpy.utils.unregister_class(FLIPFluidPreferencesExportUserData)
     bpy.utils.unregister_class(FLIPFluidPreferencesImportUserData)
-    bpy.utils.unregister_class(FLIPFluidPreferencesFindGPUDevices)
 
     bpy.utils.unregister_class(FLIPFluidInstallMixboxPlugin)
     bpy.utils.unregister_class(FLIPFluidUninstallMixboxPlugin)

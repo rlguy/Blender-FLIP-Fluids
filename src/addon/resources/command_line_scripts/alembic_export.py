@@ -115,10 +115,38 @@ def initialize_simulation_mesh_selection():
     return True
 
 
+def add_geometry_node_modifier(target_object, resource_filepath, resource_name):
+    for mod in target_object.modifiers:
+        if mod.type == 'NODES' and mod.name == resource_name:
+            # Already added
+            return mod
+        
+    node_group = bpy.data.node_groups.get(resource_name)
+    if node_group is None:
+        is_resource_found = False
+        with bpy.data.libraries.load(resource_filepath) as (data_from, data_to):
+            resource = [name for name in data_from.node_groups if name == resource_name]
+            if resource:
+                is_resource_found = True
+                data_to.node_groups = resource
+                
+        if not is_resource_found:
+            return None
+        
+        imported_resource_name = data_to.node_groups[0].name
+    else:
+        # already imported
+        imported_resource_name = node_group.name
+        
+    gn_modifier = target_object.modifiers.new(resource_name, type="NODES")
+    gn_modifier.node_group = bpy.data.node_groups.get(imported_resource_name)
+    return gn_modifier
+
+
 def get_geomety_nodes_motion_blur_scale(bl_object):
     gn_modifier = None
     for mod in bl_object.modifiers:
-        if mod.type == 'NODES' and mod.name.startswith("FF_MotionBlur"):
+        if mod.type == 'NODES' and mod.name.startswith("FF_GeometryNodes"):
             gn_modifier = mod
             break
 
@@ -181,7 +209,7 @@ def initialize_velocity_export_and_attributes():
         dust_motion_blur_scale = get_geomety_nodes_motion_blur_scale(bl_dust)
 
     print("\nRemoving motion blur render setup:")
-    bpy.ops.flip_fluid_operators.helper_remove_motion_blur('INVOKE_DEFAULT', resource_prefix="FF_MotionBlur")
+    bpy.ops.flip_fluid_operators.helper_remove_motion_blur('INVOKE_DEFAULT', resource_prefix="FF_GeometryNodes")
     print("Finished removing motion blur render setup.")
 
     if hprops.alembic_export_velocity:
@@ -247,9 +275,6 @@ def initialize_velocity_export_and_attributes():
     if dprops.surface.enable_viscosity_attribute:
         dprops.surface.enable_viscosity_attribute = False
         print("Disabled fluid surface Viscosity attribute from loading")
-    if dprops.surface.enable_color_attribute:
-        dprops.surface.enable_color_attribute = False
-        print("Disabled fluid surface Color attribute from loading")
     if dprops.surface.enable_age_attribute:
         dprops.surface.enable_age_attribute = False
         print("Disabled fluid surface Age attribute from loading")
@@ -259,6 +284,20 @@ def initialize_velocity_export_and_attributes():
     if dprops.surface.enable_whitewater_proximity_attribute:
         dprops.surface.enable_whitewater_proximity_attribute = False
         print("Disabled fluid surface Whitewater Proximity attribute from loading")
+
+    if hprops.alembic_export_color:
+        bl_surface = dprops.mesh_cache.surface.get_cache_object()
+        if bl_surface is not None:
+            print("\nInitializing Alembic surface color export setup:")
+            resources_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            geometry_nodes_library = os.path.join(resources_path, "geometry_nodes", "geometry_nodes_library.blend")
+            add_geometry_node_modifier(bl_surface, geometry_nodes_library, "FF_AlembicColorExportSurface")
+            print("Finished initializing surface color export setup.")
+    else:
+        if dprops.surface.enable_color_attribute:
+            dprops.surface.enable_color_attribute = False
+            print("Disabled fluid surface Color attribute from loading")
+
     # User may want source ID attribute for geoemtry nodes post processing
     """
     if dprops.surface.enable_source_id_attribute:
@@ -488,6 +527,8 @@ def frame_change_handler(scene):
         info_msg = "Exported <" + mesh_export_str + ">"
         if hprops.alembic_export_velocity:
             info_msg += " with velocity data"
+        if hprops.alembic_export_color:
+            info_msg += " with color data"
         info_msg += " for frame " + str(scene.frame_current)
         info_msg += " in " + '{0:.3f}'.format(elapsed_time) + " seconds  (total: " + '{0:.3f}'.format(TOTAL_TIME) + "s)"
         print(info_msg)
@@ -497,4 +538,10 @@ def frame_change_handler(scene):
 
 bpy.app.handlers.frame_change_post.append(frame_change_handler)
 
-bpy.ops.wm.alembic_export(filepath=alembic_filepath, selected=True, start=frame_start, end=frame_end, global_scale=global_scale)
+bpy.ops.wm.alembic_export(
+        filepath=alembic_filepath, 
+        selected=True, 
+        start=frame_start, 
+        end=frame_end, 
+        vcolors=hprops.alembic_export_color,
+        global_scale=global_scale)

@@ -162,16 +162,42 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
     bounds =            PointerProperty(type=FLIPFluidMeshBounds);     exec(conv("bounds"))
 
 
+    def _get_cycles_use_motion_blur(self, bl_object):
+        try:
+            # Cycles may not be enabled in the user's preferences
+            bool_value = bl_object.cycles.use_motion_blur
+            return bool_value
+        except:
+            return False
+
+
+    def _set_cycles_use_motion_blur(self, bl_object, bool_value):
+        try:
+            # Cycles may not be enabled in the user's preferences
+            bl_object.cycles.use_motion_blur = bool_value
+        except:
+            pass
+
+
+    def _is_object_motion_blur_enabled(self, bl_object_list):
+        for bl_object in bl_object_list:
+            if bl_object is None:
+                continue
+            if self._get_cycles_use_motion_blur(bl_object):
+                return True
+        return False
+
+
     def _initialize_cache_object_fluid_surface(self, bl_cache_object):
         parent_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         blend_resource_filename = "geometry_nodes_library.blend"
         resource_filepath = os.path.join(parent_path, "resources", "geometry_nodes", blend_resource_filename)
-        gn_modifier = helper_operators.add_geometry_node_modifier(bl_cache_object, resource_filepath, "FF_MotionBlurSurface")
+        gn_modifier = helper_operators.add_geometry_node_modifier(bl_cache_object, resource_filepath, "FF_GeometryNodesSurface")
 
         # Depending on FLIP Fluids version, the GN set up may not
         # have these inputs. Available in FLIP Fluids 1.7.2 or later.
         key_value_pairs = [
-            ("Input_2_use_attribute",   1),                               # Input flip_velocity
+            ("Input_2_use_attribute",   True),                               # Input flip_velocity
             ("Input_2_attribute_name",  'flip_velocity'),                 # Input flip_velocity
             ("Output_3_attribute_name", 'velocity'),                      # Output velocity
             ("Input_6",                 True), # Enable Motion Blur
@@ -184,17 +210,31 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
             except:
                 pass
 
+        # Initialize with enabled object motion blur if other FLIP meshes have this enabled
+        dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+        if dprops is not None:
+            other_mesh_objects = [
+                    dprops.mesh_cache.particles.get_cache_object(),
+                    dprops.mesh_cache.foam.get_cache_object(),
+                    dprops.mesh_cache.bubble.get_cache_object(),
+                    dprops.mesh_cache.spray.get_cache_object(),
+                    dprops.mesh_cache.dust.get_cache_object()
+                    ]
+
+            if self._is_object_motion_blur_enabled(other_mesh_objects):
+                self._set_cycles_use_motion_blur(bl_cache_object, True)
+
 
     def _initialize_cache_object_fluid_particles(self, bl_cache_object):
         parent_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         blend_resource_filename = "geometry_nodes_library.blend"
         resource_filepath = os.path.join(parent_path, "resources", "geometry_nodes", blend_resource_filename)
-        gn_modifier = helper_operators.add_geometry_node_modifier(bl_cache_object, resource_filepath, "FF_MotionBlurFluidParticles")
+        gn_modifier = helper_operators.add_geometry_node_modifier(bl_cache_object, resource_filepath, "FF_GeometryNodesFluidParticles")
 
         # Depending on FLIP Fluids version, the GN set up may not
         # have these inputs. Available in FLIP Fluids 1.7.2 or later.
         key_value_pairs = [
-            ("Input_2_use_attribute",   1),                               # Input flip_velocity
+            ("Input_2_use_attribute",   True),                               # Input flip_velocity
             ("Input_2_attribute_name",  'flip_velocity'),                 # Input flip_velocity
             ("Output_3_attribute_name", 'velocity'),                      # Output velocity
             ("Input_5",                 bl_cache_object.active_material), # Material
@@ -209,6 +249,20 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
                 gn_modifier[key] = value
             except:
                 pass
+
+        # Initialize with enabled object motion blur if other FLIP meshes have this enabled
+        dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+        if dprops is not None:
+            other_mesh_objects = [
+                    dprops.mesh_cache.surface.get_cache_object(),
+                    dprops.mesh_cache.foam.get_cache_object(),
+                    dprops.mesh_cache.bubble.get_cache_object(),
+                    dprops.mesh_cache.spray.get_cache_object(),
+                    dprops.mesh_cache.dust.get_cache_object()
+                    ]
+
+            if self._is_object_motion_blur_enabled(other_mesh_objects):
+                self._set_cycles_use_motion_blur(bl_cache_object, True)
 
 
     def _initialize_cache_object_whitewater_particles(self, bl_cache_object):
@@ -217,20 +271,20 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         resource_filepath = os.path.join(parent_path, "resources", "geometry_nodes", blend_resource_filename)
 
         if   self.cache_object_type == 'CACHE_OBJECT_TYPE_FOAM':
-            resource_name = "FF_MotionBlurWhitewaterFoam"
+            resource_name = "FF_GeometryNodesWhitewaterFoam"
         elif self.cache_object_type == 'CACHE_OBJECT_TYPE_BUBBLE':
-            resource_name = "FF_MotionBlurWhitewaterBubble"
+            resource_name = "FF_GeometryNodesWhitewaterBubble"
         elif self.cache_object_type == 'CACHE_OBJECT_TYPE_SPRAY':
-            resource_name = "FF_MotionBlurWhitewaterSpray"
+            resource_name = "FF_GeometryNodesWhitewaterSpray"
         elif self.cache_object_type == 'CACHE_OBJECT_TYPE_DUST':
-            resource_name = "FF_MotionBlurWhitewaterDust"
+            resource_name = "FF_GeometryNodesWhitewaterDust"
 
         gn_modifier = helper_operators.add_geometry_node_modifier(bl_cache_object, resource_filepath, resource_name)
 
         # Depending on FLIP Fluids version, the GN set up may not
         # have these inputs. Available in FLIP Fluids 1.7.2 or later.
         key_value_pairs = [
-            ("Input_2_use_attribute",   1),                               # Input flip_velocity
+            ("Input_2_use_attribute",   True),                               # Input flip_velocity
             ("Input_2_attribute_name",  'flip_velocity'),                 # Input flip_velocity
             ("Output_3_attribute_name", 'velocity'),                      # Output velocity
             ("Input_5",                 bl_cache_object.active_material), # Material
@@ -245,6 +299,18 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
                 gn_modifier[key] = value
             except:
                 pass
+
+
+        # Initialize with enabled object motion blur if other FLIP meshes have this enabled
+        dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+        if dprops is not None:
+            other_mesh_objects = [
+                    dprops.mesh_cache.surface.get_cache_object(),
+                    dprops.mesh_cache.particles.get_cache_object()
+                    ]
+
+            if self._is_object_motion_blur_enabled(other_mesh_objects):
+                self._set_cycles_use_motion_blur(bl_cache_object, True)
 
 
     def initialize_cache_object(self):

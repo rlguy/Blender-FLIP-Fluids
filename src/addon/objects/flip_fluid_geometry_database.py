@@ -19,7 +19,7 @@ import bpy, os, sqlite3, math
 from .flip_fluid_geometry_export_object import GeometryExportType, MotionExportType
 from ..filesystem import filesystem_protection_layer as fpl
 
-from ..pyfluid import TriangleMesh
+from ..ffengine import TriangleMesh
 
 
 class GeometryDatabase():

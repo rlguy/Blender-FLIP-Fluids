@@ -43,8 +43,6 @@ SOFTWARE.
 #include "particlelevelset.h"
 #include "pressuresolver.h"
 #include "diffuseparticlesimulation.h"
-#include "clscalarfield.h"
-#include "particleadvector.h"
 #include "velocityadvector.h"
 #include "meshfluidsource.h"
 #include "influencegrid.h"
@@ -1052,37 +1050,6 @@ public:
     void setDiffuseObstacleInfluenceDecayRate(double decay);
 
     /*
-        Enable/disable use of OpenCL for particle advection.
-
-        Enabled by default.
-    */
-    void enableOpenCLParticleAdvection();
-    void disableOpenCLParticleAdvection();
-    bool isOpenCLParticleAdvectionEnabled();
-
-    /*
-        Enable/disable use of OpenCL for scalar fields.
-
-        Enabled by default.
-    */
-    void enableOpenCLScalarField();
-    void disableOpenCLScalarField();
-    bool isOpenCLScalarFieldEnabled();
-
-    /*
-        Maximum workload size for the ParticleAdvector OpenCL kernel
-    */
-    int getParticleAdvectionKernelWorkLoadSize();
-    void setParticleAdvectionKernelWorkLoadSize(int n);
-
-
-    /*
-        Maximum workload size for the CLScalarField OpenCL kernels
-    */
-    int getScalarFieldKernelWorkLoadSize();
-    void setScalarFieldKernelWorkLoadSize(int n);
-
-    /*
         Maximum number of compute threads that can be launched
     */
     int getMaxThreadCount();
@@ -1252,12 +1219,6 @@ public:
     void setPICFLIPRatio(double r);
     double getPICAPICRatio();
     void setPICAPICRatio(double r);
-
-    /*
-        Name of the preferred GPU device to use for GPU acceleration features
-    */
-    std::string getPreferredGPUDevice();
-    void setPreferredGPUDevice(std::string deviceName);
 
     /*
         Enable/Disable experimental optimization features
@@ -2461,12 +2422,6 @@ private:
     bool _openBoundaryZNeg = false;
     bool _openBoundaryZPos = false;
     int _openBoundaryWidth = 2;    // In # of voxels
-    
-    // OpenCL
-    // NOTE: These objects are not used within the simulator, but will remain
-    //       defined in case they are needed for future use.
-    ParticleAdvector _particleAdvector;
-    CLScalarField _mesherScalarFieldAccelerator;
 
     std::vector<float> _vertx;
     std::vector<float> _verty;

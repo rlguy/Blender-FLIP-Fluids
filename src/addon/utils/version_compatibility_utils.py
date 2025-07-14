@@ -16,7 +16,7 @@
 
 import bpy, array, os, numpy
 
-from ..pyfluid import TriangleMesh
+from ..ffengine import TriangleMesh
 
 def is_blender_279():
     return bpy.app.version <= (2, 79, 999)
@@ -75,6 +75,18 @@ def is_blender_40():
 
 def is_blender_42():
     return bpy.app.version >= (4, 2, 0)
+
+
+def is_blender_43():
+    return bpy.app.version >= (4, 3, 0)
+
+
+def is_blender_44():
+    return bpy.app.version >= (4, 4, 0)
+
+
+def is_blender_45():
+    return bpy.app.version >= (4, 5, 0)
     
 
 def register_dict_property(dict_object, name_str, prop):

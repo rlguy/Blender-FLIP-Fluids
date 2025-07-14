@@ -38,20 +38,6 @@ class FLIPFLUID_PT_DomainTypeDebugPanel(bpy.types.Panel):
     def draw(self, context):
         obj = vcu.get_active_object(context)
         gprops = obj.flip_fluid.domain.debug
-        show_documentation = vcu.get_addon_preferences(context).show_documentation_in_ui
-
-        if show_documentation:
-            column = self.layout.column(align=True)
-            column.operator(
-                "wm.url_open", 
-                text="Debug Documentation", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Domain-Debug-Settings"
-            column.operator(
-                "wm.url_open", 
-                text="How to use grid visualization and obstacle debugging", 
-                icon="WORLD"
-            ).url = "https://blendermarket.com/posts/flip-fluids-10-tips-to-improve-your-blender-workflow"
 
         box = self.layout.box()
         row = box.row(align=True)

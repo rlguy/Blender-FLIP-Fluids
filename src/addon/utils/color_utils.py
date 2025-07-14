@@ -16,7 +16,7 @@
 
 import os
 
-from ..pyfluid import (
+from ..ffengine import (
         mixbox,
         )
 
