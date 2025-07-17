@@ -85,7 +85,6 @@ def frame_change_post_apply_T71908_workaround(context, depsgraph=None):
 
     input_name_list_particles = [
         "Input_4",  # Motion Blur Scale
-        "Input_5",  # Material
         "Input_6",  # Particle Scale
         "Input_8",  # Enable Motion Blur
         "Input_9",  # Enable Point Cloud

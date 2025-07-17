@@ -447,7 +447,9 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
                         row.label(text="")
                         row.prop(hprops, "cmd_launch_render_animation_no_overwrite")
                     else:
-                        column.label(text="")
+                        row = column.row(align=True)
+                        row.label(text="")
+                        row.prop(hprops, "cmd_launch_render_normal_animation_no_overwrite")
                         column.label(text="")
                 elif hprops.cmd_bake_and_render_mode == 'CMD_BAKE_AND_RENDER_MODE_INTERLEAVED':
                     row = column.row(align=True)

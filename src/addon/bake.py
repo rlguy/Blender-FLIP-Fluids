@@ -3188,9 +3188,9 @@ def __launch_bake(datafile, cache_directory, bakedata, savestate_id=None):
     __set_simulation_object(fluidsim)
 
     if __get_addon_version() != __get_engine_version(fluidsim):
-        errmsg = ("The fluid engine version <" + __get_engine_version(fluidsim) + 
-                  "> is not compatible with the addon version <" + 
-                  __get_addon_version() + ">")
+        errmsg =  "The FLIP Fluids engine version <" + __get_engine_version(fluidsim)
+        errmsg += "> is not compatible with the addon version <" + __get_addon_version() + ">."
+        errmsg += " Blender may require a restart if you have updated the addon to a new version during this session"
         raise LibraryVersionError(errmsg)
 
     if __check_bake_cancelled(bakedata):
