@@ -22,9 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-
-#ifndef FLUIDENGINE_LEVELSETUTILS_H
-#define FLUIDENGINE_LEVELSETUTILS_H
+#pragma once
 
 namespace LevelsetUtils {
 
@@ -102,5 +100,3 @@ inline void _sort(T &a, T &b, T &c, T &d)
 }
 
 }
-
-#endif

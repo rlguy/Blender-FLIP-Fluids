@@ -205,7 +205,12 @@ class FlipFluidAddQuickLiquid(bpy.types.Operator):
 
         # Domain Settings
         domain_properties = bpy.context.scene.flip_fluid.get_domain_properties()
-        domain_properties.materials.surface_material = 'FF Water (ocean volumetric)'
+
+        try:
+            # Materials may not be available depending on addon version
+            domain_properties.materials.surface_material = 'FF Water (ocean volumetric)'
+        except:
+            pass
 
         # Surface Settings
         domain_properties = bpy.context.scene.flip_fluid.get_domain_properties()
@@ -282,8 +287,13 @@ class FlipFluidAddThickViscousLiquid(bpy.types.Operator):
         domain_props.surface.subdivisions = 2
         domain_props.world.enable_viscosity = True
         domain_props.world.viscosity = 15
-        domain_props.materials.surface_material = 'FF Caramel'
         domain_props.advanced.jitter_surface_particles = True
+
+        try:
+            # Materials may not be available depending on addon version
+            domain_props.materials.surface_material = 'FF Caramel'
+        except:
+            pass
 
         # Create Inflow
         bpy.ops.mesh.primitive_cylinder_add(radius=0.25, location=(-0.125, -0.125, 1.25 + z_offset), scale=(0.4, 0.4, 0.25))
@@ -402,8 +412,13 @@ class FlipFluidAddThinViscousLiquid(bpy.types.Operator):
         domain_props.world.surface_tension_settings_expaned = True
         domain_props.world.enable_surface_tension = True
         domain_props.world.surface_tension = 0.3
-        domain_props.materials.surface_material = 'FF Caramel'
         domain_props.advanced.jitter_surface_particles = True
+
+        try:
+            # Materials may not be available depending on addon version
+            domain_props.materials.surface_material = 'FF Caramel'
+        except:
+            pass
 
         # Create Inflow
         bpy.ops.mesh.primitive_cylinder_add(radius=0.25, location=(-0.5, -0.5, 0.0 + z_offset), scale=(0.4, 0.4, 0.125))

@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_FORCEFIELD_H
-#define FLUIDENGINE_FORCEFIELD_H
+#pragma once
 
 #include "trianglemesh.h"
 #include "meshobject.h"
@@ -135,5 +134,3 @@ protected:
     float _gravityScaleFalloffThreshold = 0.90f;    // in % of the width
     
 };
-
-#endif

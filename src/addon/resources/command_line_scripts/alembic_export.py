@@ -1,3 +1,19 @@
+# Blender FLIP Fluids Add-on
+# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import bpy, os, time, sys
 
 
@@ -17,6 +33,11 @@ def check_cache_exists():
     return True
 
 
+def enable_outliner_visibility(bl_object):
+    bl_object.hide_viewport = False
+    bl_object.hide_render = False
+
+
 def initialize_simulation_mesh_selection():
     dprops = bpy.context.scene.flip_fluid.get_domain_properties()
     hprops = bpy.context.scene.flip_fluid_helper
@@ -24,12 +45,24 @@ def initialize_simulation_mesh_selection():
     print("Searching for simulation meshes:")
 
     bpy.ops.object.select_all(action='DESELECT')
+
+    bl_domain = bpy.context.scene.flip_fluid.get_domain_object()
+    print("Searching for domain mesh...", end="")
+    if bl_domain is not None:
+        bl_domain.select_set(True)
+        enable_outliner_visibility(bl_domain)
+        bl_domain.name = "FLIP_Domain"
+        print(" FOUND <" + bl_domain.name + ">")
+    else:
+        print(" NOT FOUND")
+
     num_export_meshes = 0
     if hprops.alembic_export_surface:
         print("Searching for fluid surface mesh...", end="")
         bl_surface = dprops.mesh_cache.surface.get_cache_object()
         if bl_surface is not None:
             bl_surface.select_set(True)
+            enable_outliner_visibility(bl_surface)
             num_export_meshes += 1
             print(" FOUND <" + bl_surface.name + ">")
         else:
@@ -43,6 +76,7 @@ def initialize_simulation_mesh_selection():
         bl_fluid_particles = dprops.mesh_cache.particles.get_cache_object()
         if bl_fluid_particles is not None:
             bl_fluid_particles.select_set(True)
+            enable_outliner_visibility(bl_fluid_particles)
             num_export_meshes += 1
             print(" FOUND <" + bl_fluid_particles.name + ">")
         else:
@@ -56,6 +90,7 @@ def initialize_simulation_mesh_selection():
         bl_foam = dprops.mesh_cache.foam.get_cache_object()
         if bl_foam is not None:
             bl_foam.select_set(True)
+            enable_outliner_visibility(bl_foam)
             num_export_meshes += 1
             print(" FOUND <" + bl_foam.name + ">")
         else:
@@ -69,6 +104,7 @@ def initialize_simulation_mesh_selection():
         bl_bubble = dprops.mesh_cache.bubble.get_cache_object()
         if bl_bubble is not None:
             bl_bubble.select_set(True)
+            enable_outliner_visibility(bl_bubble)
             num_export_meshes += 1
             print(" FOUND <" + bl_bubble.name + ">")
         else:
@@ -82,6 +118,7 @@ def initialize_simulation_mesh_selection():
         bl_spray = dprops.mesh_cache.spray.get_cache_object()
         if bl_spray is not None:
             bl_spray.select_set(True)
+            enable_outliner_visibility(bl_spray)
             num_export_meshes += 1
             print(" FOUND <" + bl_spray.name + ">")
         else:
@@ -95,6 +132,7 @@ def initialize_simulation_mesh_selection():
         bl_dust = dprops.mesh_cache.dust.get_cache_object()
         if bl_dust is not None:
             bl_dust.select_set(True)
+            enable_outliner_visibility(bl_dust)
             num_export_meshes += 1
             print(" FOUND <" + bl_dust.name + ">")
         else:
@@ -178,6 +216,40 @@ def set_geometry_nodes_alembic_velocity_export_motion_blur_scale(bl_object, scal
     return 1.0
 
 
+def initialize_empty_modifier_alembic_export_workaround():
+    # FLIP Fluids simulation meshes are only recognized by Blender for animated Alembic export
+    # if the meshes have a modifier. Depending on export settings, some meshes may not have any modifiers
+    # and will not be exported. To workaround this, we'll add a modifier that does nothing: a smooth modifier
+    # with 0 smoothing.
+
+    def add_0_smooth_modifier(target_object):
+        smooth_mod = target_object.modifiers.new("FF_AlembicSmooth", "SMOOTH")
+        smooth_mod.factor = 1.5
+        smooth_mod.iterations = 0
+        return smooth_mod
+
+    print("\nInitializing workarounds to Alembic exporter issues:")
+    bl_surface = dprops.mesh_cache.surface.get_cache_object()
+    if bl_surface is not None:
+        add_0_smooth_modifier(bl_surface)
+    bl_fluid_particles = dprops.mesh_cache.particles.get_cache_object()
+    if bl_fluid_particles is not None:
+        add_0_smooth_modifier(bl_fluid_particles)
+    bl_foam = dprops.mesh_cache.foam.get_cache_object()
+    if bl_foam is not None:
+        add_0_smooth_modifier(bl_foam)
+    bl_bubble = dprops.mesh_cache.bubble.get_cache_object()
+    if bl_bubble is not None:
+        add_0_smooth_modifier(bl_bubble)
+    bl_spray = dprops.mesh_cache.spray.get_cache_object()
+    if bl_spray is not None:
+        add_0_smooth_modifier(bl_spray)
+    bl_dust = dprops.mesh_cache.dust.get_cache_object()
+    if bl_dust is not None:
+        add_0_smooth_modifier(bl_dust)
+    print("Finished initializing workarounds to Alembic exporter issues.")
+
+
 def initialize_velocity_export_and_attributes():
     dprops = bpy.context.scene.flip_fluid.get_domain_properties()
     hprops = bpy.context.scene.flip_fluid_helper
@@ -208,38 +280,46 @@ def initialize_velocity_export_and_attributes():
     if bl_dust is not None:
         dust_motion_blur_scale = get_geomety_nodes_motion_blur_scale(bl_dust)
 
-    print("\nRemoving motion blur render setup:")
+    print("\nReplacing motion blur render setup with Alembic export setup:")
     bpy.ops.flip_fluid_operators.helper_remove_motion_blur('INVOKE_DEFAULT', resource_prefix="FF_GeometryNodes")
-    print("Finished removing motion blur render setup.")
+    print("Finished replacing motion blur render setup.")
 
     if hprops.alembic_export_velocity:
         print("\nInitializing Alembic velocity export setup:")
-        bpy.ops.flip_fluid_operators.helper_initialize_motion_blur('INVOKE_DEFAULT',  resource_prefix="FF_AlembicVelocityExport")
+
+        resources_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        geometry_nodes_library = os.path.join(resources_path, "geometry_nodes", "geometry_nodes_library.blend")
 
         bl_surface = dprops.mesh_cache.surface.get_cache_object()
         if bl_surface is not None:
+            add_geometry_node_modifier(bl_surface, geometry_nodes_library, "FF_AlembicVelocityExportSurface")
             value = set_geometry_nodes_alembic_velocity_export_motion_blur_scale(bl_surface, surface_motion_blur_scale)
             print("Info: Set fluid surface Alembic velocity scale to " + '{0:.2f}'.format(value))
 
         bl_fluid_particles = dprops.mesh_cache.particles.get_cache_object()
         if bl_fluid_particles is not None:
+            add_geometry_node_modifier(bl_fluid_particles, geometry_nodes_library, "FF_AlembicVelocityExportFluidParticles")
             value = set_geometry_nodes_alembic_velocity_export_motion_blur_scale(bl_fluid_particles, fluid_particles_motion_blur_scale)
             print("Info: Set fluid particles Alembic velocity scale to " + '{0:.2f}'.format(value))
 
         bl_foam = dprops.mesh_cache.foam.get_cache_object()
         if bl_foam is not None:
+            add_geometry_node_modifier(bl_foam, geometry_nodes_library, "FF_AlembicVelocityExportFluidParticles")
             value = set_geometry_nodes_alembic_velocity_export_motion_blur_scale(bl_foam, foam_motion_blur_scale)
             print("Info: Set whitewater foam Alembic velocity scale to " + '{0:.2f}'.format(value))
         bl_bubble = dprops.mesh_cache.bubble.get_cache_object()
         if bl_bubble is not None:
+            add_geometry_node_modifier(bl_bubble, geometry_nodes_library, "FF_AlembicVelocityExportFluidParticles")
             value = set_geometry_nodes_alembic_velocity_export_motion_blur_scale(bl_bubble, bubble_motion_blur_scale)
             print("Info: Set whitewater bubble Alembic velocity scale to " + '{0:.2f}'.format(value))
         bl_spray = dprops.mesh_cache.spray.get_cache_object()
         if bl_spray is not None:
+            add_geometry_node_modifier(bl_spray, geometry_nodes_library, "FF_AlembicVelocityExportFluidParticles")
             value = set_geometry_nodes_alembic_velocity_export_motion_blur_scale(bl_spray, spray_motion_blur_scale)
             print("Info: Set whitewater spray Alembic velocity scale to " + '{0:.2f}'.format(value))
         bl_dust = dprops.mesh_cache.dust.get_cache_object()
         if bl_dust is not None:
+            add_geometry_node_modifier(bl_dust, geometry_nodes_library, "FF_AlembicVelocityExportFluidParticles")
             value = set_geometry_nodes_alembic_velocity_export_motion_blur_scale(bl_dust, dust_motion_blur_scale)
             print("Info: Set whitewater dust Alembic velocity scale to " + '{0:.2f}'.format(value))
         print("Finished initializing Alembic velocity export setup.")
@@ -474,6 +554,7 @@ retval = initialize_simulation_mesh_selection()
 if not retval:
     exit()
 
+initialize_empty_modifier_alembic_export_workaround()
 initialize_velocity_export_and_attributes()
 check_cache_velocity_data()
 

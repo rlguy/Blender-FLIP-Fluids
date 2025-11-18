@@ -243,8 +243,7 @@ class FlipFluidPresetCreateNewPresetEnableAll(bpy.types.Operator):
     bl_label = "Enable All"
     bl_description = "Enable all preset attributes"
 
-    collection_id = StringProperty(default="")
-    exec(vcu.convert_attribute_to_28("collection_id"))
+    collection_id: StringProperty(default="")
 
 
     @classmethod
@@ -271,8 +270,7 @@ class FlipFluidPresetCreateNewPresetDisableAll(bpy.types.Operator):
     bl_label = "Disable All"
     bl_description = "Disable all preset attributes"
 
-    collection_id = StringProperty(default="")
-    exec(vcu.convert_attribute_to_28("collection_id"))
+    collection_id: StringProperty(default="")
 
     @classmethod
     def poll(cls, context):
@@ -299,8 +297,7 @@ class FlipFluidPresetCreateNewPresetEnableAuto(bpy.types.Operator):
     bl_description = ("Automatically enable/disable preset attributes by" +
                       " comparing to system default settings")
 
-    collection_id = StringProperty(default="")
-    exec(vcu.convert_attribute_to_28("collection_id"))
+    collection_id: StringProperty(default="")
 
     @classmethod
     def poll(cls, context):
@@ -936,8 +933,7 @@ class FlipFluidPresetDisplayInfo(bpy.types.Operator):
     bl_label = "Preset Info"
     bl_description = "Display preset information"
 
-    identifier = StringProperty(default="")
-    exec(vcu.convert_attribute_to_28("identifier"))
+    identifier: StringProperty(default="")
 
     @classmethod
     def poll(cls, context):
@@ -1245,12 +1241,11 @@ class SelectPresetPackageZipFile(bpy.types.Operator, ImportHelper):
     bl_label = "Select Package Zipfile"
 
     filename_ext = "*.zip"
-    filter_glob = StringProperty(
+    filter_glob: StringProperty(
             default="*.zip",
             options={'HIDDEN'},
             maxlen=255,
             )
-    exec(vcu.convert_attribute_to_28("filter_glob"))
 
 
     def execute(self, context):
@@ -1691,8 +1686,7 @@ class FlipFluidPresetRemovePresetFromStack(bpy.types.Operator):
     bl_label = "Remove From Preset Stack"
     bl_description = "Remove from preset stack"
 
-    stack_index = IntProperty(default=-1)
-    exec(vcu.convert_attribute_to_28("stack_index"))
+    stack_index: IntProperty(default=-1)
 
     @classmethod
     def poll(cls, context):
@@ -1714,8 +1708,7 @@ class FlipFluidPresetMovePresetUpInStack(bpy.types.Operator):
     bl_label = "Move Up"
     bl_description = "Move preset up in the stack"
 
-    stack_index = IntProperty(default=-1)
-    exec(vcu.convert_attribute_to_28("stack_index"))
+    stack_index: IntProperty(default=-1)
 
     @classmethod
     def poll(cls, context):
@@ -1737,8 +1730,7 @@ class FlipFluidPresetMovePresetDownInStack(bpy.types.Operator):
     bl_label = "Move Down"
     bl_description = "Move preset down in the stack"
 
-    stack_index = IntProperty(default=-1)
-    exec(vcu.convert_attribute_to_28("stack_index"))
+    stack_index: IntProperty(default=-1)
 
     @classmethod
     def poll(cls, context):
@@ -1760,8 +1752,7 @@ class FlipFluidPresetApplyAndRemoveFromStack(bpy.types.Operator):
     bl_label = "Apply"
     bl_description = "Apply preset and remove from the stack"
 
-    stack_index = IntProperty(default=-1)
-    exec(vcu.convert_attribute_to_28("stack_index"))
+    stack_index: IntProperty(default=-1)
 
     @classmethod
     def poll(cls, context):
@@ -1804,8 +1795,7 @@ class FlipFluidPresetEditPresetEnableAll(bpy.types.Operator):
     bl_label = "Enable All"
     bl_description = "Enable all preset attributes"
 
-    collection_id = StringProperty(default="")
-    exec(vcu.convert_attribute_to_28("collection_id"))
+    collection_id: StringProperty(default="")
 
     @classmethod
     def poll(cls, context):
@@ -1831,8 +1821,7 @@ class FlipFluidPresetEditPresetDisableAll(bpy.types.Operator):
     bl_label = "Disable All"
     bl_description = "Disable all preset attributes"
 
-    collection_id = StringProperty(default="")
-    exec(vcu.convert_attribute_to_28("collection_id"))
+    collection_id: StringProperty(default="")
 
     @classmethod
     def poll(cls, context):

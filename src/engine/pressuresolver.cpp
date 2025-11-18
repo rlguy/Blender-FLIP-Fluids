@@ -129,6 +129,7 @@ void PressureSolver::_initialize(PressureSolverParameters params) {
     _liquidSDF = params.liquidSDF;
     _weightGrid = params.weightGrid;
     _pressureGrid = params.pressureGrid;
+    _densityGrid = params.densityGrid;
 
     _isSurfaceTensionEnabled = params.isSurfaceTensionEnabled;
     _surfaceTensionConstant = params.surfaceTensionConstant;
@@ -774,6 +775,21 @@ void PressureSolver::_calculateMatrixCoefficientsThread(int startidx, int endidx
         int k = g.k;
         int index = _GridToVectorIndex(i, j, k);
 
+        GridIndex gRight( std::min(i + 1, _isize - 1), j,                           k);
+        GridIndex gLeft(  std::max(i - 1, 0),          j,                           k);
+        GridIndex gTop(   i,                           std::min(j + 1, _jsize - 1), k);
+        GridIndex gBottom(i,                           std::max(j - 1, 0),          k);
+        GridIndex gFront( i, j,                                                     std::min(k + 1, _ksize - 1));
+        GridIndex gBack(  i, j,                                                     std::max(k - 1, 0));
+
+        double rhoCenter = _densityGrid->get(g);
+        double rhoRight =  (rhoCenter + _densityGrid->get(gRight))  / 2.0;
+        double rhoLeft =   (rhoCenter + _densityGrid->get(gLeft))   / 2.0;
+        double rhoTop =    (rhoCenter + _densityGrid->get(gTop))    / 2.0;
+        double rhoBottom = (rhoCenter + _densityGrid->get(gBottom)) / 2.0;
+        double rhoFront =  (rhoCenter + _densityGrid->get(gFront))  / 2.0;
+        double rhoBack =   (rhoCenter + _densityGrid->get(gBack))   / 2.0;
+
         double volRight =  _weightGrid->U(i + 1, j,     k    );
         double volLeft =   _weightGrid->U(i,     j,     k    );
         double volTop =    _weightGrid->V(i,     j + 1, k    );
@@ -789,60 +805,60 @@ void PressureSolver::_calculateMatrixCoefficientsThread(int startidx, int endidx
         double phiFront =  _liquidSDF->get(i,     j,     k + 1);
         double phiBack =   _liquidSDF->get(i,     j,     k - 1);
 
-        double diag = (volRight + volLeft + volTop + volBottom + volFront + volBack) * factor;
+        double diag = (volRight / rhoRight + volLeft / rhoLeft + volTop / rhoTop + volBottom / rhoBottom + volFront / rhoFront + volBack / rhoBack ) * factor;
 
         // X+ neighbour
         if (phiRight < 0.0) {
-            matrix->add(index, _GridToVectorIndex(i + 1, j, k), -volRight * factor);
+            matrix->add(index, _GridToVectorIndex(i + 1, j, k), -(volRight / rhoRight) * factor);
         } else {
             double theta = phiRight / (phiCenter + eps);
             theta = _clamp(theta, -_maxtheta, _maxtheta);
-            diag -= volRight * factor * theta;
+            diag -= (volRight / rhoRight) * factor * theta;
         }
 
         // X- neighbour
         if (phiLeft < 0.0) {
-            matrix->add(index, _GridToVectorIndex(i - 1, j, k), -volLeft * factor);
+            matrix->add(index, _GridToVectorIndex(i - 1, j, k), -(volLeft / rhoLeft) * factor);
         } else {
             double theta = phiLeft / (phiCenter + eps);
             theta = _clamp(theta, -_maxtheta, _maxtheta);
-            diag -= volLeft * factor * theta;
+            diag -= (volLeft / rhoLeft) * factor * theta;
         }
 
         // Y+ neighbour
         if (phiTop < 0.0) {
-            matrix->add(index, _GridToVectorIndex(i, j + 1, k), -volTop * factor);
+            matrix->add(index, _GridToVectorIndex(i, j + 1, k), -(volTop / rhoTop) * factor);
         } else {
             double theta = phiTop / (phiCenter + eps);
             theta = _clamp(theta, -_maxtheta, _maxtheta);
-            diag -= volTop * factor * theta;
+            diag -= (volTop / rhoTop) * factor * theta;
         }
 
         // Y- neighbour
         if (phiBottom < 0.0) {
-            matrix->add(index, _GridToVectorIndex(i, j - 1, k), -volBottom * factor);
+            matrix->add(index, _GridToVectorIndex(i, j - 1, k), -(volBottom / rhoBottom) * factor);
         } else {
             double theta = phiBottom / (phiCenter + eps);
             theta = _clamp(theta, -_maxtheta, _maxtheta);
-            diag -= volBottom * factor * theta;
+            diag -= (volBottom / rhoBottom) * factor * theta;
         }
 
         // Z+ neighbour
         if (phiFront < 0.0) {
-            matrix->add(index, _GridToVectorIndex(i, j, k + 1), -volFront * factor);
+            matrix->add(index, _GridToVectorIndex(i, j, k + 1), -(volFront / rhoFront) * factor);
         } else {
             double theta = phiFront / (phiCenter + eps);
             theta = _clamp(theta, -_maxtheta, _maxtheta);
-            diag -= volFront * factor * theta;
+            diag -= (volFront / rhoFront) * factor * theta;
         }
 
         // Z- neighbour
         if (phiBack < 0.0) {
-            matrix->add(index, _GridToVectorIndex(i, j, k - 1), -volBack * factor);
+            matrix->add(index, _GridToVectorIndex(i, j, k - 1), -(volBack / rhoBack) * factor);
         } else {
             double theta = phiBack / (phiCenter + eps);
             theta = _clamp(theta, -_maxtheta, _maxtheta);
-            diag -= volBack * factor * theta;
+            diag -= (volBack / rhoBack) * factor * theta;
         }
 
         diag = std::max(diag, 0.0);
@@ -1074,7 +1090,10 @@ void PressureSolver::_applyPressureToVelocityFieldThread(int startidx, int endid
                         p1 = thetaTension * tension + thetaPressure * p2;
                     }
                 }
-                _vFieldFluid->addU(g, -factor * (p2 - p1));
+
+                float rhoU = (_densityGrid->get(pi, pj, pk) + _densityGrid->get(pi + 1, pj, pk)) / 2.0f;
+
+                _vFieldFluid->addU(g, -factor * (p2 - p1) / rhoU);
                 _validVelocities->validU.set(g, true);
 
             } else {
@@ -1122,7 +1141,10 @@ void PressureSolver::_applyPressureToVelocityFieldThread(int startidx, int endid
                         p1 = thetaTension * tension + thetaPressure * p2;
                     }
                 }
-                _vFieldFluid->addV(g, -factor * (p2 - p1));
+
+                float rhoV = (_densityGrid->get(pi, pj, pk) + _densityGrid->get(pi, pj + 1, pk)) / 2.0f;
+
+                _vFieldFluid->addV(g, -factor * (p2 - p1) / rhoV);
                 _validVelocities->validV.set(g, true);
 
             } else {
@@ -1169,7 +1191,10 @@ void PressureSolver::_applyPressureToVelocityFieldThread(int startidx, int endid
                         p1 = thetaTension * tension + thetaPressure * p2;
                     }
                 }
-                _vFieldFluid->addW(g, -factor * (p2 - p1));
+
+                float rhoW = (_densityGrid->get(pi, pj, pk) + _densityGrid->get(pi, pj, pk + 1)) / 2.0f;
+
+                _vFieldFluid->addW(g, -factor * (p2 - p1) / rhoW);
                 _validVelocities->validW.set(g, true);
 
             } else {

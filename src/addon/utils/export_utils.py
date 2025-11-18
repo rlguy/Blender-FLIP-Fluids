@@ -54,10 +54,11 @@ def flip_fluid_object_to_dict(obj, object_properties):
 
 def is_property_animated(obj, prop_name, index=0, use_exact_path=False):
     anim_data = obj.animation_data
-    if not anim_data or not anim_data.action or not anim_data.action.fcurves:
+
+    if not anim_data or not anim_data.action or not anim_data.action.layers[0].strips[0].channelbag(anim_data.action.slots[0]).fcurves:
         return False
 
-    for fcurve in anim_data.action.fcurves:
+    for fcurve in anim_data.action.layers[0].strips[0].channelbag(anim_data.action.slots[0]).fcurves:
         path = fcurve.data_path
         is_match = path.endswith(prop_name)
         if use_exact_path:
@@ -69,10 +70,11 @@ def is_property_animated(obj, prop_name, index=0, use_exact_path=False):
 
 def is_property_path_animated(obj, path_name, index = 0):
     anim_data = obj.animation_data
-    if not anim_data or not anim_data.action or not anim_data.action.fcurves:
+
+    if not anim_data or not anim_data.action or not anim_data.action.layers[0].strips[0].channelbag(anim_data.action.slots[0]).fcurves:
         return False
 
-    for fcurve in anim_data.action.fcurves:
+    for fcurve in anim_data.action.layers[0].strips[0].channelbag(anim_data.action.slots[0]).fcurves:
         if fcurve.data_path == path_name and fcurve.array_index == index:
             return True
     return False
@@ -87,7 +89,7 @@ def is_vector_animated(obj, prop_name, vector_size = 3):
 
 def get_property_fcurve(obj, prop_name, index=0, use_exact_path=False):
     anim_data = obj.animation_data
-    for fcurve in anim_data.action.fcurves:
+    for fcurve in anim_data.action.layers[0].strips[0].channelbag(anim_data.action.slots[0]).fcurves:
         path = fcurve.data_path
 
         is_match = path.endswith(prop_name)
@@ -99,7 +101,7 @@ def get_property_fcurve(obj, prop_name, index=0, use_exact_path=False):
 
 def get_property_fcurve_from_path(obj, path_name, index = 0):
     anim_data = obj.animation_data
-    for fcurve in anim_data.action.fcurves:
+    for fcurve in anim_data.action.layers[0].strips[0].channelbag(anim_data.action.slots[0]).fcurves:
         if fcurve.data_path == path_name and fcurve.array_index == index:
             return fcurve
 

@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_FRAGMENTEDVECTOR_H
-#define FLUIDENGINE_FRAGMENTEDVECTOR_H
+#pragma once
 
 #include <vector>
 
@@ -325,5 +324,3 @@ private:
 	unsigned int _size = 0;
 
 };
-
-#endif

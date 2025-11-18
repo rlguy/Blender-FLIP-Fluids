@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_TURBULENCEFIELD_H
-#define FLUIDENGINE_TURBULENCEFIELD_H
+#pragma once
 
 #if __MINGW32__ && !_WIN64
     #include "mingw32_threads/mingw.thread.h"
@@ -72,5 +71,3 @@ private:
     double _dx;
     double _radius;
 };
-
-#endif

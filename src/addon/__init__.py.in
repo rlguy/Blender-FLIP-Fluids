@@ -16,10 +16,10 @@
 
 bl_info = {
     "name" : "FLIP Fluids",
-    "description": "A FLIP Fluid Simulation Tool for Blender (v@FLUIDENGINE_VERSION_LABEL@)",
+    "description": "A FLIP Fluid Simulation Tool for Blender (v@FFENGINE_VERSION_LABEL@)",
     "author" : "Ryan Guy & Dennis Fassbaender",
-    "version" : (@FLUIDENGINE_VERSION_MAJOR@, @FLUIDENGINE_VERSION_MINOR@, @FLUIDENGINE_VERSION_REVISION@),
-    "blender" : (3, 6, 0),
+    "version" : (@FFENGINE_VERSION_MAJOR@, @FFENGINE_VERSION_MINOR@, @FFENGINE_VERSION_REVISION@),
+    "blender" : (4, 5, 0),
     "location" : "Properties > Physics > FLIP Fluid",
     "warning" : "",
     "wiki_url" : "https://github.com/rlguy/Blender-FLIP-Fluids/wiki",
@@ -147,9 +147,6 @@ def load_post(nonedata):
     if bpy.context.scene.flip_fluid.is_addon_disabled_in_blend_file():
         return
 
-    if vcu.is_blender_28() and not vcu.is_blender_281():
-        print("FLIP FLUIDS WARNING: Blender 2.80 contains bugs that can cause frequent crashes during render, Alembic export, and rigid/cloth simulation baking. Blender version 2.81 or higher is recommended.")
-
     installation_utils.load_post()
     materials.load_post()
     properties.load_post()
@@ -202,11 +199,7 @@ def register():
     ui.register()
     presets.register()
 
-    if vcu.is_blender_28():
-        bpy.app.handlers.depsgraph_update_post.append(scene_update_post)
-    else:
-        bpy.app.handlers.scene_update_post.append(scene_update_post)
-
+    bpy.app.handlers.depsgraph_update_post.append(scene_update_post)
     bpy.app.handlers.render_init.append(render_init)
     bpy.app.handlers.render_complete.append(render_complete)
     bpy.app.handlers.render_cancel.append(render_cancel)
@@ -230,11 +223,7 @@ def unregister():
     ui.unregister()
     presets.unregister()
 
-    if vcu.is_blender_28():
-        bpy.app.handlers.depsgraph_update_post.remove(scene_update_post)
-    else:
-        bpy.app.handlers.scene_update_post.remove(scene_update_post)
-
+    bpy.app.handlers.depsgraph_update_post.remove(scene_update_post)
     bpy.app.handlers.render_init.remove(render_init)
     bpy.app.handlers.render_complete.remove(render_complete)
     bpy.app.handlers.render_cancel.remove(render_cancel)

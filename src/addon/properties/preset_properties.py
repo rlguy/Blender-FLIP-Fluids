@@ -37,18 +37,16 @@ DUMMY_DOMAIN_OBJECT = None
 
 
 class PresetRegistryProperty(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
-    path = StringProperty(); exec(conv("path"))
-    label = StringProperty(); exec(conv("label"))
-    is_key = BoolProperty(); exec(conv("is_key"))
-    key_path = StringProperty(); exec(conv("key_path"))
-    key_value = StringProperty(); exec(conv("key_value"))
-    group_id = IntProperty(); exec(conv("group_id"))
+    path: StringProperty()
+    label: StringProperty()
+    is_key: BoolProperty()
+    key_path: StringProperty()
+    key_value: StringProperty()
+    group_id: IntProperty()
 
 
 class PresetRegistry(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
-    properties = CollectionProperty(type=PresetRegistryProperty); exec(conv("properties"))
+    properties: CollectionProperty(type=PresetRegistryProperty)
 
 
     def clear(self):
@@ -75,28 +73,27 @@ class PresetRegistry(bpy.types.PropertyGroup):
 
 
 class NewPresetPackageSettings(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
-    name = StringProperty(
+    name: StringProperty(
             name="",
             description="Preset package name",
             default="New Package"
-            ); exec(conv("name"))
-    author = StringProperty(
+            )
+    author: StringProperty(
             name="",
             description="Preset package author (optional)",
             default=""
-            ); exec(conv("author"))
-    description = StringProperty(
+            )
+    description: StringProperty(
             name="",
             description="Preset package description (optional)",
             default=""
-            ); exec(conv("description"))
-    use_custom_icons = BoolProperty(
+            )
+    use_custom_icons: BoolProperty(
             name="",
             description="Use custom icon images for package presets. "
                 "Images should be 256x256 resolution and PNG format",
             default=False
-            ); exec(conv("use_custom_icons"))
+            )
 
 
     def reset(self):
@@ -116,12 +113,11 @@ class NewPresetPackageSettings(bpy.types.PropertyGroup):
 
 
 class DeletePresetPackageSettings(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
-    package = EnumProperty(
+    package: EnumProperty(
             name="Remove Package",
             description="Select a package to remove",
             items=preset_library.get_deletable_package_enums,
-            ); exec(conv("package"))
+            )
 
 
     def reset(self):
@@ -129,12 +125,11 @@ class DeletePresetPackageSettings(bpy.types.PropertyGroup):
 
 
 class PresetPropertyUI(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
-    path = StringProperty(default=""); exec(conv("path"))
-    label = StringProperty(default=""); exec(conv("label"))
-    value = StringProperty(default=""); exec(conv("value"))
-    enabled = BoolProperty(default=True); exec(conv("enabled"))
-    dummy_prop = BoolProperty(default=True); exec(conv("dummy_prop"))
+    path: StringProperty(default="")
+    label: StringProperty(default="")
+    value: StringProperty(default="")
+    enabled: BoolProperty(default=True)
+    dummy_prop: BoolProperty(default=True)
 
 
     def set_value(self, value):
@@ -148,17 +143,16 @@ class PresetPropertyUI(bpy.types.PropertyGroup):
 
 
 class PresetPropertiesUI(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
-    simulation = CollectionProperty(type=PresetPropertyUI); exec(conv("simulation"))
-    render = CollectionProperty(type=PresetPropertyUI); exec(conv("render"))
-    surface = CollectionProperty(type=PresetPropertyUI); exec(conv("surface"))
-    whitewater = CollectionProperty(type=PresetPropertyUI); exec(conv("whitewater"))
-    world = CollectionProperty(type=PresetPropertyUI); exec(conv("world"))
-    materials = CollectionProperty(type=PresetPropertyUI); exec(conv("materials"))
-    advanced = CollectionProperty(type=PresetPropertyUI); exec(conv("advanced"))
-    debug = CollectionProperty(type=PresetPropertyUI); exec(conv("debug"))
-    stats = CollectionProperty(type=PresetPropertyUI); exec(conv("stats"))
-    is_initialized = BoolProperty(default=False); exec(conv("is_initialized"))
+    simulation: CollectionProperty(type=PresetPropertyUI)
+    render: CollectionProperty(type=PresetPropertyUI)
+    surface: CollectionProperty(type=PresetPropertyUI)
+    whitewater: CollectionProperty(type=PresetPropertyUI)
+    world: CollectionProperty(type=PresetPropertyUI)
+    materials: CollectionProperty(type=PresetPropertyUI)
+    advanced: CollectionProperty(type=PresetPropertyUI)
+    debug: CollectionProperty(type=PresetPropertyUI)
+    stats: CollectionProperty(type=PresetPropertyUI)
+    is_initialized: BoolProperty(default=False)
 
 
     def initialize(self):
@@ -406,24 +400,23 @@ class PresetPropertiesUI(bpy.types.PropertyGroup):
 
 
 class NewPresetSettings(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
 
-    package = EnumProperty(
+    package: EnumProperty(
             name="Preset Package",
             description="Add preset to this package",
             items=preset_library.get_user_package_enums,
-            ); exec(conv("package"))
-    name = StringProperty(
+            )
+    name: StringProperty(
             name="Name",
             description="Preset name",
             default="New Preset"
-            ); exec(conv("name"))
-    description = StringProperty(
+            )
+    description: StringProperty(
             name="Description",
             description="Preset description (optional)",
             default=""
-            ); exec(conv("description"))
-    icon = StringProperty(
+            )
+    icon: StringProperty(
             name="Icon",
             description="Icons should be 256x256 resolution and in PNG format."
                 " Images must be imported into the Blender UV/Image Editor before" 
@@ -431,87 +424,87 @@ class NewPresetSettings(bpy.types.PropertyGroup):
                 " this popup",
             default="",
             update=lambda self, context=None: self._update_icon(context),
-            ); exec(conv("icon"))
-    display_icon = EnumProperty(
+            )
+    display_icon: EnumProperty(
             name="Preset Icon",
             description="",
             items=lambda self, context=None: self._get_display_icon_enum(context),
-            ); exec(conv("display_icon"))
-    export_simulation = BoolProperty(
+            )
+    export_simulation: BoolProperty(
             name="Simulation",
             description="Export 'FLIP Fluid Simulation' panel settings",
             default=False,
             update=lambda self, context=None: self._check_current_display_panel(context),
-            ); exec(conv("export_simulation"))
-    export_display = BoolProperty(
+            )
+    export_display: BoolProperty(
             name="Display Settings",
             description="Export 'FLIP Fluid Display Settings' panel settings",
             default=False,
             update=lambda self, context=None: self._check_current_display_panel(context),
-            ); exec(conv("export_display"))
-    export_surface = BoolProperty(
+            )
+    export_surface: BoolProperty(
             name="Surface",
             description="Export 'FLIP Fluid Surface' panel settings",
             default=False,
             update=lambda self, context=None: self._check_current_display_panel(context),
-            ); exec(conv("export_surface"))
-    export_whitewater = BoolProperty(
+            )
+    export_whitewater: BoolProperty(
             name="Whitewater",
             description="Export 'FLIP Fluid Whitewater' panel settings",
             default=False,
             update=lambda self, context=None: self._check_current_display_panel(context),
-            ); exec(conv("export_whitewater"))
-    export_world = BoolProperty(
+            )
+    export_world: BoolProperty(
             name="World",
             description="Export 'FLIP Fluid World' panel settings",
             default=False,
             update=lambda self, context=None: self._check_current_display_panel(context),
-            ); exec(conv("export_world"))
-    export_materials = BoolProperty(
+            )
+    export_materials: BoolProperty(
             name="Materials",
             description="Export 'FLIP Fluid Materials' panel settings",
             default=False,
             update=lambda self, context=None: self._check_current_display_panel(context),
-            ); exec(conv("export_materials"))
-    export_advanced = BoolProperty(
+            )
+    export_advanced: BoolProperty(
             name="Advanced",
             description="Export 'FLIP Fluid Advanced' panel settings",
             default=False,
             update=lambda self, context=None: self._check_current_display_panel(context),
-            ); exec(conv("export_advanced"))
-    export_debug = BoolProperty(
+            )
+    export_debug: BoolProperty(
             name="Debug",
             description="Export 'FLIP Fluid Debug' panel settings",
             default=False,
             update=lambda self, context=None: self._check_current_display_panel(context),
-            ); exec(conv("export_debug"))
-    export_stats = BoolProperty(
+            )
+    export_stats: BoolProperty(
             name="Stats",
             description="Export 'FLIP Fluid Stats' panel settings",
             default=False,
             update=lambda self, context=None: self._check_current_display_panel(context),
-            ); exec(conv("export_stats"))
-    ui_sort = BoolProperty(
+            )
+    ui_sort: BoolProperty(
             name="Sort Attributes",
             description="Sort attributes by enabled/disabled",
             default=False,
-    ); exec(conv("ui_sort"))
-    current_display_panel = EnumProperty(
+    )
+    current_display_panel: EnumProperty(
         name="Current Preset Display",
         description="Current preset panel to display",
         items=lambda self, context=None: self.get_preset_panel_selector_enums(context),
-    ); exec(conv("current_display_panel"))
+    )
 
 
-    ui_properties = PointerProperty(type=PresetPropertiesUI); exec(conv("ui_properties"))
-    is_unedited = BoolProperty(default=True); exec(conv("is_unedited"))
+    ui_properties: PointerProperty(type=PresetPropertiesUI)
+    is_unedited: BoolProperty(default=True)
 
     # If set to 'True', new preset menu will automatically select which
     # panels to export by comparing current property values to system devault
     # values. 
     # If set to 'False', new preset menu will start with a blank panel 
     # export selection.
-    autoselect_exported_panels = BoolProperty(default=False); exec(conv("autoselect_exported_panels"))
+    autoselect_exported_panels: BoolProperty(default=False)
 
 
     def initialize(self):
@@ -768,18 +761,17 @@ class NewPresetSettings(bpy.types.PropertyGroup):
 
 
 class DeletePresetSettings(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
 
-    package = EnumProperty(
+    package: EnumProperty(
             name="Package",
             description="Select preset package",
             items=preset_library.get_user_package_enums,
-            ); exec(conv("package"))
-    preset = EnumProperty(
+            )
+    preset: EnumProperty(
             name="Remove Preset",
             description="Select a preset to remove",
             items=preset_library.get_deletable_preset_enums,
-            ); exec(conv("preset"))
+            )
 
 
     def reset(self):
@@ -811,45 +803,42 @@ class DeletePresetSettings(bpy.types.PropertyGroup):
 
 
 class ExportPresetPackageSettings(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
 
-    option_path_supports_blend_relative = set()
-    if vcu.is_blender_45():
-        # required for relative path support in Blender 4.5+
-        # https://docs.blender.org/api/4.5/bpy_types_enum_items/property_flag_items.html#rna-enum-property-flag-items
-        option_path_supports_blend_relative = {'PATH_SUPPORTS_BLEND_RELATIVE'}
+    # required for relative path support in Blender 4.5+
+    # https://docs.blender.org/api/4.5/bpy_types_enum_items/property_flag_items.html#rna-enum-property-flag-items
+    option_path_supports_blend_relative = {'PATH_SUPPORTS_BLEND_RELATIVE'}
 
-    package = EnumProperty(
+    package: EnumProperty(
             name="Export Package",
             description="Select a package to export",
             items=preset_library.get_exportable_package_enums,
             update=lambda self, context: self._initialize_export_filename(),
-            ); exec(conv("package"))
-    export_directory = StringProperty(
+            )
+    export_directory: StringProperty(
             name="",
             description="Preset package will be exported to this directory",
             default=vcu.get_blender_preferences_temporary_directory(), 
             subtype='DIR_PATH',
             options=option_path_supports_blend_relative,
-            ); exec(conv("export_directory"))
-    export_filename = StringProperty(
+            )
+    export_filename: StringProperty(
             name="",
             description="Filename of exported package",
             default="",
             update=lambda self, context: self._initialize_export_filepath(),
-            ); exec(conv("export_filename"))
-    export_filepath = StringProperty(
+            )
+    export_filepath: StringProperty(
             name="",
             description="",
             default="",
             subtype='FILE_PATH',
             options=option_path_supports_blend_relative,
-            ); exec(conv("export_filepath"))
-    create_subdirectories = BoolProperty(
+            )
+    create_subdirectories: BoolProperty(
             name="Create Missing Subdirectories",
             description="Create missing subdirectories if export directory does not exist",
             default=True,
-            ); exec(conv("create_subdirectories"))
+            )
 
 
     def reset(self):
@@ -905,30 +894,28 @@ class ExportPresetPackageSettings(bpy.types.PropertyGroup):
 
 
 class MaterialPropertyInfo(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
-    preset_id = StringProperty(); exec(conv("preset_id"))
-    loaded_id = StringProperty(); exec(conv("loaded_id"))
-    is_owner = BoolProperty(default=False); exec(conv("is_owner"))
+    preset_id: StringProperty()
+    loaded_id: StringProperty()
+    is_owner: BoolProperty(default=False)
 
 
 class DisplayPresetInfoSettings(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
 
-    display_icon = EnumProperty(
+    display_icon: EnumProperty(
             name="Preset Icon",
             description="",
             items=lambda self, context=None: self._get_display_icon_enum(context),
-            ); exec(conv("display_icon"))
-    current_display_panel = EnumProperty(
+            )
+    current_display_panel: EnumProperty(
             name="Current Preset Display",
             description="Current preset panel to display",
             items=lambda self, context=None: self.get_preset_panel_selector_enums(context),
             update=lambda self, context: self._initialize_dummy_domain_values(),
-            ); exec(conv("current_display_panel"))
+            )
 
-    identifier = StringProperty(default=""); exec(conv("identifier"))
-    ui_properties = PointerProperty(type=PresetPropertiesUI); exec(conv("ui_properties"))
-    loaded_materials = CollectionProperty(type=MaterialPropertyInfo); exec(conv("loaded_materials"))
+    identifier: StringProperty(default="")
+    ui_properties: PointerProperty(type=PresetPropertiesUI)
+    loaded_materials: CollectionProperty(type=MaterialPropertyInfo)
 
 
     def initialize(self):
@@ -1055,34 +1042,31 @@ class DisplayPresetInfoSettings(bpy.types.PropertyGroup):
 
 
 class PresetProperty(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
-    path = StringProperty(); exec(conv("path"))
-    value = StringProperty(); exec(conv("value"))
+    path: StringProperty()
+    value: StringProperty()
 
 
 class PresetInfo(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
-    name = StringProperty(); exec(conv("name"))
-    description = StringProperty(); exec(conv("description"))
-    identifier = StringProperty(); exec(conv("identifier"))
-    is_system_preset = BoolProperty(); exec(conv("is_system_preset"))
-    uid = IntProperty(); exec(conv("uid"))
-    icon_id = IntProperty(default=-1); exec(conv("icon_id"))
-    material_blend = StringProperty(default=""); exec(conv("material_blend"))
-    properties = CollectionProperty(type=PresetProperty); exec(conv("properties"))
+    name: StringProperty()
+    description: StringProperty()
+    identifier: StringProperty()
+    is_system_preset: BoolProperty()
+    uid: IntProperty()
+    icon_id: IntProperty(default=-1)
+    material_blend: StringProperty(default="")
+    properties: CollectionProperty(type=PresetProperty)
 
 
 class PresetPackageInfo(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
-    name = StringProperty(); exec(conv("name"))
-    author = StringProperty(); exec(conv("author"))
-    description = StringProperty(); exec(conv("description"))
-    identifier = StringProperty(); exec(conv("identifier"))
-    is_system_package = BoolProperty(); exec(conv("is_system_package"))
-    is_default_user_package = BoolProperty(); exec(conv("is_default_user_package"))
-    use_custom_icons = BoolProperty(); exec(conv("use_custom_icons"))
-    uid = IntProperty(); exec(conv("uid"))
-    presets = CollectionProperty(type=PresetInfo); exec(conv("presets"))
+    name: StringProperty()
+    author: StringProperty()
+    description: StringProperty()
+    identifier: StringProperty()
+    is_system_package: BoolProperty()
+    is_default_user_package: BoolProperty()
+    use_custom_icons: BoolProperty()
+    uid: IntProperty()
+    presets: CollectionProperty(type=PresetInfo)
 
 
     @classmethod
@@ -1135,34 +1119,33 @@ class PresetPackageInfo(bpy.types.PropertyGroup):
 
 
 class ImportPresetPackageSettings(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
 
-    package_filepath = StringProperty(
+    package_filepath: StringProperty(
             name="",
             description="Package zip file",
             default="",
-            ); exec(conv("package_filepath"))
-    selected_preset = EnumProperty(
+            )
+    selected_preset: EnumProperty(
             name="Preset",
             description="Select a package preset to view details",
             items=lambda self, context=None: self.get_package_preset_enums(context),
             update=lambda self, context: self._update_selected_package(context),
-            ); exec(conv("selected_preset"))
-    display_icon = EnumProperty(
+            )
+    display_icon: EnumProperty(
             name="Preset Icon",
             description="",
             items=lambda self, context=None: self._get_display_icon_enum(context),
-            ); exec(conv("display_icon"))
-    current_display_panel = EnumProperty(
+            )
+    current_display_panel: EnumProperty(
             name="Current Preset Display",
             description="Current preset panel to display",
             items=lambda self, context=None: self.get_preset_panel_selector_enums(context),
             update=lambda self, context: self._initialize_dummy_domain_values(),
-            ); exec(conv("current_display_panel"))
+            )
 
-    ui_properties = PointerProperty(type=PresetPropertiesUI); exec(conv("ui_properties"))
-    loaded_materials = CollectionProperty(type=MaterialPropertyInfo); exec(conv("loaded_materials"))
-    package_info = PointerProperty(type=PresetPackageInfo); exec(conv("package_info"))
+    ui_properties: PointerProperty(type=PresetPropertiesUI)
+    loaded_materials: CollectionProperty(type=MaterialPropertyInfo)
+    package_info: PointerProperty(type=PresetPackageInfo)
 
 
     def initialize(self, data):
@@ -1330,36 +1313,35 @@ class ImportPresetPackageSettings(bpy.types.PropertyGroup):
 
 
 class EditPresetSettings(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
 
-    edit_package = EnumProperty(
+    edit_package: EnumProperty(
             name="Preset Package",
             description="Edit preset from this package",
             items=preset_library.get_user_package_enums,
             update=lambda self, context=None: self._update_edit_package(context),
-            ); exec(conv("edit_package"))
-    edit_preset = EnumProperty(
+            )
+    edit_preset: EnumProperty(
             name="Edit Preset",
             description="Select a preset to edit",
             items=lambda self, context=None: preset_library.get_package_preset_enums(self, context, self.edit_package),
             update=lambda self, context=None: self._update_edit_preset(context),
-            ); exec(conv("edit_preset"))
-    package = EnumProperty(
+            )
+    package: EnumProperty(
             name="Preset Package",
             description="Move preset to this package",
             items=preset_library.get_user_package_enums,
-            ); exec(conv("package"))
-    name = StringProperty(
+            )
+    name: StringProperty(
             name="Name",
             description="New preset name",
             default="New Preset"
-            ); exec(conv("name"))
-    description = StringProperty(
+            )
+    description: StringProperty(
             name="Description",
             description="New preset description (optional)",
             default=""
-            ); exec(conv("description"))
-    icon = StringProperty(
+            )
+    icon: StringProperty(
             name="Icon",
             description="Icons should be 256x256 resolution and in PNG format."
                 " Images must be imported into the Blender UV/Image Editor before" 
@@ -1367,82 +1349,82 @@ class EditPresetSettings(bpy.types.PropertyGroup):
                 " this popup",
             default="",
             update=lambda self, context=None: self._update_icon(context),
-            ); exec(conv("icon"))
-    display_icon = display_icon = EnumProperty(
+            )
+    display_icon: display_icon = EnumProperty(
             name="Preset Icon",
             description="",
             items=lambda self, context=None: self._get_display_icon_enum(context),
-            ); exec(conv("display_icon"))
-    export_simulation = BoolProperty(
+            )
+    export_simulation: BoolProperty(
             name="Simulation",
             description="Export 'FLIP Fluid Simulation' panel settings",
             default=False,
             update=lambda self, context=None: self._check_current_display_panel(context),
-            ); exec(conv("export_simulation"))
-    export_display = BoolProperty(
+            )
+    export_display: BoolProperty(
             name="Display Settings",
             description="Export 'FLIP Fluid Display Settings' panel settings",
             default=False,
             update=lambda self, context=None: self._check_current_display_panel(context),
-            ); exec(conv("export_display"))
-    export_surface = BoolProperty(
+            )
+    export_surface: BoolProperty(
             name="Surface",
             description="Export 'FLIP Fluid Surface' panel settings",
             default=False,
             update=lambda self, context=None: self._check_current_display_panel(context),
-            ); exec(conv("export_surface"))
-    export_whitewater = BoolProperty(
+            )
+    export_whitewater: BoolProperty(
             name="Whitewater",
             description="Export 'FLIP Fluid Whitewater' panel settings",
             default=False,
             update=lambda self, context=None: self._check_current_display_panel(context),
-            ); exec(conv("export_whitewater"))
-    export_world = BoolProperty(
+            )
+    export_world: BoolProperty(
             name="World",
             description="Export 'FLIP Fluid World' panel settings",
             default=False,
             update=lambda self, context=None: self._check_current_display_panel(context),
-            ); exec(conv("export_world"))
-    export_materials = BoolProperty(
+            )
+    export_materials: BoolProperty(
             name="Materials",
             description="Export 'FLIP Fluid Materials' panel settings",
             default=False,
             update=lambda self, context=None: self._check_current_display_panel(context),
-            ); exec(conv("export_materials"))
-    export_advanced = BoolProperty(
+            )
+    export_advanced: BoolProperty(
             name="Advanced",
             description="Export 'FLIP Fluid Advanced' panel settings",
             default=False,
             update=lambda self, context=None: self._check_current_display_panel(context),
-            ); exec(conv("export_advanced"))
-    export_debug = BoolProperty(
+            )
+    export_debug: BoolProperty(
             name="Debug",
             description="Export 'FLIP Fluid Debug' panel settings",
             default=False,
             update=lambda self, context=None: self._check_current_display_panel(context),
-            ); exec(conv("export_debug"))
-    export_stats = BoolProperty(
+            )
+    export_stats: BoolProperty(
             name="Stats",
             description="Export 'FLIP Fluid Stats' panel settings",
             default=False,
             update=lambda self, context=None: self._check_current_display_panel(context),
-            ); exec(conv("export_stats"))
-    ui_sort = BoolProperty(
+            )
+    ui_sort: BoolProperty(
             name="Sort Attributes",
             description="Sort attributes by enabled/disabled",
             default=False,
-    ); exec(conv("ui_sort"))
-    current_display_panel = EnumProperty(
+    )
+    current_display_panel: EnumProperty(
         name="Current Preset Display",
         description="Current preset panel to display",
         items=lambda self, context=None: self.get_preset_panel_selector_enums(context),
-    ); exec(conv("current_display_panel"))
+    )
 
 
-    ui_properties = PointerProperty(type=PresetPropertiesUI); exec(conv("ui_properties"))
-    loaded_icon_image_name = StringProperty(""); exec(conv("loaded_icon_image_name"))
-    loaded_materials = CollectionProperty(type=MaterialPropertyInfo); exec(conv("loaded_materials"))
-    is_unedited = BoolProperty(default=True); exec(conv("is_unedited"))
+    ui_properties: PointerProperty(type=PresetPropertiesUI)
+    loaded_icon_image_name: StringProperty("")
+    loaded_materials: CollectionProperty(type=MaterialPropertyInfo)
+    is_unedited: BoolProperty(default=True)
 
 
     def initialize(self):

@@ -38,7 +38,7 @@ See any of our [market place product pages](https://github.com/rlguy/Blender-FLI
 ## System Requirements
 
 - Windows, macOS, or Linux operating system
-- Blender 4.1 to 4.4 compatible
+- Blender 4.5 to 5.0 compatible
 - CPU 64-bit Intel® or AMD® or Apple Silicon multi-core processor
 - 8 GB RAM minimum, 16 GB of RAM or more is highly recommended
 
@@ -93,7 +93,7 @@ Once successfully built, the FLIP Fluids addon and installation .zip file will b
 
 **Notes:**
 - The build script will work best if CMake and GNU Make are located in your system PATH variable, but if not, you may also specify their locations when executing the script with the ```-cmake-path path/to/cmake``` and ```-make-path path/to/make``` flags.
-- The simulator relies on the _**Alembic**_ and _**Imath 3**_ external dependencies. If these shared libraries are not in your system PATH variable, they should be packaged within the addon with the ```-package-alembic-library path/to/libAlembic``` and ```-package-imath-library path/to/libImath``` flags.
+- The simulator relies on the _**Alembic**_ and _**Imath 3**_ external dependencies. If these shared libraries and each of their own dependencies are not located in your system PATH variable, they should be packaged within the addon by providing a list of filepaths with the ```-package-dependencies path/to/lib1 path/to/lib2``` flag.
 - run ```python build.py --help``` for help.
 
 ### Building without automated script
@@ -122,7 +122,7 @@ Once successfully built, the FLIP Fluids addon will be located in the ```build/b
 
 **Notes:**
 - To create an addon installation file, zip the ```build/bl_flip_fluids/flip_fluids_addon``` directory using an archive utility of your choice. See [Addon Installation Guide](https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Addon-Installation-and-Uninstallation).
-- The simulator relies on the _**Alembic**_ and _**Imath 3**_ external dependencies. If these shared libraries are not in your system PATH variable, they should be packaged within the addon by copying the libraries to the ```build/bl_flip_fluids/flip_fluids_addon/ffengine/lib/``` directory.
+- The simulator relies on the _**Alembic**_ and _**Imath 3**_ external dependencies. If these shared libraries and each of their own dependencies are not located in your system PATH variable, they should be packaged within the addon by copying the libraries to the ```build/bl_flip_fluids/flip_fluids_addon/ffengine/lib/``` directory.
 
 ## Links
 
@@ -133,5 +133,5 @@ Once successfully built, the FLIP Fluids addon will be located in the ```build/b
 - [Documentation and Wiki](https://github.com/rlguy/Blender-FLIP-Fluids/wiki)
 - [Bug/Issue Tracker](https://github.com/rlguy/Blender-FLIP-Fluids/issues)
 - [FLIP Fluids Homepage](http://flipfluids.com)
-- [Twitter](https://twitter.com/flipfluids) | [Instagram](https://www.instagram.com/flip.fluids/) | [Facebook](https://www.facebook.com/FLIPFluids/) | [FLIP Fluids YouTube](https://www.youtube.com/flipfluids) | [BlenderPhysics YouTube](https://www.youtube.com/blenderphysicsvideos)
+- [Instagram](https://www.instagram.com/flip.fluids/) | [X (Twitter)](https://x.com/flipfluids) | [Facebook](https://www.facebook.com/FLIPFluids/) | [FLIP Fluids YouTube](https://www.youtube.com/flipfluids) | [BlenderPhysics YouTube](https://www.youtube.com/blenderphysicsvideos)
 - Discord Server: https://discord.gg/FLIPFluids

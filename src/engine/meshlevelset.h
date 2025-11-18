@@ -49,8 +49,7 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_MESHLEVELSET_H
-#define FLUIDENGINE_MESHLEVELSET_H
+#pragma once
 
 #if __MINGW32__ && !_WIN64
     #include "mingw32_threads/mingw.thread.h"
@@ -370,5 +369,3 @@ private:
     int _blockwidth = 10;
     int _numComputeBlocksPerJob = 10;
 };
-
-#endif

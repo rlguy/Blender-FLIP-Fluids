@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_PARTICLESYSTEM_H
-#define FLUIDENGINE_PARTICLESYSTEM_H
+#pragma once
 
 #include <vector>
 #include <string>
@@ -336,6 +335,3 @@ private:
     bool _boolValueTrue = true;
     bool _boolValueFalse = false;
 };
-
-
-#endif

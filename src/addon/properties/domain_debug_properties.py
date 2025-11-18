@@ -49,11 +49,10 @@ _LOGGING_DISABLED_MESSAGE = "(Blend file logging disabled in host preferences)"
 
 
 class VersionHistoryItem(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
-    blender_version = StringProperty(default="-1"); exec(conv("blender_version"))
-    flip_fluids_version = StringProperty(default="-1"); exec(conv("flip_fluids_version"))
-    flip_fluids_label = StringProperty(default="-1"); exec(conv("flip_fluids_label"))
-    operating_system = StringProperty(default="-1"); exec(conv("operating_system"))
+    blender_version: StringProperty(default="-1")
+    flip_fluids_version: StringProperty(default="-1")
+    flip_fluids_label: StringProperty(default="-1")
+    operating_system: StringProperty(default="-1")
 
 
     def get_info_string(self):
@@ -61,9 +60,8 @@ class VersionHistoryItem(bpy.types.PropertyGroup):
 
 
 class DomainDebugProperties(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
     
-    display_simulation_grid = BoolProperty(
+    display_simulation_grid: BoolProperty(
             name="Display Domain Grid",
             description="Visualize the domain voxel grid in the 3D viewport."
                 " Try scaling different sides of the domain to better understand how the grid works."
@@ -71,15 +69,15 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
                 " the differences in how the grid changes as the domain is resized",
             default=False,
             update=lambda self, context: self._update_display_simulation_grid(context),
-            ); exec(conv("display_simulation_grid"))
-    grid_display_mode = EnumProperty(
+            )
+    grid_display_mode: EnumProperty(
             name="Grid Display Mode",
             description="Type of grid debug info to display",
             items=types.grid_display_modes,
             default='GRID_DISPLAY_SIMULATION',
             update=lambda self, context: self._update_debug_grid_geometry(context),
-            ); exec(conv("grid_display_mode"))
-    grid_display_scale = IntProperty(
+            )
+    grid_display_scale: IntProperty(
             name="Grid Display Scale",
             description="Number of voxels that a single grid spacing in the"
                 " viewport represents",
@@ -87,37 +85,37 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
             default=1,
             step=1,
             update=lambda self, context: self._update_debug_grid_geometry(context),
-            ); exec(conv("grid_display_scale"))
-    enabled_debug_grids = BoolVectorProperty(
+            )
+    enabled_debug_grids: BoolVectorProperty(
             name="Enabled Debug Grids",
             description="Select which debug grids are displayed in the viewport",
             default=(True, True, True),
             size=3,
             subtype='XYZ',
             update=lambda self, context: self._update_debug_grid_geometry(context),
-            ); exec(conv("enabled_debug_grids"))
-    x_grid_color = FloatVectorProperty(  
+            )
+    x_grid_color: FloatVectorProperty(  
            name="X Grid Color",
            subtype='COLOR',
            default=(0.5, 0.0, 0.0),
            min=0.0, max=1.0,
            description="X grid display color"
-           ); exec(conv("x_grid_color"))
-    y_grid_color = FloatVectorProperty(  
+           )
+    y_grid_color: FloatVectorProperty(  
            name="Y Grid Color",
            subtype='COLOR',
            default=(0.0, 0.5, 0.0),
            min=0.0, max=1.0,
            description="Y grid display color"
-           ); exec(conv("y_grid_color"))
-    z_grid_color = FloatVectorProperty(  
+           )
+    z_grid_color: FloatVectorProperty(  
            name="Z Grid Color",
            subtype='COLOR',
            default=(0.0, 0.0, 0.5),
            min=0.0, max=1.0,
            description="Z grid display color"
-           ); exec(conv("z_grid_color"))
-    debug_grid_offsets = FloatVectorProperty(
+           )
+    debug_grid_offsets: FloatVectorProperty(
             name="Debug Grid Offsets",
             description="Offset at which an axis' grid is displayed in the viewport",
             min = 0.0, max = 1.0,
@@ -126,14 +124,14 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
             step=1,
             subtype='XYZ',
             update=lambda self, context: self._update_debug_grid_geometry(context),
-            ); exec(conv("debug_grid_offsets"))
-    snap_offsets_to_grid = BoolProperty(
+            )
+    snap_offsets_to_grid: BoolProperty(
             name="Snap Offsets to Grid",
             description="Align debug grids to gridcell locations",
             default=True,
             update=lambda self, context: self._update_debug_grid_geometry(context),
-            ); exec(conv("snap_offsets_to_grid"))
-    display_domain_bounds = BoolProperty(
+            )
+    display_domain_bounds: BoolProperty(
             name="Display Bounds",
             description="Display the true bounds of the domain object." + 
                 " The domain boundary contains a thin solid layer. Enabling" + 
@@ -141,154 +139,154 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
                 " the domain",
             default=False,
             update=lambda self, context: self._update_display_domain_bounds(context),
-            ); exec(conv("display_domain_bounds"))
-    domain_bounds_color = FloatVectorProperty(  
+            )
+    domain_bounds_color: FloatVectorProperty(  
            name="Domain Bounds Color",
            subtype='COLOR',
            default=(1.0, 1.0, 0.0),
            min=0.0, max=1.0,
            description="Color of the domain bounds visualization",
            update=lambda self, context: self._update_debug_grid_geometry(context),
-           ); exec(conv("domain_bounds_color"))
+           )
 
-    enable_fluid_particle_debug_output = BoolProperty(
+    enable_fluid_particle_debug_output: BoolProperty(
             name="Enable Fluid Particle Debugging",
             description="Enable to export simulator fluid particle data and to"
                 " visualize and debug problems with fluid behaviour. Enable"
                 " this option before baking a simulation to use this feature",
             default=False,
             update=lambda self, context: self._update_enable_fluid_particle_debug_output(context),
-            ); exec(conv("enable_fluid_particle_debug_output"))
-    fluid_particles_visibility = BoolProperty(
+            )
+    fluid_particles_visibility: BoolProperty(
             name="Fluid Particle Visibility",
             description="Show fluid particles in the viewport",
             default=True,
             update=lambda self, context: self._update_enable_fluid_particle_debug_output(context),
-            ); exec(conv("fluid_particles_visibility"))
-    low_speed_particle_color = FloatVectorProperty(  
+            )
+    low_speed_particle_color: FloatVectorProperty(  
            name="Low Speed Color",
            subtype='COLOR',
            default=(0.0, 0.0, 1.0),
            min=0.0, max=1.0,
            description="Color for low velocity fluid particles",
            update=lambda self, context: self._update_debug_particle_geometry(context),
-           ); exec(conv("low_speed_particle_color"))
-    high_speed_particle_color = FloatVectorProperty(  
+           )
+    high_speed_particle_color: FloatVectorProperty(  
            name="High Speed Color",
            subtype='COLOR',
            default=(1.0, 1.0, 1.0),
            min=0.0, max=1.0,
            description="Color for high velocity fluid particles",
            update=lambda self, context: self._update_debug_particle_geometry(context),
-           ); exec(conv("high_speed_particle_color"))
-    min_gradient_speed = FloatProperty(
+           )
+    min_gradient_speed: FloatProperty(
             name="Low Color Speed", 
             description="Low speed value for visualizing fluid particle velocity", 
             min=0,
             default=0.0,
             precision=2,
             update=lambda self, context: self._update_min_gradient_speed(context),
-            ); exec(conv("min_gradient_speed"))
-    max_gradient_speed = FloatProperty(
+            )
+    max_gradient_speed: FloatProperty(
             name="High Color Speed", 
             description="High speed value for visualizing fluid particle velocity", 
             min=0,
             default=5.0,
             precision=2,
             update=lambda self, context: self._update_max_gradient_speed(context),
-            ); exec(conv("max_gradient_speed"))
-    fluid_particle_gradient_mode = EnumProperty(
+            )
+    fluid_particle_gradient_mode: EnumProperty(
             name="Gradient Mode",
             description="Type of color gradient",
             items=types.gradient_interpolation_modes,
             default='GRADIENT_RGB',
             update=lambda self, context: self._update_max_gradient_speed(context),
-            ); exec(conv("fluid_particle_gradient_mode"))
-    particle_size = IntProperty(
+            )
+    particle_size: IntProperty(
             name="Particle Size", 
             description="Size to draw particles for visualization", 
             min=1, soft_max=10,
             default=1,
             update=lambda self, context: self._update_debug_particle_geometry(context),
-            ); exec(conv("particle_size"))
-    particle_draw_aabb = PointerProperty(
+            )
+    particle_draw_aabb: PointerProperty(
             name="Visualization Bounds", 
             description="If set, only particles inside the object's axis-aligned"
                 " bounding box will be drawn",
             type=bpy.types.Object,
             update=lambda self, context: self._update_debug_particle_geometry(context),
-            ); exec(conv("particle_draw_aabb"))
+            )
 
-    export_force_field = BoolProperty(
+    export_force_field: BoolProperty(
             name="Enable Force Field Debugging",
             description="Enable to export simulator force field data and to"
                 " visualize force field lines. Enable this option before baking"
                 " a simulation to use this feature",
             default=False,
             update=lambda self, context: self._update_export_force_field(context),
-            ); exec(conv("export_force_field"))
-    force_field_visibility = BoolProperty(
+            )
+    force_field_visibility: BoolProperty(
             name="Force Field Visibility",
             description="Show force fields in the viewport",
             default=True,
             update=lambda self, context: self._update_export_force_field(context),
-            ); exec(conv("force_field_visibility"))
-    low_force_field_color = FloatVectorProperty(  
+            )
+    low_force_field_color: FloatVectorProperty(  
            name="Low Force Color",
            subtype='COLOR',
            default=(1.0, 1.0, 1.0),
            min=0.0, max=1.0,
            description="Color for low strength forces",
            update=lambda self, context: self._update_export_force_field(context),
-           ); exec(conv("low_force_field_color"))
-    high_force_field_color = FloatVectorProperty(  
+           )
+    high_force_field_color: FloatVectorProperty(  
            name="High Force Color",
            subtype='COLOR',
            default=(1.0, 0.0, 0.0),
            min=0.0, max=1.0,
            description="Color for high strength forces",
            update=lambda self, context: self._update_export_force_field(context),
-           ); exec(conv("high_force_field_color"))
-    min_gradient_force = FloatProperty(
+           )
+    min_gradient_force: FloatProperty(
             name="Low Color Force", 
             description="Low force strength value for visualizing force field lines", 
             min=0,
             default=0.0,
             precision=2,
             update=lambda self, context: self._update_min_gradient_force(context),
-            ); exec(conv("min_gradient_force"))
-    max_gradient_force = FloatProperty(
+            )
+    max_gradient_force: FloatProperty(
             name="High Color Force", 
             description="High force strength value for visualizing force field lines", 
             min=0,
             default=15.0,
             precision=2,
             update=lambda self, context: self._update_max_gradient_force(context),
-            ); exec(conv("max_gradient_force"))
-    force_field_gradient_mode = EnumProperty(
+            )
+    force_field_gradient_mode: EnumProperty(
             name="Gradient Mode",
             description="Type of color gradient",
             items=types.gradient_interpolation_modes,
             default='GRADIENT_RGB',
             update=lambda self, context: self._update_max_gradient_force(context),
-            ); exec(conv("force_field_gradient_mode"))
-    force_field_display_amount = IntProperty(
+            )
+    force_field_display_amount: IntProperty(
             name="Display Amount", 
             description="Amount of force field lines to display in the viewport", 
             min=0, max=100,
             default=25,
             subtype='PERCENTAGE',
             update=lambda self, context: self._update_force_field_geometry(context),
-            ); exec(conv("force_field_display_amount"))
-    force_field_line_size = IntProperty(
+            )
+    force_field_line_size: IntProperty(
             name="Line Size", 
             description="Line thickness for force field visualization", 
             min=1, soft_max=10,
             default=2,
             update=lambda self, context: self._update_force_field_geometry(context),
-            ); exec(conv("force_field_line_size"))
+            )
 
-    export_internal_obstacle_mesh = BoolProperty(
+    export_internal_obstacle_mesh: BoolProperty(
             name="Enable Obstacle Debugging",
             description="Enable to export simulator obstacle data"
                         " and to visualize and debug problems with obstacles."
@@ -296,41 +294,37 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
                         " use this feature",
             default=False,
             update=lambda self, context: self._update_export_internal_obstacle_mesh(context),
-            ); exec(conv("export_internal_obstacle_mesh"))
-    internal_obstacle_mesh_visibility = BoolProperty(
+            )
+    internal_obstacle_mesh_visibility: BoolProperty(
             name="Obstacle Debugging Visibility",
             description="Show obstacle debug mesh in the viewport. If disabled, this prevents debug obstacle"
                 " mesh data from being loaded into Blender. Frame must be reloaded after enabling this option for"
                 " mesh to reload and become visible",
             default=True,
             update=lambda self, context: self._update_export_internal_obstacle_mesh(context),
-            ); exec(conv("internal_obstacle_mesh_visibility"))
+            )
 
-    display_console_output = BoolProperty(
+    display_console_output: BoolProperty(
             name="Display Console Output",
             description="Display simulation info in the Blender system console",
             default=True,
             update=lambda self, context: self._update_display_console_output(context),
             options={'HIDDEN'},
-            ); exec(conv("display_console_output"))
+            )
 
-    display_render_passes_console_output = BoolProperty(
+    display_render_passes_console_output: BoolProperty(
             name="Display Render Passes Console Output",
             description="Display Compositing Tools Passes Rendering debug info in the Blender system console",
             default=False,
             options={'HIDDEN'},
-            ); exec(conv("display_render_passes_console_output"))
+            )
 
-    is_draw_debug_grid_operator_running = BoolProperty(default=False); exec(conv("is_draw_debug_grid_operator_running"))
-    is_draw_gl_particles_operator_running = BoolProperty(default=False); exec(conv("is_draw_gl_particles_operator_running"))
-    is_draw_gl_force_field_operator_running = BoolProperty(default=False); exec(conv("is_draw_gl_force_field_operator_running"))
+    is_draw_debug_grid_operator_running: BoolProperty(default=False)
+    is_draw_gl_particles_operator_running: BoolProperty(default=False)
+    is_draw_gl_force_field_operator_running: BoolProperty(default=False)
 
-    grid_display_settings_expanded = BoolProperty(default=True); exec(conv("grid_display_settings_expanded"))
-    particle_debug_settings_expanded = BoolProperty(default=False); exec(conv("particle_debug_settings_expanded"))
-    force_field_debug_settings_expanded = BoolProperty(default=False); exec(conv("force_field_debug_settings_expanded"))
-
-    version_history = CollectionProperty(type=VersionHistoryItem); exec(conv("version_history"))
-    system_info = StringProperty(default=""); exec(conv("system_info"))
+    version_history: CollectionProperty(type=VersionHistoryItem)
+    system_info: StringProperty(default="")
 
 
     def register_preset_properties(self, registry, path):
@@ -410,11 +404,7 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
             preferences = vcu.get_addon_preferences()
             if preferences.enable_blend_file_logging:
                 # Save Version History
-                if vcu.is_blender_42():
-                    bl_info_dict = bl_info
-                else:
-                    bl_info_dict = sys.modules[installation_utils.get_module_name()].bl_info
-
+                bl_info_dict = bl_info
                 vdata = self.version_history.add()
                 vdata.blender_version = bpy.app.version_string
                 vdata.flip_fluids_version = str(bl_info_dict.get('version', (-1, -1, -1)))

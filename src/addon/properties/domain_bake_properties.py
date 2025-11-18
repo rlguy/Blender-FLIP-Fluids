@@ -32,37 +32,36 @@ IS_SAVESTATE_ENUMS_INITIALIZED = False
 
 
 class DomainBakeProperties(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
     
-    is_export_operator_running = BoolProperty(default=False); exec(conv("is_export_operator_running"))
-    is_export_operator_cancelled = BoolProperty(default=False); exec(conv("is_export_operator_cancelled"))
-    export_progress = FloatProperty(default=0.0); exec(conv("export_progress"))
-    export_stage = StringProperty(default=""); exec(conv("export_stage"))
+    is_export_operator_running: BoolProperty(default=False)
+    is_export_operator_cancelled: BoolProperty(default=False)
+    export_progress: FloatProperty(default=0.0)
+    export_stage: StringProperty(default="")
 
-    export_filename = StringProperty(default='flipdata.sim'); exec(conv("export_filename"))
-    export_directory_name = StringProperty(default='export'); exec(conv("export_directory_name"))
-    export_filepath = StringProperty(default=""); exec(conv("export_filepath"))
-    export_success = BoolProperty(default=False); exec(conv("export_success"))
+    export_filename: StringProperty(default='flipdata.sim')
+    export_directory_name: StringProperty(default='export')
+    export_filepath: StringProperty(default="")
+    export_success: BoolProperty(default=False)
 
-    is_simulation_running = BoolProperty(default=False); exec(conv("is_simulation_running"))
-    bake_progress = FloatProperty(default=0.0); exec(conv("bake_progress"))
-    is_bake_initialized = BoolProperty(default=False); exec(conv("is_bake_initialized"))
-    is_bake_cancelled = BoolProperty(default=False); exec(conv("is_bake_cancelled"))
-    num_baked_frames = IntProperty(default=0); exec(conv("num_baked_frames"))
+    is_simulation_running: BoolProperty(default=False)
+    bake_progress: FloatProperty(default=0.0)
+    is_bake_initialized: BoolProperty(default=False)
+    is_bake_cancelled: BoolProperty(default=False)
+    num_baked_frames: IntProperty(default=0)
 
-    is_autosave_available = BoolProperty(default=False); exec(conv("is_autosave_available"))
-    is_autosave_last_frame = BoolProperty(default=False); exec(conv("is_autosave_last_frame"))
-    is_safe_to_exit = BoolProperty(default=False); exec(conv("is_safe_to_exit"))
-    autosave_frame_id = IntProperty(default=-1); exec(conv("autosave_frame_id"))
-    autosave_frame = IntProperty(default=-1); exec(conv("autosave_frame"))
+    is_autosave_available: BoolProperty(default=False)
+    is_autosave_last_frame: BoolProperty(default=False)
+    is_safe_to_exit: BoolProperty(default=False)
+    autosave_frame_id: IntProperty(default=-1)
+    autosave_frame: IntProperty(default=-1)
 
-    original_frame_start = IntProperty(
+    original_frame_start: IntProperty(
             name="Start Frame",
             description="First frame of the simulation cache. Cannot be changed"
                 " after beginning a simulation",
             default=-1,
             options={'HIDDEN'},
-    ); exec(conv("original_frame_start"))
+    )
 
 
     def register_preset_properties(self, registry, path):

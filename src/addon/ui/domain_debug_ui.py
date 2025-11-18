@@ -39,19 +39,18 @@ class FLIPFLUID_PT_DomainTypeDebugPanel(bpy.types.Panel):
         obj = vcu.get_active_object(context)
         gprops = obj.flip_fluid.domain.debug
 
+        #
+        # Grid Visualization Panel
+        #
         box = self.layout.box()
-        row = box.row(align=True)
-        row.prop(gprops, "grid_display_settings_expanded",
-            icon="TRIA_DOWN" if gprops.grid_display_settings_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
-        if not gprops.grid_display_settings_expanded:
-                row.prop(gprops, "display_simulation_grid", text="")
-        row.label(text="Grid Visualization:")
+        header, body = box.panel("grid_visualization_settings", default_closed=False)
 
-        if gprops.grid_display_settings_expanded:
-            split = vcu.ui_split(box, align=True, factor=0.3)
+        row = header.row(align=True)
+        if not body:
+            row.prop(gprops, "display_simulation_grid", text="")
+        row.label(text="Grid Visualization:")
+        if body:
+            split = vcu.ui_split(body, align=True, factor=0.3)
             column = split.column(align=True)
             column.prop(gprops, "display_simulation_grid", text="Display Grid")
 
@@ -63,7 +62,7 @@ class FLIPFLUID_PT_DomainTypeDebugPanel(bpy.types.Panel):
             column = split.column(align=True)
             column.prop(gprops, "grid_display_scale", text="Draw Scale")
 
-            split = vcu.ui_split(box, align=True, factor=0.3)
+            split = vcu.ui_split(body, align=True, factor=0.3)
             column = split.column(align=True)
             column.enabled = gprops.display_simulation_grid
             column.label(text="Enabled Grids:")
@@ -81,7 +80,7 @@ class FLIPFLUID_PT_DomainTypeDebugPanel(bpy.types.Panel):
             row.prop(gprops, "debug_grid_offsets", text="", slider=True)
             column.prop(gprops, "snap_offsets_to_grid")
             
-            column = box.column(align=True)
+            column = body.column(align=True)
             split = vcu.ui_split(column, align=True, factor=0.3)
             column = split.column(align=True)
             column.prop(gprops, "display_domain_bounds")
@@ -90,14 +89,14 @@ class FLIPFLUID_PT_DomainTypeDebugPanel(bpy.types.Panel):
             column.enabled = gprops.display_simulation_grid or gprops.display_domain_bounds
             column.prop(gprops, "domain_bounds_color", text="")
 
+        #
+        # Fluid Particle Debugging Panel
+        #
         box = self.layout.box()
-        row = box.row(align=True)
-        row.prop(gprops, "particle_debug_settings_expanded",
-            icon="TRIA_DOWN" if gprops.particle_debug_settings_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-            )
-        if not gprops.particle_debug_settings_expanded:
+        header, body = box.panel("fluid_particle_debugging_settings", default_closed=True)
+
+        row = header.row(align=True)
+        if not body:
             row.prop(gprops, "enable_fluid_particle_debug_output", text="")
         row.label(text="Fluid Particle Debugging:")
 
@@ -109,10 +108,9 @@ class FLIPFLUID_PT_DomainTypeDebugPanel(bpy.types.Panel):
             emboss=False
             )
 
-
-        if gprops.particle_debug_settings_expanded:
-            box.prop(gprops, "enable_fluid_particle_debug_output")
-            column = box.column(align=True)
+        if body:
+            body.prop(gprops, "enable_fluid_particle_debug_output")
+            column = body.column(align=True)
             column.enabled = gprops.enable_fluid_particle_debug_output
             column.label(text="Particle Display Settings:")
             row = column.row(align=True)
@@ -124,7 +122,7 @@ class FLIPFLUID_PT_DomainTypeDebugPanel(bpy.types.Panel):
             row = column.row(align=True)
             row.prop(gprops, "fluid_particle_gradient_mode", expand=True)
 
-            column = box.column()
+            column = body.column()
             column.enabled = gprops.enable_fluid_particle_debug_output
             split = vcu.ui_split(column, factor=0.33)
             column = split.column()
@@ -134,14 +132,14 @@ class FLIPFLUID_PT_DomainTypeDebugPanel(bpy.types.Panel):
             column.prop(gprops, "particle_size", text="")
             column.prop_search(gprops, "particle_draw_aabb", bpy.data, "objects", text="")
 
+        #
+        # Force Field Debugging Panel
+        #
         box = self.layout.box()
-        row = box.row(align=True)
-        row.prop(gprops, "force_field_debug_settings_expanded",
-            icon="TRIA_DOWN" if gprops.force_field_debug_settings_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
-        if not gprops.force_field_debug_settings_expanded:
+        header, body = box.panel("force_field_debugging_settings", default_closed=True)
+
+        row = header.row(align=True)
+        if not body:
             row.prop(gprops, "export_force_field", text="")
         row.label(text="Force Field Debugging:")
 
@@ -153,9 +151,9 @@ class FLIPFLUID_PT_DomainTypeDebugPanel(bpy.types.Panel):
             emboss=False
             )
 
-        if gprops.force_field_debug_settings_expanded:
-            box.prop(gprops, "export_force_field")
-            column = box.column(align=True)
+        if body:
+            body.prop(gprops, "export_force_field")
+            column = body.column(align=True)
             column.enabled = gprops.export_force_field
             column.label(text="Force Field Display Settings:")
 
@@ -168,7 +166,7 @@ class FLIPFLUID_PT_DomainTypeDebugPanel(bpy.types.Panel):
             row = column.row(align=True)
             row.prop(gprops, "force_field_gradient_mode", expand=True)
 
-            column = box.column()
+            column = body.column()
             column.enabled = gprops.export_force_field
             split = vcu.ui_split(column, factor=0.33)
             column = split.column()
@@ -179,17 +177,24 @@ class FLIPFLUID_PT_DomainTypeDebugPanel(bpy.types.Panel):
             column.prop(gprops, "force_field_display_amount", text="")
             column.prop(gprops, "force_field_line_size", text="")
 
+        #
+        # Obstacle Debugging Panel
+        #
         box = self.layout.box()
         row = box.row(align=True)
         row.prop(gprops, "export_internal_obstacle_mesh")
+
         next_row = row.row()
         next_row.alignment = 'RIGHT'
         next_row.prop(gprops, "internal_obstacle_mesh_visibility", 
-                text="", 
-                icon=vcu.get_hide_off_icon() if gprops.internal_obstacle_mesh_visibility else vcu.get_hide_on_icon(),
-                emboss=False
-                )
+            text="", 
+            icon=vcu.get_hide_off_icon() if gprops.internal_obstacle_mesh_visibility else vcu.get_hide_on_icon(),
+            emboss=False
+            )
 
+        #
+        # Misc Debugging Panel
+        #
         box = self.layout.box()
         column = box.column(align=True)
         column.prop(gprops, "display_render_passes_console_output")

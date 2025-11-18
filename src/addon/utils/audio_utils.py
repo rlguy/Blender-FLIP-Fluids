@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, os, json, time
+import bpy, os, json, time, aud
 
 from . import version_compatibility_utils as vcu
 
@@ -24,12 +24,6 @@ def get_sounds_directory():
 
 
 def play_sound(json_audio_filepath, block=False):
-    if not vcu.is_blender_28():
-        # aud not supported in Blender 2.79 or lower
-        return
-
-    import aud
-
     with open(json_audio_filepath, 'r', encoding='utf-8') as f:
         json_data = json.loads(f.read())
 

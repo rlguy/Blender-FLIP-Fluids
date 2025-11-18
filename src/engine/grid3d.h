@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_GRID3D_H
-#define FLUIDENGINE_GRID3D_H
+#pragma once
 
 #include "aabb.h"
 #include "gridindexvector.h"
@@ -519,5 +518,3 @@ namespace Grid3d {
         return GridIndex(i, j, k);
     }
 }
-
-#endif

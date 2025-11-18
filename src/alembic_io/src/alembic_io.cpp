@@ -33,6 +33,9 @@ SOFTWARE.
 
 #include "alembic_io.h"
 
+#include "nlohmann/json.hpp"
+
+
 const size_t g_num_verts = 8;
 const Alembic::Abc::float32_t g_verts[] = { 
         -1.0f, -1.0f, -1.0f,
@@ -361,14 +364,39 @@ std::string zero_pad_int_to_string(int n, int width)
 }
 
 
-void flip_fluids_cache_to_alembic() 
+std::string format_seconds_to_MMSS(float total_seconds) {
+    float int_part;
+    float fractional_part = std::modf(total_seconds, &int_part);
+
+    int minutes = static_cast<int>(int_part / 60);
+    int seconds = static_cast<int>(int_part) % 60;
+    int milliseconds = static_cast<int>(fractional_part * 1000);
+
+    std::stringstream ss;
+    ss << std::setfill('0') << std::setw(2) << minutes << ":"
+       << std::setfill('0') << std::setw(2) << seconds << "."
+       << std::setfill('0') << std::setw(3) << milliseconds;
+
+    return ss.str();
+}
+
+
+std::string get_time_elapsed_string(std::chrono::time_point<std::chrono::steady_clock> time_start) {
+    std::chrono::time_point<std::chrono::steady_clock> time_stop = std::chrono::steady_clock::now();
+    std::chrono::duration<double, std::milli> time_elapsed = time_stop - time_start;
+    float time_elapsed_seconds = (float)time_elapsed.count() / 1000.0f;
+    return format_seconds_to_MMSS(time_elapsed_seconds);
+}
+
+
+void flip_fluids_cache_to_alembic(std::string config_json_string) 
 {
+    nlohmann::json config_data = nlohmann::json::parse(config_json_string);
+
     // Write Alembic
-    fs::path output_directory(U"C:/path/to/output/directory");
+    fs::path output_filepath(config_data["alembic_filepath"]);
+    fs::path output_directory = output_filepath.parent_path();
     fs::create_directories(output_directory);
-    
-    fs::path filename(U"flip_fluids_alembic.abc");
-    fs::path output_filepath = output_directory / filename;
 
     std::ofstream outfilestream;
     outfilestream.open(output_filepath, std::ios::out | std::ios::binary);
@@ -376,8 +404,8 @@ void flip_fluids_cache_to_alembic()
     // Frame rate and timing
     float frame_rate = 24.0f;
     float dt = 1.0f / frame_rate;
-    int frame_start = 1;
-    int frame_end = 100;
+    int frame_start = config_data["frame_start"];
+    int frame_end = config_data["frame_end"];
     float start_time = frame_start * dt;
     size_t num_frames = frame_end - frame_start + 1;
     Alembic::AbcGeom::TimeSampling *time_sampling = new Alembic::AbcGeom::TimeSampling(dt, start_time);
@@ -433,9 +461,10 @@ void flip_fluids_cache_to_alembic()
     Imath::V3f transform_translation(0.0f, 0.0f, 0.0f);
     transform_translation = convert_to_blender_coordinates(transform_translation);
 
-    std::chrono::time_point<std::chrono::steady_clock> time_start = std::chrono::steady_clock::now();
+    std::chrono::time_point<std::chrono::steady_clock> total_time_start = std::chrono::steady_clock::now();
 
-    fs::path bakefiles_directory(U"C:/path/to/cache_directory/bakefiles");
+    fs::path cache_directory(config_data["cache_directory"]);
+    fs::path bakefiles_directory = cache_directory / "bakefiles";
     for (size_t i = 0; i < num_frames; i++) {
         std::chrono::time_point<std::chrono::steady_clock> frame_time_start = std::chrono::steady_clock::now();
 
@@ -457,14 +486,12 @@ void flip_fluids_cache_to_alembic()
 
         fluid_surface_mesh_schema.set(mesh_sample);
 
-        std::chrono::time_point<std::chrono::steady_clock> frame_time_stop = std::chrono::steady_clock::now();
-        std::chrono::duration<double, std::milli> frame_time_elapsed = frame_time_stop - frame_time_start;
-
-        std::cout << "Writing Frame: " << current_frame << " - " << mesh.num_vertices << " vertices, " << mesh.num_faces << " triangles (" << (float)frame_time_elapsed.count() / 1000.0f << "s)" << std::endl;
+        std::string frame_time_string = get_time_elapsed_string(frame_time_start);
+        std::string total_time_string = get_time_elapsed_string(total_time_start);
+        std::cout << "Frame: " << current_frame << " | Time: " << frame_time_string << " | Total: " << total_time_string << " | Verts: " << mesh.num_vertices << " | Faces: " << mesh.num_faces << std::endl;
     }
 
-    std::chrono::time_point<std::chrono::steady_clock> time_stop = std::chrono::steady_clock::now();
-    std::chrono::duration<double, std::milli> time_elapsed = time_stop - time_start;
-    std::cout << "Elapsed Time: " << (float)time_elapsed.count() / 1000.0f << " s" << std::endl;
+    std::string total_time_string = get_time_elapsed_string(total_time_start);
+    std::cout << "Elapsed Time (MM:SS): " << total_time_string << std::endl << std::endl;
 
 }

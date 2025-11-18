@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef CBINDINGS_H
-#define CBINDINGS_H
+#pragma once
 
 #include <exception>
 #include <string>
@@ -164,5 +163,3 @@ DiffuseParticle_t to_struct(DiffuseParticle p);
 DiffuseParticle to_class(DiffuseParticle_t p);
 
 }
-
-#endif

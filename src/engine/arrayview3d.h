@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_ARRAYVIEW3D_H
-#define FLUIDENGINE_ARRAYVIEW3D_H
+#pragma once
 
 #include "array3d.h"
 
@@ -415,5 +414,3 @@ private:
     Array3d<T> _dummyGrid;
 
 };
-
-#endif

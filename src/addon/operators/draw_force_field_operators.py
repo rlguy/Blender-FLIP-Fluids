@@ -14,7 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, blf, math, colorsys
+import bpy, blf, math, colorsys, gpu
+from gpu_extras.batch import batch_for_shader
 
 from bpy.props import (
         IntProperty
@@ -24,10 +25,6 @@ from ..objects.flip_fluid_aabb import AABB
 from ..utils import ui_utils
 from ..utils import version_compatibility_utils as vcu
 from .. import render
-
-if vcu.is_blender_28():
-    import gpu
-    from gpu_extras.batch import batch_for_shader
 
 
 particle_vertices = []
@@ -88,51 +85,41 @@ def update_debug_force_field_geometry(context):
         color_tuple = (color[0], color[1], color[2], 1.0)
         particle_vertex_colors.append(color_tuple)
 
-    if vcu.is_blender_28():
-        global particle_shader
-        global particle_batch_draw
+    global particle_shader
+    global particle_batch_draw
 
-        vertex_shader = """
-            uniform mat4 ModelViewProjectionMatrix;
+    vertex_shader = """
+        uniform mat4 ModelViewProjectionMatrix;
 
-            in vec3 pos;
-            in vec4 color;
+        in vec3 pos;
+        in vec4 color;
 
-            out vec4 finalColor;
+        out vec4 finalColor;
 
-            void main()
-            {
-                gl_Position = ModelViewProjectionMatrix * vec4(pos, 1.0);
-                finalColor = color;
-            }
-        """
+        void main()
+        {
+            gl_Position = ModelViewProjectionMatrix * vec4(pos, 1.0);
+            finalColor = color;
+        }
+    """
 
-        fragment_shader = """
-            in vec4 finalColor;
-            out vec4 fragColor;
+    fragment_shader = """
+        in vec4 finalColor;
+        out vec4 fragColor;
 
-            void main()
-            {
-                fragColor = finalColor;
-            }
-        """
+        void main()
+        {
+            fragColor = finalColor;
+        }
+    """
 
-        if vcu.is_blender_35():
-            # Needed for support on MacOS Apple Silicon systems in Blender 3.5 or later
-            # Could possibly be a Blender regression bug why the below method no longer
-            # works in Blender 3.5 or later for MacOS. Should file a report.
-            shader_name = '3D_SMOOTH_COLOR'
-            if vcu.is_blender_40():
-                shader_name = 'SMOOTH_COLOR'
-                
-            particle_shader = gpu.shader.from_builtin(shader_name)
-        else:
-            particle_shader = gpu.types.GPUShader(vertex_shader, fragment_shader)
+    shader_name = 'SMOOTH_COLOR'
+    particle_shader = gpu.shader.from_builtin(shader_name)
 
-        particle_batch_draw = batch_for_shader(
-            particle_shader, 'POINTS',
-            {"pos": particle_vertices, "color": particle_vertex_colors},
-        )
+    particle_batch_draw = batch_for_shader(
+        particle_shader, 'POINTS',
+        {"pos": particle_vertices, "color": particle_vertex_colors},
+    )
 
 
 def _lerp_rgb(minc, maxc, factor, mode='RGB'):
@@ -185,50 +172,13 @@ class FlipFluidDrawForceField(bpy.types.Operator):
         if vcu.get_object_hide_viewport(domain):
             return
 
-        if not vcu.is_blender_28():
-            dlayers = [i for i,v in enumerate(domain.layers) if v]
-            slayers = [i for i,v in enumerate(context.scene.layers) if v]
-            if not (set(dlayers) & set(slayers)):
-                return
-
-        if vcu.is_blender_28():
-            global particle_shader
-            global particle_batch_draw
-            if vcu.is_blender_35():
-                # Warnings in Blender 3.5 when using bgl module, which is to
-                # be deprecated in Blender 3.7. Use gpu module instead.
-                gpu.state.point_size_set(dprops.debug.force_field_line_size)
-            else:
-                # only attempt to import bgl when necessary (older versions of Blender). In Blender >= 3.5,
-                # importing bgl generates a warning, and possibly an error in Blender >= 4.0.
-                import bgl
-                bgl.glPointSize(dprops.debug.force_field_line_size)
-
-            if vcu.is_blender_35():
-                # Can be drawn with depth in Blender 3.5 or later
-                gpu.state.depth_test_set('LESS_EQUAL')
-                gpu.state.depth_mask_set(True)
-            particle_batch_draw.draw(particle_shader)
-            if vcu.is_blender_35():
-                gpu.state.depth_mask_set(False)
-
-        else:
-            # only attempt to import bgl when necessary (older versions of Blender). In Blender >= 3.5,
-            # importing bgl generates a warning, and possibly an error in Blender >= 4.0.
-            import bgl
-            bgl.glPointSize(dprops.debug.force_field_line_size)
-            bgl.glBegin(bgl.GL_POINTS)
-
-            current_color = None
-            for i in range(len(particle_vertices)):
-                if current_color != particle_vertex_colors[i]:
-                    current_color = particle_vertex_colors[i]
-                    bgl.glColor4f(current_color[0], current_color[1], current_color[2], 1.0)
-                bgl.glVertex3f(*(particle_vertices[i]))
-
-            bgl.glEnd()
-            bgl.glPointSize(1)
-            bgl.glColor4f(0.0, 0.0, 0.0, 1.0)
+        global particle_shader
+        global particle_batch_draw
+        gpu.state.point_size_set(dprops.debug.force_field_line_size)
+        gpu.state.depth_test_set('LESS_EQUAL')
+        gpu.state.depth_mask_set(True)
+        particle_batch_draw.draw(particle_shader)
+        gpu.state.depth_mask_set(False)
 
 
     def modal(self, context, event):

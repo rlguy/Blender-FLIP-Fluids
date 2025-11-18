@@ -25,32 +25,31 @@ from ..utils import version_compatibility_utils as vcu
 
 
 class FlipFluidOutflowProperties(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
     
-    is_enabled = BoolProperty(
+    is_enabled: BoolProperty(
             name="Enabled",
             description="Object is active in the fluid simulation",
             default=True,
-            ); exec(conv("is_enabled"))
-    remove_fluid = BoolProperty(
+            )
+    remove_fluid: BoolProperty(
             name="Remove Fluid",
             description="Enable removing fluid particles from the domain",
             default=True,
-            ); exec(conv("remove_fluid"))
-    remove_whitewater = bpy.props.BoolProperty(
+            )
+    remove_whitewater: bpy.props.BoolProperty(
             name="Remove Whitewater",
             description="Enable removing whitewater particles from the domain",
             default=True,
-            ); exec(conv("remove_whitewater"))
-    is_inversed = BoolProperty(
+            )
+    is_inversed: BoolProperty(
             name="Inverse",
             description="Turn the outflow object 'inside-out'. If enabled,"
                 " the outflow will remove fluid that is outside of the mesh"
                 " instead of removing fluid that is inside of the mesh",
             default=False,
             options={'HIDDEN'},
-            ); exec(conv("is_inversed"))
-    export_animated_mesh = bpy.props.BoolProperty(
+            )
+    export_animated_mesh: bpy.props.BoolProperty(
             name="Export Animated Mesh",
             description="Export this object as an animated mesh. Exporting animated meshes are"
                 " slower, only use when necessary. This option is required for any animation that"
@@ -59,16 +58,16 @@ class FlipFluidOutflowProperties(bpy.types.PropertyGroup):
                 " not needed for static objects",
             default=False,
             options={'HIDDEN'},
-            ); exec(conv("export_animated_mesh"))
-    skip_reexport = BoolProperty(
-            name="Skip re-export",
+            )
+    skip_reexport: BoolProperty(
+            name="Skip Re-export",
             description="Skip re-exporting this mesh when starting or resuming"
                 " a bake. If this mesh has not been exported or is missing files,"
                 " the addon will automatically export the required files",
             default=False,
             options={'HIDDEN'},
-            ); exec(conv("skip_reexport"))
-    force_reexport_on_next_bake = BoolProperty(
+            )
+    force_reexport_on_next_bake: BoolProperty(
             name="Force Re-Export On Next Bake",
             description="Override the 'Skip Re-Export' option and force this mesh to be"
                 " re-exported and updated on the next time a simulation start/resumes"
@@ -77,22 +76,22 @@ class FlipFluidOutflowProperties(bpy.types.PropertyGroup):
                 " This option is only applicable if 'Skip Re-Export' is enabled",
             default=False,
             options={'HIDDEN'},
-            ); exec(conv("force_reexport_on_next_bake"))
-    property_registry = PointerProperty(
+            )
+    property_registry: PointerProperty(
             name="Outflow Property Registry",
             description="",
             type=preset_properties.PresetRegistry,
-            ); exec(conv("property_registry"))
+            )
 
 
-    disabled_in_viewport_tooltip = BoolProperty(
+    disabled_in_viewport_tooltip: BoolProperty(
             name="Object Disabled in Viewport", 
             description="This outflow object is currently disabled in the viewport within the"
                 " outliner (Monitor Icon) and will not be included in the simulation. If you"
                 " want the object hidden in the viewport, but still have the object included in the"
                 " simulation, use the outliner Hide in Viewport option instead (Eye Icon)", 
             default=True,
-            ); exec(conv("disabled_in_viewport_tooltip"))
+            )
 
 
 

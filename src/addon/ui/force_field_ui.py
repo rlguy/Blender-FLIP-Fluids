@@ -184,7 +184,7 @@ class FLIPFLUID_PT_ForceFieldTypePanel(bpy.types.Panel):
 
         self.layout.separator()
         box = self.layout.box()
-        box.label(text="Antigravity")
+        box.label(text="Antigravity:")
         column = box.column(align=True)
 
         if force_field_props.force_field_type == 'FORCE_FIELD_TYPE_POINT':
@@ -199,6 +199,18 @@ class FLIPFLUID_PT_ForceFieldTypePanel(bpy.types.Panel):
         elif force_field_props.force_field_type == 'FORCE_FIELD_TYPE_CURVE':
             column.prop(force_field_props, "gravity_scale_curve", slider=True)
             column.prop(force_field_props, "gravity_scale_width_curve", text="Width", slider=True)
+
+        dprops = context.scene.flip_fluid.get_domain_properties()
+        if dprops is not None:
+            box = self.layout.box()
+            box.label(text="Global Force Field Weights:")
+            column = box.column(align=True)
+            column.prop(dprops.world, "force_field_weight_fluid_particles", slider=True)
+            column.prop(dprops.world, "force_field_weight_whitewater_foam", slider=True)
+            column.prop(dprops.world, "force_field_weight_whitewater_bubble", slider=True)
+            column.prop(dprops.world, "force_field_weight_whitewater_spray", slider=True)
+            column.prop(dprops.world, "force_field_weight_whitewater_dust", slider=True)
+
         
         box = self.layout.box()
         box.label(text="Mesh Data Export:")

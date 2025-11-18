@@ -835,6 +835,21 @@ class FluidSimulation(object):
         pb.execute_lib_func(libfunc, [self()])
 
     @property
+    def enable_fluid_particle_density_attribute(self):
+        libfunc = lib.FluidSimulation_is_fluid_particle_density_attribute_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_fluid_particle_density_attribute.setter
+    def enable_fluid_particle_density_attribute(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_fluid_particle_density_attribute
+        else:
+            libfunc = lib.FluidSimulation_disable_fluid_particle_density_attribute
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
     def enable_fluid_particle_uid_attribute(self):
         libfunc = lib.FluidSimulation_is_fluid_particle_uid_attribute_enabled
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
@@ -1141,6 +1156,21 @@ class FluidSimulation(object):
             libfunc = lib.FluidSimulation_enable_surface_viscosity_attribute
         else:
             libfunc = lib.FluidSimulation_disable_surface_viscosity_attribute
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_surface_density_attribute(self):
+        libfunc = lib.FluidSimulation_is_surface_density_attribute_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_surface_density_attribute.setter
+    def enable_surface_density_attribute(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_surface_density_attribute
+        else:
+            libfunc = lib.FluidSimulation_disable_surface_density_attribute
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self()])
 
@@ -2750,6 +2780,10 @@ class FluidSimulation(object):
         return self._get_output_data(lib.FluidSimulation_get_surface_viscosity_attribute_data_size,
                                      lib.FluidSimulation_get_surface_viscosity_attribute_data)
 
+    def get_surface_density_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_surface_density_attribute_data_size,
+                                     lib.FluidSimulation_get_surface_density_attribute_data)
+
     def get_whitewater_foam_id_attribute_data(self):
         return self._get_output_data(lib.FluidSimulation_get_whitewater_foam_id_attribute_data_size,
                                      lib.FluidSimulation_get_whitewater_foam_id_attribute_data)
@@ -2853,6 +2887,14 @@ class FluidSimulation(object):
     def get_fluid_particle_viscosity_attribute_data(self):
         return self._get_output_data(lib.FluidSimulation_get_fluid_particle_viscosity_attribute_data_size,
                                      lib.FluidSimulation_get_fluid_particle_viscosity_attribute_data)
+
+    def get_fluid_particle_density_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_fluid_particle_density_attribute_data_size,
+                                     lib.FluidSimulation_get_fluid_particle_density_attribute_data)
+
+    def get_fluid_particle_density_average_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_fluid_particle_density_average_attribute_data_size,
+                                     lib.FluidSimulation_get_fluid_particle_density_average_attribute_data)
 
     def get_fluid_particle_whitewater_proximity_attribute_data(self):
         return self._get_output_data(lib.FluidSimulation_get_fluid_particle_whitewater_proximity_attribute_data_size,
@@ -2983,6 +3025,11 @@ class FluidSimulation(object):
     def get_marker_particle_viscosity_data_range(self, start_idx, end_idx):
         size_of_float = 4
         return self._get_output_data_range(lib.FluidSimulation_get_marker_particle_viscosity_data_range,
+                                           start_idx, end_idx, size_of_float)
+
+    def get_marker_particle_density_data_range(self, start_idx, end_idx):
+        size_of_float = 4
+        return self._get_output_data_range(lib.FluidSimulation_get_marker_particle_density_data_range,
                                            start_idx, end_idx, size_of_float)
 
     def get_marker_particle_id_data_range(self, start_idx, end_idx):
@@ -3136,6 +3183,17 @@ class FluidSimulation(object):
         pb.init_lib_func(libfunc, [c_void_p, FluidSimulationMarkerParticleViscosityData_t, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), pdata])
 
+    def load_marker_particle_density_data(self, num_particles, density_data):
+        c_density_data = (c_char * len(density_data)).from_buffer_copy(density_data)
+
+        pdata = FluidSimulationMarkerParticleDensityData_t()
+        pdata.size = c_int(num_particles)
+        pdata.density = ctypes.cast(c_density_data, c_char_p)
+
+        libfunc = lib.FluidSimulation_load_marker_particle_density_data
+        pb.init_lib_func(libfunc, [c_void_p, FluidSimulationMarkerParticleDensityData_t, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), pdata])
+
     def load_marker_particle_id_data(self, num_particles, id_data):
         c_id_data = (c_char * len(id_data)).from_buffer_copy(id_data)
 
@@ -3224,6 +3282,7 @@ class FluidSimulationFrameStats_t(ctypes.Structure):
                 ("surfacecolor", FluidSimulationMeshStats_t),
                 ("surfacesourceid", FluidSimulationMeshStats_t),
                 ("surfaceviscosity", FluidSimulationMeshStats_t),
+                ("surfacedensity", FluidSimulationMeshStats_t),
                 ("foam", FluidSimulationMeshStats_t),
                 ("bubble", FluidSimulationMeshStats_t),
                 ("spray", FluidSimulationMeshStats_t),
@@ -3254,6 +3313,8 @@ class FluidSimulationFrameStats_t(ctypes.Structure):
                 ("fluidparticlesage", FluidSimulationMeshStats_t),
                 ("fluidparticleslifetime", FluidSimulationMeshStats_t),
                 ("fluidparticlesviscosity", FluidSimulationMeshStats_t),
+                ("fluidparticlesdensity", FluidSimulationMeshStats_t),
+                ("fluidparticlesdensityaverage", FluidSimulationMeshStats_t),
                 ("fluidparticleswhitewaterproximity", FluidSimulationMeshStats_t),
                 ("fluidparticlessourceid", FluidSimulationMeshStats_t),
                 ("particles", FluidSimulationMeshStats_t),
@@ -3295,6 +3356,10 @@ class FluidSimulationMarkerParticleUIDData_t(ctypes.Structure):
 class FluidSimulationMarkerParticleViscosityData_t(ctypes.Structure):
     _fields_ = [("size", c_int),
                 ("viscosity", c_char_p)]
+
+class FluidSimulationMarkerParticleDensityData_t(ctypes.Structure):
+    _fields_ = [("size", c_int),
+                ("density", c_char_p)]
 
 class FluidSimulationMarkerParticleIDData_t(ctypes.Structure):
     _fields_ = [("size", c_int),

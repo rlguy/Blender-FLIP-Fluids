@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_MACVELOCITYFIELD_H
-#define FLUIDENGINE_MACVELOCITYFIELD_H
+#pragma once
 
 #if __MINGW32__ && !_WIN64
     #include "mingw32_threads/mingw.thread.h"
@@ -170,5 +169,3 @@ private:
     Array3d<float> _v;
     Array3d<float> _w;
 };
-
-#endif

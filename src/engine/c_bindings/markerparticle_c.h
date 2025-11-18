@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_MARKERPARTICLE_T_H
-#define FLUIDENGINE_MARKERPARTICLE_T_H
+#pragma once
 
 #include "vector3_c.h"
 
@@ -31,5 +30,3 @@ typedef struct MarkerParticle_t {
 	Vector3_t position;
 	Vector3_t velocity;
 } MarkerParticle_t;
-
-#endif

@@ -291,6 +291,18 @@ extern "C" {
         );
     }
 
+    EXPORTDLL int MeshFluidSource_get_density(MeshFluidSource* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &MeshFluidSource::getDensity, err
+        );
+    }
+
+    EXPORTDLL void MeshFluidSource_set_density(MeshFluidSource* obj, float v, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &MeshFluidSource::setDensity, v, err
+        );
+    }
+
     EXPORTDLL int MeshFluidSource_get_lifetime(MeshFluidSource* obj, int *err) {
         return CBindings::safe_execute_method_ret_0param(
             obj, &MeshFluidSource::getLifetime, err

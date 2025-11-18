@@ -23,8 +23,7 @@ SOFTWARE.
 */
 
 
-#ifndef FLUIDENGINE_VISCOSITYSOLVER_H
-#define FLUIDENGINE_VISCOSITYSOLVER_H
+#pragma once
 
 #include "array3d.h"
 #include "pcgsolver/pcgsolver.h"
@@ -256,7 +255,3 @@ private:
     int _solverIterations = 0;
     float _solverError = 0.0f;
 };
-
-
-#endif
-

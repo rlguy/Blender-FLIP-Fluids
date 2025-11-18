@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, os, pathlib, stat, subprocess, platform, random, shlex, shutil, traceback
+import bpy, os, pathlib, stat, subprocess, platform, random, shlex, shutil, traceback, ctypes, json
 from bpy.props import (
         BoolProperty,
         )
@@ -470,6 +470,46 @@ def get_command_line_script_filepath(script_filename):
     return script_path
 
 
+def get_flip_fluids_alembic_exporter_filepath():
+    executable_name = ""
+
+    system = platform.system()
+    if system == "Windows":
+        executable_name = "ff_alembic_exporter_windows.exe"
+    elif system == "Darwin":
+        executable_name = "ff_alembic_exporter_macos"
+    elif system == "Linux":
+        executable_name = "ff_alembic_exporter_linux"
+
+    executable_path = os.path.dirname(os.path.realpath(__file__))
+    executable_path = os.path.dirname(executable_path)
+    executable_path = os.path.join(executable_path, "ffengine", "lib", executable_name)
+    if not os.path.isfile(executable_path):
+        errmsg = "Unable to locate executable <" + executable_path + ">. Please contact the developers with this error."
+        raise Exception(errmsg)
+    return executable_path
+
+
+def get_flip_fluids_alembic_exporter_lib_filepath():
+    executable_name = ""
+
+    system = platform.system()
+    if system == "Windows":
+        lib_name = "libffalembicengine.dll"
+    elif system == "Darwin":
+        lib_name = "libffalembicengine.dylib"
+    elif system == "Linux":
+        lib_name = "libffalembicengine.so"
+
+    lib_path = os.path.dirname(os.path.realpath(__file__))
+    lib_path = os.path.dirname(lib_path)
+    lib_path = os.path.join(lib_path, "ffengine", "lib", lib_name)
+    if not os.path.isfile(lib_path):
+        errmsg = "Unable to locate executable <" + lib_path + ">. Please contact the developers with this error."
+        raise Exception(errmsg)
+    return lib_path
+
+
 def save_blend_file_before_launch(override_preferences=False):
     prefs = vcu.get_addon_preferences()
     if prefs.cmd_save_blend_file_before_launch or override_preferences:
@@ -539,11 +579,15 @@ def write_scripts_directory_readme():
         f.write(readme_text)
 
 
-def launch_command_universal_os(command_text, script_prefix_string, keep_window_open=True, skip_launch=False):
+def launch_command_universal_os(command_text, script_prefix_string, keep_window_open=True, skip_launch=False, chcp=None):
     system = platform.system()
     if system == "Windows":
+        code_page = 65001
+        if chcp:
+            code_page = chcp
+
         script_extension = ".bat"
-        script_header = "echo off\nchcp 65001\n\n"
+        script_header = "echo off\nchcp " + str(code_page) + "\n\n"
         script_footer = ""
         if keep_window_open:
             script_footer = "\ncmd /k\n"
@@ -624,8 +668,7 @@ class FlipFluidHelperCommandLineBake(bpy.types.Operator):
                      " The .blend file will need to be saved for before using" +
                      " this operator for changes to take effect")
 
-    skip_launch = BoolProperty(False)
-    exec(vcu.convert_attribute_to_28("skip_launch"))
+    skip_launch: BoolProperty(False)
 
 
     @classmethod
@@ -764,11 +807,9 @@ class FlipFluidHelperCommandLineRender(bpy.types.Operator):
     bl_description = ("Launch a new command line window and start rendering the animation." +
                      " The .blend file will need to be saved before using this operator for changes to take effect")
 
-    use_turbo_tools = BoolProperty(False)
-    exec(vcu.convert_attribute_to_28("use_turbo_tools"))
+    use_turbo_tools: BoolProperty(False)
 
-    skip_launch = BoolProperty(False)
-    exec(vcu.convert_attribute_to_28("skip_launch"))
+    skip_launch: BoolProperty(False)
 
 
     @classmethod
@@ -923,8 +964,7 @@ class FlipFluidHelperCommandLineRenderToClipboard(bpy.types.Operator):
     bl_description = ("Copy command for rendering to your system clipboard." +
                      " The .blend file will need to be saved before running this command for changes to take effect")
 
-    use_turbo_tools = BoolProperty(False)
-    exec(vcu.convert_attribute_to_28("use_turbo_tools"))
+    use_turbo_tools: BoolProperty(False)
 
 
     @classmethod
@@ -951,11 +991,9 @@ class FlipFluidHelperCommandLineRenderFrame(bpy.types.Operator):
     bl_description = ("Launch a new command line window and start rendering the current timeline frame." +
                      " The .blend file will need to be saved before using this operator for changes to take effect")
 
-    use_turbo_tools = BoolProperty(False)
-    exec(vcu.convert_attribute_to_28("use_turbo_tools"))
+    use_turbo_tools: BoolProperty(False)
 
-    skip_launch = BoolProperty(False)
-    exec(vcu.convert_attribute_to_28("skip_launch"))
+    skip_launch: BoolProperty(False)
 
 
     @classmethod
@@ -1022,14 +1060,13 @@ class FlipFluidHelperCommandLineRenderFrame(bpy.types.Operator):
 
 
 
-class FlipFluidHelperCmdRenderFrameToClipboard(bpy.types.Operator):
+class FlipFluidHelperCommandLineRenderFrameToClipboard(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.helper_cmd_render_frame_to_clipboard"
     bl_label = "Launch Frame Render"
     bl_description = ("Copy command for frame rendering to your system clipboard." +
                      " The .blend file will need to be saved before running this command for changes to take effect")
 
-    use_turbo_tools = BoolProperty(False)
-    exec(vcu.convert_attribute_to_28("use_turbo_tools"))
+    use_turbo_tools: BoolProperty(False)
 
 
     @classmethod
@@ -1055,8 +1092,7 @@ class FlipFluidHelperCommandLineAlembicExport(bpy.types.Operator):
     bl_description = ("Launch a new command line window and start exporting the simulation meshes to the Alembic (.abc) format." +
                      " The .blend file will need to be saved before using this operator for changes to take effect")
 
-    skip_launch = BoolProperty(False)
-    exec(vcu.convert_attribute_to_28("skip_launch"))
+    skip_launch: BoolProperty(False)
 
 
     @classmethod
@@ -1085,7 +1121,7 @@ class FlipFluidHelperCommandLineAlembicExport(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class FlipFluidHelperCmdAlembicExportToClipboard(bpy.types.Operator):
+class FlipFluidHelperCommandLineAlembicExportToClipboard(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.helper_cmd_alembic_export_to_clipboard"
     bl_label = "Launch Alembic Export"
     bl_description = ("Copy command for Alembic export to your system clipboard." +
@@ -1099,6 +1135,75 @@ class FlipFluidHelperCmdAlembicExportToClipboard(bpy.types.Operator):
 
     def execute(self, context):
         bpy.ops.flip_fluid_operators.helper_command_line_alembic_export('INVOKE_DEFAULT', skip_launch=True)
+          
+        info_msg = "Copied the following Alembic export command to your clipboard:\n\n"
+        info_msg += bpy.context.window_manager.clipboard + "\n\n"
+        info_msg += "For more information on command line tools, visit our documentation:\n"
+        info_msg += "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Helper-Menu-Settings#command-line-alembic-export"
+        self.report({'INFO'}, info_msg)
+
+        return {'FINISHED'}
+
+
+class FlipFluidHelperCommandLineCustomAlembicExport(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_cmd_custom_alembic_export"
+    bl_label = "Launch Alembic Export"
+    bl_description = ("Launch a new command line window and start exporting the simulation meshes to the Alembic (.abc) format." +
+                     " The .blend file will need to be saved before using this operator for changes to take effect")
+
+    skip_launch: BoolProperty(False)
+
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.flip_fluid.get_domain_object() is not None and bool(bpy.data.filepath)
+
+
+    def get_export_frame_range(self):
+        frame_start = bpy.context.scene.frame_start
+        frame_end = bpy.context.scene.frame_end
+        hprops = bpy.context.scene.flip_fluid_helper
+        if hprops.alembic_frame_range_mode == 'FRAME_RANGE_CUSTOM':
+            frame_start = hprops.alembic_frame_range_custom.value_min
+            frame_end = hprops.alembic_frame_range_custom.value_max
+        return frame_start, frame_end
+
+
+    def execute(self, context):
+        save_blend_file_before_launch(override_preferences=False)
+        restore_blender_original_cwd()
+
+        script_path = get_command_line_script_filepath("flip_fluids_alembic_export.py")
+        command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" --python \"" + script_path + "\""
+
+        script_filepath = launch_command_universal_os(command_text, "FF_ALEMBIC_EXPORT_", keep_window_open=True, skip_launch=self.skip_launch)
+
+        if not self.skip_launch:
+            info_msg = "Launched command line Alembic export window. If the Alembic export process did not begin,"
+            info_msg += " this may be caused by a conflict with another addon or a security feature of your OS that restricts"
+            info_msg += " automatic command execution. You may try running following script file manually:\n\n"
+            info_msg += script_filepath + "\n\n"
+            info_msg += "For more information on command line operators, visit our documentation:\n"
+            info_msg += "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Helper-Menu-Settings#command-line-alembic-export"
+            self.report({'INFO'}, info_msg)
+
+        return {'FINISHED'}
+
+
+class FlipFluidHelperCommandLineCustomAlembicExportToClipboard(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.cmd_custom_alembic_export_to_clipboard"
+    bl_label = "Launch Alembic Export"
+    bl_description = ("Copy command for Alembic export to your system clipboard." +
+                     " The .blend file will need to be saved before running this command for changes to take effect")
+
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.flip_fluid.get_domain_object() is not None and bool(bpy.data.filepath)
+
+
+    def execute(self, context):
+        bpy.ops.flip_fluid_operators.helper_cmd_custom_alembic_export('INVOKE_DEFAULT', skip_launch=True)
           
         info_msg = "Copied the following Alembic export command to your clipboard:\n\n"
         info_msg += bpy.context.window_manager.clipboard + "\n\n"
@@ -1346,8 +1451,7 @@ class FlipFluidHelperCommandLineRenderPassAnimation(bpy.types.Operator):
     bl_label = "Launch Render Pass Animation"
     bl_description = ("Description: todo - launch render pass animation script")
 
-    skip_launch = BoolProperty(False)
-    exec(vcu.convert_attribute_to_28("skip_launch"))
+    skip_launch: BoolProperty(False)
 
 
     @classmethod
@@ -1426,7 +1530,7 @@ class FlipFluidHelperCommandLineRenderPassAnimation(bpy.types.Operator):
             self.report({'ERROR'}, errmsg)
             return {'CANCELLED'}
 
-        if context.scene.render.engine == 'BLENDER_EEVEE':
+        if context.scene.render.engine == 'BLENDER_EEVEE' or context.scene.render.engine == 'BLENDER_EEVEE_NEXT':
             self.report({'ERROR'}, "The EEVEE render engine is not supported for this feature. Set the render engine to Cycles, save, and try again.")
             return {'CANCELLED'}
         if context.scene.render.engine == 'BLENDER_WORKBENCH':
@@ -1510,8 +1614,7 @@ class FlipFluidHelperCommandLineRenderPassFrame(bpy.types.Operator):
     bl_label = "Launch Render Pass Frame"
     bl_description = ("Description: todo - launch render pass animation script")
 
-    skip_launch = BoolProperty(False)
-    exec(vcu.convert_attribute_to_28("skip_launch"))
+    skip_launch: BoolProperty(False)
 
 
     @classmethod
@@ -1566,7 +1669,7 @@ class FlipFluidHelperCommandLineRenderPassFrame(bpy.types.Operator):
             self.report({'ERROR'}, errmsg)
             return {'CANCELLED'}
 
-        if context.scene.render.engine == 'BLENDER_EEVEE':
+        if context.scene.render.engine == 'BLENDER_EEVEE' or context.scene.render.engine == 'BLENDER_EEVEE_NEXT':
             self.report({'ERROR'}, "The EEVEE render engine is not supported for this feature. Set the render engine to Cycles, save, and try again.")
             return {'CANCELLED'}
         if context.scene.render.engine == 'BLENDER_WORKBENCH':
@@ -1679,9 +1782,11 @@ def register():
     bpy.utils.register_class(FlipFluidHelperCommandLineRender)
     bpy.utils.register_class(FlipFluidHelperCommandLineRenderToClipboard)
     bpy.utils.register_class(FlipFluidHelperCommandLineRenderFrame)
-    bpy.utils.register_class(FlipFluidHelperCmdRenderFrameToClipboard)
+    bpy.utils.register_class(FlipFluidHelperCommandLineRenderFrameToClipboard)
     bpy.utils.register_class(FlipFluidHelperCommandLineAlembicExport)
-    bpy.utils.register_class(FlipFluidHelperCmdAlembicExportToClipboard)
+    bpy.utils.register_class(FlipFluidHelperCommandLineAlembicExportToClipboard)
+    bpy.utils.register_class(FlipFluidHelperCommandLineCustomAlembicExport)
+    bpy.utils.register_class(FlipFluidHelperCommandLineCustomAlembicExportToClipboard)
     bpy.utils.register_class(FlipFluidHelperOpenRenderOutputFolder)
     bpy.utils.register_class(FlipFluidHelperOpenCacheOutputFolder)
     bpy.utils.register_class(FlipFluidHelperOpenAlembicOutputFolder)
@@ -1717,9 +1822,11 @@ def unregister():
     bpy.utils.unregister_class(FlipFluidHelperCommandLineRender)
     bpy.utils.unregister_class(FlipFluidHelperCommandLineRenderToClipboard)
     bpy.utils.unregister_class(FlipFluidHelperCommandLineRenderFrame)
-    bpy.utils.unregister_class(FlipFluidHelperCmdRenderFrameToClipboard)
+    bpy.utils.unregister_class(FlipFluidHelperCommandLineRenderFrameToClipboard)
     bpy.utils.unregister_class(FlipFluidHelperCommandLineAlembicExport)
-    bpy.utils.unregister_class(FlipFluidHelperCmdAlembicExportToClipboard)
+    bpy.utils.unregister_class(FlipFluidHelperCommandLineAlembicExportToClipboard)
+    bpy.utils.unregister_class(FlipFluidHelperCommandLineCustomAlembicExport)
+    bpy.utils.unregister_class(FlipFluidHelperCommandLineCustomAlembicExportToClipboard)
     bpy.utils.unregister_class(FlipFluidHelperOpenRenderOutputFolder)
     bpy.utils.unregister_class(FlipFluidHelperOpenCacheOutputFolder)
     bpy.utils.unregister_class(FlipFluidHelperOpenAlembicOutputFolder)
@@ -1738,5 +1845,9 @@ def unregister():
 
     # Remove shortcuts
     for km, kmi in ADDON_KEYMAPS:
-        km.keymap_items.remove(kmi)
+        try:
+            # Keymap may be unavailable depending on context
+            km.keymap_items.remove(kmi)
+        except:
+            pass
     ADDON_KEYMAPS.clear()

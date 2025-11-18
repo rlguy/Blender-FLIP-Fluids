@@ -54,47 +54,45 @@ from ..utils import api_workaround_utils
 
 
 class ObjectViewSettings(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
-    hide_render = BoolProperty(default=False); exec(conv("hide_render"))
-    show_name = BoolProperty(default=False); exec(conv("show_name"))
-    draw_type = StringProperty(default=""); exec(conv("draw_type"))
-    layers = BoolVectorProperty(size=20); exec(conv("layers"))
+    hide_render: BoolProperty(default=False)
+    show_name: BoolProperty(default=False)
+    draw_type: StringProperty(default="")
+    layers: BoolVectorProperty(size=20)
 
 
 class FlipFluidObjectProperties(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
     
-    domain = PointerProperty(
+    domain: PointerProperty(
             name="Flip Fluid Domain Properties",
             description="",
             type=domain_properties.FlipFluidDomainProperties,
-            ); exec(conv("domain"))
-    fluid = PointerProperty(
+            )
+    fluid: PointerProperty(
             name="Flip Fluid Fluid Properties",
             description="",
             type=fluid_properties.FlipFluidFluidProperties,
-            ); exec(conv("fluid"))
-    obstacle = PointerProperty(
+            )
+    obstacle: PointerProperty(
             name="Flip Fluid Obstacle Properties",
             description="",
             type=obstacle_properties.FlipFluidObstacleProperties,
-            ); exec(conv("obstacle"))
-    inflow = PointerProperty(
+            )
+    inflow: PointerProperty(
             name="Flip Fluid Inflow Properties",
             description="",
             type=inflow_properties.FlipFluidInflowProperties,
-            ); exec(conv("inflow"))
-    outflow = PointerProperty(
+            )
+    outflow: PointerProperty(
             name="Flip Fluid Outflow Properties",
             description="",
             type=outflow_properties.FlipFluidOutflowProperties,
-            ); exec(conv("outflow"))
-    force_field = PointerProperty(
+            )
+    force_field: PointerProperty(
             name="Flip Fluid Force Field Properties",
             description="",
             type=force_field_properties.FlipFluidForceFieldProperties,
-            ); exec(conv("force_field"))
-    object_type = EnumProperty(
+            )
+    object_type: EnumProperty(
             name="Type",
             description="Type of participation in the FLIP fluid simulation",
             items=types.object_types,
@@ -102,16 +100,16 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
             set=lambda self, value: self._set_object_type(value),
             update=lambda self, context: self._update_object_type(context),
             options={'HIDDEN'},
-            ); exec(conv("object_type"))
-    saved_view_settings = PointerProperty(
+            )
+    saved_view_settings: PointerProperty(
             name="Saved View Settings",
             description="",
             type=ObjectViewSettings,
-            ); exec(conv("saved_view_settings"))
+            )
 
-    is_active = BoolProperty(default=False); exec(conv("is_active"))
-    is_view_settings_saved = BoolProperty(default=False); exec(conv("is_view_settings_saved"))
-    last_hide_render_state = BoolProperty(default=False); exec(conv("last_hide_render_state"))
+    is_active: BoolProperty(default=False)
+    is_view_settings_saved: BoolProperty(default=False)
+    last_hide_render_state: BoolProperty(default=False)
 
 
     @classmethod
@@ -198,20 +196,12 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
     def _toggle_cycles_ray_visibility(self, obj, is_enabled):
         # Cycles may not be enabled in the user's preferences
         try:
-            if vcu.is_blender_30():
-                obj.visible_camera = is_enabled
-                obj.visible_diffuse = is_enabled
-                obj.visible_glossy = is_enabled
-                obj.visible_transmission = is_enabled
-                obj.visible_volume_scatter = is_enabled
-                obj.visible_shadow = is_enabled
-            else:
-                obj.cycles_visibility.camera = is_enabled
-                obj.cycles_visibility.transmission = is_enabled
-                obj.cycles_visibility.diffuse = is_enabled
-                obj.cycles_visibility.scatter = is_enabled
-                obj.cycles_visibility.glossy = is_enabled
-                obj.cycles_visibility.shadow = is_enabled
+            obj.visible_camera = is_enabled
+            obj.visible_diffuse = is_enabled
+            obj.visible_glossy = is_enabled
+            obj.visible_transmission = is_enabled
+            obj.visible_volume_scatter = is_enabled
+            obj.visible_shadow = is_enabled
         except:
             pass
 
@@ -220,8 +210,6 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
         # Should only be executed upon creation of a domain object in Blender 2.8x.
         # Locking the Blender interface is necessary to prevent crashes in Blender >= v2.81
         # and helps prevent crashes in Blender 2.80
-        if not vcu.is_blender_28():
-            return
         bpy.context.scene.render.use_lock_interface = True
 
 
@@ -283,8 +271,6 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
 
     def _update_object_type(self, context):
         obj = vcu.get_active_object(context)
-        primary_layer = 0
-        object_layer = 14
 
         if self.object_type == 'TYPE_DOMAIN':
             if bpy.context.scene.flip_fluid.get_num_domain_objects() > 1:
@@ -337,6 +323,18 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
         if obj.type == 'FONT' and self.object_type != 'TYPE_NONE':
             errmsg = "Text type objects are not supported."
             errdesc = "Text type objects are not supported. Please convert to a mesh object before setting as FLIP Fluid object."
+            bpy.ops.flip_fluid_operators.display_error(
+                'INVOKE_DEFAULT',
+                error_message=errmsg,
+                error_description=errdesc,
+                popup_width=600
+                )
+            self.object_type = 'TYPE_NONE'
+            return
+
+        if obj.type == 'POINTCLOUD' and self.object_type != 'TYPE_NONE':
+            errmsg = "Point Cloud type objects are not supported."
+            errdesc = "Point Cloud objects are not supported as a FLIP Fluid object type."
             bpy.ops.flip_fluid_operators.display_error(
                 'INVOKE_DEFAULT',
                 error_message=errmsg,
@@ -459,44 +457,31 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
             obj.hide_render = True
             vcu.set_object_display_type(obj, 'BOUNDS')
             obj.show_name = True
-            self._set_object_layer(obj, object_layer)
-            self._set_scene_layer(context.scene, object_layer)
 
         elif self.object_type == 'TYPE_FLUID':
             obj.hide_render = True
             vcu.set_object_display_type(obj, 'WIRE')
             obj.show_name = True
-            self._set_object_layer(obj, object_layer)
-            self._set_scene_layer(context.scene, object_layer)
 
         elif self.object_type == 'TYPE_OBSTACLE':
             obj.hide_render = False
             vcu.set_object_display_type(obj, 'TEXTURED')
             obj.show_name = True
-            self._set_object_layers(obj, [primary_layer, object_layer])
-            self._set_scene_layer(context.scene, primary_layer)
-            self._set_scene_layer(context.scene, object_layer)
 
         elif self.object_type == 'TYPE_INFLOW':
             obj.hide_render = True
             vcu.set_object_display_type(obj, 'WIRE')
             obj.show_name = True
-            self._set_object_layer(obj, object_layer)
-            self._set_scene_layer(context.scene, object_layer)
 
         elif self.object_type == 'TYPE_OUTFLOW':
             obj.hide_render = True
             vcu.set_object_display_type(obj, 'WIRE')
             obj.show_name = True
-            self._set_object_layer(obj, object_layer)
-            self._set_scene_layer(context.scene, object_layer)
 
         elif self.object_type == 'TYPE_FORCE_FIELD':
             obj.hide_render = True
             vcu.set_object_display_type(obj, 'WIRE')
             obj.show_name = True
-            self._set_object_layer(obj, object_layer)
-            self._set_scene_layer(context.scene, object_layer)
 
             if obj.type == 'CURVE':
                 ff_props = obj.flip_fluid.get_property_group()
@@ -510,12 +495,6 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
         self.saved_view_settings.hide_render = obj.hide_render
         self.saved_view_settings.show_name = obj.show_name
         self.saved_view_settings.draw_type = vcu.get_object_display_type(obj)
-
-        # Layers do not seem to be in Blender 2.80
-        if not vcu.is_blender_28():
-            for i in range(20):
-                self.saved_view_settings.layers[i] = obj.layers[i]
-
         self.is_view_settings_saved = True
         
 
@@ -526,43 +505,7 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
         obj.hide_render = self.saved_view_settings.hide_render
         obj.show_name = self.saved_view_settings.show_name
         vcu.set_object_display_type(obj, self.saved_view_settings.draw_type)
-
-        # Layers do not seem to be in Blender 2.80
-        if not vcu.is_blender_28():
-            for i in range(20):
-                obj.layers[i] = True
-            for i in range(20):
-                obj.layers[i] = self.saved_view_settings.layers[i]
-                
         self.is_view_settings_saved = False
-
-
-    def _set_object_layer(self, obj, layeridx):
-        if vcu.is_blender_28():
-            # Layers do not seem to be in Blender 2.80
-            return
-
-        obj.layers[layeridx] = True
-        for i in range(20):
-            obj.layers[i] = (i == layeridx)
-
-
-    def _set_object_layers(self, obj, layers):
-        if vcu.is_blender_28():
-            # Layers do not seem to be in Blender 2.80
-            return
-
-        obj.layers[layers[0]] = True
-        for i in range(20):
-            obj.layers[i] = (i in layers)
-
-
-    def _set_scene_layer(self, scene, layeridx):
-        if vcu.is_blender_28():
-            # Layers do not seem to be in Blender 2.80
-            return
-
-        scene.layers[layeridx] = True
 
 
 def scene_update_post(scene):

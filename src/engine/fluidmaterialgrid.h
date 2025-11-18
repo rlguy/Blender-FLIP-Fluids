@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_FLUIDMATERIALGRID_H
-#define FLUIDENGINE_FLUIDMATERIALGRID_H
+#pragma once
 
 #include "gridindexvector.h"
 #include "subdividedarray3d.h"
@@ -114,5 +113,3 @@ private:
 
 
 };
-
-#endif

@@ -280,6 +280,14 @@ float MeshFluidSource::getViscosity() {
     return _meshObject.getViscosity();
 }
 
+void MeshFluidSource::setDensity(float v) {
+    _meshObject.setDensity(v);
+}
+
+float MeshFluidSource::getDensity() {
+    return _meshObject.getDensity();
+}
+
 void MeshFluidSource::setLifetime(float v) {
     _meshObject.setLifetime(v);
 }

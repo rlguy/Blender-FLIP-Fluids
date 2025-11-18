@@ -81,25 +81,38 @@ void ForceFieldSurface::addGravityScaleToGrid(ForceFieldGravityScaleGrid &scaleG
         scaleWidth = std::min(scaleWidth, _maxDistance);
     }
 
-    for (int k = 0; k < _ksizeSDF + 1; k++) {
-        for (int j = 0; j < _jsizeSDF + 1; j++) {
-            for (int i = 0; i < _isizeSDF + 1; i++) {
-                vmath::vec3 vectToSurface = _vectorField(i, j, k);
-                float distanceToSurface = vectToSurface.length();
-                if (distanceToSurface > scaleWidth) {
-                    scaleGrid.addScale(i + _ioffsetSDF, j + _joffsetSDF, k + _koffsetSDF, 1.0f, 1.0f);
-                    continue;
+    int isizeScaleGrid = scaleGrid.gravityScale.width;
+    int jsizeScaleGrid = scaleGrid.gravityScale.height;
+    int ksizeScaleGrid = scaleGrid.gravityScale.depth;
+    for (int k = 0; k < ksizeScaleGrid; k++) {
+        for (int j = 0; j < jsizeScaleGrid; j++) {
+            for (int i = 0; i < isizeScaleGrid; i++) {
+
+                int iSDF = i - _ioffsetSDF;
+                int jSDF = j - _joffsetSDF;
+                int kSDF = k - _koffsetSDF;
+                if (iSDF >= 0 && jSDF >= 0 && kSDF >= 0 && iSDF < _isizeSDF + 1 && jSDF < _jsizeSDF + 1 && kSDF < _ksizeSDF + 1) {
+                    vmath::vec3 vectToSurface = _vectorField(iSDF, jSDF, kSDF);
+                    float distanceToSurface = vectToSurface.length();
+                    if (distanceToSurface > scaleWidth) {
+                        scaleGrid.addScale(i, j, k, 1.0f, 1.0f);
+                        continue;
+                    }
+
+                    float scaleFactor = 1.0f;
+                    float distanceFactor = distanceToSurface / scaleWidth;
+                    if (distanceFactor > _gravityScaleFalloffThreshold) {
+                        scaleFactor = 1.0f - (distanceFactor - _gravityScaleFalloffThreshold) / (1.0f - _gravityScaleFalloffThreshold);
+                    }
+                    scaleGrid.addScale(i, j, k, scaleFactor * _gravityScale, scaleFactor);
+                } else {
+                    scaleGrid.addScale(i, j, k, 1.0f, 1.0f);
                 }
 
-                float scaleFactor = 1.0f;
-                float distanceFactor = distanceToSurface / scaleWidth;
-                if (distanceFactor > _gravityScaleFalloffThreshold) {
-                    scaleFactor = 1.0f - (distanceFactor - _gravityScaleFalloffThreshold) / (1.0f - _gravityScaleFalloffThreshold);
-                }
-                scaleGrid.addScale(i + _ioffsetSDF, j + _joffsetSDF, k + _koffsetSDF, scaleFactor * _gravityScale, scaleFactor);
             }
         }
     }
+
 }
 
 std::vector<vmath::vec3> ForceFieldSurface::generateDebugProbes() {

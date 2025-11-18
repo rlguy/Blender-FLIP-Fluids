@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_TRIANGLEMESH_H
-#define FLUIDENGINE_TRIANGLEMESH_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -122,5 +121,3 @@ private:
 
     std::vector<std::vector<int> > _vertexTriangles;
 };
-
-#endif

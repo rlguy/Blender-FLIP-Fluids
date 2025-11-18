@@ -33,55 +33,22 @@ def _draw_geometry_attributes_menu(self, context):
     wprops = dprops.whitewater
     prefs = vcu.get_addon_preferences()
 
+    #
+    # Whitewater Attributes Panel
+    #
     box = self.layout.box()
-    row = box.row(align=True)
-    row.prop(wprops, "geometry_attributes_expanded",
-        icon="TRIA_DOWN" if wprops.geometry_attributes_expanded else "TRIA_RIGHT",
-        icon_only=True, 
-        emboss=False
-    )
-    row.label(text="Whitewater Attributes:")
+    header, body = box.panel("whitewater_geometry_attributes", default_closed=True)
 
-    if wprops.geometry_attributes_expanded:
-        if not prefs.is_extra_features_enabled():
-            warn_box = box.box()
-            warn_column = warn_box.column(align=True)
-            warn_column.enabled = True
-            warn_column.label(text="     This feature is affected by a current bug in Blender.", icon='ERROR')
-            warn_column.label(text="     The Extra Features option must be enabled in preferences")
-            warn_column.label(text="     to use this feature.")
-            warn_column.separator()
-            warn_column.prop(prefs, "enable_extra_features", text="Enable Extra Features in Preferences")
-            warn_column.separator()
-            warn_column.operator(
-                "wm.url_open", 
-                text="Important Info and Limitations", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Preferences-Menu-Settings#developer-tools"
-            return
-
-        column = box.column(align=True)
-        if not vcu.is_blender_31():
-            column.enabled = False
-            column.label(text="Geometry attribute features for whitewater are only available in", icon='ERROR')
-            column.label(text="Blender 3.1 or later", icon='ERROR')
-            return
-
-        column = box.column(align=True)
+    row = header.row(align=True)
+    row.label(text="Whitewater Attribute:")
+    if body:
+        column = body.column(align=True)
         column.prop(wprops, "enable_velocity_vector_attribute")
         column.prop(wprops, "enable_id_attribute")
         column.prop(wprops, "enable_lifetime_attribute")
         column.separator()
         column.operator("flip_fluid_operators.helper_initialize_motion_blur")
     else:
-        if not vcu.is_blender_31():
-            row = row.row(align=True)
-            row.enabled = False
-            row.alignment = 'RIGHT'
-            row.label(text="(Blender 3.1 or later required)")
-            return
-        if not prefs.is_extra_features_enabled():
-            return
         row = row.row(align=True)
         row.alignment = 'RIGHT'
         row.prop(wprops, "enable_velocity_vector_attribute", text="Velocity")
@@ -118,29 +85,17 @@ class FLIPFLUID_PT_DomainTypeWhitewaterPanel(bpy.types.Panel):
         column.prop(wprops, "enable_whitewater_simulation")
         column.separator()
 
+        #
+        # Settings View Mode Panel
+        #
         box = self.layout.box()
         box.enabled = is_whitewater_enabled
+        header, body = box.panel("whitewater_settings_view_mode", default_closed=True)
 
-        column = box.column(align=True)
-        split = column.split(align=True)
-        column_left = split.column(align=True)
-        column_right = split.column(align=True)
-
-        row = column_left.row(align=True)
-        row.prop(wprops, "settings_view_mode_expanded",
-            icon="TRIA_DOWN" if wprops.settings_view_mode_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
+        row = header.row(align=True)
         row.label(text="Settings View Mode:")
-
-        if not wprops.settings_view_mode_expanded:
-            row = column_right.row(align=True)
-            row.alignment = 'RIGHT'
-            row.prop(wprops, "whitewater_ui_mode", expand=True)
-
-        if wprops.settings_view_mode_expanded:
-            column = box.column(align=True)
+        if body:
+            column = body.column(align=True)
             row = column.row()
             row.prop(wprops, "whitewater_ui_mode", expand=True)
 
@@ -149,18 +104,30 @@ class FLIPFLUID_PT_DomainTypeWhitewaterPanel(bpy.types.Panel):
             column_right = split.column()
             column_right.enabled = show_advanced_whitewater
             column_right.prop(wprops, "highlight_advanced_settings")
+        else:
+            row = row.row(align=True)
+            row.alignment = 'RIGHT'
+            row.prop(wprops, "whitewater_ui_mode", expand=True)
 
+        #
+        # Whitewater Particle Types Panel
+        #
         box = self.layout.box()
         box.enabled = is_whitewater_enabled
-        row = box.row(align=True)
-        row.prop(wprops, "whitewater_simulation_particles_expanded",
-            icon="TRIA_DOWN" if wprops.whitewater_simulation_particles_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
-        row.label(text="Whitewater Particles:")
+        header, body = box.panel("whitewater_simulation_particles", default_closed=True)
 
-        if not wprops.whitewater_simulation_particles_expanded:
+        row = header.row(align=True)
+        row.label(text="Whitewater Particle Types:")
+        if body:
+            column = body.column(align=True)
+            column.enabled = is_whitewater_enabled
+
+            row = column.row()
+            row.prop(wprops, "enable_foam")
+            row.prop(wprops, "enable_bubbles")
+            row.prop(wprops, "enable_spray")
+            row.prop(wprops, "enable_dust")
+        else:
             info_text = ""
             enabled_particles = []
             if wprops.enable_foam:
@@ -183,48 +150,36 @@ class FLIPFLUID_PT_DomainTypeWhitewaterPanel(bpy.types.Panel):
             row.alignment = 'RIGHT'
             row.label(text=info_text)
 
-        if wprops.whitewater_simulation_particles_expanded:
-            column = box.column(align=True)
-            column.enabled = is_whitewater_enabled
-
-            row = column.row()
-            row.prop(wprops, "enable_foam")
-            row.prop(wprops, "enable_bubbles")
-            row.prop(wprops, "enable_spray")
-            row.prop(wprops, "enable_dust")
-
+        #
+        # Emitter Settings Panel
+        #
         box = self.layout.box()
         box.enabled = is_whitewater_enabled
-        row = box.row(align=True)
-        row.prop(wprops, "emitter_settings_expanded",
-            icon="TRIA_DOWN" if wprops.emitter_settings_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
+        header, body = box.panel("whitewater_emitter_settings", default_closed=False)
+
+        row = header.row(align=True)
         row.label(text="Emitter Settings:")
-
-        if wprops.emitter_settings_expanded:
-            column = box.column(align=True)
-
+        if body:
+            column = body.column(align=True)
             column.prop(wprops, "enable_whitewater_emission")
 
             if show_advanced_whitewater:
-                column = box.column(align=True)
+                column = body.column(align=True)
                 column.alert = highlight_advanced
                 column.prop(wprops, "whitewater_emitter_generation_rate")
 
-            column = box.column(align=True)
+            column = body.column(align=True)
             column.prop(wprops, "wavecrest_emission_rate")
             column.prop(wprops, "turbulence_emission_rate")
             column = column.column(align=True)
             column.enabled = wprops.enable_dust
             column.prop(wprops, "dust_emission_rate")
 
-            column = box.column(align=True)
+            column = body.column(align=True)
             column.prop(wprops, "spray_emission_speed", slider=True)
 
             if show_advanced_whitewater:
-                column = box.column(align=True)
+                column = body.column(align=True)
                 row = column.row(align=True)
                 row.prop(wprops.min_max_whitewater_energy_speed, "value_min")
                 row.prop(wprops.min_max_whitewater_energy_speed, "value_max")
@@ -239,35 +194,34 @@ class FLIPFLUID_PT_DomainTypeWhitewaterPanel(bpy.types.Panel):
                 row.prop(wprops.min_max_whitewater_turbulence, "value_min")
                 row.prop(wprops.min_max_whitewater_turbulence, "value_max")
             else:
-                column = box.column()
+                column = body.column()
                 row = column.row(align=True)
                 row.prop(wprops.min_max_whitewater_energy_speed, "value_min")
                 row.prop(wprops.min_max_whitewater_energy_speed, "value_max")
 
-            column = box.column(align=True)
+            column = body.column(align=True)
             column.prop(wprops, "max_whitewater_particles")
 
             if show_advanced_whitewater:
-                column = box.column(align=True)
+                column = body.column(align=True)
                 column.alert = highlight_advanced
                 column.prop(wprops, "enable_whitewater_emission_near_boundary")
 
-            column = box.column(align=True)
+            column = body.column(align=True)
             column.enabled = wprops.enable_dust
-            column.prop(wprops, "enable_dust_emission_near_boundary", text="Enable dust emission near domain floor")
+            column.prop(wprops, "enable_dust_emission_near_boundary", text="Enable Dust Emission Near Domain Floor")
 
+        #
+        # Particle Behavior Settings Panel
+        #
         box = self.layout.box()
         box.enabled = is_whitewater_enabled
-        row = box.row(align=True)
-        row.prop(wprops, "particle_settings_expanded",
-            icon="TRIA_DOWN" if wprops.particle_settings_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
-        row.label(text="Particle Behavior Settings:")
+        header, body = box.panel("whitewater_particle_behavior_settings", default_closed=True)
 
-        if wprops.particle_settings_expanded:
-            column = box.column()
+        row = header.row(align=True)
+        row.label(text="Particle Behavior Settings:")
+        if body:
+            column = body.column()
             column.label(text="Foam:")
 
             row = column.row()
@@ -282,22 +236,22 @@ class FLIPFLUID_PT_DomainTypeWhitewaterPanel(bpy.types.Panel):
                 row.alert = highlight_advanced
                 row.prop(wprops, "foam_layer_offset", text="Offset", slider=True)
 
-            column = box.column(align=True)
+            column = body.column(align=True)
             column.label(text="Bubble:")
             column.prop(wprops, "bubble_drag_coefficient", text="Drag Coefficient", slider=True)
             column.prop(wprops, "bubble_bouyancy_coefficient", text="Buoyancy Coefficient")
 
-            column = box.column(align=True)
+            column = body.column(align=True)
             column.label(text="Spray:")
             column.prop(wprops, "spray_drag_coefficient", text="Drag Coefficient", slider=True)
 
-            column = box.column(align=True)
+            column = body.column(align=True)
             column.enabled = wprops.enable_dust
             column.label(text="Dust:")
             column.prop(wprops, "dust_drag_coefficient", text="Drag Coefficient", slider=True)
             column.prop(wprops, "dust_bouyancy_coefficient", text="Buoyancy Coefficient")
 
-            column = box.column(align=True)
+            column = body.column(align=True)
             split = column.split()
             column = split.column(align=True)
             column.label(text="Lifespan:")
@@ -314,28 +268,17 @@ class FLIPFLUID_PT_DomainTypeWhitewaterPanel(bpy.types.Panel):
             column.enabled = wprops.enable_dust
             column.prop(wprops, "dust_lifespan_modifier", text="Dust")
 
+        #
+        # Domain Boundary Collisions Panel
+        #
         box = self.layout.box()
-        row = box.row(align=True)
-        row.prop(wprops, "boundary_behaviour_settings_expanded",
-            icon="TRIA_DOWN" if wprops.boundary_behaviour_settings_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
+        box.enabled = is_whitewater_enabled
+        header, body = box.panel("whitewater_boundary_behaviour_settings", default_closed=True)
+
+        row = header.row(align=True)
         row.label(text="Domain Boundary Collisions:")
-
-        if not wprops.boundary_behaviour_settings_expanded:
-            info_text = ""
-            if wprops.whitewater_boundary_collisions_mode == 'BOUNDARY_COLLISIONS_MODE_INHERIT':
-                info_text = "Inherit"
-            elif wprops.whitewater_boundary_collisions_mode == 'BOUNDARY_COLLISIONS_MODE_CUSTOM':
-                info_text = "Custom"
-
-            row = row.row(align=True)
-            row.alignment = 'RIGHT'
-            row.label(text=info_text)
-
-        if wprops.boundary_behaviour_settings_expanded:
-            column = box.column()
+        if body:
+            column = body.column()
             row = column.row(align=True)
             row.prop(wprops, "whitewater_boundary_collisions_mode", expand=True)
 
@@ -417,26 +360,28 @@ class FLIPFLUID_PT_DomainTypeWhitewaterPanel(bpy.types.Panel):
                 row.alignment = 'LEFT'
                 row.prop(wprops, "dust_boundary_collisions", index=4, text="Z –")
                 row.prop(wprops, "dust_boundary_collisions", index=5, text="Z+")
+        else:
+            info_text = ""
+            if wprops.whitewater_boundary_collisions_mode == 'BOUNDARY_COLLISIONS_MODE_INHERIT':
+                info_text = "Inherit"
+            elif wprops.whitewater_boundary_collisions_mode == 'BOUNDARY_COLLISIONS_MODE_CUSTOM':
+                info_text = "Custom"
 
+            row = row.row(align=True)
+            row.alignment = 'RIGHT'
+            row.label(text=info_text)
+
+        #
+        # Obstacle Influence Settings Panel
+        #
         box = self.layout.box()
         box.enabled = is_whitewater_enabled
-        row = box.row(align=True)
-        row.prop(wprops, "obstacle_settings_expanded",
-            icon="TRIA_DOWN" if wprops.obstacle_settings_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
+        header, body = box.panel("whitewater_obstacle_influence_settings", default_closed=True)
+
+        row = header.row(align=True)
         row.label(text="Obstacle Influence Settings:")
-
-        if wprops.obstacle_settings_expanded:
-            column = box.column(align=True)
-
-            # The following properties are probably set at reasonable values and
-            # are not needed by the user
-            """
-            column.prop(wprops, "obstacle_influence_base_level", text="Base Level")
-            column.prop(wprops, "obstacle_influence_decay_rate", text="Decay Rate")
-            """
+        if body:
+            column = body.column(align=True)
 
             obstacle_objects = context.scene.flip_fluid.get_obstacle_objects()
             indent_str = 5 * " "

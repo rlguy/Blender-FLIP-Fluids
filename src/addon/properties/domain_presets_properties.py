@@ -30,81 +30,79 @@ from ..utils import version_compatibility_utils as vcu
 
 
 class DomainPresetsProperties(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
 
-    enable_presets = BoolProperty(
+    enable_presets: BoolProperty(
             name="Enable Presets",
             description="Enable functionality to apply fluid presets",
             default=False,
             update=lambda self, context: self._update_enable_presets(context),
-            ); exec(conv("enable_presets"))
-    current_package = EnumProperty(
+            )
+    current_package: EnumProperty(
             name="Package",
             description="Preset package",
             items=preset_library.get_all_package_enums,
             update=lambda self, context: self._update_current_package(context),
-            ); exec(conv("current_package"))
-    current_preset = EnumProperty(
+            )
+    current_preset: EnumProperty(
             items=preset_library.get_current_package_preset_enums,
             name="Preset",
             description="Fluid Preset",
             update=lambda self, context: self._update_current_preset(context),
-            ); exec(conv("current_preset"))
-    preview_preset = BoolProperty(
+            )
+    preview_preset: BoolProperty(
             name="Preview",
             description="Automatically assign preset on change (without"
                 " needing to add to the preset stack)",
             default=False,
             update=lambda self, context: self._update_preview_preset(context),
-            ); exec(conv("preview_preset"))
-    new_package_settings = PointerProperty(
+            )
+    new_package_settings: PointerProperty(
             name="New Package Settings",
             description="",
             type=preset_properties.NewPresetPackageSettings,
-            ); exec(conv("new_package_settings"))
-    delete_package_settings = PointerProperty(
+            )
+    delete_package_settings: PointerProperty(
             name="Delete Package Settings",
             description="",
             type=preset_properties.DeletePresetPackageSettings,
-            ); exec(conv("delete_package_settings"))
-    new_preset_settings = PointerProperty(
+            )
+    new_preset_settings: PointerProperty(
             name="New Preset Settings",
             description="",
             type=preset_properties.NewPresetSettings,
-            ); exec(conv("new_preset_settings"))
-    delete_preset_settings = PointerProperty(
+            )
+    delete_preset_settings: PointerProperty(
             name="Delete Preset Settings",
             description="",
             type=preset_properties.DeletePresetSettings,
-            ); exec(conv("delete_preset_settings"))
-    edit_preset_settings = PointerProperty(
+            )
+    edit_preset_settings: PointerProperty(
             name="Edit Preset Settings",
             description="",
             type=preset_properties.EditPresetSettings,
-            ); exec(conv("edit_preset_settings"))
-    display_preset_settings = PointerProperty(
+            )
+    display_preset_settings: PointerProperty(
             name="Display Preset Settings",
             description="",
             type=preset_properties.DisplayPresetInfoSettings,
-            ); exec(conv("display_preset_settings"))
-    export_package_settings = PointerProperty(
+            )
+    export_package_settings: PointerProperty(
             name="Export Package Settings",
             description="",
             type=preset_properties.ExportPresetPackageSettings,
-            ); exec(conv("export_package_settings"))
-    import_package_settings = PointerProperty(
+            )
+    import_package_settings: PointerProperty(
             name="Import Package Settings",
             description="",
             type=preset_properties.ImportPresetPackageSettings,
-            ); exec(conv("import_package_settings"))
-    preset_stack = PointerProperty(
+            )
+    preset_stack: PointerProperty(
             name="Flip Fluid Preset Stack",
             description="",
             type=flip_fluid_preset_stack.FlipFluidPresetStack,
-            ); exec(conv("preset_stack"))
-
-    preset_manager_expanded = BoolProperty(default=False); exec(conv("preset_manager_expanded"))
-    deprecated_presets_disabled_on_load = BoolProperty(default=False); exec(conv("deprecated_presets_disabled_on_load"))
+            )
+    
+    deprecated_presets_disabled_on_load: BoolProperty(default=False)
 
 
     def register_preset_properties(self, registry, path):

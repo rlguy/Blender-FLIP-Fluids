@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_PARTICLEMASKGRID_H
-#define FLUIDENGINE_PARTICLEMASKGRID_H
+#pragma once
 
 #include "array3d.h"
 #include "vmath.h"
@@ -55,5 +54,3 @@ private:
     Array3d<unsigned char> _maskGrid;
 
 };
-
-#endif

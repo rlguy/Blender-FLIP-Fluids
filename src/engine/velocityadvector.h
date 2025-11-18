@@ -49,8 +49,7 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_VELOCITYADVECTOR_H
-#define FLUIDENGINE_VELOCITYADVECTOR_H
+#pragma once
 
 #include "fragmentedvector.h"
 #include "markerparticle.h"
@@ -189,5 +188,3 @@ private:
     int _numBlocksPerJob = 10;
     
 };
-
-#endif

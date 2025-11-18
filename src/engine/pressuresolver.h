@@ -31,8 +31,8 @@ SOFTWARE.
 
     Source Code: https://github.com/christopherbatty/Fluid3D
 */
-#ifndef FLUIDENGINE_PRESSURESOLVER_H
-#define FLUIDENGINE_PRESSURESOLVER_H
+
+#pragma once
 
 #include "pcgsolver/sparsematrix.h"
 #include "gridindexkeymap.h"
@@ -109,6 +109,7 @@ struct PressureSolverParameters {
     Array3d<float> *liquidSDF;
     WeightGrid *weightGrid;
     Array3d<float> *pressureGrid;
+    Array3d<float> *densityGrid;
 
     bool isSurfaceTensionEnabled = false;
     double surfaceTensionConstant;
@@ -215,6 +216,7 @@ private:
     Array3d<float> *_liquidSDF;
     WeightGrid *_weightGrid;
     Array3d<float> *_pressureGrid;
+    Array3d<float> *_densityGrid;
 
     bool _isSurfaceTensionEnabled = false;
     double _surfaceTensionConstant;
@@ -230,5 +232,3 @@ private:
     float _solverError = 0.0f;
 
 };
-
-#endif

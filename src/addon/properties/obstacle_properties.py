@@ -26,14 +26,13 @@ from ..utils import version_compatibility_utils as vcu
 
 
 class FlipFluidObstacleProperties(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
     
-    is_enabled = BoolProperty(
+    is_enabled: BoolProperty(
             name="Enabled",
             description="Obstacle is present in the fluid simulation",
             default=True,
-            ); exec(conv("is_enabled"))
-    is_inversed = BoolProperty(
+            )
+    is_inversed: BoolProperty(
             name="Inverse",
             description="Turn the obstacle 'inside-out'. Enabling this option will make the inside solid parts"
                 " of this obstacle empty while everything outside of the obstacle will become solid."
@@ -44,8 +43,8 @@ class FlipFluidObstacleProperties(bpy.types.PropertyGroup):
                 " can prevent fluid from generating",
             default=False,
             options={'HIDDEN'},
-            ); exec(conv("is_inversed"))
-    export_animated_mesh = BoolProperty(
+            )
+    export_animated_mesh: BoolProperty(
             name="Export Animated Mesh",
             description="Export this object as an animated mesh. Exporting animated meshes are"
                 " slower, only use when necessary. This option is required for any animation that"
@@ -54,16 +53,16 @@ class FlipFluidObstacleProperties(bpy.types.PropertyGroup):
                 " not needed for static objects",
             default=False,
             options={'HIDDEN'},
-            ); exec(conv("export_animated_mesh"))
-    skip_reexport = BoolProperty(
-            name="Skip Mesh Re-Export",
+            )
+    skip_reexport: BoolProperty(
+            name="Skip Re-Export",
             description="Skip re-exporting this mesh when starting or resuming"
                 " a bake. If this mesh has not been exported or is missing files,"
                 " the addon will automatically export the required files",
             default=False,
             options={'HIDDEN'},
-            ); exec(conv("skip_reexport"))
-    force_reexport_on_next_bake = BoolProperty(
+            )
+    force_reexport_on_next_bake: BoolProperty(
             name="Force Re-Export On Next Bake",
             description="Override the 'Skip Re-Export' option and force this mesh to be"
                 " re-exported and updated on the next time a simulation start/resumes"
@@ -72,16 +71,16 @@ class FlipFluidObstacleProperties(bpy.types.PropertyGroup):
                 " This option is only applicable if 'Skip Re-Export' is enabled",
             default=False,
             options={'HIDDEN'},
-            ); exec(conv("force_reexport_on_next_bake"))
-    friction = FloatProperty(
+            )
+    friction: FloatProperty(
             name="Friction",
             description="Amount of friction between the fluid and the surface"
                 " of the obstacle",
             min=0.0, max=1.0,
             default=0.0,
             precision=2,
-            ); exec(conv("friction"))
-    velocity_scale = FloatProperty(
+            )
+    velocity_scale: FloatProperty(
             name="Velocity Scale",
             description="Scale the object velocity by this amount. Values greater than 1.0"
                 " will exaggerate the velocity and the simulation will behave as if the object"
@@ -91,8 +90,8 @@ class FlipFluidObstacleProperties(bpy.types.PropertyGroup):
             soft_min=0.0, soft_max=5.0,
             default=1.0,
             precision=2,
-            ); exec(conv("velocity_scale"))
-    whitewater_influence = FloatProperty(
+            )
+    whitewater_influence: FloatProperty(
             name="Whitewater Influence",
             description="Scale the amount of whitewater generated near this"
                 " obstacle by this value. A value of 1.0 will generate the"
@@ -101,8 +100,8 @@ class FlipFluidObstacleProperties(bpy.types.PropertyGroup):
             min=0.0,
             default=1.0,
             precision=2,
-            ); exec(conv("whitewater_influence"))
-    dust_emission_strength = FloatProperty(
+            )
+    dust_emission_strength: FloatProperty(
             name="Dust Emission Strength",
             description="Scale the amount of whitewater dust particles generated"
                 " near this obstacle by this value. A value of 1.0 will generate the"
@@ -112,8 +111,8 @@ class FlipFluidObstacleProperties(bpy.types.PropertyGroup):
             min=0.0,
             default=1.0,
             precision=2,
-            ); exec(conv("dust_emission_strength"))
-    sheeting_strength = FloatProperty(
+            )
+    sheeting_strength: FloatProperty(
             name="Sheeting Strength Multiplier",
             description="Scale the amount of fluid sheeting strength against this"
                 " obstacle by this value. This parameter will only take effect if"
@@ -121,8 +120,8 @@ class FlipFluidObstacleProperties(bpy.types.PropertyGroup):
             min=0.0,
             default=1.0,
             precision=2,
-            ); exec(conv("sheeting_strength"))
-    mesh_expansion = FloatProperty(
+            )
+    mesh_expansion: FloatProperty(
             name="Expand Geometry",
             description="Expand the obstacle mesh by this value. This setting"
                 " can be used to prevent fluid from slipping through small"
@@ -134,22 +133,22 @@ class FlipFluidObstacleProperties(bpy.types.PropertyGroup):
             soft_min=-0.05, soft_max=0.05,
             step=0.01,
             precision=5,
-            ); exec(conv("mesh_expansion"))
-    property_registry = PointerProperty(
+            )
+    property_registry: PointerProperty(
             name="Obstacle Property Registry",
             description="",
             type=preset_properties.PresetRegistry,
-            ); exec(conv("property_registry"))
+            )
 
 
-    disabled_in_viewport_tooltip = BoolProperty(
+    disabled_in_viewport_tooltip: BoolProperty(
             name="Object Disabled in Viewport", 
             description="This obstacle object is currently disabled in the viewport within the"
                 " outliner (Monitor Icon) and will not be included in the simulation. If you"
                 " want the object hidden in the viewport, but still have the object included in the"
                 " simulation, use the outliner Hide in Viewport option instead (Eye Icon)", 
             default=True,
-            ); exec(conv("disabled_in_viewport_tooltip"))
+            )
 
 
 

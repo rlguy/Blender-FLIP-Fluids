@@ -28,14 +28,9 @@ class FlipFluidDisplayError(bpy.types.Operator):
     bl_label = ""
     bl_description = ""
 
-    error_message = StringProperty()
-    exec(vcu.convert_attribute_to_28("error_message"))
-
-    error_description = StringProperty()
-    exec(vcu.convert_attribute_to_28("error_description"))
-
-    popup_width = IntProperty(default=400)
-    exec(vcu.convert_attribute_to_28("popup_width"))
+    error_message: StringProperty()
+    error_description: StringProperty()
+    popup_width: IntProperty(default=400)
 
 
     def draw(self, context):

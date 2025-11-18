@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_FLUIDSIMULATION_H
-#define FLUIDENGINE_FLUIDSIMULATION_H
+#pragma once
 
 #if __MINGW32__ && !_WIN64
     #include "mingw32_threads/mingw.thread.h"
@@ -110,6 +109,7 @@ struct FluidSimulationFrameStats {
     FluidSimulationMeshStats surfacecolor;
     FluidSimulationMeshStats surfacesourceid;
     FluidSimulationMeshStats surfaceviscosity;
+    FluidSimulationMeshStats surfacedensity;
     FluidSimulationMeshStats foam;
     FluidSimulationMeshStats bubble;
     FluidSimulationMeshStats spray;
@@ -140,6 +140,8 @@ struct FluidSimulationFrameStats {
     FluidSimulationMeshStats fluidparticlesage;
     FluidSimulationMeshStats fluidparticleslifetime;
     FluidSimulationMeshStats fluidparticlesviscosity;
+    FluidSimulationMeshStats fluidparticlesdensity;
+    FluidSimulationMeshStats fluidparticlesdensityaverage;
     FluidSimulationMeshStats fluidparticleswhitewaterproximity;
     FluidSimulationMeshStats fluidparticlessourceid;
     FluidSimulationMeshStats particles;
@@ -189,6 +191,11 @@ struct FluidSimulationMarkerParticleUIDData {
 struct FluidSimulationMarkerParticleViscosityData {
     int size = 0;
     char *viscosity;
+};
+
+struct FluidSimulationMarkerParticleDensityData {
+    int size = 0;
+    char *density;
 };
 
 struct FluidSimulationMarkerParticleIDData {
@@ -603,6 +610,13 @@ public:
     bool isSurfaceViscosityAttributeEnabled();
 
     /*
+        Generate density attributes at fluid surface mesh vertices
+    */
+    void enableSurfaceDensityAttribute();
+    void disableSurfaceDensityAttribute();
+    bool isSurfaceDensityAttributeEnabled();
+
+    /*
         Generate velocity vector attributes at whitewater particles
     */
     void enableWhitewaterVelocityAttribute();
@@ -660,6 +674,10 @@ public:
     void enableFluidParticleSourceIDAttribute();
     void disableFluidParticleSourceIDAttribute();
     bool isFluidParticleSourceIDAttributeEnabled();
+
+    void enableFluidParticleDensityAttribute();
+    void disableFluidParticleDensityAttribute();
+    bool isFluidParticleDensityAttributeEnabled();
 
     void enableFluidParticleUIDAttribute();
     void disableFluidParticleUIDAttribute();
@@ -1420,6 +1438,7 @@ public:
     std::vector<char>* getSurfaceColorAttributeData();
     std::vector<char>* getSurfaceSourceIDAttributeData();
     std::vector<char>* getSurfaceViscosityAttributeData();
+    std::vector<char>* getSurfaceDensityAttributeData();
     std::vector<char>* getDiffuseData();
     std::vector<char>* getDiffuseFoamData();
     std::vector<char>* getDiffuseBubbleData();
@@ -1450,6 +1469,8 @@ public:
     std::vector<char>* getFluidParticleAgeAttributeData();
     std::vector<char>* getFluidParticleLifetimeAttributeData();
     std::vector<char>* getFluidParticleViscosityAttributeData();
+    std::vector<char>* getFluidParticleDensityAttributeData();
+    std::vector<char>* getFluidParticleDensityAverageAttributeData();
     std::vector<char>* getFluidParticleWhitewaterProximityAttributeData();
     std::vector<char>* getFluidParticleSourceIDAttributeData();
     std::vector<char>* getFluidParticleUIDAttributeData();
@@ -1470,7 +1491,7 @@ public:
     void getMarkerParticleSourceIDDataRange(int start_idx, int end_idx, char *data);
     void getMarkerParticleUIDDataRange(int start_idx, int end_idx, char *data);
     void getMarkerParticleViscosityDataRange(int start_idx, int end_idx, char *data);
-    void getMarkerParticleIDDataRange(int start_idx, int end_idx, char *data);
+    void getMarkerParticleDensityDataRange(int start_idx, int end_idx, char *data);    void getMarkerParticleIDDataRange(int start_idx, int end_idx, char *data);
     void getDiffuseParticlePositionDataRange(int start_idx, int end_idx, char *data);
     void getDiffuseParticleVelocityDataRange(int start_idx, int end_idx, char *data);
     void getDiffuseParticleLifetimeDataRange(int start_idx, int end_idx, char *data);
@@ -1503,6 +1524,7 @@ public:
     void loadMarkerParticleSourceIDData(FluidSimulationMarkerParticleSourceIDData data);
     void loadMarkerParticleUIDData(FluidSimulationMarkerParticleUIDData data);
     void loadMarkerParticleViscosityData(FluidSimulationMarkerParticleViscosityData data);
+    void loadMarkerParticleDensityData(FluidSimulationMarkerParticleDensityData data);
     void loadMarkerParticleIDData(FluidSimulationMarkerParticleIDData data);
     void loadDiffuseParticleData(FluidSimulationDiffuseParticleData data);
 
@@ -1559,6 +1581,7 @@ private:
         std::vector<char> surfaceColorAttributeData;
         std::vector<char> surfaceSourceIDAttributeData;
         std::vector<char> surfaceViscosityAttributeData;
+        std::vector<char> surfaceDensityAttributeData;
         std::vector<char> diffuseData;
         std::vector<char> diffuseFoamData;
         std::vector<char> diffuseBubbleData;
@@ -1589,6 +1612,8 @@ private:
         std::vector<char> fluidParticleAgeAttributeData;
         std::vector<char> fluidParticleLifetimeAttributeData;
         std::vector<char> fluidParticleViscosityAttributeData;
+        std::vector<char> fluidParticleDensityAttributeData;
+        std::vector<char> fluidParticleDensityAverageAttributeData;
         std::vector<char> fluidParticleWhitewaterProximityAttributeData;
         std::vector<char> fluidParticleSourceIDAttributeData;
         std::vector<char> fluidParticleUIDAttributeData;
@@ -1632,6 +1657,10 @@ private:
         FragmentedVector<MarkerParticleViscosity> particles;
     };
 
+    struct MarkerParticleDensityLoadData {
+        FragmentedVector<MarkerParticleDensity> particles;
+    };
+
     struct MarkerParticleIDLoadData {
         FragmentedVector<MarkerParticleID> particles;
     };
@@ -1640,6 +1669,7 @@ private:
     struct MarkerParticleAttributes {
         int sourceID = 0;
         float sourceViscosity = 0.0f;
+        float sourceDensity = 0.0f;
         float sourceLifetime = 0.0f;
         float sourceLifetimeVariance = 0.0f;
         vmath::vec3 sourceColor;
@@ -1747,6 +1777,7 @@ private:
                               MarkerParticleColorLoadData &colorData,
                               MarkerParticleSourceIDLoadData &sourceIDData,
                               MarkerParticleViscosityLoadData &viscosityData,
+                              MarkerParticleDensityLoadData &vdensityData,
                               MarkerParticleIDLoadData &idData,
                               MarkerParticleUIDLoadData &UIDData);
     void _loadDiffuseParticles(DiffuseParticleLoadData &data);
@@ -1897,6 +1928,9 @@ private:
     void _updateMarkerParticleViscosityAttributeGrid(Array3d<float> &viscosityAttributeGrid,
                                                      Array3d<bool> &viscosityAttributeValidGrid);
     void _updateMarkerParticleViscosityAttribute();
+    void _updateMarkerParticleDensityAttributeGrid(Array3d<float> &densityAttributeGrid,
+                                                     Array3d<bool> &densityAttributeValidGrid);
+    void _updateMarkerParticleDensityAttribute();
     void _updateMarkerParticleColorAttributeGrid(Array3d<float> &colorAttributeGridR,
                                                  Array3d<float> &colorAttributeGridG,
                                                  Array3d<float> &colorAttributeGridB,
@@ -1987,6 +2021,7 @@ private:
     void _generateSurfaceColorAttributeData(TriangleMesh &surface);
     void _generateSurfaceSourceIDAttributeData(TriangleMesh &surface, std::vector<vmath::vec3> &positions, std::vector<int> *sourceID);
     void _generateSurfaceViscosityAttributeData(TriangleMesh &surface);
+    void _generateSurfaceDensityAttributeData(TriangleMesh &surface);
     void _outputSurfaceMeshThread(std::vector<vmath::vec3> *particles,
                                   MeshLevelSet *solidSDF,
                                   MACVelocityField *vfield,
@@ -2175,6 +2210,7 @@ private:
     std::vector<MarkerParticleSourceIDLoadData> _markerParticleSourceIDLoadQueue;
     std::vector<MarkerParticleUIDLoadData> _markerParticleUIDLoadQueue;
     std::vector<MarkerParticleViscosityLoadData> _markerParticleViscosityLoadQueue;
+    std::vector<MarkerParticleDensityLoadData> _markerParticleDensityLoadQueue;
     std::vector<MarkerParticleIDLoadData> _markerParticleIDLoadQueue;
     std::vector<DiffuseParticleLoadData> _diffuseParticleLoadQueue;
 
@@ -2220,6 +2256,7 @@ private:
     bool _isFluidParticleLifetimeAttributeEnabled = false;
     bool _isFluidParticleWhitewaterProximityAttributeEnabled = false;
     bool _isFluidParticleSourceIDAttributeEnabled = false;
+    bool _isFluidParticleDensityAttributeEnabled = false;
     bool _isFluidParticleUIDAttributeEnabled = false;
     bool _isFluidParticleUIDAttributeReuseEnabled = false;
 
@@ -2253,6 +2290,7 @@ private:
     bool _isSurfaceSourceColorAttributeMixingEnabled = false;
     bool _isSurfaceSourceIDAttributeEnabled = false;
     bool _isSurfaceSourceViscosityAttributeEnabled = false;
+    bool _isSurfaceDensityAttributeEnabled = false;
     bool _isWhitewaterIDAttributeEnabled = false;
     bool _isWhitewaterLifetimeAttributeEnabled = false;
     double _contactThresholdDistance = 0.08;          // in # of grid cells
@@ -2390,6 +2428,10 @@ private:
     float _viscosityAttributeRadius = 3.0f;        // In # of voxels
     float _viscositySolverAttributeRadius = 2.0f;  // In # of voxels
 
+    Array3d<float> _densityAttributeGrid;
+    Array3d<bool> _densityAttributeValidGrid;
+    float _densityAttributeRadius = 1.0f;   // In # of voxels
+
     Array3d<float> _colorAttributeGridR;
     Array3d<float> _colorAttributeGridG;
     Array3d<float> _colorAttributeGridB;
@@ -2428,5 +2470,3 @@ private:
     std::uniform_real_distribution<> _random;
 
 };
-
-#endif

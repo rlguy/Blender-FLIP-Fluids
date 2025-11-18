@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_SUBDIVIDEDARRAY3D_H
-#define FLUIDENGINE_SUBDIVIDEDARRAY3D_H
+#pragma once
 
 template <class T>
 class SubdividedArray3d
@@ -187,5 +186,3 @@ private:
      double _invsublevel = 1;
 
 };
-
-#endif

@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_BLOCKARRAY3D_H
-#define FLUIDENGINE_BLOCKARRAY3D_H
+#pragma once
 
 #include "array3d.h"
 #include "grid3d.h"
@@ -264,5 +263,3 @@ private:
     Array3d<BlockData> _blockDataGrid;
     std::vector<T> _arraydata;
 };
-
-#endif

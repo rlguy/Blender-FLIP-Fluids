@@ -47,8 +47,7 @@ class FLIPFluidPreferencesExportUserData(bpy.types.Operator):
     bl_description = ("Creates a backup of your user settings and presets as a" +
         " .zip file. All user data will be lost after uninstalling the addon.")
 
-    filepath = StringProperty(subtype="FILE_PATH")
-    exec(vcu.convert_attribute_to_28("filepath"))
+    filepath: StringProperty(subtype="FILE_PATH")
 
 
     @classmethod
@@ -180,12 +179,11 @@ class FLIPFluidPreferencesImportUserData(bpy.types.Operator, ImportHelper):
     bl_description = "Load user settings and presets from a previous installation"
 
     filename_ext = "*.zip"
-    filter_glob = StringProperty(
+    filter_glob: StringProperty(
             default="*.zip",
             options={'HIDDEN'},
             maxlen=255,
             )
-    exec(vcu.convert_attribute_to_28("filter_glob"))
 
 
 
@@ -264,12 +262,11 @@ class FLIPFluidInstallMixboxPlugin(bpy.types.Operator, ImportHelper):
                       " Fluids addon downloads")
 
     filename_ext = "*.plugin"
-    filter_glob = StringProperty(
+    filter_glob: StringProperty(
             default="*.plugin;*.zip",
             options={'HIDDEN'},
             maxlen=255,
             )
-    exec(vcu.convert_attribute_to_28("filter_glob"))
 
 
     @classmethod
@@ -377,12 +374,11 @@ class FLIPFluidInstallPresetLibrary(bpy.types.Operator, ImportHelper):
                       " The Preset Scenes file can be found in the FLIP Fluids addon downloads")
 
     filename_ext = "*.zip"
-    filter_glob = StringProperty(
+    filter_glob: StringProperty(
             default="*.zip",
             options={'HIDDEN'},
             maxlen=255,
             )
-    exec(vcu.convert_attribute_to_28("filter_glob"))
 
 
     @classmethod
@@ -512,9 +508,7 @@ class FLIPFluidInstallPresetLibrary(bpy.types.Operator, ImportHelper):
         for lib_entry in bl_filepaths.asset_libraries:
             if self.is_path_equal(lib_entry.path, preset_library_directory):
                 lib_entry.name = preset_library_name
-                if vcu.is_blender_35():
-                    # Only available in Blender >= 3.5
-                    lib_entry.import_method = 'APPEND'
+                lib_entry.import_method = 'APPEND'
 
         installation_utils.update_preset_library_installation_status()
         success_message = "The Preset Scenes Library has been installed successfully into the Blender Asset Browser."
@@ -529,11 +523,9 @@ class FLIPFluidSelectPresetLibraryFolder(bpy.types.Operator):
     bl_label = "Install Preset Folder"
     bl_description = ("Select an existing Preset Library installation folder and add it to the Blender Asset Browser")
 
-    directory = bpy.props.StringProperty(name="Directory", options={"HIDDEN"})
-    exec(vcu.convert_attribute_to_28("directory"))
+    directory: bpy.props.StringProperty(name="Directory", options={"HIDDEN"})
 
-    filter_folder = bpy.props.BoolProperty(default=True, options={"HIDDEN"})
-    exec(vcu.convert_attribute_to_28("filter_folder"))
+    filter_folder: bpy.props.BoolProperty(default=True, options={"HIDDEN"})
 
 
     @classmethod
@@ -643,9 +635,7 @@ class FLIPFluidSelectPresetLibraryFolder(bpy.types.Operator):
                     lib_version_str = "v" + str(version[0]) + "." + str(version[1]) + "." + str(version[2])
                     preset_library_name = "FLIP Fluids Addon Presets " + lib_version_str
                     lib_entry.name = preset_library_name
-                    if vcu.is_blender_35():
-                        # Only available in Blender >= 3.5
-                        lib_entry.import_method = 'APPEND'
+                    lib_entry.import_method = 'APPEND'
 
         installation_utils.update_preset_library_installation_status()
         success_message = "The Preset Scenes Library has been installed successfully into the Blender Asset Browser."
@@ -667,8 +657,7 @@ class FLIPFluidPresetLibraryCopyInstallLocation(bpy.types.Operator):
     bl_description = ("Copy the preset library location to the Install Location field and" + 
                       " system clipboard. The install location is the parent directory of the path listed below")
 
-    install_location = StringProperty(default="")
-    exec(vcu.convert_attribute_to_28("install_location"))
+    install_location: StringProperty(default="")
 
     def execute(self, context):
         preferences = vcu.get_addon_preferences()
@@ -683,8 +672,7 @@ class FLIPFluidUninstallPresetLibrary(bpy.types.Operator):
     bl_description = ("Uninstall the preset library. The preset library will be removed from" +
                       " the Blender Asset Browser and the files deleted from your system")
 
-    install_info_json_string = StringProperty(default="")
-    exec(vcu.convert_attribute_to_28("install_info_json_string"))
+    install_info_json_string: StringProperty(default="")
 
 
     def tag_redraw(self, context):
@@ -751,8 +739,7 @@ class FLIPFluidUninstallPresetLibrary(bpy.types.Operator):
 
 
 class VersionDataTextEntry(bpy.types.PropertyGroup):
-    text = StringProperty(default="")
-    exec(vcu.convert_attribute_to_28("text"))
+    text: StringProperty(default="")
 
 
 def get_gpu_string():
@@ -899,12 +886,11 @@ def get_system_info_dict():
     addons_list = []
     addons_string = "Unknown"
     try:
-        if vcu.is_blender_42():
-            for addon in bpy.context.preferences.addons:
-                addon_name = addon.module
-                addon_name = addon_name.split('.')[-1]
-                if addon_name and addon_name not in default_addons:
-                    addons_list.append(addon_name)
+        for addon in bpy.context.preferences.addons:
+            addon_name = addon.module
+            addon_name = addon_name.split('.')[-1]
+            if addon_name and addon_name not in default_addons:
+                addons_list.append(addon_name)
         if addons_list:
             addons_string = ', '.join(addons_list)
         else:
@@ -913,7 +899,7 @@ def get_system_info_dict():
         print(traceback.format_exc())
         print(e)
 
-    developer_tools_string = "Uknown"
+    developer_tools_string = "Unknown"
     try:
         preferences = vcu.get_addon_preferences()
         developer_tools_string = "Enabled" if preferences.enable_extra_features else "Disabled"
@@ -1198,6 +1184,7 @@ def get_system_info_dict():
     d = {}
     d['blender_version'] = blender_version
     d['addon_version'] = bl_info.get('description', "Missing Version Label")
+    d['addon_support_license'] = installation_utils.get_support_license_label()
     d['operating_system'] = platform.platform()
     d['cpu'] = cpu_string
     d['threads'] = threads_string
@@ -1256,6 +1243,7 @@ class FlipFluidReportBugPrefill(bpy.types.Operator):
         user_info += "#### System and Blend File Information\n\n"
         user_info += "**Blender Version:** " + sys_info['blender_version'] + "\n"
         user_info += "**Addon Version:** " + sys_info['addon_version'] + "\n"
+        user_info += "**Addon Build:** " + sys_info['addon_support_license'] + "\n"
         user_info += "**OS:** " + sys_info['operating_system'] + "\n"
         user_info += "**GPU:** " + sys_info['gpu'] + "\n"
         user_info += "**CPU:** " + sys_info['cpu'] + "\n"
@@ -1318,6 +1306,7 @@ def get_system_info_string():
     user_info = ""
     user_info += "Blender Version: " + sys_info['blender_version'] + "\n"
     user_info += "Addon Version: " + sys_info['addon_version'] + "\n"
+    user_info += "Addon Build: " + sys_info['addon_support_license'] + "\n"
     user_info += "OS: " + sys_info['operating_system'] + "\n"
     user_info += "GPU: " + sys_info['gpu'] + "\n"
     user_info += "CPU: " + sys_info['cpu'] + "\n"
@@ -1383,8 +1372,7 @@ class FlipFluidOpenPreferences(bpy.types.Operator):
     bl_label = "FLIP Fluids Preferences"
     bl_description = ("Open the FLIP Fluids addon preferences menu")
 
-    view_mode = StringProperty(default="NONE")
-    exec(vcu.convert_attribute_to_28("view_mode"))
+    view_mode: StringProperty(default="NONE")
 
 
     def execute(self, context):
@@ -1402,12 +1390,8 @@ class FlipFluidOpenPreferences(bpy.types.Operator):
         if self.view_mode in valid_view_modes:
             prefs = vcu.get_addon_preferences()
             prefs.preferences_menu_view_mode = self.view_mode
-
-        if vcu.is_blender_42():
-            module_name = base_package
-        else:
-            module_name = installation_utils.get_module_name()
-        bpy.ops.preferences.addon_show(module=module_name)
+            
+        bpy.ops.preferences.addon_show(module=base_package)
         return {'FINISHED'}
 
 
@@ -1435,9 +1419,7 @@ class FLIPFLUIDS_MT_help_menu(bpy.types.Menu):
     def draw(self, context):
         self.layout.operator("flip_fluid_operators.report_bug_prefill", icon="URL")
         self.layout.operator("flip_fluid_operators.copy_system_info", icon="COPYDOWN")
-
-        if vcu.is_blender_28():
-            self.layout.operator("flip_fluid_operators.open_preferences", icon="PREFERENCES").view_mode = 'NONE'
+        self.layout.operator("flip_fluid_operators.open_preferences", icon="PREFERENCES").view_mode = 'NONE'
 
 
 def draw_flip_fluids_help_menu(self, context):

@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_PARTICLESHEETER_H
-#define FLUIDENGINE_PARTICLESHEETER_H
+#pragma once
 
 #include "markerparticle.h"
 #include "fragmentedvector.h"
@@ -139,5 +138,3 @@ private:
     float _sheetSearchRadius = 2.0f;
     float _projectionFactor = 0.75;
 };
-
-#endif

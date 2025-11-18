@@ -267,6 +267,7 @@ def __update_surface_display_mode():
         surface_cache.enable_color_attribute = dprops.surface.enable_color_attribute
         surface_cache.enable_source_id_attribute = dprops.surface.enable_source_id_attribute
         surface_cache.enable_viscosity_attribute = dprops.surface.enable_viscosity_attribute
+        surface_cache.enable_density_attribute = dprops.world.enable_density_attribute
         surface_cache.enable_id_attribute = False
     elif display_mode == 'DISPLAY_PREVIEW':
         surface_cache.mesh_prefix = "preview"
@@ -281,6 +282,7 @@ def __update_surface_display_mode():
         surface_cache.enable_color_attribute = False
         surface_cache.enable_source_id_attribute = False
         surface_cache.enable_viscosity_attribute = False
+        surface_cache.enable_density_attribute = False
         surface_cache.enable_id_attribute = False
     elif display_mode == 'DISPLAY_NONE':
         surface_cache.mesh_prefix = "none"
@@ -295,6 +297,7 @@ def __update_surface_display_mode():
         surface_cache.enable_color_attribute = False
         surface_cache.enable_source_id_attribute = False
         surface_cache.enable_viscosity_attribute = False
+        surface_cache.enable_density_attribute = False
         surface_cache.enable_id_attribute = False
 
 
@@ -366,6 +369,7 @@ def __update_fluid_particle_display_mode():
         particle_cache.enable_color_attribute = particle_props.enable_fluid_particle_color_attribute
         particle_cache.enable_source_id_attribute = particle_props.enable_fluid_particle_source_id_attribute
         particle_cache.enable_viscosity_attribute =  dprops.surface.enable_viscosity_attribute
+        particle_cache.enable_density_attribute =  dprops.world.enable_density_attribute
         particle_cache.enable_id_attribute = particle_props.enable_fluid_particle_output
         particle_cache.enable_uid_attribute = particle_props.enable_fluid_particle_uid_attribute
     elif display_mode == 'DISPLAY_PREVIEW':
@@ -380,6 +384,7 @@ def __update_fluid_particle_display_mode():
         particle_cache.enable_color_attribute = particle_props.enable_fluid_particle_color_attribute
         particle_cache.enable_source_id_attribute = particle_props.enable_fluid_particle_source_id_attribute
         particle_cache.enable_viscosity_attribute = dprops.surface.enable_viscosity_attribute
+        particle_cache.enable_density_attribute = dprops.world.enable_density_attribute
         particle_cache.enable_id_attribute = particle_props.enable_fluid_particle_output
         particle_cache.enable_uid_attribute = particle_props.enable_fluid_particle_uid_attribute
     elif display_mode == 'DISPLAY_NONE':
@@ -394,6 +399,7 @@ def __update_fluid_particle_display_mode():
         particle_cache.enable_color_attribute = False
         particle_cache.enable_source_id_attribute = False
         particle_cache.enable_viscosity_attribute = False
+        particle_cache.enable_density_attribute = False
         particle_cache.enable_id_attribute = False
         particle_cache.enable_uid_attribute = False
 
@@ -518,6 +524,10 @@ def __update_whitewater_display_mode():
         cache.bubble.enable_viscosity_attribute = False
         cache.spray.enable_viscosity_attribute = False
         cache.dust.enable_viscosity_attribute = False
+        cache.foam.enable_density_attribute = False
+        cache.bubble.enable_density_attribute = False
+        cache.spray.enable_density_attribute = False
+        cache.dust.enable_density_attribute = False
     elif display_mode == 'DISPLAY_PREVIEW':
         cache.foam.mesh_prefix = "foam"
         cache.bubble.mesh_prefix = "bubble"
@@ -571,6 +581,10 @@ def __update_whitewater_display_mode():
         cache.bubble.enable_viscosity_attribute = False
         cache.spray.enable_viscosity_attribute = False
         cache.dust.enable_viscosity_attribute = False
+        cache.foam.enable_density_attribute = False
+        cache.bubble.enable_density_attribute = False
+        cache.spray.enable_density_attribute = False
+        cache.dust.enable_density_attribute = False
     elif display_mode == 'DISPLAY_NONE':
         cache.foam.mesh_prefix = "foam_none"
         cache.bubble.mesh_prefix = "bubble_none"
@@ -624,6 +638,10 @@ def __update_whitewater_display_mode():
         cache.bubble.enable_viscosity_attribute = False
         cache.spray.enable_viscosity_attribute = False
         cache.dust.enable_viscosity_attribute = False
+        cache.foam.enable_density_attribute = False
+        cache.bubble.enable_density_attribute = False
+        cache.spray.enable_density_attribute = False
+        cache.dust.enable_density_attribute = False
 
     foam_pct, bubble_pct, spray_pct, dust_pct = __get_whitewater_display_percentages()
     cache.foam.wwp_import_percentage = foam_pct
@@ -809,11 +827,9 @@ def frame_change_post(scene, depsgraph=None):
     if not __is_domain_in_scene():
         return
 
-    if is_rendering() and vcu.is_blender_28():
+    if is_rendering():
         if not scene.render.use_lock_interface:
                 print("FLIP FLUIDS WARNING: The Blender interface should be locked during render to prevent render crashes (Blender > Render > Lock Interface).")
-        if not vcu.is_blender_281():
-            print("FLIP FLUIDS WARNING: Blender 2.80 contains a bug that can cause frequent render crashes and incorrect render results. Blender version 2.81 or higher is recommended.")
 
     force_reload = False
     frameno = get_current_render_frame()

@@ -22,13 +22,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_GRIDINDEX_T_H
-#define FLUIDENGINE_GRIDINDEX_T_H
+#pragma once
 
 typedef struct GridIndex_t {
 	int i;
     int j;
     int k;  
 } GridIndex_t;
-
-#endif

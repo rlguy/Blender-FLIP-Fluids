@@ -30,11 +30,14 @@ SOFTWARE.
     #define EXPORTDLL
 #endif
 
+#include <string>
+
 
 extern "C" {
 
-    EXPORTDLL void alembic_io_flip_fluids_cache_to_alembic() {
-        flip_fluids_cache_to_alembic();
+    EXPORTDLL void alembic_io_flip_fluids_cache_to_alembic(const char* export_config_json) {
+        std::string json_string(export_config_json);
+        flip_fluids_cache_to_alembic(json_string);
     }
 
 }

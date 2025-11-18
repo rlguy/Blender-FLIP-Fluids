@@ -551,6 +551,14 @@ float MeshObject::getViscosity() {
     return _viscosity;
 }
 
+void MeshObject::setDensity(float d) {
+    _density = d;
+}
+
+float MeshObject::getDensity() {
+    return _density;
+}
+
 void MeshObject::setLifetime(float v) {
     _lifetime = v;
 }

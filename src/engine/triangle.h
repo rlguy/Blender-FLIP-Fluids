@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_TRIANGLE_H
-#define FLUIDENGINE_TRIANGLE_H
+#pragma once
 
 struct Triangle {
     int tri[3];     // indices to a vertex
@@ -40,5 +39,3 @@ struct Triangle {
         tri[2] = p3;
     }
 };
-
-#endif

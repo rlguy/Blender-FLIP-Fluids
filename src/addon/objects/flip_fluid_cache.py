@@ -44,18 +44,17 @@ class EnabledMeshCacheObjects:
 
 
 class FLIPFluidMeshBounds(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
-    x =      FloatProperty(0.0);  exec(conv("x"))
-    y =      FloatProperty(0.0);  exec(conv("y"))
-    z =      FloatProperty(0.0);  exec(conv("z"))
-    width =  FloatProperty(1.0);  exec(conv("width"))
-    height = FloatProperty(1.0);  exec(conv("height"))
-    depth =  FloatProperty(1.0);  exec(conv("depth"))
-    dx =     FloatProperty(1.0);  exec(conv("dx"))
-    isize =  IntProperty(0);      exec(conv("isize"))
-    jsize =  IntProperty(0);      exec(conv("jsize"))
-    ksize =  IntProperty(0);      exec(conv("ksize"))
-    is_set = BoolProperty(False); exec(conv("is_set"))
+    x:      FloatProperty(0.0)
+    y:      FloatProperty(0.0)
+    z:      FloatProperty(0.0)
+    width:  FloatProperty(1.0)
+    height: FloatProperty(1.0)
+    depth:  FloatProperty(1.0)
+    dx:     FloatProperty(1.0)
+    isize:  IntProperty(0)
+    jsize:  IntProperty(0)
+    ksize:  IntProperty(0)
+    is_set: BoolProperty(False)
 
 
     def set(self, bounds_dict):
@@ -80,27 +79,27 @@ class FLIPFluidMeshBounds(bpy.types.PropertyGroup):
 
 
 class FlipFluidLoadedMeshData(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
-    mesh_prefix =                            StringProperty(default="mesh_prefix"); exec(conv("mesh_prefix"))
-    enable_motion_blur =                     BoolProperty(default=False);           exec(conv("enable_motion_blur"))
-    motion_blur_scale =                      FloatProperty(default=-1.0);           exec(conv("motion_blur_scale"))
-    enable_velocity_attribute =              BoolProperty(default=False);           exec(conv("enable_velocity_attribute"))
-    enable_vorticity_attribute =             BoolProperty(default=False);           exec(conv("enable_vorticity_attribute"))
-    enable_speed_attribute =                 BoolProperty(default=False);           exec(conv("enable_speed_attribute"))
-    enable_age_attribute =                   BoolProperty(default=False);           exec(conv("enable_age_attribute"))
-    enable_color_attribute =                 BoolProperty(default=False);           exec(conv("enable_color_attribute"))
-    enable_source_id_attribute =             BoolProperty(default=False);           exec(conv("enable_source_id_attribute"))
-    enable_viscosity_attribute =             BoolProperty(default=False);           exec(conv("enable_viscosity_attribute"))
-    enable_id_attribute =                    BoolProperty(default=False);           exec(conv("enable_id_attribute"))
-    enable_uid_attribute =                   BoolProperty(default=False);           exec(conv("enable_uid_attribute"))
-    enable_lifetime_attribute =              BoolProperty(default=False);           exec(conv("enable_lifetime_attribute"))
-    enable_whitewater_proximity_attribute =  BoolProperty(default=False);           exec(conv("enable_whitewater_proximity_attribute"))
-    wwp_import_percentage =                  IntProperty(default=0);                exec(conv("wwp_import_percentage"))
-    ffp3_surface_import_percentage =         FloatProperty(default=0);              exec(conv("ffp3_surface_import_percentage"))
-    ffp3_boundary_import_percentage =        FloatProperty(default=0);              exec(conv("ffp3_boundary_import_percentage"))
-    ffp3_interior_import_percentage =        FloatProperty(default=0);              exec(conv("ffp3_interior_import_percentage"))
-    is_rendering =                           BoolProperty(default=True);            exec(conv("is_rendering"))
-    frame =                                  IntProperty(default=-1);               exec(conv("frame"))
+    mesh_prefix:                            StringProperty(default="mesh_prefix")
+    enable_motion_blur:                     BoolProperty(default=False)
+    motion_blur_scale:                      FloatProperty(default=-1.0)
+    enable_velocity_attribute:              BoolProperty(default=False)
+    enable_vorticity_attribute:             BoolProperty(default=False)
+    enable_speed_attribute:                 BoolProperty(default=False)
+    enable_age_attribute:                   BoolProperty(default=False)
+    enable_color_attribute:                 BoolProperty(default=False)
+    enable_source_id_attribute:             BoolProperty(default=False)
+    enable_viscosity_attribute:             BoolProperty(default=False)
+    enable_density_attribute:               BoolProperty(default=False)
+    enable_id_attribute:                    BoolProperty(default=False)
+    enable_uid_attribute:                   BoolProperty(default=False)
+    enable_lifetime_attribute:              BoolProperty(default=False)
+    enable_whitewater_proximity_attribute:  BoolProperty(default=False)
+    wwp_import_percentage:                  IntProperty(default=0)
+    ffp3_surface_import_percentage:         FloatProperty(default=0)
+    ffp3_boundary_import_percentage:        FloatProperty(default=0)
+    ffp3_interior_import_percentage:        FloatProperty(default=0)
+    is_rendering:                           BoolProperty(default=True)
+    frame:                                  IntProperty(default=-1)
 
 
     def reset(self):
@@ -114,6 +113,7 @@ class FlipFluidLoadedMeshData(bpy.types.PropertyGroup):
         self.property_unset("enable_color_attribute")
         self.property_unset("enable_source_id_attribute")
         self.property_unset("enable_viscosity_attribute")
+        self.property_unset("enable_density_attribute")
         self.property_unset("enable_id_attribute")
         self.property_unset("enable_uid_attribute")
         self.property_unset("enable_lifetime_attribute")
@@ -127,39 +127,39 @@ class FlipFluidLoadedMeshData(bpy.types.PropertyGroup):
 
 
 class FlipFluidMeshCache(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
 
     # Mesh properties
-    mesh_prefix =                            StringProperty(default="");                       exec(conv("mesh_prefix"))
-    mesh_display_name_prefix =               StringProperty(default="");                       exec(conv("mesh_display_name_prefix"))
-    mesh_file_extension =                    StringProperty(default="");                       exec(conv("mesh_file_extension"))
-    enable_motion_blur =                     BoolProperty(default=False);                      exec(conv("enable_motion_blur"))
-    motion_blur_scale =                      FloatProperty(default=1.0);                       exec(conv("motion_blur_scale"))
-    enable_velocity_attribute =              BoolProperty(default=False);                      exec(conv("enable_velocity_attribute"))
-    enable_vorticity_attribute =             BoolProperty(default=False);                      exec(conv("enable_vorticity_attribute"))
-    enable_speed_attribute =                 BoolProperty(default=False);                      exec(conv("enable_speed_attribute"))
-    enable_age_attribute =                   BoolProperty(default=False);                      exec(conv("enable_age_attribute"))
-    enable_color_attribute =                 BoolProperty(default=False);                      exec(conv("enable_color_attribute"))
-    enable_source_id_attribute =             BoolProperty(default=False);                      exec(conv("enable_source_id_attribute"))
-    enable_viscosity_attribute =             BoolProperty(default=False);                      exec(conv("enable_viscosity_attribute"))
-    enable_id_attribute =                    BoolProperty(default=False);                      exec(conv("enable_id_attribute"))
-    enable_uid_attribute =                   BoolProperty(default=False);                      exec(conv("enable_uid_attribute"))
-    enable_lifetime_attribute =              BoolProperty(default=False);                      exec(conv("enable_lifetime_attribute"))
-    enable_whitewater_proximity_attribute =  BoolProperty(default=False);                      exec(conv("enable_whitewater_proximity_attribute"))
-    cache_object_default_name =              StringProperty(default="");                       exec(conv("cache_object_default_name"))
-    cache_object =                           PointerProperty(type=bpy.types.Object);           exec(conv("cache_object"))
-    is_mesh_shading_smooth =                 BoolProperty(default=True);                       exec(conv("is_mesh_shading_smooth"))
-    current_loaded_frame =                   IntProperty(default=-1);                          exec(conv("current_loaded_frame"))
-    import_function_name =                   StringProperty(default="import_empty");           exec(conv("import_function_name"))
-    wwp_import_percentage =                  IntProperty(default=100);                         exec(conv("wwp_import_percentage"))
-    ffp3_surface_import_percentage =         FloatProperty(default=0);                         exec(conv("ffp3_surface_import_percentage"))
-    ffp3_boundary_import_percentage =        FloatProperty(default=0);                         exec(conv("ffp3_boundary_import_percentage"))
-    ffp3_interior_import_percentage =        FloatProperty(default=0);                         exec(conv("ffp3_interior_import_percentage"))
-    cache_object_type =                      StringProperty(default="CACHE_OBJECT_TYPE_NONE"); exec(conv("cache_object_type"))
+    mesh_prefix:                            StringProperty(default="")
+    mesh_display_name_prefix:               StringProperty(default="")
+    mesh_file_extension:                    StringProperty(default="")
+    enable_motion_blur:                     BoolProperty(default=False)
+    motion_blur_scale:                      FloatProperty(default=1.0)
+    enable_velocity_attribute:              BoolProperty(default=False)
+    enable_vorticity_attribute:             BoolProperty(default=False)
+    enable_speed_attribute:                 BoolProperty(default=False)
+    enable_age_attribute:                   BoolProperty(default=False)
+    enable_color_attribute:                 BoolProperty(default=False)
+    enable_source_id_attribute:             BoolProperty(default=False)
+    enable_viscosity_attribute:             BoolProperty(default=False)
+    enable_density_attribute:               BoolProperty(default=False)
+    enable_id_attribute:                    BoolProperty(default=False)
+    enable_uid_attribute:                   BoolProperty(default=False)
+    enable_lifetime_attribute:              BoolProperty(default=False)
+    enable_whitewater_proximity_attribute:  BoolProperty(default=False)
+    cache_object_default_name:              StringProperty(default="")
+    cache_object:                           PointerProperty(type=bpy.types.Object)
+    is_mesh_shading_smooth:                 BoolProperty(default=True)
+    current_loaded_frame:                   IntProperty(default=-1)
+    import_function_name:                   StringProperty(default="import_empty")
+    wwp_import_percentage:                  IntProperty(default=100)
+    ffp3_surface_import_percentage:         FloatProperty(default=0)
+    ffp3_boundary_import_percentage:        FloatProperty(default=0)
+    ffp3_interior_import_percentage:        FloatProperty(default=0)
+    cache_object_type:                      StringProperty(default="CACHE_OBJECT_TYPE_NONE")
 
     # Loaded data properties
-    loaded_frame_data = PointerProperty(type=FlipFluidLoadedMeshData); exec(conv("loaded_frame_data"))
-    bounds =            PointerProperty(type=FLIPFluidMeshBounds);     exec(conv("bounds"))
+    loaded_frame_data: PointerProperty(type=FlipFluidLoadedMeshData)
+    bounds:            PointerProperty(type=FLIPFluidMeshBounds)
 
 
     def _get_cycles_use_motion_blur(self, bl_object):
@@ -194,18 +194,20 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         resource_filepath = os.path.join(parent_path, "resources", "geometry_nodes", blend_resource_filename)
         gn_modifier = helper_operators.add_geometry_node_modifier(bl_cache_object, resource_filepath, "FF_GeometryNodesSurface")
 
+        bl_domain_object = bpy.context.scene.flip_fluid.get_domain_object()
+
         # Depending on FLIP Fluids version, the GN set up may not
         # have these inputs. Available in FLIP Fluids 1.7.2 or later.
         key_value_pairs = [
-            ("Input_2_use_attribute",   True),                               # Input flip_velocity
+            ("Input_2_use_attribute",   True),                            # Input flip_velocity
             ("Input_2_attribute_name",  'flip_velocity'),                 # Input flip_velocity
             ("Output_3_attribute_name", 'velocity'),                      # Output velocity
-            ("Input_6",                 True), # Enable Motion Blur
+            ("Input_6",                 True),                            # Enable Motion Blur
+            ("Socket_7",                bl_domain_object),                # FLIP Domain Object
             ]
 
         for (key, value) in key_value_pairs:
             try:
-                # Input flip_velocity
                 gn_modifier[key] = value
             except:
                 pass
@@ -231,21 +233,24 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         resource_filepath = os.path.join(parent_path, "resources", "geometry_nodes", blend_resource_filename)
         gn_modifier = helper_operators.add_geometry_node_modifier(bl_cache_object, resource_filepath, "FF_GeometryNodesFluidParticles")
 
+        bl_domain_object = bpy.context.scene.flip_fluid.get_domain_object()
+
+        bl_surface_object = None
+        dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+        if dprops is not None:
+            bl_surface_object = dprops.mesh_cache.surface.get_cache_object()
+
         # Depending on FLIP Fluids version, the GN set up may not
         # have these inputs. Available in FLIP Fluids 1.7.2 or later.
         key_value_pairs = [
-            ("Input_2_use_attribute",   True),                               # Input flip_velocity
-            ("Input_2_attribute_name",  'flip_velocity'),                 # Input flip_velocity
-            ("Output_3_attribute_name", 'velocity'),                      # Output velocity
             ("Input_5",                 bl_cache_object.active_material), # Material
             ("Input_8",                 True),                            # Enable Motion Blur
-            ("Input_9",                 True),                            # Enable Point Cloud
-            ("Input_10",                False),                           # Enable Instancing
+            ("Socket_46",               bl_domain_object),                # FLIP Domain Object
+            ("Socket_49",               bl_surface_object),               # FLIP Surface Object
             ]
 
         for (key, value) in key_value_pairs:
             try:
-                # Input flip_velocity
                 gn_modifier[key] = value
             except:
                 pass
@@ -278,19 +283,25 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
             resource_name = "FF_GeometryNodesWhitewaterSpray"
         elif self.cache_object_type == 'CACHE_OBJECT_TYPE_DUST':
             resource_name = "FF_GeometryNodesWhitewaterDust"
+        else:
+            return
 
         gn_modifier = helper_operators.add_geometry_node_modifier(bl_cache_object, resource_filepath, resource_name)
+
+        bl_domain_object = bpy.context.scene.flip_fluid.get_domain_object()
+
+        bl_surface_object = None
+        dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+        if dprops is not None:
+            bl_surface_object = dprops.mesh_cache.surface.get_cache_object()
 
         # Depending on FLIP Fluids version, the GN set up may not
         # have these inputs. Available in FLIP Fluids 1.7.2 or later.
         key_value_pairs = [
-            ("Input_2_use_attribute",   True),                               # Input flip_velocity
-            ("Input_2_attribute_name",  'flip_velocity'),                 # Input flip_velocity
-            ("Output_3_attribute_name", 'velocity'),                      # Output velocity
             ("Input_5",                 bl_cache_object.active_material), # Material
             ("Input_8",                 True),                            # Enable Motion Blur
-            ("Input_9",                 True),                            # Enable Point Cloud
-            ("Input_10",                False),                           # Enable Instancing
+            ("Socket_29",               bl_domain_object),                # FLIP Domain Object
+            ("Socket_32",               bl_surface_object),               # FLIP Surface Object
             ]
 
         for (key, value) in key_value_pairs:
@@ -311,6 +322,90 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
             if self._is_object_motion_blur_enabled(other_mesh_objects):
                 self._set_cycles_use_motion_blur(bl_cache_object, True)
+
+
+    def _update_ff_geometry_nodes_modifier_domain_object(self, bl_cache_object):
+        if   self.cache_object_type == 'CACHE_OBJECT_TYPE_SURFACE':
+            resource_name = "FF_GeometryNodesSurface"
+            socket_key = "Socket_7"
+        elif self.cache_object_type == 'CACHE_OBJECT_TYPE_FLUID_PARTICLES':
+            resource_name = "FF_GeometryNodesFluidParticles"
+            socket_key = "Socket_46"
+        elif self.cache_object_type == 'CACHE_OBJECT_TYPE_FOAM':
+            resource_name = "FF_GeometryNodesWhitewaterFoam"
+            socket_key = "Socket_29"
+        elif self.cache_object_type == 'CACHE_OBJECT_TYPE_BUBBLE':
+            resource_name = "FF_GeometryNodesWhitewaterBubble"
+            socket_key = "Socket_29"
+        elif self.cache_object_type == 'CACHE_OBJECT_TYPE_SPRAY':
+            resource_name = "FF_GeometryNodesWhitewaterSpray"
+            socket_key = "Socket_29"
+        elif self.cache_object_type == 'CACHE_OBJECT_TYPE_DUST':
+            resource_name = "FF_GeometryNodesWhitewaterDust"
+            socket_key = "Socket_29"
+        else:
+            return
+
+        bl_domain_object = bpy.context.scene.flip_fluid.get_domain_object()
+        if bl_domain_object is None:
+            return
+
+        gn_modifier = helper_operators.get_geometry_node_modifier(bl_cache_object, resource_name)
+        if gn_modifier is None:
+            return
+
+        try:
+            if gn_modifier[socket_key] != bl_domain_object:
+                gn_modifier[socket_key] = bl_domain_object
+        except:
+            pass
+
+
+    def _update_ff_geometry_nodes_modifier_fluid_surface_object(self, bl_cache_object):
+        if self.cache_object_type == 'CACHE_OBJECT_TYPE_SURFACE':
+            # Avoid circular dependency
+            return
+
+        if   self.cache_object_type == 'CACHE_OBJECT_TYPE_FLUID_PARTICLES':
+            resource_name = "FF_GeometryNodesFluidParticles"
+            socket_key = "Socket_49"
+        elif self.cache_object_type == 'CACHE_OBJECT_TYPE_FOAM':
+            resource_name = "FF_GeometryNodesWhitewaterFoam"
+            socket_key = "Socket_32"
+        elif self.cache_object_type == 'CACHE_OBJECT_TYPE_BUBBLE':
+            resource_name = "FF_GeometryNodesWhitewaterBubble"
+            socket_key = "Socket_32"
+        elif self.cache_object_type == 'CACHE_OBJECT_TYPE_SPRAY':
+            resource_name = "FF_GeometryNodesWhitewaterSpray"
+            socket_key = "Socket_32"
+        elif self.cache_object_type == 'CACHE_OBJECT_TYPE_DUST':
+            resource_name = "FF_GeometryNodesWhitewaterDust"
+            socket_key = "Socket_32"
+        else:
+            return
+
+        dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+        if dprops is None:
+            return
+
+        bl_surface_object = dprops.mesh_cache.surface.get_cache_object()
+        if bl_surface_object is None:
+            return
+
+        gn_modifier = helper_operators.get_geometry_node_modifier(bl_cache_object, resource_name)
+        if gn_modifier is None:
+            return
+
+        try:
+            if gn_modifier[socket_key] != bl_surface_object:
+                gn_modifier[socket_key] = bl_surface_object
+        except:
+            pass
+
+
+    def _update_ff_geometry_nodes_modifier(self, bl_cache_object):
+        self._update_ff_geometry_nodes_modifier_domain_object(bl_cache_object)
+        self._update_ff_geometry_nodes_modifier_fluid_surface_object(bl_cache_object)
 
 
     def initialize_cache_object(self):
@@ -346,16 +441,16 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
         self._initialize_cache_object_octane(cache_object)
 
-        if self.cache_object_type == 'CACHE_OBJECT_TYPE_SURFACE' and vcu.is_blender_31():
+        if self.cache_object_type == 'CACHE_OBJECT_TYPE_SURFACE':
             self._initialize_cache_object_fluid_surface(cache_object)
 
-        if self.cache_object_type == 'CACHE_OBJECT_TYPE_FLUID_PARTICLES' and vcu.is_blender_31():
+        if self.cache_object_type == 'CACHE_OBJECT_TYPE_FLUID_PARTICLES':
             self._initialize_cache_object_fluid_particles(cache_object)
 
         if (self.cache_object_type == 'CACHE_OBJECT_TYPE_FOAM' or 
                 self.cache_object_type == 'CACHE_OBJECT_TYPE_BUBBLE' or 
                 self.cache_object_type == 'CACHE_OBJECT_TYPE_SPRAY' or 
-                self.cache_object_type == 'CACHE_OBJECT_TYPE_DUST') and vcu.is_blender_31():
+                self.cache_object_type == 'CACHE_OBJECT_TYPE_DUST'):
             self._initialize_cache_object_whitewater_particles(cache_object)
 
         self.cache_object = cache_object
@@ -366,16 +461,16 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         if cache_object is None:
             return
 
-        if self.cache_object_type == 'CACHE_OBJECT_TYPE_SURFACE' and vcu.is_blender_31():
+        if self.cache_object_type == 'CACHE_OBJECT_TYPE_SURFACE':
             self._initialize_cache_object_fluid_surface(cache_object)
 
-        if self.cache_object_type == 'CACHE_OBJECT_TYPE_FLUID_PARTICLES' and vcu.is_blender_31():
+        if self.cache_object_type == 'CACHE_OBJECT_TYPE_FLUID_PARTICLES':
             self._initialize_cache_object_fluid_particles(cache_object)
 
         if (self.cache_object_type == 'CACHE_OBJECT_TYPE_FOAM' or 
                 self.cache_object_type == 'CACHE_OBJECT_TYPE_BUBBLE' or 
                 self.cache_object_type == 'CACHE_OBJECT_TYPE_SPRAY' or 
-                self.cache_object_type == 'CACHE_OBJECT_TYPE_DUST') and vcu.is_blender_31():
+                self.cache_object_type == 'CACHE_OBJECT_TYPE_DUST'):
             self._initialize_cache_object_whitewater_particles(cache_object)
 
         self.cache_object = cache_object
@@ -404,34 +499,17 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
             print(warning)
             return
 
-        if vcu.is_blender_281():
-            mesh_data = cache_object.data
+        mesh_data = cache_object.data
+        is_smooth = self._is_mesh_smooth(mesh_data)
+        octane_mesh_type = self._get_octane_mesh_type(cache_object)
 
-            is_smooth = self._is_mesh_smooth(mesh_data)
-            octane_mesh_type = self._get_octane_mesh_type(cache_object)
+        vcu.swap_object_mesh_data_geometry(cache_object, [], [], 
+                                           mesh_data,
+                                           is_smooth,
+                                           octane_mesh_type)
 
-            vcu.swap_object_mesh_data_geometry(cache_object, [], [], 
-                                               mesh_data,
-                                               is_smooth,
-                                               octane_mesh_type)
-
-            self._set_mesh_smoothness(mesh_data, is_smooth)
-            self._set_octane_settings(cache_object, octane_mesh_type)
-
-        else:
-            old_mesh_data = cache_object.data
-
-            mesh_data_name = self.cache_object_default_name + "_mesh"
-            new_mesh_data = bpy.data.meshes.new(mesh_data_name)
-            new_mesh_data.from_pydata([], [], [])
-            
-            self._transfer_mesh_materials(old_mesh_data, new_mesh_data)
-            self._transfer_mesh_smoothness(old_mesh_data, new_mesh_data)
-            self._transfer_octane_settings(cache_object, cache_object)
-
-            cache_object.data = new_mesh_data
-
-            vcu.delete_mesh_data(old_mesh_data)
+        self._set_mesh_smoothness(mesh_data, is_smooth)
+        self._set_octane_settings(cache_object, octane_mesh_type)
 
 
     def _is_loaded_frame_up_to_date(self, frameno):
@@ -446,6 +524,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
                     self.enable_color_attribute                 != d.enable_color_attribute or
                     self.enable_source_id_attribute             != d.enable_source_id_attribute or
                     self.enable_viscosity_attribute             != d.enable_viscosity_attribute or
+                    self.enable_density_attribute               != d.enable_density_attribute or
                     self.enable_id_attribute                    != d.enable_id_attribute or
                     self.enable_uid_attribute                   != d.enable_uid_attribute or
                     self.enable_lifetime_attribute              != d.enable_lifetime_attribute or
@@ -470,6 +549,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         d.enable_color_attribute                 = self.enable_color_attribute
         d.enable_source_id_attribute             = self.enable_source_id_attribute
         d.enable_viscosity_attribute             = self.enable_viscosity_attribute
+        d.enable_density_attribute               = self.enable_density_attribute
         d.enable_id_attribute                    = self.enable_id_attribute
         d.enable_uid_attribute                   = self.enable_uid_attribute
         d.enable_lifetime_attribute              = self.enable_lifetime_attribute
@@ -509,7 +589,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         frame_string = self._frame_number_to_string(frameno)
         current_frame = render.get_current_render_frame()
 
-        if vcu.is_blender_281() and cache_object.data.shape_keys is not None:
+        if cache_object.data.shape_keys is not None:
             for idx,key in enumerate(cache_object.data.shape_keys.key_blocks):
                 cache_object.shape_key_remove(key=key)
 
@@ -538,7 +618,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
 
     def _update_velocity_attribute(self, frameno):
-        if not vcu.is_blender_293() or not self.enable_velocity_attribute:
+        if not self.enable_velocity_attribute:
             return
 
         cache_object = self.get_cache_object()
@@ -560,7 +640,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
 
     def _update_speed_attribute(self, frameno):
-        if not vcu.is_blender_293() or not self.enable_speed_attribute:
+        if not self.enable_speed_attribute:
             return
 
         cache_object = self.get_cache_object()
@@ -582,7 +662,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
 
     def _update_vorticity_attribute(self, frameno):
-        if not vcu.is_blender_293() or not self.enable_vorticity_attribute:
+        if not self.enable_vorticity_attribute:
             return
 
         cache_object = self.get_cache_object()
@@ -604,7 +684,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
 
     def _update_age_attribute(self, frameno):
-        if not vcu.is_blender_293() or not self.enable_age_attribute:
+        if not self.enable_age_attribute:
             return
 
         cache_object = self.get_cache_object()
@@ -626,7 +706,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
 
     def _update_color_attribute(self, frameno):
-        if not vcu.is_blender_293() or not self.enable_color_attribute:
+        if not self.enable_color_attribute:
             return
 
         cache_object = self.get_cache_object()
@@ -648,7 +728,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
 
     def _update_source_id_attribute(self, frameno):
-        if not vcu.is_blender_293() or not self.enable_source_id_attribute:
+        if not self.enable_source_id_attribute:
             return
 
         cache_object = self.get_cache_object()
@@ -670,7 +750,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
 
     def _update_uid_attribute(self, frameno):
-        if not vcu.is_blender_293() or not self.enable_uid_attribute:
+        if not self.enable_uid_attribute:
             return
 
         cache_object = self.get_cache_object()
@@ -692,7 +772,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
 
     def _update_viscosity_attribute(self, frameno):
-        if not vcu.is_blender_293() or not self.enable_viscosity_attribute:
+        if not self.enable_viscosity_attribute:
             return
 
         cache_object = self.get_cache_object()
@@ -713,8 +793,47 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         attribute.data.foreach_set("value", viscosity_data)
 
 
+    def _update_density_attribute(self, frameno):
+        if not self.enable_density_attribute:
+            return
+
+        cache_object = self.get_cache_object()
+        frame_string = self._frame_number_to_string(frameno)
+        density_data, _ = self._import_density_attribute_data(frameno)
+
+        if not density_data:
+            return
+
+        attribute_name = "flip_density"
+        mesh = cache_object.data
+        try:
+            mesh.attributes.remove(mesh.attributes.get(attribute_name))
+        except:
+            pass
+
+        attribute = mesh.attributes.new(attribute_name, "FLOAT", "POINT")
+        attribute.data.foreach_set("value", density_data)
+
+        # flip_density_average attribute needs more work
+        """
+        density_average_data, _ = self._import_density_average_attribute_data(frameno)
+        if not density_average_data:
+            return
+
+        attribute_name = "flip_density_average"
+        mesh = cache_object.data
+        try:
+            mesh.attributes.remove(mesh.attributes.get(attribute_name))
+        except:
+            pass
+
+        attribute = mesh.attributes.new(attribute_name, "FLOAT", "POINT")
+        attribute.data.foreach_set("value", density_average_data)
+        """
+
+
     def _update_id_attribute(self, frameno):
-        if not vcu.is_blender_293() or not self.enable_id_attribute:
+        if not self.enable_id_attribute:
             return
 
         cache_object = self.get_cache_object()
@@ -768,7 +887,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
 
     def _update_lifetime_attribute(self, frameno):
-        if not vcu.is_blender_293() or not self.enable_lifetime_attribute:
+        if not self.enable_lifetime_attribute:
             return
 
         cache_object = self.get_cache_object()
@@ -790,7 +909,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
 
     def _update_whitewater_proximity_attribute(self, frameno):
-        if not vcu.is_blender_293() or not self.enable_whitewater_proximity_attribute:
+        if not self.enable_whitewater_proximity_attribute:
             return
 
         cache_object = self.get_cache_object()
@@ -833,9 +952,6 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
     # Cache values unrelated to geometry will be stored on the domain vertices
     # to minimize memory usage
     def _update_domain_data_storage_attributes(self, current_frame):
-        if not vcu.is_blender_293():
-            return
-
         domain_object = self._get_domain_object()
         if not domain_object:
             return
@@ -879,6 +995,42 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
                     attribute = mesh.attributes.new(attribute_name, "INT", "POINT")
                     attribute.data.foreach_set("value", [max_uid_value] * len(attribute.data))
 
+        # Store per frame metadata values
+        bakefiles_directory = self._get_bakefiles_directory()
+        metadata_filename = "metadata" + self._frame_number_to_string(current_frame) + ".json"
+        metadata_filepath = os.path.join(bakefiles_directory, metadata_filename)
+        metadata_dict = {}
+        if os.path.isfile(metadata_filepath):
+            with open(metadata_filepath, "r") as metadata_file:
+                metadata_dict = json.load(metadata_file)
+
+        time_scale_value = 1.0
+        if 'time_scale' in metadata_dict:
+            time_scale_value = metadata_dict['time_scale']
+
+        world_scale_value = 1.0
+        if 'world_scale' in metadata_dict:
+            world_scale_value = metadata_dict['world_scale']
+
+        attribute_list = [
+                ("flip_time_scale",  "FLOAT", time_scale_value),
+                ("flip_world_scale", "FLOAT", world_scale_value),
+        ]
+
+        for attribute_data in attribute_list:
+            attribute_name = attribute_data[0]
+            attribute_type = attribute_data[1]
+            attribute_value = attribute_data[2]
+
+            mesh = domain_object.data
+            try:
+                mesh.attributes.remove(mesh.attributes.get(attribute_name))
+            except:
+                pass
+
+            attribute = mesh.attributes.new(attribute_name, attribute_type, "POINT")
+            attribute.data.foreach_set("value", [attribute_value] * len(attribute.data))
+
 
     def load_frame(self, frameno, force_load=False, depsgraph=None):
         if not self._is_load_frame_valid(frameno, force_load):
@@ -912,6 +1064,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
                                            octane_mesh_type)
 
         self.update_transforms()
+        self._update_ff_geometry_nodes_modifier(cache_object)
         self._update_motion_blur(frameno)
         self._update_velocity_attribute(frameno)
         self._update_speed_attribute(frameno)
@@ -920,6 +1073,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         self._update_color_attribute(frameno)
         self._update_source_id_attribute(frameno)
         self._update_viscosity_attribute(frameno)
+        self._update_density_attribute(frameno)
         self._update_id_attribute(frameno)
         self._update_uid_attribute(frameno)
         self._update_lifetime_attribute(frameno)
@@ -928,18 +1082,6 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
         self.current_loaded_frame = render.get_current_render_frame()
         self._commit_loaded_frame_data(frameno)
-
-        if vcu.is_blender_279() or render.is_rendering():
-            use_persistent_data = bpy.context.scene.render.use_persistent_data
-            is_keyframed_hide_render = render.is_keyframed_hide_render_issue_relevant()
-            if not use_persistent_data and not is_keyframed_hide_render:
-                # Updating depsgraph when 'Persistent Data' option is enabled
-                # causes incorrect render. Note: ignoring the depsgraph update
-                # can result in more frequent render crashes. 
-                if depsgraph is not None:
-                    depsgraph.update()
-                else:
-                    vcu.depsgraph_update()
 
 
     def update_transforms(self):
@@ -982,11 +1124,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         if self.cache_object is None:
             return None
             
-        if vcu.is_blender_28():
-            object_collection = bpy.context.scene.collection.all_objects
-        else:
-            object_collection = bpy.context.scene.objects
-
+        object_collection = bpy.context.scene.collection.all_objects
         if object_collection.get(self.cache_object.name) is None:
             self.delete_cache_object()
         return self.cache_object
@@ -1388,6 +1526,30 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         return os.path.join(bakefiles_directory, filename)
 
 
+    def _get_density_attribute_filepath(self, frameno):
+        filename = ("density" + self.mesh_prefix + 
+                    self._frame_number_to_string(frameno) + 
+                    ".data")
+        bakefiles_directory = self._get_bakefiles_directory()
+        return os.path.join(bakefiles_directory, filename)
+
+
+    def _get_fluid_particle_density_attribute_filepath(self, frameno):
+        filename = (self.mesh_prefix + "density" +
+                    self._frame_number_to_string(frameno) + 
+                    ".ffp3")
+        bakefiles_directory = self._get_bakefiles_directory()
+        return os.path.join(bakefiles_directory, filename)
+
+
+    def _get_fluid_particle_density_average_attribute_filepath(self, frameno):
+        filename = (self.mesh_prefix + "densityaverage" +
+                    self._frame_number_to_string(frameno) + 
+                    ".ffp3")
+        bakefiles_directory = self._get_bakefiles_directory()
+        return os.path.join(bakefiles_directory, filename)
+
+
     def _get_id_attribute_filepath(self, frameno):
         filename = ("id" + self.mesh_prefix + 
                     self._frame_number_to_string(frameno) + 
@@ -1460,11 +1622,7 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         if self.cache_object is None:
                 return False
 
-        if vcu.is_blender_28():
-            object_collection = bpy.context.scene.collection.all_objects
-        else:
-            object_collection = bpy.context.scene.objects
-
+        object_collection = bpy.context.scene.collection.all_objects
         if object_collection.get(self.cache_object.name) is None:
             self.delete_cache_object()
             return False
@@ -1819,6 +1977,62 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
         return viscosity_data, header_info
 
 
+    def _import_density_attribute_data(self, frameno):
+        header_info = None
+        density_data = []
+        if not self._is_domain_set() or not self._is_frame_cached(frameno):
+            return density_data, header_info
+
+        if self.cache_object_type == 'CACHE_OBJECT_TYPE_FLUID_PARTICLES':
+            filepath = self._get_fluid_particle_density_attribute_filepath(frameno)
+        else:
+            filepath = self._get_density_attribute_filepath(frameno)
+
+        if not os.path.exists(filepath):
+            return density_data, header_info
+
+        import_function = getattr(self, self.import_function_name)
+        if import_function == self.import_wwp:
+            density_data, _ = import_function(filepath, self.wwp_import_percentage)
+        elif import_function == self.import_ffp3:
+            density_data, _, header_info = self.import_ffp3(
+                    filepath,
+                    pct_surface=self.ffp3_surface_import_percentage,
+                    pct_boundary=self.ffp3_boundary_import_percentage,
+                    pct_interior=self.ffp3_interior_import_percentage,
+                    attribute_type='ATTRIBUTE_TYPE_FLOAT'
+                    )
+        else:
+            density_data = self.import_floats(filepath)
+
+        return density_data, header_info
+
+
+    def _import_density_average_attribute_data(self, frameno):
+        header_info = None
+        density_average_data = []
+        if not self._is_domain_set() or not self._is_frame_cached(frameno):
+            return density_average_data, header_info
+
+        if self.cache_object_type != 'CACHE_OBJECT_TYPE_FLUID_PARTICLES':
+            # Attribute only available for fluid particles
+            return density_average_data, header_info
+
+        filepath = self._get_fluid_particle_density_average_attribute_filepath(frameno)
+        if not os.path.exists(filepath):
+            return density_average_data, header_info
+
+        density_average_data, _, header_info = self.import_ffp3(
+                filepath,
+                pct_surface=self.ffp3_surface_import_percentage,
+                pct_boundary=self.ffp3_boundary_import_percentage,
+                pct_interior=self.ffp3_interior_import_percentage,
+                attribute_type='ATTRIBUTE_TYPE_FLOAT'
+                )
+
+        return density_average_data, header_info
+
+
     def _import_id_attribute_data(self, frameno):
         header_info = None
         id_data = []
@@ -1933,12 +2147,11 @@ class FlipFluidMeshCache(bpy.types.PropertyGroup):
 
 
 class FlipFluidGLPointCache(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
-    mesh_prefix = StringProperty(default=""); exec(conv("mesh_prefix"))
-    mesh_file_extension = StringProperty(default=""); exec(conv("mesh_file_extension"))
-    current_loaded_frame = IntProperty(default=-1); exec(conv("current_loaded_frame"))
-    uid = IntProperty(default=-1); exec(conv("uid"))
-    is_enabled = BoolProperty(default=False); exec(conv("is_enabled"))
+    mesh_prefix: StringProperty(default="")
+    mesh_file_extension: StringProperty(default="")
+    current_loaded_frame: IntProperty(default=-1)
+    uid: IntProperty(default=-1)
+    is_enabled: BoolProperty(default=False)
 
 
     def enable(self):
@@ -2084,12 +2297,11 @@ class FlipFluidGLPointCache(bpy.types.PropertyGroup):
 
 
 class FlipFluidGLForceFieldCache(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
-    mesh_prefix = StringProperty(default=""); exec(conv("mesh_prefix"))
-    mesh_file_extension = StringProperty(default=""); exec(conv("mesh_file_extension"))
-    current_loaded_frame = IntProperty(default=-1); exec(conv("current_loaded_frame"))
-    uid = IntProperty(default=-1); exec(conv("uid"))
-    is_enabled = BoolProperty(default=False); exec(conv("is_enabled"))
+    mesh_prefix: StringProperty(default="")
+    mesh_file_extension: StringProperty(default="")
+    current_loaded_frame: IntProperty(default=-1)
+    uid: IntProperty(default=-1)
+    is_enabled: BoolProperty(default=False)
 
 
     def enable(self):
@@ -2221,16 +2433,15 @@ class FlipFluidGLForceFieldCache(bpy.types.PropertyGroup):
 
 
 class FlipFluidCache(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
-    surface = PointerProperty(type=FlipFluidMeshCache); exec(conv("surface"))
-    particles = PointerProperty(type=FlipFluidMeshCache); exec(conv("particles"))
-    foam = PointerProperty(type=FlipFluidMeshCache); exec(conv("foam"))
-    bubble = PointerProperty(type=FlipFluidMeshCache); exec(conv("bubble"))
-    spray = PointerProperty(type=FlipFluidMeshCache); exec(conv("spray"))
-    dust = PointerProperty(type=FlipFluidMeshCache); exec(conv("dust"))
-    gl_particles = PointerProperty(type=FlipFluidGLPointCache); exec(conv("gl_particles"))
-    gl_force_field = PointerProperty(type=FlipFluidGLForceFieldCache); exec(conv("gl_force_field"))
-    obstacle = PointerProperty(type=FlipFluidMeshCache); exec(conv("obstacle"))
+    surface: PointerProperty(type=FlipFluidMeshCache)
+    particles: PointerProperty(type=FlipFluidMeshCache)
+    foam: PointerProperty(type=FlipFluidMeshCache)
+    bubble: PointerProperty(type=FlipFluidMeshCache)
+    spray: PointerProperty(type=FlipFluidMeshCache)
+    dust: PointerProperty(type=FlipFluidMeshCache)
+    gl_particles: PointerProperty(type=FlipFluidGLPointCache)
+    gl_force_field: PointerProperty(type=FlipFluidGLForceFieldCache)
+    obstacle: PointerProperty(type=FlipFluidMeshCache)
 
 
     def initialize_cache_settings(self):

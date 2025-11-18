@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_GRIDUTILS_H
-#define FLUIDENGINE_GRIDUTILS_H
+#pragma once
 
 #include "array3d.h"
 #include "grid3d.h"
@@ -163,5 +162,3 @@ namespace GridUtils {
         }
     }
 }
-
-#endif

@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_PARTICLELEVELSET_H
-#define FLUIDENGINE_PARTICLELEVELSET_H
+#pragma once
 
 #if __MINGW32__ && !_WIN64
     #include "mingw32_threads/mingw.thread.h"
@@ -149,5 +148,3 @@ private:
     int _numComputeBlocksPerJob = 10;
     float _searchRadiusFactor = 2.0f;
 };
-
-#endif

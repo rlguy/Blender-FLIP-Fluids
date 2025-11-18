@@ -31,61 +31,33 @@ def _draw_geometry_attributes_menu(self, context):
     obj = vcu.get_active_object(context)
     sprops = obj.flip_fluid.domain.surface
     rprops = obj.flip_fluid.domain.render
+    is_surface_mesh_generation_enabled = sprops.enable_surface_mesh_generation
 
     #
     # Geometry Attributes
     #
+    is_preview_mode_enabled = rprops.viewport_display == 'DISPLAY_PREVIEW'
+    is_attributes_enabled = (
+            sprops.enable_velocity_vector_attribute or
+            sprops.enable_speed_attribute or
+            sprops.enable_vorticity_vector_attribute or
+            sprops.enable_color_attribute or
+            sprops.enable_age_attribute or
+            sprops.enable_lifetime_attribute or
+            sprops.enable_whitewater_proximity_attribute or
+            sprops.enable_source_id_attribute or
+            sprops.enable_viscosity_attribute
+            )
+
     box = self.layout.box()
-    row = box.row(align=True)
-    row.alert = not sprops.enable_surface_mesh_generation
-    row.prop(sprops, "geometry_attributes_expanded",
-        icon="TRIA_DOWN" if sprops.geometry_attributes_expanded else "TRIA_RIGHT",
-        icon_only=True, 
-        emboss=False
-    )
+    header, body = box.panel("geometry_attributes", default_closed=True)
+
+    row = header.row(align=True)
+    row.alert = not is_surface_mesh_generation_enabled
     row.label(text="Surface Attributes:")
-
-    if sprops.geometry_attributes_expanded:
-        prefs = vcu.get_addon_preferences()
-        if not prefs.is_extra_features_enabled():
-            warn_box = box.box()
-            warn_column = warn_box.column(align=True)
-            warn_column.enabled = True
-            warn_column.label(text="     This feature is affected by a current bug in Blender.", icon='ERROR')
-            warn_column.label(text="     The Extra Features option must be enabled in preferences")
-            warn_column.label(text="     to use this feature.")
-            warn_column.separator()
-            warn_column.prop(prefs, "enable_extra_features", text="Enable Extra Features in Preferences")
-            warn_column.separator()
-            warn_column.operator(
-                "wm.url_open", 
-                text="Important Info and Limitations", 
-                icon="WORLD"
-            ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Preferences-Menu-Settings#developer-tools"
-            return
-
-        if not vcu.is_blender_293():
-            column = box.column(align=True)
-            column.enabled = False
-            column.label(text="Geometry attribute features for the fluid surface are only available in", icon='ERROR')
-            column.label(text="Blender 2.93 or later. Blender 3.1 or later recommended.", icon='ERROR')
-            return
-
-        is_preview_mode_enabled = rprops.viewport_display == 'DISPLAY_PREVIEW'
-        is_attributes_enabled = (
-                sprops.enable_velocity_vector_attribute or
-                sprops.enable_speed_attribute or
-                sprops.enable_vorticity_vector_attribute or
-                sprops.enable_color_attribute or
-                sprops.enable_age_attribute or
-                sprops.enable_lifetime_attribute or
-                sprops.enable_whitewater_proximity_attribute or
-                sprops.enable_source_id_attribute or
-                sprops.enable_viscosity_attribute
-                )
-
+    if body:
         if is_preview_mode_enabled and is_attributes_enabled:
-            row = box.row(align=True)
+            row = body.row(align=True)
             row.alert = True
             row.alignment = 'LEFT'
             row.prop(sprops, "preview_mode_attributes_tooltip", icon="QUESTION", emboss=False, text="")
@@ -94,17 +66,14 @@ def _draw_geometry_attributes_menu(self, context):
         #
         # Velocity Attributes
         #
-        subbox = box.box()
-        row = subbox.row(align=True)
-        row.prop(sprops, "velocity_attributes_expanded",
-            icon="TRIA_DOWN" if sprops.velocity_attributes_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
-        row.label(text="Velocity Based Attributes:")
+        box = body.box()
+        header_velocity, body_velocity = box.panel("velocity_attributes", default_closed=True)
 
-        if sprops.velocity_attributes_expanded:
-            column = subbox.column(align=True)
+        row_velocity = header_velocity.row(align=True)
+        row_velocity.alert = not is_surface_mesh_generation_enabled
+        row_velocity.label(text="Velocity Based Attributes:")
+        if body_velocity:
+            column = body_velocity.column(align=True)
             split = column.split(align=True)
             column_left = split.column(align=True)
             column_right = split.column(align=True)
@@ -119,7 +88,7 @@ def _draw_geometry_attributes_menu(self, context):
             column.separator()
             column.operator("flip_fluid_operators.helper_initialize_motion_blur")
         else:
-            row = row.row(align=True)
+            row = row_velocity.row(align=True)
             row.alignment = 'RIGHT'
             row.prop(sprops, "enable_velocity_vector_attribute", text="Velocity")
             row.prop(sprops, "enable_speed_attribute", text="Speed")
@@ -128,17 +97,14 @@ def _draw_geometry_attributes_menu(self, context):
         #
         # Color Attributes
         #
-        subbox = box.box()
-        row = subbox.row(align=True)
-        row.prop(sprops, "color_attributes_expanded",
-            icon="TRIA_DOWN" if sprops.color_attributes_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
-        row.label(text="Color and Mixing Attributes:")
+        box = body.box()
+        header_color, body_color = box.panel("color_attributes", default_closed=True)
 
-        if sprops.color_attributes_expanded:
-            column = subbox.column(align=True)
+        row_color = header_color.row(align=True)
+        row_color.alert = not is_surface_mesh_generation_enabled
+        row_color.label(text="Color and Mixing Attributes:")
+        if body_color:
+            column = body_color.column(align=True)
             split = column.split(align=True)
             column_left = split.column(align=True)
             column_right = split.column(align=True)
@@ -146,7 +112,7 @@ def _draw_geometry_attributes_menu(self, context):
             if sprops.show_smoothing_radius_in_ui:
                 column_right.prop(sprops, "color_attribute_radius", text="Smoothing", slider=True)
 
-            column = subbox.column(align=True)
+            column = body_color.column(align=True)
             split = column.split(align=True)
             column_left = split.column(align=True)
             column_right = split.column(align=True)
@@ -155,7 +121,7 @@ def _draw_geometry_attributes_menu(self, context):
             column_right.enabled = sprops.enable_color_attribute and sprops.enable_color_attribute_mixing
             column_right.prop(sprops, "color_attribute_mixing_rate", text="Mix Rate", slider=True)
 
-            column = subbox.column(align=True)
+            column = body_color.column(align=True)
             column.enabled = sprops.enable_color_attribute and sprops.enable_color_attribute_mixing
             column.label(text="Mixing Mode:")
             row = column.row(align=True)
@@ -178,10 +144,10 @@ def _draw_geometry_attributes_menu(self, context):
                                 text="Open Preferences", icon="PREFERENCES"
                                 ).view_mode = 'PREFERENCES_MENU_VIEW_MIXBOX'
         else:
-            row = row.row(align=True)
+            row = row_color.row(align=True)
             row.alignment = 'RIGHT'
             row.prop(sprops, "enable_color_attribute", text="Color")
-            row = row.row(align=True)
+            row = row_color.row(align=True)
             row.alignment = 'RIGHT'
             row.enabled = sprops.enable_color_attribute
             row.prop(sprops, "enable_color_attribute_mixing", text="Mixing")
@@ -189,17 +155,14 @@ def _draw_geometry_attributes_menu(self, context):
         #
         # Other Attributes
         #
-        subbox = box.box()
-        row = subbox.row(align=True)
-        row.prop(sprops, "other_attributes_expanded",
-            icon="TRIA_DOWN" if sprops.other_attributes_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
-        row.label(text="Other Attributes:")
+        box = body.box()
+        header_other, body_other = box.panel("other_attributes", default_closed=True)
 
-        if sprops.other_attributes_expanded:
-            column = subbox.column(align=True)
+        row_other = header_other.row(align=True)
+        row_other.alert = not is_surface_mesh_generation_enabled
+        row_other.label(text="Other Attributes:")
+        if body_other:
+            column = body_other.column(align=True)
             row = column.row(align=True)
             row.prop(sprops, "enable_age_attribute", text="Age Attributes")
             if sprops.show_smoothing_radius_in_ui:
@@ -217,7 +180,7 @@ def _draw_geometry_attributes_menu(self, context):
                 row.prop(sprops, "whitewater_proximity_attribute_radius", text="Smoothing", slider=True)
             column.prop(sprops, "enable_source_id_attribute", text="Source ID Attributes")
         else:
-            row = row.row(align=True)
+            row = row_other.row(align=True)
             row.alignment = 'RIGHT'
             row.prop(sprops, "enable_age_attribute", text="Age")
             row.prop(sprops, "enable_lifetime_attribute", text="Life")
@@ -245,21 +208,28 @@ class FLIPFLUID_PT_DomainTypeFluidSurfacePanel(bpy.types.Panel):
     def draw(self, context):
         obj = vcu.get_active_object(context)
         sprops = obj.flip_fluid.domain.surface
+        is_surface_mesh_generation_enabled = sprops.enable_surface_mesh_generation
         
         column = self.layout.column(align=True)
         column.prop(sprops, "enable_surface_mesh_generation")
 
+        #
+        # Surface Mesh Panel
+        #
         box = self.layout.box()
-        row = box.row(align=True)
-        row.alert = not sprops.enable_surface_mesh_generation
-        row.prop(sprops, "surface_mesh_expanded",
-            icon="TRIA_DOWN" if sprops.surface_mesh_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
-        row.label(text="Surface Mesh:")
+        header, body = box.panel("surface_mesh", default_closed=False)
 
-        if not sprops.surface_mesh_expanded:
+        row = header.row(align=True)
+        row.alert = not is_surface_mesh_generation_enabled
+        row.label(text="Surface Mesh:")
+        if body:
+            column = body.column(align=True)
+            column.prop(sprops, "subdivisions")
+            row = column.row(align=True)
+            if sprops.particle_scale < 0.999:
+                row.alert = True
+            row.prop(sprops, "particle_scale")
+        else:
             info_text = "Subdivisions " + str(sprops.subdivisions) + "  /  "
             info_text += "Scale " + "{:.2f}".format(sprops.particle_scale)
             row = row.row(align=True)
@@ -268,71 +238,53 @@ class FLIPFLUID_PT_DomainTypeFluidSurfacePanel(bpy.types.Panel):
                 row.alert = True
             row.label(text=info_text)
 
-        if sprops.surface_mesh_expanded:
-            column = box.column(align=True)
-            column.prop(sprops, "subdivisions")
-            row = column.row(align=True)
-            if sprops.particle_scale < 0.999:
-                row.alert = True
-            row.prop(sprops, "particle_scale")
-
-        object_collection = vcu.get_scene_collection()
-        if vcu.is_blender_28():
-            search_group = "all_objects"
-        else:
-            search_group = "objects"
-
+        #
+        # Meshing Volume Panel
+        #
         box = self.layout.box()
-        row = box.row(align=True)
-        row.alert = not sprops.enable_surface_mesh_generation
-        row.prop(sprops, "meshing_volume_expanded",
-            icon="TRIA_DOWN" if sprops.meshing_volume_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
+        header, body = box.panel("meshing_volume", default_closed=True)
+
+        row = header.row(align=True)
+        row.alert = not is_surface_mesh_generation_enabled
         row.label(text="Meshing Volume:")
-
-        if not sprops.meshing_volume_expanded:
-            info_text = ""
-            if sprops.meshing_volume_mode == "MESHING_VOLUME_MODE_DOMAIN":
-                info_text = "Domain Volume"
-            elif sprops.meshing_volume_mode == "MESHING_VOLUME_MODE_OBJECT":
-                info_text = "Object Volume"
-            row = row.row(align=True)
-            row.alignment = 'RIGHT'
-            row.label(text=info_text)
-
-        if sprops.meshing_volume_expanded:
-            row = box.row(align=True)
+        if body:
+            row = body.row(align=True)
             row.prop(sprops, "meshing_volume_mode", expand=True)
             column = box.column(align=True)
             split = column.split(align=True)
             column_left = split.column(align=True)
             column_right = split.column(align=True)
             column_right.enabled = sprops.meshing_volume_mode == "MESHING_VOLUME_MODE_OBJECT"
-            column_right.prop_search(sprops, "meshing_volume_object", object_collection, search_group, text="Object")
+            column_right.prop_search(sprops, "meshing_volume_object", vcu.get_scene_collection(), "all_objects", text="Object")
             column_right.prop(sprops, "export_animated_meshing_volume_object")
-
-        box = self.layout.box()
-        row = box.row(align=True)
-        row.alert = not sprops.enable_surface_mesh_generation
-        row.prop(sprops, "meshing_against_boundary_expanded",
-            icon="TRIA_DOWN" if sprops.meshing_against_boundary_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
-        row.label(text="Meshing Against Boundary:")
-
-        if not sprops.meshing_against_boundary_expanded:
+        else:
+            info_text = ""
+            if sprops.meshing_volume_mode == "MESHING_VOLUME_MODE_DOMAIN":
+                info_text = "Domain Volume"
+            elif sprops.meshing_volume_mode == "MESHING_VOLUME_MODE_OBJECT":
+                info_text = "Object Volume"
+                if sprops.meshing_volume_object is not None:
+                    info_text += ": <" + sprops.meshing_volume_object.name + ">"
+                else:
+                    info_text += ": None"
             row = row.row(align=True)
             row.alignment = 'RIGHT'
-            row.prop(sprops, "remove_mesh_near_domain", text="Remove")
+            row.label(text=info_text)
 
-        if sprops.meshing_against_boundary_expanded:
-            column = box.column(align=True)
+        #
+        # Meshing Volume Panel
+        #
+        box = self.layout.box()
+        header, body = box.panel("meshing_against_boundary", default_closed=True)
+
+        row = header.row(align=True)
+        row.alert = not is_surface_mesh_generation_enabled
+        row.label(text="Meshing Against Boundary:")
+        if body:
+            column = body.column(align=True)
             column.prop(sprops, "remove_mesh_near_domain")
 
-            column = box.column(align=True)
+            column = body.column(align=True)
             column.enabled = sprops.remove_mesh_near_domain
             row = column.row(align=True)
             row.prop(sprops, "remove_mesh_near_domain_sides", index=0, text="X –")
@@ -344,43 +296,30 @@ class FLIPFLUID_PT_DomainTypeFluidSurfacePanel(bpy.types.Panel):
             row.prop(sprops, "remove_mesh_near_domain_sides", index=4, text="Z –")
             row.prop(sprops, "remove_mesh_near_domain_sides", index=5, text="Z+")
             column.prop(sprops, "remove_mesh_near_domain_distance")
+        else:
+            row = row.row(align=True)
+            row.alignment = 'RIGHT'
+            row.prop(sprops, "remove_mesh_near_domain", text="Remove")
 
+        #
+        # Meshing Against Obstacle Panel
+        #
         box = self.layout.box()
-        row = box.row(align=True)
-        row.alert = not sprops.enable_surface_mesh_generation
-        row.prop(sprops, "meshing_against_obstacles_expanded",
-            icon="TRIA_DOWN" if sprops.meshing_against_obstacles_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
-        row.label(text="Meshing Against Obstacles:")
+        header, body = box.panel("meshing_against_obstacles", default_closed=True)
 
-        if not sprops.meshing_against_obstacles_expanded:
+        row = header.row(align=True)
+        row.alert = not is_surface_mesh_generation_enabled
+        row.label(text="Meshing Against Obstacles:")
+        if body:
+            column = body.column(align=True)
+            column.prop(sprops, "enable_meshing_offset")
+            row = body.row(align=True)
+            row.enabled = sprops.enable_meshing_offset
+            row.prop(sprops, "obstacle_meshing_mode", expand=True)
+        else:
             row = row.row(align=True)
             row.alignment = 'RIGHT'
             row.prop(sprops, "enable_meshing_offset", text="Enable  ")
-
-        if sprops.meshing_against_obstacles_expanded:
-            column = box.column(align=True)
-            column.prop(sprops, "enable_meshing_offset")
-            row = box.row(align=True)
-            row.enabled = sprops.enable_meshing_offset
-            row.prop(sprops, "obstacle_meshing_mode", expand=True)
-            
-        # Removed surface smoothing options. These are better set
-        # using a Blender smooth modifier.
-        """
-        box = self.layout.box()
-        box.label(text="Smoothing:")
-        row = box.row(align=True)
-        row.prop(sprops, "smoothing_value")
-        row.prop(sprops, "smoothing_iterations")
-        """
-
-        # Motion Blur is no longer supported
-        #column = self.layout.column(align=True)
-        #column.separator()
-        #column.prop(sprops, "generate_motion_blur_data")
 
         _draw_fluid_surface_display_settings(self, context)
         _draw_geometry_attributes_menu(self, context)

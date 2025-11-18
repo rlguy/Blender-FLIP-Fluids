@@ -40,27 +40,16 @@ class FLIPFLUID_PT_DomainTypeAdvancedPanel(bpy.types.Panel):
         aprops = obj.flip_fluid.domain.advanced
         wprops = obj.flip_fluid.domain.world
 
+        #
+        # Frame Substeps Panel
+        #
         box = self.layout.box()
-        column = box.column(align=True)
-        split = vcu.ui_split(column, factor=0.45)
-        column_left = split.column(align=True)
-        column_right = split.column(align=True)
+        header, body = box.panel("frame_substeps_settings", default_closed=False)
 
-        row = column_left.row(align=True)
-        row.prop(aprops, "frame_substeps_expanded",
-            icon="TRIA_DOWN" if aprops.frame_substeps_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
+        row = header.row(align=True)
         row.label(text="Frame Substeps:")
-
-        if not aprops.frame_substeps_expanded:
-            row = column_right.row(align=True)
-            row.prop(aprops.min_max_time_steps_per_frame, "value_min", text="Min")
-            row.prop(aprops.min_max_time_steps_per_frame, "value_max", text="Max")
-
-        if aprops.frame_substeps_expanded:
-            column = box.column(align=True)
+        if body:
+            column = body.column(align=True)
             if wprops.enable_surface_tension and aprops.min_max_time_steps_per_frame.value_max < wprops.minimum_surface_tension_substeps:
                 row = column.row(align=True)
                 row.alert = True
@@ -73,77 +62,66 @@ class FLIPFLUID_PT_DomainTypeAdvancedPanel(bpy.types.Panel):
             column.prop(aprops, "CFL_condition_number")
             column.prop(aprops, "enable_adaptive_obstacle_time_stepping")
             column.prop(aprops, "enable_adaptive_force_field_time_stepping")
+        else:
+            row = row.row(align=True)
+            row.alignment = 'RIGHT'
+            row.prop(aprops.min_max_time_steps_per_frame, "value_min", text="Min")
+            row.prop(aprops.min_max_time_steps_per_frame, "value_max", text="Max")
 
+        #
+        # Simulation Method Panel
+        #
         box = self.layout.box()
-        column = box.column(align=True)
-        split = vcu.ui_split(column, factor=0.5)
-        column_left = split.column(align=True)
-        column_right = split.column(align=True)
+        header, body = box.panel("simulation_method_settings", default_closed=False)
 
-        row = column_left.row(align=True)
-        row.prop(aprops, "simulation_method_expanded",
-            icon="TRIA_DOWN" if aprops.simulation_method_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
+        row = header.row(align=True)
         row.label(text="Simulation Method:")
-
-        if not aprops.simulation_method_expanded:
-            row = column_right.row(align=True)
-            row.prop(aprops, "velocity_transfer_method", expand=True)
-
-        if aprops.simulation_method_expanded:
-            column = box.column(align=True)
+        if body:
+            column = body.column(align=True)
             row = column.row(align=True)
             row.prop(aprops, "velocity_transfer_method", expand=True)
             if aprops.velocity_transfer_method == 'VELOCITY_TRANSFER_METHOD_FLIP':
                 column.prop(aprops, "PICFLIP_ratio", slider=True)
             else:
                 column.label(text="")
-
+        else:
+            row = row.row(align=True)
+            row.alignment = 'RIGHT'
+            row.prop(aprops, "velocity_transfer_method", expand=True)
+        
+        #
+        # Simulation and Particle Stability Panel
+        #
         box = self.layout.box()
-        row = box.row(align=True)
-        row.prop(aprops, "simulation_stability_expanded",
-            icon="TRIA_DOWN" if aprops.simulation_stability_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
+        header, body = box.panel("simulation_and_particle_stability_settings", default_closed=True)
+
+        row = header.row(align=True)
         row.label(text="Simulation and Particle Stability:")
-
-        if aprops.simulation_stability_expanded:
-            column = box.column()
-
+        if body:
+            column = body.column()
             row = column.row(align=True)
             row.prop(aprops, "particle_jitter_factor", slider=True)
             row.prop(aprops, "jitter_surface_particles")
             column.prop(aprops, "enable_extreme_velocity_removal")
             column.separator()
-            column = box.column(align=True)
+            column = body.column(align=True)
             column.prop(aprops, "pressure_solver_max_iterations")
             column.prop(aprops, "viscosity_solver_max_iterations")
-
-        box = self.layout.box()
-        row = box.row(align=True)
-        row.prop(aprops, "multithreading_expanded",
-            icon="TRIA_DOWN" if aprops.multithreading_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
-        row.label(text="Multithreading and Performance:")
-
-        if not aprops.multithreading_expanded:
-            info_text = ""
-            if aprops.threading_mode == 'THREADING_MODE_AUTO_DETECT':
-                info_text = "Auto-detect " + str(aprops.num_threads_auto_detect) + " threads"
-            elif aprops.threading_mode == 'THREADING_MODE_FIXED':
-                info_text = "Fixed " + str(aprops.num_threads_fixed) + " threads"
-
+        else:
             row = row.row(align=True)
             row.alignment = 'RIGHT'
-            row.label(text=info_text)
+            row.prop(aprops, "jitter_surface_particles")
 
-        if aprops.multithreading_expanded:
-            column = box.column()
+        #
+        # Multithreading and Performance Panel
+        #
+        box = self.layout.box()
+        header, body = box.panel("multithreading_and_performance_settings", default_closed=False)
+
+        row = header.row(align=True)
+        row.label(text="Multithreading and Performance:")
+        if body:
+            column = body.column()
             split = column.split(align=True)
 
             column_left = split.column(align=True)
@@ -156,31 +134,29 @@ class FLIPFLUID_PT_DomainTypeAdvancedPanel(bpy.types.Panel):
             elif aprops.threading_mode == 'THREADING_MODE_FIXED':
                 row.prop(aprops, "num_threads_fixed")
 
-            column = box.column()
+            column = body.column()
             column.prop(aprops, "enable_fracture_optimization")
-        
-        # Performance and optimization settings are hidden from the UI.
-        # These should always be enabled for performance.
-        """
-        column = self.layout.column(align=True)
-        column.separator()
-        column.label(text="Performance and Optimization:")
-        column.prop(aprops, "enable_asynchronous_meshing")
-        column.prop(aprops, "precompute_static_obstacles")
-        column.prop(aprops, "reserve_temporary_grids")
-        """
+        else:
+            info_text = ""
+            if aprops.threading_mode == 'THREADING_MODE_AUTO_DETECT':
+                info_text = "Auto-detect " + str(aprops.num_threads_auto_detect) + " threads"
+            elif aprops.threading_mode == 'THREADING_MODE_FIXED':
+                info_text = "Fixed " + str(aprops.num_threads_fixed) + " threads"
 
+            row = row.row(align=True)
+            row.alignment = 'RIGHT'
+            row.label(text=info_text)
+
+        #
+        # Warnings and Errors Panel
+        #
         box = self.layout.box()
-        row = box.row(align=True)
-        row.prop(aprops, "warnings_and_errors_expanded",
-            icon="TRIA_DOWN" if aprops.warnings_and_errors_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
-        row.label(text="Warnings and Errors:")
+        header, body = box.panel("warnings_and_errors_settings", default_closed=True)
 
-        if aprops.warnings_and_errors_expanded:
-            column = box.column(align=True)
+        row = header.row(align=True)
+        row.label(text="Warnings and Errors:")
+        if body:
+            column = body.column(align=True)
             column.prop(aprops, "disable_changing_topology_warning")
         
     
