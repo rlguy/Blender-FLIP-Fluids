@@ -22,6 +22,9 @@ IS_INSTALLATION_UTILS_INITIALIZED = False
 IS_INSTALLATION_COMPLETE = False
 IS_STABLE_BUILD = True
 
+SUPPORT_LICENSE_TYPE = "GitHub"
+SUPPORT_LICENSE_ID = "108EM"
+
 IS_MIXBOX_SUPPORTED = False
 IS_MIXBOX_INSTALLATION_COMPLETE = False
 MIXBOX_BOOST_FACTOR = 1.2
@@ -164,10 +167,6 @@ def update_preset_library_installation_status():
     IS_PRESET_LIBRARY_INSTALLATION_COMPLETE = False
     PRESET_LIBRARY_INSTALLATIONS = []
 
-    if not vcu.is_blender_33():
-        # Asset library is only available in Blender 3.3 or later
-        return
-
     bl_preferences = bpy.context.preferences
     bl_filepaths = bl_preferences.filepaths
     for lib_entry in bl_filepaths.asset_libraries:
@@ -249,6 +248,12 @@ def get_library_list():
         library_list.append(library_entry)
 
     return library_list
+
+
+def get_support_license_label():
+    global SUPPORT_LICENSE_TYPE
+    global SUPPORT_LICENSE_ID
+    return SUPPORT_LICENSE_TYPE + " " + SUPPORT_LICENSE_ID
 
 
 def __load_post_update_is_addon_active():

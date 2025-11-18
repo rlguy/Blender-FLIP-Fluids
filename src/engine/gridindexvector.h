@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_GRIDINDEXVECTOR_H
-#define FLUIDENGINE_GRIDINDEXVECTOR_H
+#pragma once
 
 #include "fluidsimassert.h"
 #include "array3d.h"
@@ -130,5 +129,3 @@ private:
     std::vector<int> _indices;
 
 };
-
-#endif

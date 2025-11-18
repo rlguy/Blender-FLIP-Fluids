@@ -30,9 +30,8 @@ from ..utils import version_compatibility_utils as vcu
 
 
 class DomainAdvancedProperties(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
     
-    min_max_time_steps_per_frame = NewMinMaxIntProperty(
+    min_max_time_steps_per_frame: NewMinMaxIntProperty(
             name_min="Min Substeps",
             description_min="Minimum number of substeps per frame calculation",
             min_min=1, max_min=1000000,
@@ -44,24 +43,24 @@ class DomainAdvancedProperties(bpy.types.PropertyGroup):
             min_max=1, max_max=1000000,
             soft_max_max=100,
             default_max=24,
-            ); exec(conv("min_max_time_steps_per_frame"))
-    enable_adaptive_obstacle_time_stepping = BoolProperty(
+            )
+    enable_adaptive_obstacle_time_stepping: BoolProperty(
             name="Enable Adaptive Time Stepping for Obstacles",
             description="Include obstacle velocities when calculating number"
                 " of frame substeps. Enabling may improve the accuracy of"
                 " fluid-solid interaction for fast moving obstacles, but"
                 " may take longer to simulate",
             default = False,
-            ); exec(conv("enable_adaptive_obstacle_time_stepping"))
-    enable_adaptive_force_field_time_stepping = BoolProperty(
+            )
+    enable_adaptive_force_field_time_stepping: BoolProperty(
             name="Enable Adaptive Time Stepping for Force Fields",
             description="Include force field velocities when calculating number"
                 " of frame substeps. Enabling may improve the accuracy of"
                 " fluid-forcefield interaction for fast moving force fields, but"
                 " will take longer to simulate",
             default = False,
-            ); exec(conv("enable_adaptive_force_field_time_stepping"))
-    particle_jitter_factor = FloatProperty(
+            )
+    particle_jitter_factor: FloatProperty(
             name="Particle Jitter",
             description="Amount of random jitter that is added to newly spawned"
                 " fluid particles. Higher values may improve simulation accuracy",
@@ -69,8 +68,8 @@ class DomainAdvancedProperties(bpy.types.PropertyGroup):
             default=1.0,
             precision=2,
             subtype='FACTOR',
-            ); exec(conv("particle_jitter_factor"))
-    jitter_surface_particles = BoolProperty(
+            )
+    jitter_surface_particles: BoolProperty(
             name="Jitter Surface Particles",
             description="If disabled, a random jitter position will only be applied to particles within"
             " the interior of the Inflow/Fluid object shape. If enabled, all emitted particles"
@@ -79,31 +78,31 @@ class DomainAdvancedProperties(bpy.types.PropertyGroup):
             " Enabling is recommended for fluid particle effects and results in"
             " more natural particle generation",
             default=False,
-            ); exec(conv("jitter_surface_particles"))
-    pressure_solver_max_iterations = IntProperty(
+            )
+    pressure_solver_max_iterations: IntProperty(
             name="Pressure Solver Max Iterations",
             description="Maximum number of iterations that the pressure solver is allowed"
                 " to run during a substep. The default value of 900 is often a good choice and does"
                 " not need to be changed. See documentation for more information on this setting",
             min=1, soft_max=10000,
             default=900,
-            ); exec(conv("pressure_solver_max_iterations"))
-    viscosity_solver_max_iterations = IntProperty(
+            )
+    viscosity_solver_max_iterations: IntProperty(
             name="Viscosity Solver Max Iterations",
             description="Maximum number of iterations that the viscosity solver is allowed"
                 " to run during a substep. The default value of 900 is often a good choice and does"
                 " not need to be changed. See documentation for more information on this setting",
             min=1, soft_max=10000,
             default=900,
-            ); exec(conv("viscosity_solver_max_iterations"))
-    velocity_transfer_method = EnumProperty(
+            )
+    velocity_transfer_method: EnumProperty(
             name="Velocity Transfer Method",
             description="Simulation method to use",
             items=types.velocity_transfer_methods,
             default='VELOCITY_TRANSFER_METHOD_FLIP',
             options={'HIDDEN'},
-            ); exec(conv("velocity_transfer_method"))
-    PICFLIP_ratio = FloatProperty(
+            )
+    PICFLIP_ratio: FloatProperty(
             name="PIC/FLIP Ratio",
             description="Ratio of PIC velocity to FLIP velocity update mixture."
                 " PIC velocity method is not very accurate, but stable. FLIP"
@@ -114,16 +113,16 @@ class DomainAdvancedProperties(bpy.types.PropertyGroup):
             default=0.05,
             precision=2,
             subtype='FACTOR',
-            ); exec(conv("PICFLIP_ratio"))
-    PICAPIC_ratio = FloatProperty(
+            )
+    PICAPIC_ratio: FloatProperty(
             name="PIC/APIC Ratio",
             description="Placeholder",
             min=0.0, max=1.0,
             default=0.00,
             precision=2,
             subtype='FACTOR',
-            ); exec(conv("PICAPIC_ratio"))
-    CFL_condition_number = IntProperty(
+            )
+    CFL_condition_number: IntProperty(
             name="Safety Factor (CFL Number)",
             description="Maximum number of voxels that a particle can travel"
                 " in a single substep. A larger number may speed up simulation"
@@ -131,8 +130,8 @@ class DomainAdvancedProperties(bpy.types.PropertyGroup):
                 " cost of simulation accuracy",
             min=1, max=30,
             default=5,
-            ); exec(conv("CFL_condition_number"))
-    enable_extreme_velocity_removal = BoolProperty(
+            )
+    enable_extreme_velocity_removal: BoolProperty(
             name="Remove particles with extreme velocities",
             description="Attempt to remove extreme particle velocities that"
                 " cause the simulator to exceed the maximum number of allowed"
@@ -141,8 +140,8 @@ class DomainAdvancedProperties(bpy.types.PropertyGroup):
                 " this option outside of experimentation and testing. Disabling"
                 " can result in unstable simulations and/or extreme simulation times",
             default=True,
-            ); exec(conv("enable_extreme_velocity_removal"))
-    enable_gpu_features = BoolProperty(
+            )
+    enable_gpu_features: BoolProperty(
             name="Enable GPU Features",
             description="Enable simulator to accelerate some computations"
                 " with your GPU device. TIP: Compare simulation performance"
@@ -150,28 +149,28 @@ class DomainAdvancedProperties(bpy.types.PropertyGroup):
                 " hardware setup. Note: you may only notice a difference on"
                 " higher resolution simulations",
             default=True
-            ); exec(conv("enable_gpu_features"))
-    num_threads_auto_detect = IntProperty(
+            )
+    num_threads_auto_detect: IntProperty(
             name="Threads",
             description="Number of threads to use simultaneously while simulating",
             min=1, max=1024,
             default=1,
-            ); exec(conv("num_threads_auto_detect"))
-    num_threads_fixed = IntProperty(
+            )
+    num_threads_fixed: IntProperty(
             name="Threads",
             description="Number of threads to use simultaneously while simulating",
             min=1, max=1024,
             default=4,
-            ); exec(conv("num_threads_fixed"))
-    threading_mode = EnumProperty(
+            )
+    threading_mode: EnumProperty(
             name="Threading Mode",
             description="Determing the amount of simulation threads used",
             items=types.threading_modes,
             default='THREADING_MODE_AUTO_DETECT',
             update=lambda self, context: self.initialize_num_threads_auto_detect(),
             options={'HIDDEN'},
-            ); exec(conv("threading_mode"))
-    enable_fracture_optimization = BoolProperty(
+            )
+    enable_fracture_optimization: BoolProperty(
             name="Enable Fracture Optimizations",
             description="Enable optimizations when using animated fracture simulations as"
                 " FLIP obstacles. These optimizations can greatly improve simulation performance"
@@ -181,30 +180,30 @@ class DomainAdvancedProperties(bpy.types.PropertyGroup):
                 " this option can increase memory requirements",
             default = False,
             options={'HIDDEN'},
-            ); exec(conv("enable_fracture_optimization"))
-    enable_asynchronous_meshing = BoolProperty(
+            )
+    enable_asynchronous_meshing: BoolProperty(
             name="Enable Async Meshing",
             description="Run mesh generation process in a separate thread while"
                 " the simulation is running. May increase simulation performance"
                 " but will use more RAM if enabled",
             default = True,
-            ); exec(conv("enable_asynchronous_meshing"))
-    precompute_static_obstacles = BoolProperty(
+            )
+    precompute_static_obstacles: BoolProperty(
             name="Precompute Static Obstacles",
             description="Precompute data for static obstacles. If enabled,"
                 " the simulator will avoid recomputing data for non-animated"
                 " obstacles. Increases simulation performance but will use"
                 " more RAM if enabled",
             default = True,
-            ); exec(conv("precompute_static_obstacles"))
-    reserve_temporary_grids = BoolProperty(
+            )
+    reserve_temporary_grids: BoolProperty(
             name="Reserve Temporary Grid Memory",
             description="Reserve space in memory for temporary grids. Increases"
                 " simulation performance for scenes with animated or keyframed"
                 " obstacles but will use more RAM if enabled",
             default = True,
-            ); exec(conv("reserve_temporary_grids"))
-    disable_changing_topology_warning = BoolProperty(
+            )
+    disable_changing_topology_warning: BoolProperty(
             name="Disable Changing Topology Warning",
             description="Disable warning that is displayed when exporting an"
             " animated mesh with changing topology. WARNING: mesh velocity"
@@ -213,23 +212,17 @@ class DomainAdvancedProperties(bpy.types.PropertyGroup):
             " not be able to push around the fluid",
             default=False,
             options={'HIDDEN'},
-            ); exec(conv("disable_changing_topology_warning"))
+            )
 
-    surface_tension_substeps_exceeded_tooltip = BoolProperty(
+    surface_tension_substeps_exceeded_tooltip: BoolProperty(
             name="Warning: Not Enough Max Substeps", 
             description="The estimated number of Surface Tension substeps per frame exceeds the Max Frame"
                 " Substeps value. This can cause an unstable simulation. Either decrease the amount of"
                 " Surface Tension in the FLIP Fluid World panel to lower the number of required substeps or"
                 " increase the number of allowed Max Frame Substeps in the FLIP Fluid Advanced panel", 
             default=True,
-            ); exec(conv("surface_tension_substeps_exceeded_tooltip"))
-
-    frame_substeps_expanded = BoolProperty(default=True); exec(conv("frame_substeps_expanded"))
-    simulation_method_expanded = BoolProperty(default=True); exec(conv("simulation_method_expanded"))
-    simulation_stability_expanded = BoolProperty(default=False); exec(conv("simulation_stability_expanded"))
-    multithreading_expanded = BoolProperty(default=True); exec(conv("multithreading_expanded"))
-    warnings_and_errors_expanded = BoolProperty(default=False); exec(conv("warnings_and_errors_expanded"))
-
+            )
+    
 
     def register_preset_properties(self, registry, path):
         add = registry.add_property

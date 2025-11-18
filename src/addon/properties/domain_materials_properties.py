@@ -27,24 +27,23 @@ from ..utils import version_compatibility_utils as vcu
 
 
 class DomainMaterialsProperties(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
     
-    surface_material = EnumProperty(
+    surface_material: EnumProperty(
             name="Fluid Surface",
             description="Select a material for the fluid surface. Tip: materials can also be"
                 " created and assigned to the fluid_surface object in Blender's Material"
                 " Properties panel",
             items=material_library.get_surface_material_enums_ui,
             update=lambda self, context: self._update_surface_material(context),
-            ); exec(conv("surface_material"))
-    fluid_particles_material = EnumProperty(
+            )
+    fluid_particles_material: EnumProperty(
             name="Fluid Particles",
             description="Select a material for the fluid particles. Tip: If the object contains"
                 " a Point Cloud geometry node modifier, the material can be set in the modifier settings",
             items=material_library.get_fluid_particles_material_enums_ui,
             update=lambda self, context: self._update_fluid_particles_material(context),
-            ); exec(conv("fluid_particles_material"))
-    whitewater_foam_material = EnumProperty(
+            )
+    whitewater_foam_material: EnumProperty(
             name="Whitewater Foam",
             description="Select a material for the foam particles. Tip: materials can also be"
                 " created and assigned to the whitewater_foam object in Blender's Material"
@@ -52,8 +51,8 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
                 " the material can be set in the modifier settings",
             items=material_library.get_whitewater_material_enums_ui,
             update=lambda self, context: self._update_whitewater_foam_material(context),
-            ); exec(conv("whitewater_foam_material"))
-    whitewater_bubble_material = EnumProperty(
+            )
+    whitewater_bubble_material: EnumProperty(
             name="Whitewater Bubble",
             description="Select a material for the bubble particles. Tip: materials can also be"
                 " created and assigned to the whitewater_bubble object in Blender's Material"
@@ -61,8 +60,8 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
                 " the material can be set in the modifier settings",
             items=material_library.get_whitewater_material_enums_ui,
             update=lambda self, context: self._update_whitewater_bubble_material(context),
-            ); exec(conv("whitewater_bubble_material"))
-    whitewater_spray_material = EnumProperty(
+            )
+    whitewater_spray_material: EnumProperty(
             name="Whitewater Spray",
             description="Select a material for the spray particles. Tip: materials can also be"
                 " created and assigned to the whitewater_spray object in Blender's Material"
@@ -70,8 +69,8 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
                 " the material can be set in the modifier settings",
             items=material_library.get_whitewater_material_enums_ui,
             update=lambda self, context: self._update_whitewater_spray_material(context),
-            ); exec(conv("whitewater_spray_material"))
-    whitewater_dust_material = EnumProperty(
+            )
+    whitewater_dust_material: EnumProperty(
             name="Whitewater Dust",
             description="Select a material for the dust particles. Tip: materials can also be"
                 " created and assigned to the whitewater_dust object in Blender's Material"
@@ -79,19 +78,19 @@ class DomainMaterialsProperties(bpy.types.PropertyGroup):
                 " the material can be set in the modifier settings",
             items=material_library.get_whitewater_material_enums_ui,
             update=lambda self, context: self._update_whitewater_dust_material(context),
-            ); exec(conv("whitewater_dust_material"))
-    material_import = EnumProperty(
+            )
+    material_import: EnumProperty(
             name="Import",
             description="Import materials into this scene",
             items=material_library.get_material_import_enums_ui,
-            ); exec(conv("material_import"))
+            )
 
-    last_surface_material = StringProperty(default=""); exec(conv("last_surface_material"))
-    last_fluid_particles_material = StringProperty(default=""); exec(conv("last_fluid_particles_material"))
-    last_whitewater_foam_material = StringProperty(default=""); exec(conv("last_whitewater_foam_material"))
-    last_whitewater_bubble_material = StringProperty(default=""); exec(conv("last_whitewater_bubble_material"))
-    last_whitewater_spray_material = StringProperty(default=""); exec(conv("last_whitewater_spray_material"))
-    last_whitewater_dust_material = StringProperty(default=""); exec(conv("last_whitewater_dust_material"))
+    last_surface_material: StringProperty(default="")
+    last_fluid_particles_material: StringProperty(default="")
+    last_whitewater_foam_material: StringProperty(default="")
+    last_whitewater_bubble_material: StringProperty(default="")
+    last_whitewater_spray_material: StringProperty(default="")
+    last_whitewater_dust_material: StringProperty(default="")
 
 
     def load_post(self):

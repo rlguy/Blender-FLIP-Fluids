@@ -48,31 +48,19 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
         wprops = obj.flip_fluid.domain.world
         aprops = obj.flip_fluid.domain.advanced
 
+        #
+        # World Scale Panel
+        #
         box = self.layout.box()
-        row = box.row(align=True)
-        row.prop(wprops, "world_scale_settings_expanded",
-            icon="TRIA_DOWN" if wprops.world_scale_settings_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
+        header, body = box.panel("world_scale_settings", default_closed=False)
+
+        row = header.row(align=True)
         row.label(text="World Scale:")
-
-        if not wprops.world_scale_settings_expanded:
-            xdims, ydims, zdims = wprops.get_simulation_dimensions(context)
-            xdims_str = '{:.2f}'.format(round(xdims, 2)) + " m"
-            ydims_str = '{:.2f}'.format(round(ydims, 2)) + " m"
-            zdims_str = '{:.2f}'.format(round(zdims, 2)) + " m"
-
-            info_text = xdims_str + " x " + ydims_str + " x " + zdims_str
-            row = row.row(align=True)
-            row.alignment = 'RIGHT'
-            row.label(text=info_text)
-
-        if wprops.world_scale_settings_expanded:
-            row = box.row(align=True)
+        if body:
+            row = body.row(align=True)
             row.prop(wprops, "world_scale_mode", expand=True)
 
-            column = box.column(align=True)
+            column = body.column(align=True)
             split = column.split(align=True)
             column_left = split.column()
             column_right = split.column()
@@ -106,19 +94,27 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
             column_right.label(text=xdims_str)
             column_right.label(text=ydims_str)
             column_right.label(text=zdims_str)
+        else:
+            xdims, ydims, zdims = wprops.get_simulation_dimensions(context)
+            xdims_str = '{:.2f}'.format(round(xdims, 2)) + " m"
+            ydims_str = '{:.2f}'.format(round(ydims, 2)) + " m"
+            zdims_str = '{:.2f}'.format(round(zdims, 2)) + " m"
 
+            info_text = xdims_str + " x " + ydims_str + " x " + zdims_str
+            row = row.row(align=True)
+            row.alignment = 'RIGHT'
+            row.label(text=info_text)
+
+        #
+        # Gravity and Force Fields Panel
+        #
         box = self.layout.box()
-        row = box.row(align=True)
-        row.prop(wprops, "force_field_settings_expanded",
-            icon="TRIA_DOWN" if wprops.force_field_settings_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
+        header, body = box.panel("gravity_and_force_field_settings", default_closed=True)
+
+        row = header.row(align=True)
         row.label(text="Gravity and Force Fields:")
-
-        if wprops.force_field_settings_expanded:
-
-            subbox = box.box()
+        if body:
+            subbox = body.box()
             subbox.label(text="Gravity:")
             row = subbox.row(align=True)
             row.prop(wprops, "gravity_type", expand=True)
@@ -154,7 +150,7 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
             column = subbox.column(align=True)
             column.operator("flip_fluid_operators.make_zero_gravity")
 
-            subbox = box.box()
+            subbox = body.box()
             subbox.label(text="Force Field Resolution:")
             column = subbox.column(align=True)
             row = column.row(align=True)
@@ -178,7 +174,7 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
             row.label(text="Grid resolution: ")
             column_right.label(text=str(field_resolution))
 
-            subbox = box.box()
+            subbox = body.box()
             subbox.label(text="Force Field Weights:")
             column = subbox.column(align=True)
             column.prop(wprops, "force_field_weight_fluid_particles", slider=True)
@@ -187,29 +183,21 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
             column.prop(wprops, "force_field_weight_whitewater_spray", slider=True)
             column.prop(wprops, "force_field_weight_whitewater_dust", slider=True)
 
-        box = self.layout.box()
-        row = box.row(align=True)
-        row.prop(wprops, "viscosity_settings_expanded",
-            icon="TRIA_DOWN" if wprops.viscosity_settings_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
-        if not wprops.viscosity_settings_expanded:
-                row.prop(wprops, "enable_viscosity", text="")
-        row.label(text="Viscosity:")
-
+        
+        #
+        # Viscosity Panel
+        #
         is_variable_viscosity_enabled = attrprops.enable_viscosity_attribute
-        if not wprops.viscosity_settings_expanded:
-            if not is_variable_viscosity_enabled:
-                total_viscosity = wprops.viscosity * (10**(-wprops.viscosity_exponent))
-                total_viscosity_str = format_number_precision(self, total_viscosity)
-                row = row.row(align=True)
-                row.alignment = 'RIGHT'
-                row.enabled = wprops.enable_viscosity
-                row.label(text=total_viscosity_str)
 
-        if wprops.viscosity_settings_expanded:
-            column = box.column(align=True)
+        box = self.layout.box()
+        header, body = box.panel("viscosity_settings", default_closed=True)
+
+        row = header.row(align=True)
+        if not body:
+            row.prop(wprops, "enable_viscosity", text="")
+        row.label(text="Viscosity:")
+        if body:
+            column = body.column(align=True)
             row = column.row(align=True)
             row.prop(wprops, "enable_viscosity")
 
@@ -218,7 +206,7 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
                 row.enabled = wprops.enable_viscosity
                 row.prop(attrprops, "enable_viscosity_attribute", text="Variable Viscosity")
 
-            column = box.column(align=True)
+            column = body.column(align=True)
             column.enabled = wprops.enable_viscosity
 
             if is_variable_viscosity_enabled:
@@ -236,29 +224,27 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
                 total_viscosity = wprops.viscosity * (10**(-wprops.viscosity_exponent))
                 total_viscosity_str = "Total viscosity   =   " + format_number_precision(self, total_viscosity)
                 column.label(text=total_viscosity_str)
+        else:
+            if not is_variable_viscosity_enabled:
+                total_viscosity = wprops.viscosity * (10**(-wprops.viscosity_exponent))
+                total_viscosity_str = format_number_precision(self, total_viscosity)
+                row = row.row(align=True)
+                row.alignment = 'RIGHT'
+                row.enabled = wprops.enable_viscosity
+                row.label(text=total_viscosity_str)
 
+        #
+        # Surface Tension Panel
+        #
         box = self.layout.box()
-        row = box.row(align=True)
-        row.prop(wprops, "surface_tension_settings_expanded",
-            icon="TRIA_DOWN" if wprops.surface_tension_settings_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
-        if not wprops.surface_tension_settings_expanded:
-                row.prop(wprops, "enable_surface_tension", text="")
+        header, body = box.panel("surface_tension_settings", default_closed=True)
+
+        row = header.row(align=True)
+        if not body:
+            row.prop(wprops, "enable_surface_tension", text="")
         row.label(text="Surface Tension:")
-
-        if not wprops.surface_tension_settings_expanded:
-            total_surface_tension = wprops.get_surface_tension_value()
-            surface_tension_str = format_number_precision(self, total_surface_tension)
-            row = row.row(align=True)
-            row.alignment = 'RIGHT'
-            row.enabled = wprops.enable_surface_tension
-            row.alert = wprops.enable_surface_tension and wprops.minimum_surface_tension_substeps > aprops.min_max_time_steps_per_frame.value_max
-            row.label(text=surface_tension_str)
-
-        if wprops.surface_tension_settings_expanded:
-            column = box.column(align=True)
+        if body:
+            column = body.column(align=True)
             split = column.split(align=True)
             column_left = split.column(align=True)
             column_left.prop(wprops, "enable_surface_tension")
@@ -292,21 +278,27 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
                 row.alert = True
                 row.prop(wprops, "surface_tension_substeps_exceeded_tooltip", icon="QUESTION", emboss=False, text="")
                 row.label(text="  Warning: Too Many Substeps")
+        else:
+            total_surface_tension = wprops.get_surface_tension_value()
+            surface_tension_str = format_number_precision(self, total_surface_tension)
+            row = row.row(align=True)
+            row.alignment = 'RIGHT'
+            row.enabled = wprops.enable_surface_tension
+            row.alert = wprops.enable_surface_tension and wprops.minimum_surface_tension_substeps > aprops.min_max_time_steps_per_frame.value_max
+            row.label(text=surface_tension_str)
 
+        #
+        # Sheeting Effects Panel
+        #
         box = self.layout.box()
-        row = box.row(align=True)
-        row.prop(wprops, "sheeting_settings_expanded",
-            icon="TRIA_DOWN" if wprops.sheeting_settings_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
-        if not wprops.sheeting_settings_expanded:
-                row.prop(wprops, "enable_sheet_seeding", text="")
-        row.label(text="Sheeting Effects:")
+        header, body = box.panel("sheeting_effects_settings", default_closed=True)
 
-        if wprops.sheeting_settings_expanded:
-            box.label(text="Sheeting Effects:")
-            column = box.column(align=True)
+        row = header.row(align=True)
+        if not body:
+            row.prop(wprops, "enable_sheet_seeding", text="")
+        row.label(text="Sheeting Effects:")
+        if body:
+            column = body.column(align=True)
             split = column.split(align=True)
             column_left = split.column(align=True)
             column_left.prop(wprops, "enable_sheet_seeding")
@@ -328,42 +320,54 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
                     pgroup = ob.flip_fluid.get_property_group()
                     column_left.label(text=ob.name, icon="OBJECT_DATA")
                     column_right.prop(pgroup, "sheeting_strength", text="Strength Scale")
-                    
+        
+        #
+        # Variable Density Panel
+        #
         box = self.layout.box()
-        row = box.row(align=True)
-        row.prop(wprops, "friction_settings_expanded",
-            icon="TRIA_DOWN" if wprops.friction_settings_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
+        header, body = box.panel("variable_density_settings", default_closed=True)
+
+        row = header.row(align=True)
+        if not body:
+            row.prop(wprops, "enable_density_attribute", text="")
+        row.label(text="Variable Density:")
+        if body:
+            column = body.column(align=True)
+            column.prop(wprops, "enable_density_attribute")
+
+            column = body.column(align=True)
+            column.enabled = wprops.enable_density_attribute
+            column.label(text="Variable density values can be set in the", icon='INFO')
+            column.label(text="Fluid or Inflow physics properties menu", icon='INFO')
+                    
+        #
+        # Friction Panel
+        #
+        box = self.layout.box()
+        header, body = box.panel("friction_settings", default_closed=True)
+
+        row = header.row(align=True)
         row.label(text="Friction:")
-
-        if not wprops.friction_settings_expanded:
-            row = row.row(align=True)
-            row.alignment = 'RIGHT'
-            row.label(text="Boundary Friction  ")
-            row.prop(wprops, "boundary_friction", text="")
-
-        if wprops.friction_settings_expanded:
-            column = box.column()
+        if body:
+            column = body.column()
             split = column.split(align=True)
             column_left = split.column()
             column_left.label(text="Boundary Friction:")
             column_right = split.column()
             column_right.prop(wprops, "boundary_friction", text="")
 
-            row = box.row(align=True)
-            row.prop(wprops, "obstacle_friction_expanded",
-                icon="TRIA_DOWN" if wprops.obstacle_friction_expanded else "TRIA_RIGHT",
-                icon_only=True, 
-                emboss=False
-            )
-            row.label(text="Obstacle Friction:")
+            #
+            # Obstacle Friction Panel
+            #
+            box = body.box()
+            header_obstacle_friction, body_obstacle_friction = box.panel("obstacle_friction_settings", default_closed=True)
 
-            if wprops.obstacle_friction_expanded:
+            row_obstacle_friction = header_obstacle_friction.row(align=True)
+            row_obstacle_friction.label(text="Obstacle Friction:")
+            if body_obstacle_friction:
                 obstacle_objects = context.scene.flip_fluid.get_obstacle_objects()
 
-                column = box.column(align=True)
+                column = body_obstacle_friction.column(align=True)
                 indent_str = 5 * " "
                 if len(obstacle_objects) == 0:
                     column.label(text=indent_str + "No obstacle objects found...")
@@ -375,6 +379,11 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
                         pgroup = ob.flip_fluid.get_property_group()
                         column_left.label(text=ob.name, icon="OBJECT_DATA")
                         column_right.prop(pgroup, "friction")
+        else:
+            row = row.row(align=True)
+            row.alignment = 'RIGHT'
+            row.label(text="Boundary Friction  ")
+            row.prop(wprops, "boundary_friction", text="")
 
     
 def register():

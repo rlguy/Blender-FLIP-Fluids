@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_STOPWATCH_H
-#define FLUIDENGINE_STOPWATCH_H
+#pragma once
 
 #if defined(__linux__) || defined(__APPLE__) || defined(__MACOSX)
     #include <sys/time.h>
@@ -48,5 +47,3 @@ private:
     double _tbegin, _tend;
     double _timeRunning = 0.0;
 };
-
-#endif

@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_FORCEFIELDGRID_H
-#define FLUIDENGINE_FORCEFIELDGRID_H
+#pragma once
 
 #include <vector>
 
@@ -87,5 +86,3 @@ private:
     int _numArrowSegments = 5;
     float _stepDistanceFactor = 0.125;
 };
-
-#endif

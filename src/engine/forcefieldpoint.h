@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_FORCEFIELDPOINT_H
-#define FLUIDENGINE_FORCEFIELDPOINT_H
+#pragma once
 
 #include "forcefield.h"
 
@@ -55,5 +54,3 @@ private:
     float _minRadiusFactor = 4.0f;
 
 };
-
-#endif

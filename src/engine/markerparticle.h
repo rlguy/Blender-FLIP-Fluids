@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_MARKERPARTICLE_H
-#define FLUIDENGINE_MARKERPARTICLE_H
+#pragma once
 
 #include <cstdint>
 
@@ -91,6 +90,12 @@ struct MarkerParticleViscosity {
     MarkerParticleViscosity(float v) : viscosity(v) {}
 };
 
+struct MarkerParticleDensity {
+    float density;
+
+    MarkerParticleDensity(float d) : density(d) {}
+};
+
 struct MarkerParticleID {
     uint16_t id;
 
@@ -103,5 +108,3 @@ enum class MarkerParticleType : char {
     boundary = 0x02, 
     interior = 0x03
 };
-
-#endif

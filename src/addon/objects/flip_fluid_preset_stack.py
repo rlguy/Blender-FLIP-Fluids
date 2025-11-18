@@ -29,10 +29,9 @@ from ..utils import version_compatibility_utils as vcu
 
 
 class PresetStackProperty(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
-    path = StringProperty(); exec(conv("path"))
-    value = StringProperty(); exec(conv("value"))
-    is_value_set = BoolProperty(default=False); exec(conv("is_value_set"))
+    path: StringProperty()
+    value: StringProperty()
+    is_value_set: BoolProperty(default=False)
 
 
     def get_value(self):
@@ -51,27 +50,25 @@ class PresetStackProperty(bpy.types.PropertyGroup):
 
 
 class PresetStackMaterialInfo(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
-    preset_id = StringProperty(); exec(conv("preset_id"))
-    loaded_id = StringProperty(); exec(conv("loaded_id"))
+    preset_id: StringProperty()
+    loaded_id: StringProperty()
 
 
 class PresetStackElement(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
 
-    is_enabled = BoolProperty(
+    is_enabled: BoolProperty(
             name="Enabled",
             description="Enable effects of preset in the stack",
             default=True,
             update=lambda self, context: self._update_is_enabled(context),
-            ); exec(conv("is_enabled"))
+            )
 
-    is_applied = BoolProperty(default=False); exec(conv("is_applied"))
-    is_active = BoolProperty(default=True); exec(conv("is_active"))
-    identifier = StringProperty(); exec(conv("identifier"))
-    stack_uid = IntProperty(default=-1); exec(conv("stack_uid"))
-    saved_properties = CollectionProperty(type=PresetStackProperty); exec(conv("saved_properties"))
-    loaded_materials = CollectionProperty(type=PresetStackMaterialInfo); exec(conv("loaded_materials"))
+    is_applied: BoolProperty(default=False)
+    is_active: BoolProperty(default=True)
+    identifier: StringProperty()
+    stack_uid: IntProperty(default=-1)
+    saved_properties: CollectionProperty(type=PresetStackProperty)
+    loaded_materials: CollectionProperty(type=PresetStackMaterialInfo)
 
 
     def clear(self):
@@ -165,11 +162,10 @@ class PresetStackElement(bpy.types.PropertyGroup):
 
 
 class FlipFluidPresetStack(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
-    is_enabled = BoolProperty(default=False); exec(conv("is_enabled"))
-    staged_preset = PointerProperty(type=PresetStackElement); exec(conv("staged_preset"))
-    is_preset_staged = BoolProperty(default=False); exec(conv("is_preset_staged"))
-    preset_stack = CollectionProperty(type=PresetStackElement); exec(conv("preset_stack"))
+    is_enabled: BoolProperty(default=False)
+    staged_preset: PointerProperty(type=PresetStackElement)
+    is_preset_staged: BoolProperty(default=False)
+    preset_stack: CollectionProperty(type=PresetStackElement)
 
 
     def enable(self):

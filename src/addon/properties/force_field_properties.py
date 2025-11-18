@@ -32,29 +32,28 @@ from ..utils import version_compatibility_utils as vcu
 
 
 class FlipFluidForceFieldProperties(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
 
-    force_field_type = EnumProperty(
+    force_field_type: EnumProperty(
             name="Type",
             description="Type of force field",
             items=types.force_field_types,
             default='FORCE_FIELD_TYPE_POINT',
             update=lambda self, context: self._update_force_field_type(context),
             options={'HIDDEN'},
-            ); exec(conv("force_field_type"))
-    is_enabled = BoolProperty(
+            )
+    is_enabled: BoolProperty(
             name="Enabled",
             description="Force field is active in the fluid simulation",
             default=True,
-            ); exec(conv("is_enabled"))
-    strength = FloatProperty(
+            )
+    strength: FloatProperty(
             name="Strength",
             description="Strength of the force field. A negative value pulls fluid in,"
                 " a positive value pushes fluid away",
             default=-9.81,
             precision=2,
-            ); exec(conv("strength"))
-    falloff_power = FloatProperty(
+            )
+    falloff_power: FloatProperty(
             name="Falloff Power",
             description="How quickly force strength decreases with distance. If "
                 " r is the distance from the force object, the force strength changes"
@@ -64,18 +63,18 @@ class FlipFluidForceFieldProperties(bpy.types.PropertyGroup):
             min=0.0,
             soft_max=3.0, max=6.0,
             precision=2,
-            ); exec(conv("falloff_power"))
-    enable_min_distance = BoolProperty(
+            )
+    enable_min_distance: BoolProperty(
             name="Enable Min Distance",
             description="Use a minimum distance for the force field falloff",
             default=False,
-            ); exec(conv("enable_min_distance"))
-    enable_max_distance = BoolProperty(
+            )
+    enable_max_distance: BoolProperty(
             name="Enable Max Distance",
             description="Use a maximum distance for the force field to work",
             default=False,
-            ); exec(conv("enable_max_distance"))
-    min_max_distance = NewMinMaxFloatProperty(
+            )
+    min_max_distance: NewMinMaxFloatProperty(
             name_min="Min Distance", 
             description_min="The distance from the force object at which the strength"
                 " begins to falloff", 
@@ -90,8 +89,8 @@ class FlipFluidForceFieldProperties(bpy.types.PropertyGroup):
             min_max=0,
             default_max=0.0,
             precision_max=3,
-            ); exec(conv("min_max_distance"))
-    maximum_force_limit_factor = FloatProperty(
+            )
+    maximum_force_limit_factor: FloatProperty(
             name="Max Force Limit Factor",
             description="The maximum force in the field will be limited to the Strength"
                 " multiplied by this value",
@@ -99,8 +98,8 @@ class FlipFluidForceFieldProperties(bpy.types.PropertyGroup):
             min=0.0,
             soft_max=10.0,
             precision=2,
-            ); exec(conv("maximum_force_limit_factor"))
-    export_animated_mesh = bpy.props.BoolProperty(
+            )
+    export_animated_mesh: bpy.props.BoolProperty(
             name="Export Animated Mesh",
             description="Export this object as an animated mesh. Exporting animated meshes are"
                 " slower, only use when necessary. This option is required for any animation that"
@@ -109,16 +108,16 @@ class FlipFluidForceFieldProperties(bpy.types.PropertyGroup):
                 " not needed for static objects",
             default=False,
             options={'HIDDEN'},
-            ); exec(conv("export_animated_mesh"))
-    skip_reexport = BoolProperty(
-            name="Skip re-export",
+            )
+    skip_reexport: BoolProperty(
+            name="Skip Re-export",
             description="Skip re-exporting this mesh when starting or resuming"
                 " a bake. If this mesh has not been exported or is missing files,"
                 " the addon will automatically export the required files",
             default=False,
             options={'HIDDEN'},
-            ); exec(conv("skip_reexport"))
-    force_reexport_on_next_bake = BoolProperty(
+            )
+    force_reexport_on_next_bake: BoolProperty(
             name="Force Re-Export On Next Bake",
             description="Override the 'Skip Re-Export' option and force this mesh to be"
                 " re-exported and updated on the next time a simulation start/resumes"
@@ -127,9 +126,9 @@ class FlipFluidForceFieldProperties(bpy.types.PropertyGroup):
                 " This option is only applicable if 'Skip Re-Export' is enabled",
             default=False,
             options={'HIDDEN'},
-            ); exec(conv("force_reexport_on_next_bake"))
+            )
 
-    maximum_strength_tooltip = BoolProperty(
+    maximum_strength_tooltip: BoolProperty(
             name="Maximum Force", 
             description="This value estimates the maximum possible force field strength"
                 " generated by this object. Force field strengths are inversely proportional"
@@ -137,7 +136,7 @@ class FlipFluidForceFieldProperties(bpy.types.PropertyGroup):
                 " Force Limit Factor to reduce the maximum force. For reference, a force strength"
                 " value of 9.81 is equal to the default strength of gravity", 
             default=True,
-            ); exec(conv("maximum_strength_tooltip"))
+            )
 
 
     #
@@ -145,94 +144,94 @@ class FlipFluidForceFieldProperties(bpy.types.PropertyGroup):
     #
 
     # Point Force Field
-    falloff_shape = EnumProperty(
+    falloff_shape: EnumProperty(
             name="Falloff Shape",
             description="(Placeholder, TODO) Specifies the shape of the force field. Only takes"
                 " effect if the Falloff Power is greater than 0",
             items=types.force_field_falloff_shapes,
             default='FORCE_FIELD_FALLOFF_SPHERE',
             options={'HIDDEN'},
-            ); exec(conv("falloff_shape"))
-    gravity_scale_point = FloatProperty(
+            )
+    gravity_scale_point: FloatProperty(
             name="Gravity Scale",
             description="Scale the force of gravity around this point by this value. A scale"
                 " of 0.0 is zero gravity, a scale of 1.0 is full gravity",
             default=1.0,
             soft_min=0.0, soft_max=1.0,
             precision=2,
-            ); exec(conv("gravity_scale_point"))
-    gravity_scale_width_point = FloatProperty(
+            )
+    gravity_scale_width_point: FloatProperty(
             name="Gravity Scale Width",
             description="The distance around this point that gravity scaling will take effect",
             default=1.0,
             min=0.0, soft_max=5.0,
             precision=2,
-            ); exec(conv("gravity_scale_width_point"))
+            )
 
     # Surface Force Field
-    enable_frontfacing = BoolProperty(
+    enable_frontfacing: BoolProperty(
             name="Front",
             description="Enable force field on the front-facing side of the surface."
             " This is the side where face normals point outwards",
             default=True,
-            ); exec(conv("enable_frontfacing"))
-    enable_backfacing = BoolProperty(
+            )
+    enable_backfacing: BoolProperty(
             name="Back",
             description="Enable force field on back-facing polygons."
                 " This is the side opposite of the face normal",
             default=True,
-            ); exec(conv("enable_backfacing"))
-    enable_edgefacing = BoolProperty(
+            )
+    enable_edgefacing: BoolProperty(
             name="Edge",
             description="Enable force field on planar edges."
                 " These are edges of the object that are not connected to any other polygons."
                 " Must have at lease one of Front or Back sides enabled",
             default=True,
-            ); exec(conv("enable_edgefacing"))
-    gravity_scale_surface = FloatProperty(
+            )
+    gravity_scale_surface: FloatProperty(
             name="Gravity Scale",
             description="Scale the force of gravity near the surface by this value. A scale"
                 " of 0.0 is zero gravity, a scale of 1.0 is full gravity",
             default=1.0,
             soft_min=0.0, soft_max=1.0,
             precision=2,
-            ); exec(conv("gravity_scale_surface"))
-    gravity_scale_width_surface = FloatProperty(
+            )
+    gravity_scale_width_surface: FloatProperty(
             name="Gravity Scale Width",
             description="The distance from the surface that gravity scaling will take effect",
             default=1.0,
             min=0.0, soft_max=5.0,
             precision=2,
-            ); exec(conv("gravity_scale_width_surface"))
+            )
 
     # Volume Force Field
-    gravity_scale_volume = FloatProperty(
+    gravity_scale_volume: FloatProperty(
             name="Gravity Scale",
             description="Scale the force of gravity inside the volume by this value. A scale"
                 " of 0.0 is zero gravity, a scale of 1.0 is full gravity",
             default=1.0,
             soft_min=0.0, soft_max=1.0,
             precision=2,
-            ); exec(conv("gravity_scale_volume"))
-    gravity_scale_width_volume = FloatProperty(
+            )
+    gravity_scale_width_volume: FloatProperty(
             name="Gravity Scale Width",
             description="The distance from the outside of the volume's surface that gravity"
                 " scaling will take effect",
             default=0.0,
             min=0.0, soft_max=5.0,
             precision=2,
-            ); exec(conv("gravity_scale_width_volume"))
+            )
 
     # Curve Force Field
-    flow_strength = FloatProperty(
+    flow_strength: FloatProperty(
             name="Flow Strength",
             description="Strength of the flow along the direction of the curve. The curve direction"
                 " is in the vertex order of the Blender Curve object. A negative value will reverse"
                 " the direction",
             default=0.0,
             precision=2,
-            ); exec(conv("flow_strength"))
-    spin_strength = FloatProperty(
+            )
+    spin_strength: FloatProperty(
             name="Spin Strength",
             description="Strength of the the force that directs fluid to spin around the curve. A positive"
                 " strength uses the 'Right Hand Rule:' take your right hand and point your thumb in"
@@ -241,46 +240,46 @@ class FlipFluidForceFieldProperties(bpy.types.PropertyGroup):
                 " direction",
             default=0.0,
             precision=2,
-            ); exec(conv("spin_strength"))
-    gravity_scale_curve = FloatProperty(
+            )
+    gravity_scale_curve: FloatProperty(
             name="Gravity Scale",
             description="Scale the force of gravity near the curve by this value. A scale"
                 " of 0.0 is zero gravity, a scale of 1.0 is full gravity",
             default=1.0,
             soft_min=0.0, soft_max=1.0,
             precision=2,
-            ); exec(conv("gravity_scale_curve"))
-    gravity_scale_width_curve = FloatProperty(
+            )
+    gravity_scale_width_curve: FloatProperty(
             name="Gravity Scale Width",
             description="The distance from the curve that gravity"
                 " scaling will take effect",
             default=1.0,
             min=0.0, soft_max=5.0,
             precision=2,
-            ); exec(conv("gravity_scale_width_curve"))
-    enable_endcaps = BoolProperty(
+            )
+    enable_endcaps: BoolProperty(
             name="Enable End Caps",
             description="Whether fluid is attracted towards the ends of the curve segment. Disable"
                 " to allow fluid to flow past the ends of the curve segment",
             default=True,
-            ); exec(conv("enable_endcaps"))
+            )
 
 
-    property_registry = PointerProperty(
+    property_registry: PointerProperty(
             name="Outflow Property Registry",
             description="",
             type=preset_properties.PresetRegistry,
-            ); exec(conv("property_registry"))
+            )
 
 
-    disabled_in_viewport_tooltip = BoolProperty(
+    disabled_in_viewport_tooltip: BoolProperty(
             name="Object Disabled in Viewport", 
             description="This force field object is currently disabled in the viewport within the"
                 " outliner (Monitor Icon) and will not be included in the simulation. If you"
                 " want the object hidden in the viewport, but still have the object included in the"
                 " simulation, use the outliner Hide in Viewport option instead (Eye Icon)", 
             default=True,
-            ); exec(conv("disabled_in_viewport_tooltip"))
+            )
 
 
 

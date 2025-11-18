@@ -23,7 +23,7 @@
 import os, shutil, subprocess, platform, argparse
 
 
-def cmake_make(cmakelists_dir, cmake_path, make_path, alembic_package_root=None, build_debug=False, make_build=True, darwin_arch="", library_suffix=""):
+def cmake_make(cmakelists_dir, cmake_path, make_path, alembic_package_root=None, build_debug=False, make_build=True, darwin_arch=""):
     if build_debug:
         build_debug_flag = "-DBUILD_DEBUG=ON"
     else:
@@ -38,9 +38,6 @@ def cmake_make(cmakelists_dir, cmake_path, make_path, alembic_package_root=None,
             cmake_command.append("-DCMAKE_OSX_ARCHITECTURES=" + darwin_arch)
     elif system == "Linux":
         cmake_command = [cmake_path, cmakelists_dir, build_debug_flag]
-
-    if library_suffix:
-        cmake_command.append("-DLIBRARY_SUFFIX=" + library_suffix)
 
     if alembic_package_root is not None:
         cmake_command.append("-DALEMBIC_PACKAGE_ROOT=" + alembic_package_root)
@@ -82,12 +79,12 @@ def main():
     parser = argparse.ArgumentParser(description="FLIP Fluids Addon build and compile script")
     parser.add_argument("-build-directory", help="Path to destination build directory")
     parser.add_argument("-darwin-arch", help="Target architecture to set for CMAKE_OSX_ARCHITECTURES")
-    parser.add_argument("-library-suffix", help="Specify suffix to add to the generated library name")
     parser.add_argument("-cmake-path", help="Specify path to CMake binary (www.cmake.org)")
     parser.add_argument("-make-path", help="Specify path to GNU Make binary (www.gnu.org/software/make)")
     parser.add_argument("-alembic-path", help="Specify path to Alembic root directory")
     parser.add_argument("-package-imath-library", help="Specify path to Imath library and package with add-on")
     parser.add_argument("-package-alembic-library", help="Specify path to Alembic library and package with add-on")
+    parser.add_argument("-package-dependencies", nargs='*', help="Specify list of dependency filepaths to package with add-on")
     parser.add_argument('--clean', action="store_true", help="Clear generated files in the build directory before building")
     parser.add_argument('-no-compile', action="store_true", help="Do not compile libraries")
     parser.add_argument('-no-zip', action="store_true", help="After building, do not package the add-on folder into a zip for Blender install")
@@ -101,10 +98,6 @@ def main():
     darwin_arch = ""
     if args.darwin_arch:
         darwin_arch = args.darwin_arch
-
-    library_suffix = ""
-    if args.library_suffix:
-        library_suffix = args.library_suffix
 
     cmake_path = "cmake"
     if args.cmake_path:
@@ -134,21 +127,18 @@ def main():
     if args.alembic_path:
         alembic_package_root = process_path(args.alembic_path)
 
-    imath_library_path = None
-    if args.package_imath_library:
-        libpath = process_path(args.package_imath_library)
-        if os.path.isfile(libpath):
-            imath_library_path = libpath
-        else:
-            print("\n***ERROR: Imath library filepath not found:\n\t -package-imath-library <" + libpath + ">***\n")
+    dependency_filepaths = []
+    if args.package_dependencies:
+        dependency_filepaths = args.package_dependencies
 
-    alembic_library_path = None
-    if args.package_alembic_library:
-        libpath = process_path(args.package_alembic_library)
-        if os.path.isfile(libpath):
-            alembic_library_path = libpath
-        else:
-            print("\n***ERROR: Alembic library filepath not found:\n\t -package-alembic-library <" + libpath + ">***\n")
+    dependency_error_encountered = False
+    for filepath in dependency_filepaths:
+        libpath = process_path(filepath)
+        if not os.path.isfile(libpath):
+            dependency_error_encountered = True
+            print("***ERROR: Dependency filepath not found <" + libpath + ">")
+    if dependency_error_encountered:
+        return
 
     try:
         original_cwd = os.getcwd()
@@ -166,8 +156,7 @@ def main():
                 alembic_package_root=alembic_package_root,
                 build_debug=False, 
                 make_build=not args.no_compile, 
-                darwin_arch=darwin_arch, 
-                library_suffix=library_suffix)
+                darwin_arch=darwin_arch)
 
         lib_dir = os.path.join(build_dir, "bl_flip_fluids", "flip_fluids_addon", "ffengine", "lib")
         if os.path.isdir(lib_dir):
@@ -187,13 +176,9 @@ def main():
     print("\t<" + addon_dir + ">")
 
     addon_libs_dir = os.path.join(addon_dir, "ffengine", "lib")
-    if imath_library_path is not None:
-        shutil.copy(imath_library_path, addon_libs_dir)
-        print("Packaged <" + imath_library_path + "> to <" + addon_libs_dir + ">")
-
-    if alembic_library_path is not None:
-        shutil.copy(alembic_library_path, addon_libs_dir)
-        print("Packaged <" + alembic_library_path + "> to <" + addon_libs_dir + ">")
+    for filepath in dependency_filepaths:
+        shutil.copy(filepath, addon_libs_dir)
+        print("Packaged <" + filepath + "> to <" + addon_libs_dir + ">")
 
     if not args.no_zip:
         # To create a .zip whose name is ".../flip_fluids_addon.zip".

@@ -22,9 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-
-#ifndef FLUIDENGINE_FORCEFIELDUTILS_H
-#define FLUIDENGINE_FORCEFIELDUTILS_H
+#pragma once
 
 #include "meshlevelset.h"
 
@@ -54,5 +52,3 @@ extern void _checkNeighbour(VectorFieldGenerationData *data, Array3d<bool> *isFr
                            vmath::vec3 gx, GridIndex g, int di, int dj, int dk);
 
 }
-
-#endif

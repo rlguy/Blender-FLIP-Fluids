@@ -274,3 +274,14 @@ preferences_menu_view_modes = (
     ('PREFERENCES_MENU_VIEW_PRESETS', "Presets Installation", "Install the asset browser preset library"),
     ('PREFERENCES_MENU_VIEW_SUPPORT', "Help & Support",       "Info and links for help and support"),
     )
+
+"""
+alembic_export_engines = (
+    ('ALEMBIC_EXPORT_ENGINE_FLIP_FLUIDS', "FLIP Fluids", "Export using the custom FLIP Fluids Alembic Exporter"),
+    ('ALEMBIC_EXPORT_ENGINE_BLENDER',     "Blender",     "Export using Blender's built-in Alembic Exporter")
+    )
+"""
+
+alembic_export_engines = (
+    ('ALEMBIC_EXPORT_ENGINE_BLENDER',     "Blender",     "Export using Blender's built-in Alembic Exporter"),
+    )

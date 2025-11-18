@@ -224,7 +224,7 @@ def clear_cache_directory(cache_directory, clear_export=False, clear_logs=False,
     delete_file(stats_filepath)
 
     bakefiles_dir = os.path.join(cache_directory, "bakefiles")
-    extensions = [".bbox", ".bobj", ".data", ".wwp", ".wwf", ".wwi", ".fpd", ".ffd", ".ffp3", ".txt"]
+    extensions = [".bbox", ".bobj", ".data", ".wwp", ".wwf", ".wwi", ".fpd", ".ffd", ".ffp3", ".txt", ".json"]
     delete_files_in_directory(bakefiles_dir, extensions, remove_directory=True)
 
     temp_dir = os.path.join(cache_directory, "temp")

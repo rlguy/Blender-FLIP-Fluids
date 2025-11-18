@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_THREADUTILS_H
-#define FLUIDENGINE_THREADUTILS_H
+#pragma once
 
 #if __MINGW32__ && !_WIN64
     #include <mutex>
@@ -51,5 +50,3 @@ namespace ThreadUtils {
                                                     int rangeEnd, 
                                                     int numIntervals);
 }
-
-#endif

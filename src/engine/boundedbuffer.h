@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_BOUNDED_BUFFER_H
-#define FLUIDENGINE_BOUNDED_BUFFER_H
+#pragma once
 
 #include "threadutils.h"
 #include "fluidsimassert.h"
@@ -167,5 +166,3 @@ private:
     std::condition_variable _notFull;
     std::condition_variable _notEmpty;
 };
-
-#endif

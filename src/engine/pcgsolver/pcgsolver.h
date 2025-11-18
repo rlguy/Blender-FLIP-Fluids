@@ -10,8 +10,7 @@ You can copy, modify, distribute and perform the work, even for commercial
 purposes, all without asking permission. See Other Information below.
 */
 
-#ifndef FLUIDENGINE_PCG_SOLVER_H
-#define FLUIDENGINE_PCG_SOLVER_H
+#pragma once
 
 // Implements PCG with Modified Incomplete Cholesky (0) preconditioner.
 // PCGSolver<T> is the main class for setting up and solving a linear system.
@@ -346,5 +345,3 @@ protected:
     }
 
 };
-
-#endif

@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_DIFFUSEPARTICLE_H
-#define FLUIDENGINE_DIFFUSEPARTICLE_H
+#pragma once
 
 enum class DiffuseParticleType : char { 
     bubble = 0x00, 
@@ -50,5 +49,3 @@ struct DiffuseParticle {
                         type(DiffuseParticleType::notset),
                         id(ident) {}
 };
-
-#endif

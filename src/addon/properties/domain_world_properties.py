@@ -30,16 +30,15 @@ from ..objects.flip_fluid_aabb import AABB
 
 
 class DomainWorldProperties(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
     
-    world_scale_mode = EnumProperty(
+    world_scale_mode: EnumProperty(
             name="World Scaling Mode",
             description="Scaling mode for the physical size of the domain",
             items=types.world_scale_mode,
             default='WORLD_SCALE_MODE_RELATIVE',
             options={'HIDDEN'},
-            ); exec(conv("world_scale_mode"))
-    world_scale_relative = FloatProperty(
+            )
+    world_scale_relative: FloatProperty(
             name="Meters", 
             description="Size of a Blender unit in meters. If set to 1.0, each blender unit will be equal to 1.0 meter in the simulation", 
             min=0.0001,
@@ -47,8 +46,8 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
             precision=3,
             update=lambda self, context: self._update_world_scale_relative(context),
             options={'HIDDEN'},
-            ); exec(conv("world_scale_relative"))
-    world_scale_absolute = FloatProperty(
+            )
+    world_scale_absolute: FloatProperty(
             name="Meters", 
             description="Size of the longest side of the domain in meters", 
             min=0.001,
@@ -56,23 +55,23 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
             precision=3,
             update=lambda self, context: self._update_world_scale_absolute(context),
             options={'HIDDEN'},
-            ); exec(conv("world_scale_absolute"))
-    gravity_type = EnumProperty(
+            )
+    gravity_type: EnumProperty(
             name="Gravity Type",
             description="Gravity Type",
             items=types.gravity_types,
             default='GRAVITY_TYPE_SCENE',
             options={'HIDDEN'},
-            ); exec(conv("gravity_type"))
-    gravity = FloatVectorProperty(
+            )
+    gravity: FloatVectorProperty(
             name="Gravity",
             description="Gravity in X, Y, and Z direction",
             default=(0.0, 0.0, -9.81),
             precision=3,
             size=3,
             subtype='ACCELERATION',
-            ); exec(conv("gravity"))
-    force_field_resolution = EnumProperty(
+            )
+    force_field_resolution: EnumProperty(
             name="Force Field Resolution",
             description="Amount of grid resolution to use when evaluating force fields."
                 " Higher resolution improves force field accuracy at the cost of speed"
@@ -82,18 +81,18 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
             items=types.force_field_resolution_modes,
             default='FORCE_FIELD_RESOLUTION_ULTRA',
             options={'HIDDEN'},
-            ); exec(conv("force_field_resolution"))
-    force_field_weight_fluid_particles = FloatProperty(
+            )
+    force_field_weight_fluid_particles: FloatProperty(
             name="Fluid Particles", 
-            description="Force field object weight for fluid particles", 
+            description="Global force field weight for fluid particles. Applies to all force field objects", 
             soft_min=0.0,
             soft_max=1.0,
             default=1.0,
             precision=3,
-            ); exec(conv("force_field_weight_fluid_particles"))
-    force_field_weight_whitewater_foam = FloatProperty(
+            )
+    force_field_weight_whitewater_foam: FloatProperty(
             name="Whitewater Foam", 
-            description="Force field object weight for whitewater foam particles. Note: This setting"
+            description="Global force field weight for whitewater foam particles. Applies to all force field objects. Note: This setting"
                 " currently has no effect on the simulation. The movement of foam particles is"
                 " controlled only by the motion of the fluid surface. Force fields and gravity"
                 " currently have no effect on foam particles", 
@@ -101,10 +100,10 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
             soft_max=1.0,
             default=1.0,
             precision=3,
-            ); exec(conv("force_field_weight_whitewater_foam"))
-    force_field_weight_whitewater_bubble = FloatProperty(
+            )
+    force_field_weight_whitewater_bubble: FloatProperty(
             name="Whitewater Bubble", 
-            description="Force field object weight for whitewater bubble particles. Note: Bubble particles"
+            description="Global force field weight for whitewater bubble particles. Applies to all force field objects. Note: Bubble particles"
                 " are assumed to be lower density than the containing liquid and due to buoyancy, bubbles"
                 " will drift the opposite direction of the force fields. If you desire bubble particles"
                 " to move with the direction of the force fields, set this weight to a negative value", 
@@ -112,45 +111,45 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
             soft_max=1.0,
             default=1.0,
             precision=3,
-            ); exec(conv("force_field_weight_whitewater_bubble"))
-    force_field_weight_whitewater_spray = FloatProperty(
+            )
+    force_field_weight_whitewater_spray: FloatProperty(
             name="Whitewater Spray", 
-            description="Force field object weight for whitewater spray particles. Tip: Spray particles are"
+            description="Global force field weight for whitewater spray particles. Applies to all force field objects. Tip: Spray particles are"
                 " often lower a lower density than the fluid. Depending on the desired effect, setting a higher"
                 " weight value can be a good choice", 
             soft_min=0.0,
             soft_max=1.0,
             default=1.0,
             precision=3,
-            ); exec(conv("force_field_weight_whitewater_spray"))
-    force_field_weight_whitewater_dust = FloatProperty(
+            )
+    force_field_weight_whitewater_dust: FloatProperty(
             name="Whitewater Dust", 
-            description="Force field object weight for whitewater dust particles", 
+            description="Global force field weight for whitewater dust particles. Applies to all force field objects", 
             soft_min=0.0,
             soft_max=1.0,
             default=1.0,
             precision=3,
-            ); exec(conv("force_field_weight_whitewater_dust"))
-    force_field_resolution_tooltip = BoolProperty(
+            )
+    force_field_resolution_tooltip: BoolProperty(
             name="Force Field Grid Resolution", 
             description="Exact force field grid resolution calculated from the domain"
                 " resolution. See Debug Panel for force field visualization tools", 
             default=True,
-            ); exec(conv("force_field_resolution_tooltip"))
-    enable_viscosity = BoolProperty(
+            )
+    enable_viscosity: BoolProperty(
             name="Enable Viscosity",
             description="Enable viscosity solver",
             default=False,
-            ); exec(conv("enable_viscosity"))
-    viscosity = FloatProperty(
+            )
+    viscosity: FloatProperty(
             name="Viscosity", 
             description="Viscosity base value. This value is multipled by 10 to the"
                 " power of (exponent * -1)", 
             min=0.0,
             default=5.0,
             precision=3,
-            ); exec(conv("viscosity"))
-    viscosity_exponent = IntProperty(
+            )
+    viscosity_exponent: IntProperty(
             name="Viscosity Exponent", 
             description="Viscosity exponent. Negative exponent for the viscosity value"
                 " to simplify entering small values (ex: 5.0 * 10^-3 = 0.005)", 
@@ -159,8 +158,8 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
             default=0,
             update=lambda self, context: self._update_viscosity_exponent(context),
             options={'HIDDEN'},
-            ); exec(conv("viscosity_exponent"))
-    viscosity_solver_error_tolerance = IntProperty(
+            )
+    viscosity_solver_error_tolerance: IntProperty(
             description="Accuracy of the viscosity solver. Decrease to speed up baking at the cost of accuracy,"
                 " increase to improve accuracy at the cost of baking speed. High viscosity thick or stiff fluids"
                 " benefit the most from increasing accuracy. Low viscosity thin fluids often work well at the lowest"
@@ -169,21 +168,21 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
             min=1, max=6,
             soft_max=4,
             default=4,
-            ); exec(conv("viscosity_solver_error_tolerance"))
-    enable_surface_tension = BoolProperty(
+            )
+    enable_surface_tension: BoolProperty(
             name="Enable Surface Tension",
             description="Enable surface tension forces",
             default=False,
-            ); exec(conv("enable_surface_tension"))
-    surface_tension = FloatProperty(
+            )
+    surface_tension: FloatProperty(
             name="Surface Tension", 
             description="Surface tension base value. This value is multipled by 10 to the"
                 " power of (exponent * -1)", 
             min=0.0,
             default=0.25,
             precision=3,
-            ); exec(conv("surface_tension"))
-    surface_tension_exponent = IntProperty(
+            )
+    surface_tension_exponent: IntProperty(
             name="Viscosity Exponent", 
             description="Viscosity exponent. Negative exponent for the surface tension value"
                 " to simplify entering small values (ex: 5.0 * 10^-3 = 0.005)", 
@@ -192,8 +191,8 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
             default=0,
             update=lambda self, context: self._update_surface_tension_exponent(context),
             options={'HIDDEN'},
-            ); exec(conv("surface_tension_exponent"))
-    surface_tension_accuracy = IntProperty(
+            )
+    surface_tension_accuracy: IntProperty(
             name="Surface Tension Accuracy", 
             description="Amount of accuracy when calculating surface tension."
                 " Increasing accuracy will produce more accurate surface tension"
@@ -202,15 +201,15 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
             min=0, max=100,
             default=95,
             subtype='PERCENTAGE',
-            ); exec(conv("surface_tension_accuracy"))
-    surface_tension_solver_method = EnumProperty(
+            )
+    surface_tension_solver_method: EnumProperty(
             name="Surface Tension Solver",
             description="Surface tension solving method to use",
             items=types.surface_tension_solver_methods,
             default='SURFACE_TENSION_SOLVER_METHOD_REGULAR',
             options={'HIDDEN'},
-            ); exec(conv("surface_tension_solver_method"))
-    enable_sheet_seeding = BoolProperty(
+            )
+    enable_sheet_seeding: BoolProperty(
             name="Enable Sheeting Effects",
             description="Fluid sheeting fills in gaps between fluid particles to"
                 " help preserve thin fluid sheets and splashes. Tip: Sheeting will"
@@ -218,8 +217,8 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
                 " fluid volume. Keyframing the Sheeting Strength down to 0.0 when no longer"
                 " needed can help prevent increased volume",
             default=False,
-            ); exec(conv("enable_sheet_seeding"))
-    sheet_fill_rate = FloatProperty(
+            )
+    sheet_fill_rate: FloatProperty(
             name="Sheeting Strength", 
             description="The rate at which new sheeting particles are added."
                 " A higher value will add sheeting particles more often and"
@@ -227,16 +226,27 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
             min=0.0, max=1.0,
             default=0.5,
             precision=2,
-            ); exec(conv("sheet_fill_rate"))
-    sheet_fill_threshold = FloatProperty(
+            )
+    sheet_fill_threshold: FloatProperty(
             name="Sheeting Thickness", 
             description="Controls how thick to fill in gaps", 
             min=0.0, max=1.0,
             soft_min=0.05,
             default=0.1,
             precision=2,
-            ); exec(conv("sheet_fill_threshold"))
-    boundary_friction = FloatProperty(
+            )
+    enable_density_attribute: BoolProperty(
+            name="Enable Variable Density",
+            description="Enable the variable density solver for mixed density simulations."
+                " After enabling, each Fluid/Inflow object can be set to assign a density value"
+                " to the generated fluid. When enabled, density value attributes will also"
+                " be generated for the fluid surface and fluid particles. After baking, the density values can"
+                " be accessed in a Cycles Attribute Node with the name 'flip_density' from"
+                " the Fac output",
+            default=False,
+            options={'HIDDEN'},
+            )
+    boundary_friction: FloatProperty(
             name="Boundary Friction", 
             description="Amount of friction on the domain boundary walls", 
             min=0.0,
@@ -244,21 +254,14 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
             default=0.0,
             precision=2,
             subtype='FACTOR',
-            ); exec(conv("boundary_friction"))
+            )
 
-    last_viscosity_exponent = IntProperty(default=0)
-    exec(conv("last_viscosity_exponent"))
+    last_viscosity_exponent: IntProperty(default=0)
+    last_surface_tension_exponent: IntProperty(default=0)
+    native_surface_tension_scale: FloatProperty(default=0.1)
+    minimum_surface_tension_substeps: IntProperty(default=-1)
 
-    last_surface_tension_exponent = IntProperty(default=0)
-    exec(conv("last_surface_tension_exponent"))
-
-    native_surface_tension_scale = FloatProperty(default=0.1)
-    exec(conv("native_surface_tension_scale"))
-
-    minimum_surface_tension_substeps = IntProperty(default=-1)
-    exec(conv("minimum_surface_tension_substeps"))
-
-    surface_tension_substeps_tooltip = BoolProperty(
+    surface_tension_substeps_tooltip: BoolProperty(
             name="Estimated Substeps", 
             description="The estimated number of substeps per frame that the"
                 " simulator will run in order to keep simulation stable during surface"
@@ -266,30 +269,19 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
                 " and size, framerate, amount of surface tension, and surface tension" 
                 " accuracy", 
             default=True,
-            ); exec(conv("surface_tension_substeps_tooltip"))
+            )
 
-    surface_tension_substeps_exceeded_tooltip = BoolProperty(
+    surface_tension_substeps_exceeded_tooltip: BoolProperty(
             name="Warning: Too Many Substeps", 
             description="The estimated number of Surface Tension substeps per frame exceeds the Max Frame"
                 " Substeps value. This can cause an unstable simulation. Either decrease the amount of"
                 " Surface Tension in the FLIP Fluid World panel to lower the number of required substeps or"
                 " increase the number of allowed Max Frame Substeps in the FLIP Fluid Advanced panel", 
             default=True,
-            ); exec(conv("surface_tension_substeps_exceeded_tooltip"))
+            )
 
-    minimum_surface_tension_cfl = FloatProperty(default=0.25)
-    exec(conv("minimum_surface_tension_cfl"))
-
-    maximum_surface_tension_cfl = FloatProperty(default=5.0)
-    exec(conv("maximum_surface_tension_cfl"))
-
-    world_scale_settings_expanded = BoolProperty(default=True); exec(conv("world_scale_settings_expanded"))
-    force_field_settings_expanded = BoolProperty(default=False); exec(conv("force_field_settings_expanded"))
-    viscosity_settings_expanded = BoolProperty(default=False); exec(conv("viscosity_settings_expanded"))
-    surface_tension_settings_expanded = BoolProperty(default=False); exec(conv("surface_tension_settings_expanded"))
-    sheeting_settings_expanded = BoolProperty(default=False); exec(conv("sheeting_settings_expanded"))
-    friction_settings_expanded = BoolProperty(default=False); exec(conv("friction_settings_expanded"))
-    obstacle_friction_expanded = BoolProperty(default=False); exec(conv("obstacle_friction_expanded"))
+    minimum_surface_tension_cfl: FloatProperty(default=0.25)
+    maximum_surface_tension_cfl: FloatProperty(default=5.0)
 
 
     def scene_update_post(self, scene):
@@ -327,6 +319,7 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
         add(path + ".enable_sheet_seeding",                 "Enable Sheeting Effects",   group_id=0)
         add(path + ".sheet_fill_rate",                      "Sheeting Strength",         group_id=0)
         add(path + ".sheet_fill_threshold",                 "Sheeting Thickness",        group_id=0)
+        add(path + ".enable_density_attribute",             "Enable Variable Density",   group_id=0)
         add(path + ".boundary_friction",                    "Boundary Friction",         group_id=0)
 
 

@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_VERSIONUTILS_H
-#define FLUIDENGINE_VERSIONUTILS_H
+#pragma once
 
 #include <string>
 
@@ -32,11 +31,13 @@ namespace VersionUtils {
     extern int _minor;
     extern int _revision;
     extern std::string _label;
+    extern std::string _support_license_type;
+    extern std::string _support_license_id;
     extern void getVersion(int *major, int *minor, int *revision);
     extern int getMajor();
     extern int getMinor();
     extern int getRevision();
     extern std::string getLabel();
+    extern std::string getSupportLabel();
+    extern std::string getSupportLicenseID();
 }
-
-#endif

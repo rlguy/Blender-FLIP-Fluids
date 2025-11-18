@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_SPATIALPOINTGRID_H
-#define FLUIDENGINE_SPATIALPOINTGRID_H
+#pragma once
 
 #include <vector>
 
@@ -140,5 +139,3 @@ private:
     Array3d<CellNode> _grid;
     AABB _bbox;
 };
-
-#endif

@@ -34,12 +34,11 @@ from ..operators import bake_operators
 # ##############################################################################
 
 class ByteProperty(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
-    bytes = FloatProperty(
+    bytes: FloatProperty(
             default=-1.0, 
             get=lambda self: self._get_bytes(),
             set=lambda self, value: self._set_bytes(value),
-            ); exec(conv("bytes"))
+            )
 
 
     def get(self):
@@ -62,27 +61,25 @@ class ByteProperty(bpy.types.PropertyGroup):
 
 
 class MeshStatsProperties(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
-    enabled = bpy.props.BoolProperty(default=False); exec(conv("enabled"))
-    verts = bpy.props.IntProperty(default=-1); exec(conv("verts"))
-    faces = bpy.props.IntProperty(default=-1); exec(conv("faces"))
-    bytes = PointerProperty(type=ByteProperty); exec(conv("bytes"))
+    enabled: bpy.props.BoolProperty(default=False)
+    verts: bpy.props.IntProperty(default=-1)
+    faces: bpy.props.IntProperty(default=-1)
+    bytes: PointerProperty(type=ByteProperty)
 
 
 class TimeStatsProperties(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
-    time = FloatProperty(
+    time: FloatProperty(
             default=-1.0, 
             precision = 1
-            ); exec(conv("time"))
-    pct = FloatProperty(
+            )
+    pct: FloatProperty(
             min=0, max=100,
             default=0.0, 
             precision = 1,
             subtype='PERCENTAGE',
             get=lambda self: self._get_time_pct(),
             set=lambda self, value: None,
-            ); exec(conv("pct"))
+            )
 
 
     def set_time_pct(self, value):
@@ -97,8 +94,7 @@ class TimeStatsProperties(bpy.types.PropertyGroup):
 
 
 class SolverStressProperties(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
-    stress_level = FloatProperty(
+    stress_level: FloatProperty(
             name="Stress Level",
             description="Amount of stress experienced by the solver. If the stress level exceeds"
                 " 80% for multiple consecutive frames, this may indicate that the simulator requires"
@@ -112,7 +108,7 @@ class SolverStressProperties(bpy.types.PropertyGroup):
             subtype='PERCENTAGE',
             get=lambda self: self._get_stress_level_pct(),
             set=lambda self, value: None,
-            ); exec(conv("stress_level"))
+            )
 
 
     def set_stress_level_pct(self, value):
@@ -127,178 +123,172 @@ class SolverStressProperties(bpy.types.PropertyGroup):
 
 
 class DomainStatsProperties(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
 
-    option_path_supports_blend_relative = set()
-    if vcu.is_blender_45():
-        # required for relative path support in Blender 4.5+
-        # https://docs.blender.org/api/4.5/bpy_types_enum_items/property_flag_items.html#rna-enum-property-flag-items
-        option_path_supports_blend_relative = {'PATH_SUPPORTS_BLEND_RELATIVE'}
+    # required for relative path support in Blender 4.5+
+    # https://docs.blender.org/api/4.5/bpy_types_enum_items/property_flag_items.html#rna-enum-property-flag-items
+    option_path_supports_blend_relative = {'PATH_SUPPORTS_BLEND_RELATIVE'}
     
-    cache_info_type = EnumProperty(
+    cache_info_type: EnumProperty(
             name="Cache Info Display Mode",
             description="Type of cache info to display",
             items=types.cache_info_modes,
             default='CACHE_INFO',
             update=lambda self, context: self._update_cache_info_type(context),
-            ); exec(conv("cache_info_type"))
-    current_info_frame = IntProperty(
+            )
+    current_info_frame: IntProperty(
             name="Frame", 
             description="Select frame number", 
             min=0,
             default=0,
             update=lambda self, context: self._update_current_info_frame(context),
-            ); exec(conv("current_info_frame"))
-    lock_info_frame_to_timeline = BoolProperty(
+            )
+    lock_info_frame_to_timeline: BoolProperty(
             name="Lock To Timeline",
             description="Set frame number to current frame in timeline",
             default=True,
             update=lambda self, context: self._update_lock_info_frame_to_timeline(context),
-            ); exec(conv("lock_info_frame_to_timeline"))
+            )
     temp_directory = vcu.get_blender_preferences_temporary_directory()
-    csv_save_filepath = StringProperty(
+    csv_save_filepath: StringProperty(
             name="",
             default=os.path.join(temp_directory, "flip_fluid_stats.csv"), 
             subtype='FILE_PATH',
             options=option_path_supports_blend_relative,
-            ); exec(conv("csv_save_filepath"))
-    csv_region_format = EnumProperty(
+            )
+    csv_region_format: EnumProperty(
             name="Region Format",
             description="CSV region formatting",
             items=types.csv_regions,
             default='CSV_REGION_US',
-            ); exec(conv("csv_region_format"))
+            )
 
-    stats_filename = bpy.props.StringProperty(default='flipstats.data'); exec(conv("stats_filename"))
-    is_stats_current = bpy.props.BoolProperty(default=False); exec(conv("is_stats_current"))
+    stats_filename: bpy.props.StringProperty(default='flipstats.data')
+    is_stats_current: bpy.props.BoolProperty(default=False)
 
     # Cache Info
-    cache_info_simulation_stats_expanded = BoolProperty(default=True); exec(conv("cache_info_simulation_stats_expanded"))
-    cache_info_timing_stats_expanded = BoolProperty(default=True); exec(conv("cache_info_timing_stats_expanded"))
-    cache_info_mesh_stats_expanded = BoolProperty(default=True); exec(conv("cache_info_mesh_stats_expanded"))
-    cache_info_solver_stats_expanded = BoolProperty(default=True); exec(conv("cache_info_solver_stats_expanded"))
-    cache_info_pressure_solver_stats_expanded = BoolProperty(default=True); exec(conv("cache_info_pressure_solver_stats_expanded"))
-    cache_info_viscosity_solver_stats_expanded = BoolProperty(default=True); exec(conv("cache_info_viscosity_solver_stats_expanded"))
-    is_cache_info_available = BoolProperty(default=False); exec(conv("is_cache_info_available"))
-    frame_start = IntProperty(default=-1); exec(conv("frame_start"))
-    num_cache_frames = IntProperty(default=-1); exec(conv("num_cache_frames"))
-    is_average_performance_score_enabled = BoolProperty(default=False); exec(conv("is_average_performance_score_enabled"))
-    average_performance_score = IntProperty(default=-1); exec(conv("average_performance_score"))
-    estimated_frame_speed = FloatProperty(default=-1); exec(conv("estimated_frame_speed"))
-    estimated_time_remaining = IntProperty(default=-1); exec(conv("estimated_time_remaining"))
-    estimated_time_remaining_timestamp = IntProperty(default=-1); exec(conv("estimated_time_remaining_timestamp"))
-    is_estimated_time_remaining_available = BoolProperty(default=False); exec(conv("is_estimated_time_remaining_available"))
-    cache_bytes = PointerProperty(type=ByteProperty); exec(conv("cache_bytes"))
+    is_cache_info_available: BoolProperty(default=False)
+    frame_start: IntProperty(default=-1)
+    num_cache_frames: IntProperty(default=-1)
+    is_average_performance_score_enabled: BoolProperty(default=False)
+    average_performance_score: IntProperty(default=-1)
+    estimated_frame_speed: FloatProperty(default=-1)
+    estimated_time_remaining: IntProperty(default=-1)
+    estimated_time_remaining_timestamp: IntProperty(default=-1)
+    is_estimated_time_remaining_available: BoolProperty(default=False)
+    cache_bytes: PointerProperty(type=ByteProperty)
 
-    pressure_solver_enabled = BoolProperty(default=False); exec(conv("pressure_solver_enabled"))
-    pressure_solver_failures = IntProperty(default=-1); exec(conv("pressure_solver_failures"))
-    pressure_solver_steps = IntProperty(default=-1); exec(conv("pressure_solver_steps"))
-    pressure_solver_max_iterations = IntProperty(default=-1); exec(conv("pressure_solver_max_iterations"))
-    pressure_solver_max_iterations_frame = IntProperty(default=-1); exec(conv("pressure_solver_max_iterations_frame"))
-    pressure_solver_max_error = FloatProperty(default=-1); exec(conv("pressure_solver_max_error"))
-    pressure_solver_max_error_frame = IntProperty(default=-1); exec(conv("pressure_solver_max_error_frame"))
-    pressure_solver_max_stress = FloatProperty(default=-1); exec(conv("pressure_solver_max_stress"))
-    pressure_solver_max_stress_frame = IntProperty(default=-1); exec(conv("pressure_solver_max_stress_frame"))
+    pressure_solver_enabled: BoolProperty(default=False)
+    pressure_solver_failures: IntProperty(default=-1)
+    pressure_solver_steps: IntProperty(default=-1)
+    pressure_solver_max_iterations: IntProperty(default=-1)
+    pressure_solver_max_iterations_frame: IntProperty(default=-1)
+    pressure_solver_max_error: FloatProperty(default=-1)
+    pressure_solver_max_error_frame: IntProperty(default=-1)
+    pressure_solver_max_stress: FloatProperty(default=-1)
+    pressure_solver_max_stress_frame: IntProperty(default=-1)
 
-    viscosity_solver_enabled = BoolProperty(default=False); exec(conv("viscosity_solver_enabled"))
-    viscosity_solver_failures = IntProperty(default=-1); exec(conv("viscosity_solver_failures"))
-    viscosity_solver_steps = IntProperty(default=-1); exec(conv("viscosity_solver_steps"))
-    viscosity_solver_max_iterations = IntProperty(default=-1); exec(conv("viscosity_solver_max_iterations"))
-    viscosity_solver_max_iterations_frame = IntProperty(default=-1); exec(conv("viscosity_solver_max_iterations_frame"))
-    viscosity_solver_max_error = FloatProperty(default=-1); exec(conv("viscosity_solver_max_error"))
-    viscosity_solver_max_error_frame = IntProperty(default=-1); exec(conv("viscosity_solver_max_error_frame"))
-    viscosity_solver_max_stress = FloatProperty(default=-1); exec(conv("viscosity_solver_max_stress"))
-    viscosity_solver_max_stress_frame = IntProperty(default=-1); exec(conv("viscosity_solver_max_stress_frame"))
+    viscosity_solver_enabled: BoolProperty(default=False)
+    viscosity_solver_failures: IntProperty(default=-1)
+    viscosity_solver_steps: IntProperty(default=-1)
+    viscosity_solver_max_iterations: IntProperty(default=-1)
+    viscosity_solver_max_iterations_frame: IntProperty(default=-1)
+    viscosity_solver_max_error: FloatProperty(default=-1)
+    viscosity_solver_max_error_frame: IntProperty(default=-1)
+    viscosity_solver_max_stress: FloatProperty(default=-1)
+    viscosity_solver_max_stress_frame: IntProperty(default=-1)
 
     # Frame Info
-    frame_info_simulation_stats_expanded = BoolProperty(default=True); exec(conv("frame_info_simulation_stats_expanded"))
-    frame_info_solver_stats_expanded = BoolProperty(default=True); exec(conv("frame_info_solver_stats_expanded"))
-    frame_info_pressure_solver_stats_expanded = BoolProperty(default=True); exec(conv("frame_info_pressure_solver_stats_expanded"))
-    frame_info_viscosity_solver_stats_expanded = BoolProperty(default=True); exec(conv("frame_info_viscosity_solver_stats_expanded"))
-    frame_info_timing_stats_expanded = BoolProperty(default=True); exec(conv("frame_info_timing_stats_expanded"))
-    frame_info_mesh_stats_expanded = BoolProperty(default=True); exec(conv("frame_info_mesh_stats_expanded"))
-    display_frame_viscosity_timing_stats = BoolProperty(default=False); exec(conv("display_frame_viscosity_timing_stats"))
-    display_frame_diffuse_timing_stats = BoolProperty(default=False); exec(conv("display_frame_diffuse_timing_stats"))
-    display_frame_diffuse_particle_stats = BoolProperty(default=False); exec(conv("display_frame_diffuse_particle_stats"))
-    is_frame_info_available = bpy.props.BoolProperty(default=False); exec(conv("is_frame_info_available"))
-    frame_info_id = IntProperty(default=-1); exec(conv("frame_info_id"))
-    frame_substeps = IntProperty(default=-1); exec(conv("frame_substeps"))
-    frame_delta_time = FloatProperty(default=0.0); exec(conv("frame_delta_time"))
-    frame_fluid_particles = IntProperty(default=-1); exec(conv("frame_fluid_particles"))
-    frame_diffuse_particles = IntProperty(default=-1); exec(conv("frame_diffuse_particles"))
-    frame_performance_score = IntProperty(default=-1); exec(conv("frame_performance_score"))
+    frame_info_simulation_stats_expanded: BoolProperty(default=True)
+    frame_info_solver_stats_expanded: BoolProperty(default=True)
+    frame_info_pressure_solver_stats_expanded: BoolProperty(default=True)
+    frame_info_viscosity_solver_stats_expanded: BoolProperty(default=True)
+    frame_info_timing_stats_expanded: BoolProperty(default=True)
+    frame_info_mesh_stats_expanded: BoolProperty(default=True)
+    display_frame_viscosity_timing_stats: BoolProperty(default=False)
+    display_frame_diffuse_timing_stats: BoolProperty(default=False)
+    display_frame_diffuse_particle_stats: BoolProperty(default=False)
+    is_frame_info_available: bpy.props.BoolProperty(default=False)
+    frame_info_id: IntProperty(default=-1)
+    frame_substeps: IntProperty(default=-1)
+    frame_delta_time: FloatProperty(default=0.0)
+    frame_fluid_particles: IntProperty(default=-1)
+    frame_diffuse_particles: IntProperty(default=-1)
+    frame_performance_score: IntProperty(default=-1)
 
-    frame_pressure_solver_enabled = BoolProperty(default=False); exec(conv("frame_pressure_solver_enabled"))
-    frame_pressure_solver_success = BoolProperty(default=True); exec(conv("frame_pressure_solver_success"))
-    frame_pressure_solver_error = FloatProperty(default=0.0); exec(conv("frame_pressure_solver_error"))
-    frame_pressure_solver_iterations = IntProperty(default=-1); exec(conv("frame_pressure_solver_iterations"))
-    frame_pressure_solver_max_iterations = IntProperty(default=-1); exec(conv("frame_pressure_solver_max_iterations"))
-    frame_pressure_solver_stress = PointerProperty(type=SolverStressProperties); exec(conv("frame_pressure_solver_stress"))
+    frame_pressure_solver_enabled: BoolProperty(default=False)
+    frame_pressure_solver_success: BoolProperty(default=True)
+    frame_pressure_solver_error: FloatProperty(default=0.0)
+    frame_pressure_solver_iterations: IntProperty(default=-1)
+    frame_pressure_solver_max_iterations: IntProperty(default=-1)
+    frame_pressure_solver_stress: PointerProperty(type=SolverStressProperties)
 
-    frame_viscosity_solver_enabled = BoolProperty(default=False); exec(conv("frame_viscosity_solver_enabled"))
-    frame_viscosity_solver_success = BoolProperty(default=True); exec(conv("frame_viscosity_solver_success"))
-    frame_viscosity_solver_error = FloatProperty(default=0.0); exec(conv("frame_viscosity_solver_error"))
-    frame_viscosity_solver_iterations = IntProperty(default=-1); exec(conv("frame_viscosity_solver_iterations"))
-    frame_viscosity_solver_max_iterations = IntProperty(default=-1); exec(conv("frame_viscosity_solver_max_iterations"))
-    frame_viscosity_solver_stress = PointerProperty(type=SolverStressProperties); exec(conv("frame_viscosity_solver_stress"))
+    frame_viscosity_solver_enabled: BoolProperty(default=False)
+    frame_viscosity_solver_success: BoolProperty(default=True)
+    frame_viscosity_solver_error: FloatProperty(default=0.0)
+    frame_viscosity_solver_iterations: IntProperty(default=-1)
+    frame_viscosity_solver_max_iterations: IntProperty(default=-1)
+    frame_viscosity_solver_stress: PointerProperty(type=SolverStressProperties)
 
     # Mesh Info
-    surface_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surface_mesh"))
-    preview_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("preview_mesh"))
-    surfaceblur_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surfaceblur_mesh"))
-    surfacevelocity_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surfacevelocity_mesh"))
-    surfacespeed_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surfacespeed_mesh"))
-    surfacevorticity_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surfacevorticity_mesh"))
-    surfaceage_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surfaceage_mesh"))
-    surfacelifetime_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surfacelifetime_mesh"))
-    surfacewhitewaterproximity_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surfacewhitewaterproximity_mesh"))
-    surfacecolor_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surfacecolor_mesh"))
-    surfacesourceid_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surfacesourceid_mesh"))
-    surfaceviscosity_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("surfaceviscosity_mesh"))
-    foam_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("foam_mesh"))
-    bubble_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("bubble_mesh"))
-    spray_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("spray_mesh"))
-    dust_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("dust_mesh"))
-    foamblur_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("foamblur_mesh"))
-    bubbleblur_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("bubbleblur_mesh"))
-    sprayblur_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("sprayblur_mesh"))
-    dustblur_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("dustblur_mesh"))
-    foamvelocity_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("foamvelocity_mesh"))
-    bubblevelocity_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("bubblevelocity_mesh"))
-    sprayvelocity_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("sprayvelocity_mesh"))
-    dustvelocity_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("dustvelocity_mesh"))
-    foamid_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("foamid_mesh"))
-    bubbleid_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("bubbleid_mesh"))
-    sprayid_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("sprayid_mesh"))
-    dustid_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("dustid_mesh"))
-    foamlifetime_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("foamlifetime_mesh"))
-    bubblelifetime_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("bubblelifetime_mesh"))
-    spraylifetime_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("spraylifetime_mesh"))
-    dustlifetime_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("dustlifetime_mesh"))
-    fluid_particle_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("fluid_particle_mesh"))
-    fluid_particle_id_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("fluid_particle_id_mesh"))
-    fluid_particle_velocity_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("fluid_particle_velocity_mesh"))
-    fluid_particle_speed_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("fluid_particle_speed_mesh"))
-    fluid_particle_vorticity_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("fluid_particle_vorticity_mesh"))
-    fluid_particle_color_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("fluid_particle_color_mesh"))
-    fluid_particle_age_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("fluid_particle_age_mesh"))
-    fluid_particle_lifetime_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("fluid_particle_lifetime_mesh"))
-    fluid_particle_viscosity_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("fluid_particle_viscosity_mesh"))
-    fluid_particle_whitewater_proximity_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("fluid_particle_whitewater_proximity_mesh"))
-    fluid_particle_source_id_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("fluid_particle_source_id_mesh"))
-    fluid_particle_uid_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("fluid_particle_uid_mesh"))
-    debug_particle_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("debug_particle_mesh"))
-    obstacle_mesh = PointerProperty(type=MeshStatsProperties); exec(conv("obstacle_mesh"))
+    surface_mesh: PointerProperty(type=MeshStatsProperties)
+    preview_mesh: PointerProperty(type=MeshStatsProperties)
+    surfaceblur_mesh: PointerProperty(type=MeshStatsProperties)
+    surfacevelocity_mesh: PointerProperty(type=MeshStatsProperties)
+    surfacespeed_mesh: PointerProperty(type=MeshStatsProperties)
+    surfacevorticity_mesh: PointerProperty(type=MeshStatsProperties)
+    surfaceage_mesh: PointerProperty(type=MeshStatsProperties)
+    surfacelifetime_mesh: PointerProperty(type=MeshStatsProperties)
+    surfacewhitewaterproximity_mesh: PointerProperty(type=MeshStatsProperties)
+    surfacecolor_mesh: PointerProperty(type=MeshStatsProperties)
+    surfacesourceid_mesh: PointerProperty(type=MeshStatsProperties)
+    surfaceviscosity_mesh: PointerProperty(type=MeshStatsProperties)
+    surfacedensity_mesh: PointerProperty(type=MeshStatsProperties)
+    foam_mesh: PointerProperty(type=MeshStatsProperties)
+    bubble_mesh: PointerProperty(type=MeshStatsProperties)
+    spray_mesh: PointerProperty(type=MeshStatsProperties)
+    dust_mesh: PointerProperty(type=MeshStatsProperties)
+    foamblur_mesh: PointerProperty(type=MeshStatsProperties)
+    bubbleblur_mesh: PointerProperty(type=MeshStatsProperties)
+    sprayblur_mesh: PointerProperty(type=MeshStatsProperties)
+    dustblur_mesh: PointerProperty(type=MeshStatsProperties)
+    foamvelocity_mesh: PointerProperty(type=MeshStatsProperties)
+    bubblevelocity_mesh: PointerProperty(type=MeshStatsProperties)
+    sprayvelocity_mesh: PointerProperty(type=MeshStatsProperties)
+    dustvelocity_mesh: PointerProperty(type=MeshStatsProperties)
+    foamid_mesh: PointerProperty(type=MeshStatsProperties)
+    bubbleid_mesh: PointerProperty(type=MeshStatsProperties)
+    sprayid_mesh: PointerProperty(type=MeshStatsProperties)
+    dustid_mesh: PointerProperty(type=MeshStatsProperties)
+    foamlifetime_mesh: PointerProperty(type=MeshStatsProperties)
+    bubblelifetime_mesh: PointerProperty(type=MeshStatsProperties)
+    spraylifetime_mesh: PointerProperty(type=MeshStatsProperties)
+    dustlifetime_mesh: PointerProperty(type=MeshStatsProperties)
+    fluid_particle_mesh: PointerProperty(type=MeshStatsProperties)
+    fluid_particle_id_mesh: PointerProperty(type=MeshStatsProperties)
+    fluid_particle_velocity_mesh: PointerProperty(type=MeshStatsProperties)
+    fluid_particle_speed_mesh: PointerProperty(type=MeshStatsProperties)
+    fluid_particle_vorticity_mesh: PointerProperty(type=MeshStatsProperties)
+    fluid_particle_color_mesh: PointerProperty(type=MeshStatsProperties)
+    fluid_particle_age_mesh: PointerProperty(type=MeshStatsProperties)
+    fluid_particle_lifetime_mesh: PointerProperty(type=MeshStatsProperties)
+    fluid_particle_viscosity_mesh: PointerProperty(type=MeshStatsProperties)
+    fluid_particle_density_mesh: PointerProperty(type=MeshStatsProperties)
+    fluid_particle_density_average_mesh: PointerProperty(type=MeshStatsProperties)
+    fluid_particle_whitewater_proximity_mesh: PointerProperty(type=MeshStatsProperties)
+    fluid_particle_source_id_mesh: PointerProperty(type=MeshStatsProperties)
+    fluid_particle_uid_mesh: PointerProperty(type=MeshStatsProperties)
+    debug_particle_mesh: PointerProperty(type=MeshStatsProperties)
+    obstacle_mesh: PointerProperty(type=MeshStatsProperties)
 
     # Time Info
-    time_mesh = PointerProperty(type=TimeStatsProperties); exec(conv("time_mesh"))
-    time_advection = PointerProperty(type=TimeStatsProperties); exec(conv("time_advection"))
-    time_particles = PointerProperty(type=TimeStatsProperties); exec(conv("time_particles"))
-    time_pressure = PointerProperty(type=TimeStatsProperties); exec(conv("time_pressure"))
-    time_diffuse = PointerProperty(type=TimeStatsProperties); exec(conv("time_diffuse"))
-    time_viscosity = PointerProperty(type=TimeStatsProperties); exec(conv("time_viscosity"))
-    time_objects = PointerProperty(type=TimeStatsProperties); exec(conv("time_objects"))
-    time_other = PointerProperty(type=TimeStatsProperties); exec(conv("time_other"))
+    time_mesh: PointerProperty(type=TimeStatsProperties)
+    time_advection: PointerProperty(type=TimeStatsProperties)
+    time_particles: PointerProperty(type=TimeStatsProperties)
+    time_pressure: PointerProperty(type=TimeStatsProperties)
+    time_diffuse: PointerProperty(type=TimeStatsProperties)
+    time_viscosity: PointerProperty(type=TimeStatsProperties)
+    time_objects: PointerProperty(type=TimeStatsProperties)
+    time_other: PointerProperty(type=TimeStatsProperties)
 
 
     def register_preset_properties(self, registry, path):
@@ -366,6 +356,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             "surfacecolor_mesh",
             "surfacesourceid_mesh",
             "surfaceviscosity_mesh",
+            "surfacedensity_mesh",
             "foam_mesh",
             "bubble_mesh",
             "spray_mesh",
@@ -395,6 +386,8 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             "fluid_particle_age_mesh",
             "fluid_particle_lifetime_mesh",
             "fluid_particle_viscosity_mesh",
+            "fluid_particle_density_mesh",
+            "fluid_particle_density_average_mesh",
             "fluid_particle_whitewater_proximity_mesh",
             "fluid_particle_source_id_mesh",
             "fluid_particle_uid_mesh",
@@ -582,6 +575,10 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             # If statement to support older caches that do not have a surfaceviscosity entry
             self._set_mesh_stats_data(self.surfaceviscosity_mesh, data['surfaceviscosity'])
 
+        if 'surfacedensity' in data:
+            # If statement to support older caches that do not have a surfacedensity entry
+            self._set_mesh_stats_data(self.surfacedensity_mesh, data['surfacedensity'])
+
         self._set_mesh_stats_data(self.foam_mesh,             data['foam'])
         self._set_mesh_stats_data(self.bubble_mesh,           data['bubble'])
         self._set_mesh_stats_data(self.spray_mesh,            data['spray'])
@@ -660,6 +657,14 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         if 'fluidparticlesviscosity' in data:
             # If statement to support older caches that do not have a fluidparticlesviscosity entry
             self._set_mesh_stats_data(self.fluid_particle_viscosity_mesh, data['fluidparticlesviscosity'])
+
+        if 'fluidparticlesdensity' in data:
+            # If statement to support older caches that do not have a fluidparticlesdensity entry
+            self._set_mesh_stats_data(self.fluid_particle_density_mesh, data['fluidparticlesdensity'])
+
+        if 'fluidparticlesdensityaverage' in data:
+            # If statement to support older caches that do not have a fluidparticlesdensityaverage entry
+            self._set_mesh_stats_data(self.fluid_particle_density_average_mesh, data['fluidparticlesdensityaverage'])
 
         if 'fluidparticleswhitewaterproximity' in data:
             # If statement to support older caches that do not have a fluidparticleswhitewaterproximity entry
@@ -765,6 +770,8 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
                 cache_size += fdata['surfacesourceid']['bytes']
             if 'surfaceviscosity' in fdata and fdata['surfaceviscosity']['enabled']: # If statement to support caches without a surfaceviscosity entry
                 cache_size += fdata['surfaceviscosity']['bytes']
+            if 'surfacedensity' in fdata and fdata['surfacedensity']['enabled']: # If statement to support caches without a surfacedensity entry
+                cache_size += fdata['surfacedensity']['bytes']
             if fdata['foam']['enabled']:
                 cache_size += fdata['foam']['bytes']
             if fdata['bubble']['enabled']:
@@ -823,6 +830,10 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
                 cache_size += fdata['fluidparticleslifetime']['bytes']
             if 'fluidparticlesviscosity' in fdata and fdata['fluidparticlesviscosity']['enabled']:
                 cache_size += fdata['fluidparticlesviscosity']['bytes']
+            if 'fluidparticlesdensity' in fdata and fdata['fluidparticlesdensity']['enabled']:
+                cache_size += fdata['fluidparticlesdensity']['bytes']
+            if 'fluidparticlesdensityaverage' in fdata and fdata['fluidparticlesdensityaverage']['enabled']:
+                cache_size += fdata['fluidparticlesdensityaverage']['bytes']
             if 'fluidparticleswhitewaterproximity' in fdata and fdata['fluidparticleswhitewaterproximity']['enabled']:
                 cache_size += fdata['fluidparticleswhitewaterproximity']['bytes']
             if 'fluidparticlessourceid' in fdata and fdata['fluidparticlessourceid']['enabled']:
@@ -870,6 +881,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         is_surfacecolor_enabled = False
         is_surfacesourceid_enabled = False
         is_surfaceviscosity_enabled = False
+        is_surfacedensity_enabled = False
         is_foam_enabled = False
         is_bubble_enabled = False
         is_spray_enabled = False
@@ -899,6 +911,8 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         is_fluid_particles_age_enabled = False
         is_fluid_particles_lifetime_enabled = False
         is_fluid_particles_viscosity_enabled = False
+        is_fluid_particles_density_enabled = False
+        is_fluid_particles_density_average_enabled = False
         is_fluid_particles_whitewater_proximity_enabled = False
         is_fluid_particles_source_id_enabled = False
         is_fluid_particles_uid_enabled = False
@@ -916,6 +930,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         surfacecolor_bytes = 0
         surfacesourceid_bytes = 0
         surfaceviscosity_bytes = 0
+        surfacedensity_bytes = 0
         foam_bytes = 0
         bubble_bytes = 0
         spray_bytes = 0
@@ -945,6 +960,8 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         fluid_particles_age_bytes = 0
         fluid_particles_lifetime_bytes = 0
         fluid_particles_viscosity_bytes = 0
+        fluid_particles_density_bytes = 0
+        fluid_particles_density_average_bytes = 0
         fluid_particles_whitewater_proximity_bytes = 0
         fluid_particles_source_id_bytes = 0
         fluid_particles_uid_bytes = 0
@@ -1015,6 +1032,9 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             if 'surfaceviscosity' in fdata and fdata['surfaceviscosity']['enabled']: # If statement to support caches without a surfaceviscosity entry
                 is_surfaceviscosity_enabled = True
                 surfaceviscosity_bytes += fdata['surfaceviscosity']['bytes']
+            if 'surfacedensity' in fdata and fdata['surfacedensity']['enabled']: # If statement to support caches without a surfacedensity entry
+                is_surfacedensity_enabled = True
+                surfacedensity_bytes += fdata['surfacedensity']['bytes']
             if fdata['foam']['enabled']:
                 is_foam_enabled = True
                 foam_bytes += fdata['foam']['bytes']
@@ -1102,6 +1122,12 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             if 'fluidparticlesviscosity' in fdata and fdata['fluidparticlesviscosity']['enabled']:
                 is_fluid_particles_viscosity_enabled = True
                 fluid_particles_viscosity_bytes += fdata['fluidparticlesviscosity']['bytes']
+            if 'fluidparticlesdensity' in fdata and fdata['fluidparticlesdensity']['enabled']:
+                is_fluid_particles_density_enabled = True
+                fluid_particles_density_bytes += fdata['fluidparticlesdensity']['bytes']
+            if 'fluidparticlesdensityaverage' in fdata and fdata['fluidparticlesdensityaverage']['enabled']:
+                is_fluid_particles_density_average_enabled = True
+                fluid_particles_density_average_bytes += fdata['fluidparticlesdensityaverage']['bytes']
             if 'fluidparticleswhitewaterproximity' in fdata and fdata['fluidparticleswhitewaterproximity']['enabled']:
                 is_fluid_particles_whitewater_proximity_enabled = True
                 fluid_particles_whitewater_proximity_bytes += fdata['fluidparticleswhitewaterproximity']['bytes']
@@ -1154,6 +1180,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.surfacecolor_mesh.enabled = is_surfacecolor_enabled
         self.surfacesourceid_mesh.enabled = is_surfacesourceid_enabled
         self.surfaceviscosity_mesh.enabled = is_surfaceviscosity_enabled
+        self.surfacedensity_mesh.enabled = is_surfacedensity_enabled
         self.foam_mesh.enabled = is_foam_enabled
         self.bubble_mesh.enabled = is_bubble_enabled
         self.spray_mesh.enabled = is_spray_enabled
@@ -1183,6 +1210,8 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.fluid_particle_age_mesh.enabled = is_fluid_particles_age_enabled
         self.fluid_particle_lifetime_mesh.enabled = is_fluid_particles_lifetime_enabled
         self.fluid_particle_viscosity_mesh.enabled = is_fluid_particles_viscosity_enabled
+        self.fluid_particle_density_mesh.enabled = is_fluid_particles_density_enabled
+        self.fluid_particle_density_average_mesh.enabled = is_fluid_particles_density_average_enabled
         self.fluid_particle_whitewater_proximity_mesh.enabled = is_fluid_particles_whitewater_proximity_enabled
         self.fluid_particle_source_id_mesh.enabled = is_fluid_particles_source_id_enabled
         self.fluid_particle_uid_mesh.enabled = is_fluid_particles_uid_enabled
@@ -1201,6 +1230,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.surfacecolor_mesh.bytes.set(surfacecolor_bytes)
         self.surfacesourceid_mesh.bytes.set(surfacesourceid_bytes)
         self.surfaceviscosity_mesh.bytes.set(surfaceviscosity_bytes)
+        self.surfacedensity_mesh.bytes.set(surfacedensity_bytes)
         self.foam_mesh.bytes.set(foam_bytes)
         self.bubble_mesh.bytes.set(bubble_bytes)
         self.spray_mesh.bytes.set(spray_bytes)
@@ -1230,6 +1260,8 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.fluid_particle_age_mesh.bytes.set(fluid_particles_age_bytes)
         self.fluid_particle_lifetime_mesh.bytes.set(fluid_particles_lifetime_bytes)
         self.fluid_particle_viscosity_mesh.bytes.set(fluid_particles_viscosity_bytes)
+        self.fluid_particle_density_mesh.bytes.set(fluid_particles_density_bytes)
+        self.fluid_particle_density_average_mesh.bytes.set(fluid_particles_density_average_bytes)
         self.fluid_particle_whitewater_proximity_mesh.bytes.set(fluid_particles_whitewater_proximity_bytes)
         self.fluid_particle_source_id_mesh.bytes.set(fluid_particles_source_id_bytes)
         self.fluid_particle_uid_mesh.bytes.set(fluid_particles_uid_bytes)

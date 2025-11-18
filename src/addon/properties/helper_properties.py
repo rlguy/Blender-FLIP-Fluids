@@ -547,21 +547,18 @@ class FlipFluidHelperPropertiesShadowCatcherState(bpy.types.PropertyGroup):
 
 # Properties:
 class FlipFluidHelperProperties(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
 
-    option_path_supports_blend_relative = set()
-    if vcu.is_blender_45():
-        # required for relative path support in Blender 4.5+
-        # https://docs.blender.org/api/4.5/bpy_types_enum_items/property_flag_items.html#rna-enum-property-flag-items
-        option_path_supports_blend_relative = {'PATH_SUPPORTS_BLEND_RELATIVE'}
+    # required for relative path support in Blender 4.5+
+    # https://docs.blender.org/api/4.5/bpy_types_enum_items/property_flag_items.html#rna-enum-property-flag-items
+    option_path_supports_blend_relative = {'PATH_SUPPORTS_BLEND_RELATIVE'}
 
-    enable_auto_frame_load = BoolProperty(
+    enable_auto_frame_load: BoolProperty(
             name="Auto-Load Baked Frames",
             description="Automatically load frames as they finish baking",
             default=False,
             update=lambda self, context: self._update_enable_auto_frame_load_cmd(context),
-            ); exec(conv("enable_auto_frame_load"))
-    enable_auto_frame_load_cmd = BoolProperty(
+            )
+    enable_auto_frame_load_cmd: BoolProperty(
             name="Sync With CMD Bake",
             description="Automatically load frames as they finish baking when running a command"
                 " line bake. Note: this feature may decrease Blender performance and responsiveness"
@@ -569,27 +566,27 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
                 " this option when a CMD bake is not running",
             default=False,
             update=lambda self, context: self._update_enable_auto_frame_load_cmd(context),
-            ); exec(conv("enable_auto_frame_load_cmd"))
-    playback_frame_offset = IntProperty(
+            )
+    playback_frame_offset: IntProperty(
             name="Frame Offset",
             description="Frame offset for simulation playback. A positive offset will shift simulation playback forwards in the timeline while a negative offset will shift playback backwards in the timeline",
             default=0,
             options={'HIDDEN'},
-            ); exec(conv("playback_frame_offset"))
+            )
 
-    cmd_bake_and_render = BoolProperty(
+    cmd_bake_and_render: BoolProperty(
             name="Bake and Render",
             description="Enable both baking and rendering in the command line process",
             default=False,
-            ); exec(conv("cmd_bake_and_render"))
-    cmd_bake_and_render_mode = EnumProperty(
+            )
+    cmd_bake_and_render_mode: EnumProperty(
             name="CMD Bake and Render Mode",
             description="How to bake and render the simulation",
             items=types.cmd_bake_and_render_mode,
             default='CMD_BAKE_AND_RENDER_MODE_SEQUENCE',
             options={'HIDDEN'},
-            ); exec(conv("cmd_bake_and_render_mode"))
-    cmd_bake_and_render_interleaved_instances = IntProperty(
+            )
+    cmd_bake_and_render_interleaved_instances: IntProperty(
             name="Render Instances",
             description="Maximum number of render instances to run simultaneously. This number is how many frames"
                 " are allowed to be rendered at the same time. More render instances maximizes system resource usage"
@@ -599,42 +596,42 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             min=1,
             soft_max=8,
             options={'HIDDEN'},
-            ); exec(conv("cmd_bake_and_render_interleaved_instances"))
-    cmd_bake_and_render_interleaved_no_overwrite = BoolProperty(
+            )
+    cmd_bake_and_render_interleaved_no_overwrite: BoolProperty(
             name="Continue render from last rendered frame",
             description="Skip rendering frames that already exist in the render output directory. Useful for continuing a render from the last completed frame. If disabled, rendered frames will be overwritten",
             default=True,
-            ); exec(conv("cmd_bake_and_render_interleaved_no_overwrite"))
-    cmd_launch_render_animation_mode = EnumProperty(
+            )
+    cmd_launch_render_animation_mode: EnumProperty(
             name="Animation Render Mode",
             description="How to render the animation",
             items=types.cmd_render_animation_mode,
             default='CMD_RENDER_MODE_NORMAL',
             options={'HIDDEN'},
-            ); exec(conv("cmd_launch_render_animation_mode"))
-    cmd_launch_render_passes_animation_mode = EnumProperty(
+            )
+    cmd_launch_render_passes_animation_mode: EnumProperty(
             name="Animation Render Mode",
             description="How to render the compositing tools render passes animation",
             items=types.cmd_render_passes_animation_mode,
             default='CMD_RENDER_MODE_RENDER_PASSES',
             options={'HIDDEN'},
-            ); exec(conv("cmd_launch_render_passes_animation_mode"))
-    cmd_launch_render_normal_animation_no_overwrite = BoolProperty(
+            )
+    cmd_launch_render_normal_animation_no_overwrite: BoolProperty(
             name="Skip rendered frames",
             description="Skip rendering frames that already exist in the render output directory. Useful for continuing a render from the last completed frame. If disabled, rendered frames will be overwritten",
             default=False,
-            ); exec(conv("cmd_launch_render_normal_animation_no_overwrite"))
-    cmd_launch_render_animation_no_overwrite = BoolProperty(
+            )
+    cmd_launch_render_animation_no_overwrite: BoolProperty(
             name="Skip rendered frames",
             description="Skip rendering frames that already exist in the render output directory. Useful for continuing a render from the last completed frame. If disabled, rendered frames will be overwritten",
             default=True,
-            ); exec(conv("cmd_launch_render_animation_no_overwrite"))
-    cmd_launch_render_passes_animation_no_overwrite = BoolProperty(
+            )
+    cmd_launch_render_passes_animation_no_overwrite: BoolProperty(
             name="Skip rendered frames",
             description="Skip rendering compositing pass frames that already exist in the render output directory. Useful for continuing a render from the last completed compositing pass frame. If disabled, rendered frames will be overwritten",
             default=True,
-            ); exec(conv("cmd_launch_render_passes_animation_no_overwrite"))
-    cmd_launch_render_animation_instances = IntProperty(
+            )
+    cmd_launch_render_animation_instances: IntProperty(
             name="Render Instances",
             description="Maximum number of render instances to run simultaneously. This number is how many frames"
                 " are allowed to be rendered at the same time. More render instances maximizes system resource usage"
@@ -643,8 +640,8 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             min=1,
             soft_max=8,
             options={'HIDDEN'},
-            ); exec(conv("cmd_launch_render_animation_instances"))
-    cmd_launch_render_passes_animation_instances = IntProperty(
+            )
+    cmd_launch_render_passes_animation_instances: IntProperty(
             name="Render Instances",
             description="Maximum number of render instances to run simultaneously. This number is how many compositing pass frames"
                 " are allowed to be rendered at the same time. More render instances maximizes system resource usage"
@@ -653,29 +650,29 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             min=1,
             soft_max=8,
             options={'HIDDEN'},
-            ); exec(conv("cmd_launch_render_passes_animation_instances"))
-    cmd_open_image_after_render = BoolProperty(
+            )
+    cmd_open_image_after_render: BoolProperty(
             name="Open Image After Render",
             description="After the command line render process is finished, open the image in your default OS image program",
             default=True,
-            ); exec(conv("cmd_open_image_after_render"))
-    cmd_close_window_after_render = BoolProperty(
+            )
+    cmd_close_window_after_render: BoolProperty(
             name="Close CMD Window After Render",
             description="After the command line render process is finished, open the image in your default OS image program",
             default=False,
-            ); exec(conv("cmd_close_window_after_render"))
+            )
             
 
     ### NEW RENDER PASSES ###
 
     # Disabled by default for the release of FLIP Fluids 1.8.0
-    display_compositing_tools_in_ui = BoolProperty(default=False); exec(conv("display_compositing_tools_in_ui"))
+    display_compositing_tools_in_ui: BoolProperty(default=False)
    
-    render_passes = BoolProperty(
+    render_passes: BoolProperty(
             name="Activate Passes Rendering",
             description="Activate rendering of selected passes",
             default=False
-            ); exec(conv("render_passes"))
+            )
         
     render_passes_objectlist: bpy.props.CollectionProperty(type=FlipFluidHelperPropertiesRenderPassesObjectslist)
     render_passes_fg_elementslist: bpy.props.CollectionProperty(type=FlipFluidHelperPropertiesRenderPassesObjectslist)
@@ -999,68 +996,80 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
  
     ### END OF PASSES ###
 
-    alembic_export_surface = BoolProperty(
+    alembic_export_engine: EnumProperty(
+            name="Alembic Export Engine",
+            description="Select the Alembic export engine",
+            items=types.alembic_export_engines,
+            default='ALEMBIC_EXPORT_ENGINE_BLENDER',
+            options={'HIDDEN'},
+            )
+    alembic_export_surface: BoolProperty(
             name="Surface",
             description="Include fluid surface mesh in the Alembic export",
             default=True,
-            ); exec(conv("alembic_export_surface"))
-    alembic_export_fluid_particles = BoolProperty(
+            )
+    alembic_export_surface_preview: BoolProperty(
+            name="Preview",
+            description="Include fluid surface preview mesh in the Alembic export",
+            default=False,
+            )
+    alembic_export_fluid_particles: BoolProperty(
             name="Fluid Particles",
             description="Include fluid particles in the Alembic export",
             default=False,
-            ); exec(conv("alembic_export_fluid_particles"))
-    alembic_export_foam = BoolProperty(
+            )
+    alembic_export_foam: BoolProperty(
             name="Foam",
             description="Include whitewater foam mesh in the Alembic export if applicable. This mesh will be exported as a vertex-only mesh",
             default=True,
-            ); exec(conv("alembic_export_foam"))
-    alembic_export_bubble = BoolProperty(
+            )
+    alembic_export_bubble: BoolProperty(
             name="Bubble",
             description="Include whitewater bubble mesh in the Alembic export if applicable. This mesh will be exported as a vertex-only mesh",
             default=True,
-            ); exec(conv("alembic_export_bubble"))
-    alembic_export_spray = BoolProperty(
+            )
+    alembic_export_spray: BoolProperty(
             name="Spray",
             description="Include whitewater spray mesh in the Alembic export if applicable. This mesh will be exported as a vertex-only mesh",
             default=True,
-            ); exec(conv("alembic_export_spray"))
-    alembic_export_dust = BoolProperty(
+            )
+    alembic_export_dust: BoolProperty(
             name="Dust",
             description="Include whitewater dust mesh in the Alembic export if applicable. This mesh will be exported as a vertex-only mesh",
             default=True,
-            ); exec(conv("alembic_export_dust"))
-    alembic_export_velocity = BoolProperty(
+            )
+    alembic_export_velocity: BoolProperty(
             name="Export Velocity",
             description="Include velocity data in the Alembic export. This data will be available"
                 " under the 'velocity' point attribute of the Alembic export and can be used for motion"
                 " blur rendering. Velocity attributes for the surface, fluid particles, and/or whitewater are required to"
                 " be baked before export",
             default=False,
-            ); exec(conv("alembic_export_velocity"))
-    alembic_export_color = BoolProperty(
+            )
+    alembic_export_color: BoolProperty(
             name="Export Color",
             description="Include color attribute data in the Alembic export. This data will be available"
                 " under the 'color' face-corner attribute of the Alembic export and can be used for material shading."
                 " This attribute is only supported for the Surface mesh."
                 " Color attributes for the surface are required to be baked before export",
             default=False,
-            ); exec(conv("alembic_export_color"))
-    alembic_global_scale = FloatProperty(
+            )
+    alembic_global_scale: FloatProperty(
             name="Scale", 
             description="Scale value by which to enlarge or shrink the simulation meshes with respect to the world's origin", 
             min=0.0001,
             max=1000.0,
             default=1.0,
             precision=3,
-            ); exec(conv("alembic_global_scale"))
-    alembic_frame_range_mode = EnumProperty(
+            )
+    alembic_frame_range_mode: EnumProperty(
             name="Frame Range Mode",
             description="Frame range to use for Alembic Export",
             items=types.frame_range_modes,
             default='FRAME_RANGE_TIMELINE',
             options={'HIDDEN'},
-            ); exec(conv("alembic_frame_range_mode"))
-    alembic_frame_range_custom = NewMinMaxIntProperty(
+            )
+    alembic_frame_range_custom: NewMinMaxIntProperty(
             name_min="Start Frame", 
             description_min="First frame of the Alembic export", 
             min_min=0,
@@ -1072,8 +1081,8 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             min_max=0,
             default_max=250,
             options_max={'HIDDEN'},
-            ); exec(conv("alembic_frame_range_custom"))
-    alembic_output_filepath = StringProperty(
+            )
+    alembic_output_filepath: StringProperty(
             name="",
             description="Alembic export will be saved to this filepath. Remember to save the Blend file before"
                 " starting the Alembic export",
@@ -1081,68 +1090,68 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             subtype='FILE_PATH',
             options=option_path_supports_blend_relative,
             update=lambda self, context: self._update_alembic_output_filepath(context),
-            ); exec(conv("alembic_output_filepath"))
-    is_alembic_output_filepath_set = BoolProperty(default=False); exec(conv("is_alembic_output_filepath_set"))
+            )
+    is_alembic_output_filepath_set: BoolProperty(default=False)
 
-    unsaved_blend_file_tooltip = BoolProperty(
+    unsaved_blend_file_tooltip: BoolProperty(
             name="Unsaved Blend File Tooltip", 
             description="This is currently an unsaved .blend file. We recommend saving your file before baking a"
                 " simulation so you do not accidentally lose your simulation progress or settings", 
             default=True,
-            ); exec(conv("unsaved_blend_file_tooltip"))
+            )
 
-    turbo_tools_render_tooltip = BoolProperty(
+    turbo_tools_render_tooltip: BoolProperty(
             name="Turbo Tools command line rendering support", 
             description="An installation of the Turbo Tools addon has been detected. Use these operators to launch"
                 " a Turbo Tools render process or copy the render command. Refer to the Turbo Tools documentation for more info"
                 " on command line rendering", 
             default=True,
-            ); exec(conv("turbo_tools_render_tooltip"))
+            )
 
-    flip_fluids_remesh_skip_hide_render_objects = BoolProperty(
+    flip_fluids_remesh_skip_hide_render_objects: BoolProperty(
             name="Skip Hidden Render Objects",
             description="Skip remeshing objects in the collection that are hidden from render (outliner camera icon)",
             default=False,
-            ); exec(conv("flip_fluids_remesh_skip_hide_render_objects"))
-    flip_fluids_remesh_apply_object_modifiers = BoolProperty(
+            )
+    flip_fluids_remesh_apply_object_modifiers: BoolProperty(
             name="Apply Object Modifiers",
             description="Automatically apply modifiers to objects in collection. If disabled, objects with modifiers will"
                 " need to have modifiers applied manually or excluded from the viewport (disable outliner monitor icon)"
                 " before proceeding with the remesh process. Modifiers may not be applied in the intended order and objects"
                 " with complex modifier dependencies may need to be applied manually for accuracy",
             default=True,
-            ); exec(conv("flip_fluids_remesh_apply_object_modifiers"))
-    flip_fluids_remesh_convert_objects_to_mesh = BoolProperty(
+            )
+    flip_fluids_remesh_convert_objects_to_mesh: BoolProperty(
             name="Convert Objects to Mesh",
             description="Automatically convert non-mesh type objects in the collection to a mesh type if applicable. If an object cannot"
                 " be converted to a mesh (empties, armatures, etc), the object will be skipped from the remeshing process."
                 " If disabled, non-mesh type objects will need to be manually converted to a mesh or excluded from the viewport"
                 " (disable outliner monitor icon) before proceeding with the remesh process",
             default=True,
-            ); exec(conv("flip_fluids_remesh_convert_objects_to_mesh"))
-    update_object_speed_data_on_frame_change = BoolProperty(
+            )
+    update_object_speed_data_on_frame_change: BoolProperty(
             name="Update on frame change",
             description="Update the object speed measurement for the active object after changing a frame. Not recommended"
             " to leave this option enabled when not in use as this could slow down Blender when measuring complex or high poly geometry",
             default=False,
-            ); exec(conv("update_object_speed_data_on_frame_change"))
-    measure_object_speed_units_mode = EnumProperty(
+            )
+    measure_object_speed_units_mode: EnumProperty(
             name="Measurement Units",
             description="Display speed in metric or imperial units",
             items=types.measurement_units_mode,
             default='MEASUREMENT_UNITS_MODE_METRIC',
             options={'HIDDEN'},
-            ); exec(conv("measure_object_speed_units_mode"))
+            )
 
-    disable_addon_in_blend_file = BoolProperty(
+    disable_addon_in_blend_file: BoolProperty(
             name="Disable Addon in Blend File",
             description="",
             default=False,
-            ); exec(conv("disable_addon_in_blend_file"))
+            )
 
-    is_auto_frame_load_cmd_operator_running = BoolProperty(default=False); exec(conv("is_auto_frame_load_cmd_operator_running"))
+    is_auto_frame_load_cmd_operator_running: BoolProperty(default=False)
 
-    export_animated_mesh_parent_tooltip = BoolProperty(
+    export_animated_mesh_parent_tooltip: BoolProperty(
             name="Hint: Export Animated Mesh", 
             description="A parented relation has been detected on this object. If this object"
                 " is moving, enabling the 'Export Animated Mesh' option is required to evaluate"
@@ -1150,41 +1159,18 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
                 " animation that is more complex than keyframed loc/rot/scale such as parented objects."
                 " If the object is static, keep this option disabled", 
             default=True,
-            ); exec(conv("export_animated_mesh_parent_tooltip"))
+            )
 
     # Used in Helper Operators > FlipFluidMeasureObjectSpeed operator
-    is_translation_data_available = BoolProperty(default=False); exec(conv("is_translation_data_available"))
-    min_vertex_translation = FloatProperty(default=0.0); exec(conv("min_vertex_translation"))
-    max_vertex_translation = FloatProperty(default=0.0); exec(conv("max_vertex_translation"))
-    avg_vertex_translation = FloatProperty(default=0.0); exec(conv("avg_vertex_translation"))
-    center_translation = FloatProperty(default=0.0); exec(conv("center_translation"))
-    translation_data_object_name = StringProperty(default="Name Not Available"); exec(conv("translation_data_object_name"))
-    translation_data_object_vertices = IntProperty(default=-1); exec(conv("translation_data_object_vertices"))
-    translation_data_object_frame = IntProperty(default=-1); exec(conv("translation_data_object_frame"))
-    translation_data_object_compute_time = IntProperty(default=-1); exec(conv("translation_data_object_compute_time"))
-
-    prepare_geometry_tools_expanded = BoolProperty(default=False); exec(conv("prepare_geometry_tools_expanded"))
-    bake_simulation_expanded = BoolProperty(default=True); exec(conv("bake_simulation_expanded"))
-    add_remove_objects_expanded = BoolProperty(default=False); exec(conv("add_remove_objects_expanded"))
-    outliner_organization_expanded = BoolProperty(default=False); exec(conv("outliner_organization_expanded"))
-    quick_select_expanded = BoolProperty(default=False); exec(conv("quick_select_expanded"))
-
-    command_line_tools_expanded = BoolProperty(default=True); exec(conv("command_line_tools_expanded"))
-    command_line_bake_expanded = BoolProperty(default=False); exec(conv("command_line_bake_expanded"))
-    command_line_render_passes_expanded = BoolProperty(default=False); exec(conv("command_line_render_passes_expanded"))
-    command_line_render_expanded = BoolProperty(default=False); exec(conv("command_line_render_expanded"))
-    command_line_render_frame_expanded = BoolProperty(default=False); exec(conv("command_line_render_frame_expanded"))
-    command_line_render_turbo_tools_expanded  = BoolProperty(default=False); exec(conv("command_line_render_turbo_tools_expanded"))
-    command_line_alembic_export_expanded = BoolProperty(default=False); exec(conv("command_line_alembic_export_expanded"))
-
-    geometry_node_tools_expanded = BoolProperty(default=False); exec(conv("geometry_node_tools_expanded"))
-    object_speed_measurement_tools_expanded = BoolProperty(default=False); exec(conv("object_speed_measurement_tools_expanded"))
-    beginner_tools_expanded = BoolProperty(default=False); exec(conv("beginner_tools_expanded"))
-    disable_addon_expanded = BoolProperty(default=False); exec(conv("disable_addon_expanded"))
-
-    quick_viewport_display_expanded = BoolProperty(default=True); exec(conv("quick_viewport_display_expanded"))
-    simulation_playback_expanded = BoolProperty(default=False); exec(conv("simulation_playback_expanded"))
-    render_tools_expanded = BoolProperty(default=False); exec(conv("render_tools_expanded"))
+    is_translation_data_available: BoolProperty(default=False)
+    min_vertex_translation: FloatProperty(default=0.0)
+    max_vertex_translation: FloatProperty(default=0.0)
+    avg_vertex_translation: FloatProperty(default=0.0)
+    center_translation: FloatProperty(default=0.0)
+    translation_data_object_name: StringProperty(default="Name Not Available")
+    translation_data_object_vertices: IntProperty(default=-1)
+    translation_data_object_frame: IntProperty(default=-1)
+    translation_data_object_compute_time: IntProperty(default=-1)
 
 
     @classmethod

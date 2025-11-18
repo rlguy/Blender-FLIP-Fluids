@@ -26,20 +26,19 @@ from ..utils import version_compatibility_utils as vcu
 
 
 class FlipFluidMaterialLibraryProperties(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
     
     # Material Library Data
-    is_library_material = BoolProperty(default=False); exec(conv("is_library_material"))
-    library_name = StringProperty(default=""); exec(conv("library_name"))
-    imported_name = StringProperty(default=""); exec(conv("imported_name"))
-    data_block_id = StringProperty(default="-1"); exec(conv("data_block_id"))
+    is_library_material: BoolProperty(default=False)
+    library_name: StringProperty(default="")
+    imported_name: StringProperty(default="")
+    data_block_id: StringProperty(default="-1")
 
     # Preset Library Data
-    is_preset_material = BoolProperty(default=False); exec(conv("is_preset_material"))
-    preset_identifier = StringProperty(default=""); exec(conv("preset_identifier"))
-    preset_blend_identifier = StringProperty(default=""); exec(conv("preset_blend_identifier"))
-    is_fake_user_set_by_addon = BoolProperty(default=False); exec(conv("is_fake_user_set_by_addon"))
-    skip_preset_unload = BoolProperty(default=False); exec(conv("skip_preset_unload"))
+    is_preset_material: BoolProperty(default=False)
+    preset_identifier: StringProperty(default="")
+    preset_blend_identifier: StringProperty(default="")
+    is_fake_user_set_by_addon: BoolProperty(default=False)
+    skip_preset_unload: BoolProperty(default=False)
 
 
     @classmethod

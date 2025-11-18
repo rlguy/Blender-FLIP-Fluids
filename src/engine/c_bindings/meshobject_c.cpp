@@ -259,6 +259,18 @@ extern "C" {
         );
     }
 
+    EXPORTDLL int MeshObject_get_density(MeshObject* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &MeshObject::getDensity, err
+        );
+    }
+
+    EXPORTDLL void MeshObject_set_density(MeshObject* obj, float d, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &MeshObject::setDensity, d, err
+        );
+    }
+
     EXPORTDLL int MeshObject_get_lifetime(MeshObject* obj, int *err) {
         return CBindings::safe_execute_method_ret_0param(
             obj, &MeshObject::getLifetime, err

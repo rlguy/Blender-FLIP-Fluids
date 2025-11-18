@@ -54,17 +54,16 @@ def draw_frame_info_simulation_stats(self, context, box):
     sprops = vcu.get_active_object(context).flip_fluid.domain.stats
     simprops = vcu.get_active_object(context).flip_fluid.domain.simulation
 
-    subbox = box.box()
-    row = subbox.row()
-    row.prop(sprops, "frame_info_simulation_stats_expanded",
-        icon="TRIA_DOWN" if sprops.frame_info_simulation_stats_expanded else "TRIA_RIGHT",
-        icon_only=True, 
-        emboss=False
-    )
-    row.label(text="Simulation Stats")
+    #
+    # Simulation Frame Stats Panel
+    #
+    box = box.box()
+    header, body = box.panel("simulation_frame_stats_settings", default_closed=False)
 
-    if sprops.frame_info_simulation_stats_expanded:
-        column = subbox.column()
+    row = header.row(align=True)
+    row.label(text="Simulation Stats:")
+    if body:
+        column = body.column()
         split = column.split()
         column = split.column()
         column.label(text="Frame ID:")
@@ -102,30 +101,27 @@ def draw_frame_info_simulation_stats(self, context, box):
 def draw_frame_info_solver_stats(self, context, box):
     sprops = vcu.get_active_object(context).flip_fluid.domain.stats
 
-    subbox = box.box()
-    row = subbox.row()
-    row.prop(sprops, "frame_info_solver_stats_expanded",
-        icon="TRIA_DOWN" if sprops.frame_info_solver_stats_expanded else "TRIA_RIGHT",
-        icon_only=True, 
-        emboss=False
-    )
-    row.label(text="Solver Stats")
+    #
+    # Solver Frame Stats Panel
+    #
+    stress_threshold = 80.0
 
-    if sprops.frame_info_solver_stats_expanded:
+    box = box.box()
+    header, body = box.panel("solver_frame_stats_settings", default_closed=False)
+
+    row = header.row(align=True)
+    row.label(text="Solver Stats:")
+    if body:
         if sprops.frame_pressure_solver_enabled:
-            stress_threshold = 80.0
+            #
+            # Pressure Solver Frame Stats Panel
+            #
+            header_pressure, body_pressure = body.panel("pressure_solver_frame_stats_settings", default_closed=False)
 
-            stat_box = subbox.box()
-            row = stat_box.row()
-            row.prop(sprops, "frame_info_pressure_solver_stats_expanded",
-                icon="TRIA_DOWN" if sprops.frame_info_pressure_solver_stats_expanded else "TRIA_RIGHT",
-                icon_only=True, 
-                emboss=False
-            )
-            row.label(text="Pressure Solver")
-
-            if sprops.frame_info_pressure_solver_stats_expanded:
-                column = stat_box.column(align=True)
+            row_pressure = header_pressure.row(align=True)
+            row_pressure.label(text="Pressure Solver:")
+            if body_pressure:
+                column = body_pressure.column(align=True)
                 split = column.split()
                 column1 = split.column(align=True)
                 column2 = split.column(align=True)
@@ -157,17 +153,15 @@ def draw_frame_info_solver_stats(self, context, box):
                 row.prop(sprops.frame_pressure_solver_stress, "stress_level", slider=True, text=stress_status)
 
         if sprops.frame_viscosity_solver_enabled:
-            stat_box = subbox.box()
-            row = stat_box.row()
-            row.prop(sprops, "frame_info_viscosity_solver_stats_expanded",
-                icon="TRIA_DOWN" if sprops.frame_info_viscosity_solver_stats_expanded else "TRIA_RIGHT",
-                icon_only=True, 
-                emboss=False
-            )
-            row.label(text="Viscosity Solver")
+            #
+            # Viscosity Solver Frame Stats Panel
+            #
+            header_viscosity, body_viscosity = body.panel("viscosity_solver_frame_stats_settings", default_closed=False)
 
-            if sprops.frame_info_viscosity_solver_stats_expanded:
-                column = stat_box.column(align=True)
+            row_viscosity = header_viscosity.row(align=True)
+            row_viscosity.label(text="Viscosity Solver:")
+            if body_viscosity:
+                column = body_viscosity.column(align=True)
                 column.alert = not sprops.frame_viscosity_solver_success
 
                 split = column.split()
@@ -204,17 +198,16 @@ def draw_frame_info_solver_stats(self, context, box):
 def draw_frame_info_timing_stats(self, context, box):
     sprops = vcu.get_active_object(context).flip_fluid.domain.stats
 
-    subbox = box.box()
-    row = subbox.row()
-    row.prop(sprops, "frame_info_timing_stats_expanded",
-        icon="TRIA_DOWN" if sprops.frame_info_timing_stats_expanded else "TRIA_RIGHT",
-        icon_only=True, 
-        emboss=False
-    )
-    row.label(text="Timing Stats")
+    #
+    # Timing Frame Stats Panel
+    #
+    box = box.box()
+    header, body = box.panel("timing_frame_stats_settings", default_closed=False)
 
-    if sprops.frame_info_timing_stats_expanded:
-        column = subbox.column()
+    row = header.row(align=True)
+    row.label(text="Timing Stats:")
+    if body:
+        column = body.column()
         split = vcu.ui_split(column, factor=0.75)
         column = split.column(align = True)
         column.prop(sprops.time_mesh, "pct", slider = True, text = "Mesh Generation")
@@ -246,7 +239,7 @@ def draw_frame_info_timing_stats(self, context, box):
                       sprops.time_diffuse.time + sprops.time_viscosity.time +
                       sprops.time_objects.time + sprops.time_other.time)
 
-        column = subbox.column()
+        column = body.column()
         split = column.split()
         column = split.column()
         column = split.column()
@@ -261,17 +254,16 @@ def draw_frame_info_mesh_stats(self, context, box):
     sprops = vcu.get_active_object(context).flip_fluid.domain.stats
     simprops = vcu.get_active_object(context).flip_fluid.domain.simulation
 
-    subbox = box.box()
-    row = subbox.row()
-    row.prop(sprops, "frame_info_mesh_stats_expanded",
-        icon="TRIA_DOWN" if sprops.frame_info_mesh_stats_expanded else "TRIA_RIGHT",
-        icon_only=True, 
-        emboss=False
-    )
-    row.label(text="Mesh Stats")
+    #
+    # Mesh Frame Stats Panel
+    #
+    box = box.box()
+    header, body = box.panel("mesh_frame_stats_settings", default_closed=False)
 
-    if sprops.frame_info_mesh_stats_expanded:
-        column = subbox.column()
+    row = header.row(align=True)
+    row.label(text="Mesh Stats:")
+    if body:
+        column = body.column()
         split = column.split()
         column1 = split.column()
         column2 = split.column()
@@ -367,6 +359,13 @@ def draw_frame_info_mesh_stats(self, context, box):
             column3.label(text="")
             column4.label(text=format_bytes(sprops.surfaceviscosity_mesh.bytes.get()))
             total_bytes += sprops.surfaceviscosity_mesh.bytes.get()
+
+        if sprops.surfacedensity_mesh.enabled:
+            column1.label(text="Density")
+            column2.label(text=format_number(sprops.surfacedensity_mesh.verts))
+            column3.label(text="")
+            column4.label(text=format_bytes(sprops.surfacedensity_mesh.bytes.get()))
+            total_bytes += sprops.surfacedensity_mesh.bytes.get()
 
         if sprops.foam_mesh.enabled:
             column1.label(text="Foam")
@@ -578,6 +577,20 @@ def draw_frame_info_mesh_stats(self, context, box):
             column4.label(text=format_bytes(sprops.fluid_particle_viscosity_mesh.bytes.get()))
             total_bytes += sprops.fluid_particle_viscosity_mesh.bytes.get()
 
+        if sprops.fluid_particle_density_mesh.enabled:
+            column1.label(text="Fluid Particles Density")
+            column2.label(text=format_number(sprops.fluid_particle_density_mesh.verts))
+            column3.label(text="")
+            column4.label(text=format_bytes(sprops.fluid_particle_density_mesh.bytes.get()))
+            total_bytes += sprops.fluid_particle_density_mesh.bytes.get()
+
+        if sprops.fluid_particle_density_average_mesh.enabled:
+            column1.label(text="Fluid Particles Density Average")
+            column2.label(text=format_number(sprops.fluid_particle_density_average_mesh.verts))
+            column3.label(text="")
+            column4.label(text=format_bytes(sprops.fluid_particle_density_average_mesh.bytes.get()))
+            total_bytes += sprops.fluid_particle_density_average_mesh.bytes.get()
+
         if sprops.fluid_particle_whitewater_proximity_mesh.enabled:
             column1.label(text="Fluid Particles Whitewater Proximity")
             column2.label(text=format_number(sprops.fluid_particle_whitewater_proximity_mesh.verts))
@@ -627,7 +640,6 @@ def draw_frame_info(self, context, box):
     else:
         box.label(text="Data Not Available (frame " + str(sprops.current_info_frame) + ")", icon='ERROR')
 
-    box.separator()
     draw_frame_info_simulation_stats(self, context, box)
     draw_frame_info_solver_stats(self, context, box)
     draw_frame_info_timing_stats(self, context, box)
@@ -639,20 +651,19 @@ def draw_cache_info_simulation_stats(self, context, box):
     sprops = dprops.stats
     simprops = dprops.simulation
 
-    subbox = box.box()
-    row = subbox.row()
-    row.prop(sprops, "cache_info_simulation_stats_expanded",
-        icon="TRIA_DOWN" if sprops.cache_info_simulation_stats_expanded else "TRIA_RIGHT",
-        icon_only=True, 
-        emboss=False
-    )
-    row.label(text="Simulation Stats")
+    #
+    # Simulation Cache Stats Panel
+    #
+    box = box.box()
+    header, body = box.panel("simulation_cache_stats_settings", default_closed=False)
 
-    if sprops.cache_info_simulation_stats_expanded:
+    row = header.row(align=True)
+    row.label(text="Simulation Stats:")
+    if body:
         num_frames = dprops.simulation.frame_end - sprops.frame_start + 1
         num_baked_frames = sprops.num_cache_frames
 
-        column = subbox.column()
+        column = body.column()
         split = column.split()
         column = split.column()
         column.label(text="Completed Frames:")
@@ -672,7 +683,7 @@ def draw_cache_info_simulation_stats(self, context, box):
         column.label(text=str(sprops.average_performance_score))
 
         if dprops.bake.is_simulation_running:
-            column = subbox.column()
+            column = body.column()
             split = column.split()
             column = split.column()
 
@@ -690,119 +701,111 @@ def draw_cache_info_solver_stats(self, context, box):
     sprops = dprops.stats
     simprops = dprops.simulation
 
-    subbox = box.box()
-    row = subbox.row()
-    row.prop(sprops, "cache_info_solver_stats_expanded",
-        icon="TRIA_DOWN" if sprops.cache_info_solver_stats_expanded else "TRIA_RIGHT",
-        icon_only=True, 
-        emboss=False
-    )
-    row.label(text="Solver Stats")
+    #
+    # Solver Cache Stats Panel
+    #
+    box = box.box()
+    header, body = box.panel("solver_cache_stats_settings", default_closed=False)
 
-    if not sprops.cache_info_solver_stats_expanded:
-        return
+    row = header.row(align=True)
+    row.label(text="Solver Stats:")
+    if body:
+        if sprops.pressure_solver_enabled:
+            #
+            # Pressure Solver Cache Stats Panel
+            #
+            header_pressure, body_pressure = body.panel("pressure_solver_cache_stats_settings", default_closed=False)
 
-    if sprops.pressure_solver_enabled:
-        pressure_box = subbox.box()
-        row = pressure_box.row()
-        row.prop(sprops, "cache_info_pressure_solver_stats_expanded",
-            icon="TRIA_DOWN" if sprops.cache_info_pressure_solver_stats_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
-        row.label(text="Pressure Solver")
+            row_pressure = header_pressure.row(align=True)
+            row_pressure.label(text="Pressure Solver:")
+            if body_pressure:
+                column = body_pressure.column(align=True)
+                split = column.split(align=True)
+                column_left = split.column(align=True)
+                column_middle = split.column(align=True)
+                column_right = split.column(align=True)
 
-        if sprops.cache_info_pressure_solver_stats_expanded:
-            column = pressure_box.column(align=True)
-            split = column.split(align=True)
-            column_left = split.column(align=True)
-            column_middle = split.column(align=True)
-            column_right = split.column(align=True)
+                column_left.label(text="Solver Failures:")
+                column_left.label(text="Max Iterations:")
+                column_left.label(text="Max Error:")
+                column_left.label(text="Max Stress:")
 
-            column_left.label(text="Solver Failures:")
-            column_left.label(text="Max Iterations:")
-            column_left.label(text="Max Error:")
-            column_left.label(text="Max Stress:")
+                failure_str = str(sprops.pressure_solver_failures) + " failures / " + str(sprops.pressure_solver_steps) + " steps"
+                iterations_str = str(sprops.pressure_solver_max_iterations)
+                error_str = '{0:.12f}'.format(sprops.pressure_solver_max_error)
+                stress_threshold = 80.0
+                stress_state = "OK"
+                if sprops.pressure_solver_max_stress > stress_threshold:
+                    stress_state = "HIGH"
+                if sprops.pressure_solver_max_stress >= 99.999:
+                    stress_state = "MAX"
+                stress_str = '{0:.1f}'.format(sprops.pressure_solver_max_stress) + "%   " + stress_state
 
-            failure_str = str(sprops.pressure_solver_failures) + " failures / " + str(sprops.pressure_solver_steps) + " steps"
-            iterations_str = str(sprops.pressure_solver_max_iterations)
-            error_str = '{0:.12f}'.format(sprops.pressure_solver_max_error)
-            stress_threshold = 80.0
-            stress_state = "OK"
-            if sprops.pressure_solver_max_stress > stress_threshold:
-                stress_state = "HIGH"
-            if sprops.pressure_solver_max_stress >= 99.999:
-                stress_state = "MAX"
-            stress_str = '{0:.1f}'.format(sprops.pressure_solver_max_stress) + "%   " + stress_state
+                column_middle.label(text=failure_str)
+                column_middle.label(text=iterations_str)
+                column_middle.label(text=error_str)
+                column_middle.label(text=stress_str)
 
-            column_middle.label(text=failure_str)
-            column_middle.label(text=iterations_str)
-            column_middle.label(text=error_str)
-            column_middle.label(text=stress_str)
+                column_right.label(text="")
+                column_right.label(text="(frame " + str(sprops.pressure_solver_max_iterations_frame) + ")")
+                column_right.label(text="(frame " + str(sprops.pressure_solver_max_error_frame) + ")")
+                column_right.label(text="(frame " + str(sprops.pressure_solver_max_stress_frame) + ")")
 
-            column_right.label(text="")
-            column_right.label(text="(frame " + str(sprops.pressure_solver_max_iterations_frame) + ")")
-            column_right.label(text="(frame " + str(sprops.pressure_solver_max_error_frame) + ")")
-            column_right.label(text="(frame " + str(sprops.pressure_solver_max_stress_frame) + ")")
+        if sprops.viscosity_solver_enabled:
+            #
+            # Viscosity Solver Cache Stats Panel
+            #
+            header_viscosity, body_viscosity = body.panel("viscosity_solver_cache_stats_settings", default_closed=False)
 
-    if sprops.viscosity_solver_enabled:
-        viscosity_box = subbox.box()
-        row = viscosity_box.row()
-        row.prop(sprops, "cache_info_viscosity_solver_stats_expanded",
-            icon="TRIA_DOWN" if sprops.cache_info_viscosity_solver_stats_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
-        row.label(text="Viscosity Solver")
+            row_viscosity = header_viscosity.row(align=True)
+            row_viscosity.label(text="Viscosity Solver:")
+            if body_viscosity:
+                column = body_viscosity.column(align=True)
+                split = column.split(align=True)
+                column_left = split.column(align=True)
+                column_middle = split.column(align=True)
+                column_right = split.column(align=True)
 
-        if sprops.cache_info_viscosity_solver_stats_expanded:
-            column = viscosity_box.column(align=True)
-            split = column.split(align=True)
-            column_left = split.column(align=True)
-            column_middle = split.column(align=True)
-            column_right = split.column(align=True)
+                column_left.label(text="Solver Failures:")
+                column_left.label(text="Max Iterations:")
+                column_left.label(text="Max Error:")
+                column_left.label(text="Max Stress:")
 
-            column_left.label(text="Solver Failures:")
-            column_left.label(text="Max Iterations:")
-            column_left.label(text="Max Error:")
-            column_left.label(text="Max Stress:")
+                failure_str = str(sprops.viscosity_solver_failures) + " failures / " + str(sprops.viscosity_solver_steps) + " steps"
+                iterations_str = str(sprops.viscosity_solver_max_iterations)
+                error_str = '{0:.12f}'.format(sprops.viscosity_solver_max_error)
+                stress_threshold = 80.0
+                stress_state = "OK"
+                if sprops.viscosity_solver_max_stress > stress_threshold:
+                    stress_state = "HIGH"
+                if sprops.viscosity_solver_max_stress >= 99.999:
+                    stress_state = "MAX"
+                stress_str = '{0:.1f}'.format(sprops.viscosity_solver_max_stress) + "%   " + stress_state
 
-            failure_str = str(sprops.viscosity_solver_failures) + " failures / " + str(sprops.viscosity_solver_steps) + " steps"
-            iterations_str = str(sprops.viscosity_solver_max_iterations)
-            error_str = '{0:.12f}'.format(sprops.viscosity_solver_max_error)
-            stress_threshold = 80.0
-            stress_state = "OK"
-            if sprops.viscosity_solver_max_stress > stress_threshold:
-                stress_state = "HIGH"
-            if sprops.viscosity_solver_max_stress >= 99.999:
-                stress_state = "MAX"
-            stress_str = '{0:.1f}'.format(sprops.viscosity_solver_max_stress) + "%   " + stress_state
+                column_middle.label(text=failure_str)
+                column_middle.label(text=iterations_str)
+                column_middle.label(text=error_str)
+                column_middle.label(text=stress_str)
 
-            column_middle.label(text=failure_str)
-            column_middle.label(text=iterations_str)
-            column_middle.label(text=error_str)
-            column_middle.label(text=stress_str)
-
-            column_right.label(text="")
-            column_right.label(text="(frame " + str(sprops.viscosity_solver_max_iterations_frame) + ")")
-            column_right.label(text="(frame " + str(sprops.viscosity_solver_max_error_frame) + ")")
-            column_right.label(text="(frame " + str(sprops.viscosity_solver_max_stress_frame) + ")")
+                column_right.label(text="")
+                column_right.label(text="(frame " + str(sprops.viscosity_solver_max_iterations_frame) + ")")
+                column_right.label(text="(frame " + str(sprops.viscosity_solver_max_error_frame) + ")")
+                column_right.label(text="(frame " + str(sprops.viscosity_solver_max_stress_frame) + ")")
 
 
 def draw_cache_info_timing_stats(self, context, box):
     sprops = vcu.get_active_object(context).flip_fluid.domain.stats
 
-    subbox = box.box()
-    row = subbox.row()
-    row.prop(sprops, "cache_info_timing_stats_expanded",
-        icon="TRIA_DOWN" if sprops.cache_info_timing_stats_expanded else "TRIA_RIGHT",
-        icon_only=True, 
-        emboss=False
-    )
-    row.label(text="Timing Stats")
+    #
+    # Timing Cache Stats Panel
+    #
+    box = box.box()
+    header, body = box.panel("timing_cache_stats_settings", default_closed=False)
 
-    if sprops.cache_info_timing_stats_expanded:
-        column = subbox.column()
+    row = header.row(align=True)
+    row.label(text="Timing Stats:")
+    if body:
+        column = body.column()
         split = vcu.ui_split(column, factor=0.75)
         column = split.column(align=True)
         column.prop(sprops.time_mesh, "pct", slider=True, text="Mesh Generation")
@@ -834,7 +837,7 @@ def draw_cache_info_timing_stats(self, context, box):
                       sprops.time_diffuse.time + sprops.time_viscosity.time +
                       sprops.time_objects.time + sprops.time_other.time)
 
-        column = subbox.column()
+        column = body.column()
         split = column.split()
         column = split.column()
         column = split.column()
@@ -848,17 +851,16 @@ def draw_cache_info_timing_stats(self, context, box):
 def draw_cache_info_mesh_stats(self, context, box):
     sprops = vcu.get_active_object(context).flip_fluid.domain.stats
 
-    subbox = box.box()
-    row = subbox.row()
-    row.prop(sprops, "cache_info_mesh_stats_expanded",
-        icon="TRIA_DOWN" if sprops.cache_info_mesh_stats_expanded else "TRIA_RIGHT",
-        icon_only=True, 
-        emboss=False
-    )
-    row.label(text="Mesh Stats")
+    #
+    # Mesh Cache Stats Panel
+    #
+    box = box.box()
+    header, body = box.panel("mesh_cache_stats_settings", default_closed=False)
 
-    if sprops.cache_info_mesh_stats_expanded:
-        column = subbox.column()
+    row = header.row(align=True)
+    row.label(text="Mesh Stats:")
+    if body:
+        column = body.column()
         split = vcu.ui_split(column, factor=0.5)
         column1 = split.column()
         column2 = split.column()
@@ -875,6 +877,7 @@ def draw_cache_info_mesh_stats(self, context, box):
                        sprops.surfacecolor_mesh.enabled or 
                        sprops.surfacesourceid_mesh.enabled or 
                        sprops.surfaceviscosity_mesh.enabled or 
+                       sprops.surfacedensity_mesh.enabled or 
                        sprops.foam_mesh.enabled or 
                        sprops.bubble_mesh.enabled or 
                        sprops.spray_mesh.enabled or 
@@ -904,6 +907,8 @@ def draw_cache_info_mesh_stats(self, context, box):
                        sprops.fluid_particle_age_mesh.enabled or
                        sprops.fluid_particle_lifetime_mesh.enabled or
                        sprops.fluid_particle_viscosity_mesh.enabled or
+                       sprops.fluid_particle_density_mesh.enabled or
+                       sprops.fluid_particle_density_average_mesh.enabled or
                        sprops.fluid_particle_whitewater_proximity_mesh.enabled or
                        sprops.fluid_particle_source_id_mesh.enabled or
                        sprops.fluid_particle_uid_mesh.enabled or
@@ -987,6 +992,12 @@ def draw_cache_info_mesh_stats(self, context, box):
             column2.label(text=format_bytes(sprops.surfaceviscosity_mesh.bytes.get()))
             row_count += 1
             total_size += sprops.surfaceviscosity_mesh.bytes.get()
+
+        if sprops.surfacedensity_mesh.enabled:
+            column1.label(text="Density")
+            column2.label(text=format_bytes(sprops.surfacedensity_mesh.bytes.get()))
+            row_count += 1
+            total_size += sprops.surfacedensity_mesh.bytes.get()
 
         if sprops.foam_mesh.enabled:
             column1.label(text="Foam")
@@ -1168,6 +1179,18 @@ def draw_cache_info_mesh_stats(self, context, box):
             row_count += 1
             total_size += sprops.fluid_particle_viscosity_mesh.bytes.get()
 
+        if sprops.fluid_particle_density_mesh.enabled:
+            column1.label(text="Fluid Particles Density")
+            column2.label(text=format_bytes(sprops.fluid_particle_density_mesh.bytes.get()))
+            row_count += 1
+            total_size += sprops.fluid_particle_density_mesh.bytes.get()
+
+        if sprops.fluid_particle_density_average_mesh.enabled:
+            column1.label(text="Fluid Particles Density Average")
+            column2.label(text=format_bytes(sprops.fluid_particle_density_average_mesh.bytes.get()))
+            row_count += 1
+            total_size += sprops.fluid_particle_density_average_mesh.bytes.get()
+
         if sprops.fluid_particle_whitewater_proximity_mesh.enabled:
             column1.label(text="Fluid Particles Whitewater Proximity")
             column2.label(text=format_bytes(sprops.fluid_particle_whitewater_proximity_mesh.bytes.get()))
@@ -1193,7 +1216,7 @@ def draw_cache_info_mesh_stats(self, context, box):
             total_size += sprops.obstacle_mesh.bytes.get()
 
         if stats_exist:
-            column = subbox.column()
+            column = body.column()
             split = column.split()
             column1 = split.column()
             column2 = split.column()

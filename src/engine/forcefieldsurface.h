@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_FORCEFIELDSURFACE_H
-#define FLUIDENGINE_FORCEFIELDSURFACE_H
+#pragma once
 
 #include "forcefield.h"
 #include "meshlevelset.h"
@@ -72,5 +71,3 @@ private:
     float _maxRadiusFactor = 5.0f;
 
 };
-
-#endif

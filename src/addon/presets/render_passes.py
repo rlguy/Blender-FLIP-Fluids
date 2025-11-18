@@ -169,7 +169,7 @@ visibility_settings = {
         "world": {"camera": False, "diffuse": True, "glossy": False, "transmission": False, "scatter": False},
         "selected_objects": {"camera": False, "diffuse": True, "glossy": True, "transmission": True, "scatter": True, "shadow": True, "is_shadow_catcher": False, "is_holdout": False},
         "fg_elements": {"camera": True, "diffuse": True, "glossy": True, "transmission": False, "scatter": True, "shadow": True, "is_shadow_catcher": False, "is_holdout": True},
-        "bg_elements": {"camera": True, "diffuse": True, "glossy": True, "transmission": False, "scatter": True, "shadow": True, "is_shadow_catcher": True, "is_holdout": False},
+        "bg_elements": {"camera": True, "diffuse": True, "glossy": True, "transmission": False, "scatter": True, "shadow": True, "is_shadow_catcher": False, "is_holdout": False},
         "ref_elements": {"camera": True, "diffuse": True, "glossy": True, "transmission": False, "scatter": True, "shadow": True, "is_shadow_catcher": False, "is_holdout": True},
         "film_transparent": True,
         "transparent_glass": True,

@@ -259,6 +259,18 @@ class MeshFluidSource():
         pb.execute_lib_func(libfunc, [self(), float(v)])
 
     @property
+    def density(self):
+        libfunc = lib.MeshFluidSource_get_density
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @density.setter
+    def density(self, v):
+        libfunc = lib.MeshFluidSource_set_density
+        pb.init_lib_func(libfunc, [c_void_p, c_float, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), float(v)])
+
+    @property
     def lifetime(self):
         libfunc = lib.MeshFluidSource_get_lifetime
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)

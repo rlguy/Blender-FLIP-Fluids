@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_DIFFUSEPARTICLE_T_H
-#define FLUIDENGINE_DIFFUSEPARTICLE_T_H
+#pragma once
 
 #include "vector3_c.h"
 
@@ -34,5 +33,3 @@ typedef struct DiffuseParticle_t {
 	char type;
 	unsigned char id;
 } DiffuseParticle_t;
-
-#endif

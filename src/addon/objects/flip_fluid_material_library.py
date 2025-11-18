@@ -30,13 +30,12 @@ from ..utils import version_compatibility_utils as vcu
 
 
 class FLIPFluidMaterialLibraryMaterial(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
-    name = StringProperty(default=""); exec(conv("name"))
-    description = StringProperty(default=""); exec(conv("description"))
-    path = StringProperty(default=""); exec(conv("path"))
-    type = EnumProperty(items=types.material_types, default="MATERIAL_TYPE_SURFACE"); exec(conv("type"))
-    icon_id = IntProperty(default=-1); exec(conv("icon_id"))
-    imported_icon_id = IntProperty(default=-1); exec(conv("imported_icon_id"))
+    name: StringProperty(default="")
+    description: StringProperty(default="")
+    path: StringProperty(default="")
+    type: EnumProperty(items=types.material_types, default="MATERIAL_TYPE_SURFACE")
+    icon_id: IntProperty(default=-1)
+    imported_icon_id: IntProperty(default=-1)
 
 
     def get_ui_enum(self):
@@ -60,9 +59,8 @@ class FLIPFluidMaterialLibraryMaterial(bpy.types.PropertyGroup):
 
 
 class FLIPFluidMaterialLibrary(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
-    library_path = StringProperty(default=""); exec(conv("library_path"))
-    material_list = CollectionProperty(type=FLIPFluidMaterialLibraryMaterial); exec(conv("material_list"))
+    library_path: StringProperty(default="")
+    material_list: CollectionProperty(type=FLIPFluidMaterialLibraryMaterial)
 
 
     @classmethod

@@ -55,14 +55,11 @@ class FlipFluidHelperRemesh(bpy.types.Operator):
         " of the input geometry. Use the link next to this operator to view documentation and a video guide" + 
         " for using this feature")
 
-    skip_hide_render_objects = BoolProperty(True)
-    exec(vcu.convert_attribute_to_28("skip_hide_render_objects"))
+    skip_hide_render_objects: BoolProperty(True)
 
-    apply_object_modifiers = BoolProperty(True)
-    exec(vcu.convert_attribute_to_28("apply_object_modifiers"))
+    apply_object_modifiers: BoolProperty(True)
 
-    convert_objects_to_mesh = BoolProperty(True)
-    exec(vcu.convert_attribute_to_28("convert_objects_to_mesh"))
+    convert_objects_to_mesh: BoolProperty(True)
 
 
     @classmethod
@@ -446,8 +443,7 @@ class FlipFluidHelperSelectObjects(bpy.types.Operator):
     bl_label = "Select Objects"
     bl_description = "Select all FLIP Fluid objects of this type"
 
-    object_type = StringProperty("TYPE_NONE")
-    exec(vcu.convert_attribute_to_28("object_type"))
+    object_type: StringProperty("TYPE_NONE")
 
 
     @classmethod
@@ -802,8 +798,7 @@ class FlipFluidHelperAddObjects(bpy.types.Operator):
     bl_label = "Add Objects"
     bl_description = "Add selected objects as FLIP Fluid objects"
 
-    object_type = StringProperty("TYPE_NONE")
-    exec(vcu.convert_attribute_to_28("object_type"))
+    object_type: StringProperty("TYPE_NONE")
 
     @classmethod
     def poll(cls, context):
@@ -1014,8 +1009,7 @@ class FlipFluidHelperDeleteWhitewaterObjects(bpy.types.Operator):
                       " Warning: deleting these objects will also remove any modifications such as added" + 
                       " modifiers and materials")
 
-    whitewater_type = StringProperty("TYPE_ALL")
-    exec(vcu.convert_attribute_to_28("whitewater_type"))
+    whitewater_type: StringProperty("TYPE_ALL")
 
 
     @classmethod
@@ -1053,7 +1047,7 @@ class FlipFluidHelperOrganizeOutliner(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return vcu.is_blender_28()
+        return True
 
 
     def initialize_child_collection(self, context, child_name, parent_collection):
@@ -1159,7 +1153,7 @@ class FlipFluidHelperSeparateFLIPMeshes(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         dprops = context.scene.flip_fluid.get_domain_properties()
-        return vcu.is_blender_28() and dprops is not None
+        return dprops is not None
 
 
     def initialize_child_collection(self, context, child_name, parent_collection):
@@ -1237,7 +1231,7 @@ class FlipFluidHelperUndoOrganizeOutliner(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return vcu.is_blender_28()
+        return True
 
 
     def unlink_collection(self, context, collection_name):
@@ -1287,7 +1281,7 @@ class FlipFluidHelperUndoSeparateFLIPMeshes(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         dprops = context.scene.flip_fluid.get_domain_properties()
-        return vcu.is_blender_28() and dprops is not None
+        return dprops is not None
 
 
     def unlink_collection(self, context, collection_name):
@@ -1331,8 +1325,7 @@ class FlipFluidHelperSetObjectViewportDisplay(bpy.types.Operator):
     bl_label = "Object Viewport Display"
     bl_description = "Set how selected objects are displayed/rendered in the viewport"
 
-    display_mode = StringProperty("TYPE_NONE")
-    exec(vcu.convert_attribute_to_28("display_mode"))
+    display_mode: StringProperty("TYPE_NONE")
 
 
     @classmethod
@@ -1365,8 +1358,7 @@ class FlipFluidHelperSetObjectRenderDisplay(bpy.types.Operator):
     bl_label = "Object Render Display"
     bl_description = "Set selected objects visiblility in the render"
 
-    hide_render = BoolProperty(False)
-    exec(vcu.convert_attribute_to_28("hide_render"))
+    hide_render: BoolProperty(False)
 
 
     @classmethod
@@ -1568,7 +1560,7 @@ class FlipFluidEnableColorAttributeTooltip(bpy.types.Operator):
 class FlipFluidEnableViscosityAttribute(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.enable_viscosity_attribute"
     bl_label = "Enable Viscosity Attribute"
-    bl_description = "Enable viscosity solver and variable viscosity attribute in the Domain FLIP Fluid World panel"
+    bl_description = "Enable viscosity solver and variable viscosity attribute in the Domain World panel"
 
     @classmethod
     def poll(cls, context):
@@ -1606,10 +1598,50 @@ class FlipFluidEnableViscosityAttributeTooltip(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class FlipFluidEnableDensityAttribute(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.enable_density_attribute"
+    bl_label = "Enable Density Attribute"
+    bl_description = "Enable variable density solver and attribute in the Domain World panel"
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.flip_fluid.get_domain_object() is not None
+
+
+    def execute(self, context):
+        dprops = context.scene.flip_fluid.get_domain_properties()
+        dprops.world.enable_density_attribute = True
+        return {'FINISHED'}
+
+
+class FlipFluidEnableDensityAttributeMenu(bpy.types.Menu):
+    bl_label = ""
+    bl_idname = "FLIP_FLUID_MENUS_MT_enable_density_attribute_menu"
+
+    def draw(self, context):
+        self.layout.operator("flip_fluid_operators.enable_density_attribute")
+
+
+class FlipFluidEnableDensityAttributeTooltip(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.enable_density_attribute_tooltip"
+    bl_label = "Enable Density Attribute"
+    bl_description = "Click to enable the variable density solver and attribute in the Domain World panel"
+
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.flip_fluid.get_domain_object() is not None
+
+
+    def execute(self, context):
+        bpy.ops.wm.call_menu(name="FLIP_FLUID_MENUS_MT_enable_density_attribute_menu")
+        return {'FINISHED'}
+
+
 class FlipFluidEnableLifetimeAttribute(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.enable_lifetime_attribute"
     bl_label = "Enable Lifetime Attribute"
-    bl_description = "Enable lifetime attribute in the Domain FLIP Fluid Surface and Domain FLIP Fluid Particles panel"
+    bl_description = "Enable lifetime attribute in the Domain Surface and/or Domain Particles panel"
 
     @classmethod
     def poll(cls, context):
@@ -1619,7 +1651,8 @@ class FlipFluidEnableLifetimeAttribute(bpy.types.Operator):
     def execute(self, context):
         dprops = context.scene.flip_fluid.get_domain_properties()
         dprops.surface.enable_lifetime_attribute = True
-        dprops.particles.enable_lifetime_attribute = True
+        dprops.particles.enable_fluid_particle_lifetime_attribute = True
+        dprops.whitewater.enable_lifetime_attribute = True
         return {'FINISHED'}
 
 
@@ -1634,7 +1667,7 @@ class FlipFluidEnableLifetimeAttributeMenu(bpy.types.Menu):
 class FlipFluidEnableLifetimeAttributeTooltip(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.enable_lifetime_attribute_tooltip"
     bl_label = "Enable Lifetime Attribute"
-    bl_description = "Click to enable the lifetime attribute in the Domain FLIP Fluid Surface and Domain FLIP Fluid Particles panel"
+    bl_description = "Click to enable the lifetime attribute in the Domain Surface and/or Domain Particles panel"
 
 
     @classmethod
@@ -1650,7 +1683,7 @@ class FlipFluidEnableLifetimeAttributeTooltip(bpy.types.Operator):
 class FlipFluidEnableSourceIDAttribute(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.enable_source_id_attribute"
     bl_label = "Enable Source ID Attribute"
-    bl_description = "Enable source ID attribute in the Domain FLIP Fluid Surface and FLIP Fluid Particles panel"
+    bl_description = "Enable source ID attribute in the Domain Surface and/or Particles panel"
 
     @classmethod
     def poll(cls, context):
@@ -1675,7 +1708,7 @@ class FlipFluidEnableSourceIDAttributeMenu(bpy.types.Menu):
 class FlipFluidEnableSourceIDAttributeTooltip(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.enable_source_id_attribute_tooltip"
     bl_label = "Enable Source ID Attribute"
-    bl_description = "Click to enable the source ID attribute in the Domain FLIP Fluid Surface and FLIP Fluid Particles panel"
+    bl_description = "Click to enable the source ID attribute in the Domain Surface and/or Domain Particles panel"
 
 
     @classmethod
@@ -1689,9 +1722,6 @@ class FlipFluidEnableSourceIDAttributeTooltip(bpy.types.Operator):
 
 
 def is_geometry_node_point_cloud_detected(bl_mesh_cache_object=None):
-    if not vcu.is_blender_31():
-        return False
-
     try:
         dprops = bpy.context.scene.flip_fluid.get_domain_properties()
         if bl_mesh_cache_object is None:
@@ -1723,7 +1753,7 @@ def is_geometry_node_point_cloud_detected(bl_mesh_cache_object=None):
 
 
 def update_geometry_node_material(bl_object, resource_name):
-    if not vcu.is_blender_31() or bl_object is None:
+    if bl_object is None:
         return
 
     gn_modifier = None
@@ -1769,6 +1799,13 @@ def add_geometry_node_modifier(target_object, resource_filepath, resource_name):
     return gn_modifier
 
 
+def get_geometry_node_modifier(target_object, resource_name):
+    for mod in target_object.modifiers:
+        if mod.type == 'NODES' and mod.name == resource_name:
+            return mod
+    return None
+
+
 class FlipFluidHelperInitializeMotionBlur(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.helper_initialize_motion_blur"
     bl_label = "Initialize Motion Blur"
@@ -1776,8 +1813,7 @@ class FlipFluidHelperInitializeMotionBlur(bpy.types.Operator):
                       " This will be applied to the fluid surface, fluid particles, and whitewater particles if enabled." + 
                       " Node groups can be viewed in the geometry nodes editor and modifier")
 
-    resource_prefix = StringProperty(default="FF_GeometryNodes")
-    exec(vcu.convert_attribute_to_28("resource_prefix"))
+    resource_prefix: StringProperty(default="FF_GeometryNodes")
 
 
     @classmethod
@@ -1786,10 +1822,6 @@ class FlipFluidHelperInitializeMotionBlur(bpy.types.Operator):
 
 
     def apply_modifier_settings(self, target_object, gn_modifier):
-        gn_modifier["Input_2_use_attribute"] = True
-        gn_modifier["Input_2_attribute_name"] = 'flip_velocity'
-        gn_modifier["Output_3_attribute_name"] = 'velocity'
-
         gn_name = gn_modifier.name
         if gn_name.startswith("FF_GeometryNodesSurface"):
             # Depending on FLIP Fluids version, the GN set up may not
@@ -1815,30 +1847,15 @@ class FlipFluidHelperInitializeMotionBlur(bpy.types.Operator):
             except:
                 pass
 
-            try:
-                # Enable Point Cloud
-                gn_modifier["Input_9"] = True
-            except:
-                pass
-
-            try:
-                # Enable Instancing
-                gn_modifier["Input_10"] = False
-            except:
-                pass
-
 
     def execute(self, context):
-        if not vcu.is_blender_31():
-            self.report({'INFO'}, "Blender 3.1 or later is required for this feature")
-            return {'CANCELLED'}
-
         if not context.scene.flip_fluid.is_domain_in_active_scene():
             self.report({"ERROR"}, 
                          "Active scene must contain domain object to use this operator. Select the scene that contains the domain object and try again.")
             return {'CANCELLED'}
         
-        if context.scene.render.engine != 'CYCLES':
+        unsupported_render_engines = ['BLENDER_EEVEE', 'BLENDER_EEVEE_NEXT', 'BLENDER_WORKBENCH']
+        if context.scene.render.engine in unsupported_render_engines:
             context.scene.render.engine = 'CYCLES'
             self.report({'INFO'}, "Setting render engine to Cycles")
         if not context.scene.render.use_motion_blur:
@@ -1848,15 +1865,15 @@ class FlipFluidHelperInitializeMotionBlur(bpy.types.Operator):
         dprops = context.scene.flip_fluid.get_domain_properties()
         if not dprops.surface.enable_velocity_vector_attribute:
             dprops.surface.enable_velocity_vector_attribute = True
-            self.report({'INFO'}, "Enabled generation of fluid surface velocity vector attributes in FLIP Fluid Surface panel (baking required)")
+            self.report({'INFO'}, "Enabled generation of fluid surface velocity vector attributes in Domain Surface panel (baking required)")
 
         if not dprops.particles.enable_fluid_particle_velocity_vector_attribute:
             dprops.particles.enable_fluid_particle_velocity_vector_attribute = True
-            self.report({'INFO'}, "Enabled generation of fluid particle velocity vector attributes in FLIP Fluid Particles panel (baking required)")
+            self.report({'INFO'}, "Enabled generation of fluid particle velocity vector attributes in Domain Particles panel (baking required)")
 
         if not dprops.whitewater.enable_velocity_vector_attribute:
             dprops.whitewater.enable_velocity_vector_attribute = True
-            self.report({'INFO'}, "Enabled generation of whitewater velocity vector attributes in FLIP Fluid Whitewater (baking required)")
+            self.report({'INFO'}, "Enabled generation of whitewater velocity vector attributes in Domain Whitewater (baking required)")
 
         blend_filename = "geometry_nodes_library.blend"
         surface_resource = self.resource_prefix + "Surface"
@@ -1943,8 +1960,7 @@ class FlipFluidHelperRemoveMotionBlur(bpy.types.Operator):
             " operator will not disable the Domain surface/particles/whitewater velocity attribute settings")
 
 
-    resource_prefix = StringProperty(default="FF_GeometryNodes")
-    exec(vcu.convert_attribute_to_28("resource_prefix"))
+    resource_prefix: StringProperty(default="FF_GeometryNodes")
 
 
     @classmethod
@@ -1953,10 +1969,6 @@ class FlipFluidHelperRemoveMotionBlur(bpy.types.Operator):
 
 
     def execute(self, context):
-        if not vcu.is_blender_31():
-            self.report({'INFO'}, "Blender 3.1 or later is required for this feature")
-            return {'CANCELLED'}
-
         if not context.scene.flip_fluid.is_domain_in_active_scene():
             self.report({"ERROR"}, 
                          "Active scene must contain domain object to use this operator. Select the scene that contains the domain object and try again.")
@@ -2019,8 +2031,7 @@ class FlipFluidHelperToggleMotionBlurRendering(bpy.types.Operator):
     bl_description = ("Toggle motion blur rendering for the simulation meshes on or off. This operator will enable or" +
                       " disable the simulations mesh object and geometry node settings for motion blur rendering")
 
-    enable_motion_blur_rendering = BoolProperty(default=True)
-    exec(vcu.convert_attribute_to_28("enable_motion_blur_rendering"))
+    enable_motion_blur_rendering: BoolProperty(default=True)
 
 
     @classmethod
@@ -2070,13 +2081,207 @@ class FlipFluidHelperToggleMotionBlurRendering(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class FlipFluidHelperUpdateGeometryNodeModifiers(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_update_geometry_node_modifiers"
+    bl_label = "Update Geometry Node Modifiers"
+    bl_description = ("Update the fluid surface, particle, and whitewater geometry nodes modifiers to the current addon version and transfer settings." + 
+                      " This operator will not delete existing FLIP Fluids modifiers or datablocks. Existing modifiers will be renamed with a" + 
+                      " BACKUP prefix and disabled in the modifier stack. This backup can be removed if not wanted")
+
+    resource_prefix: StringProperty(default="FF_GeometryNodes")
+
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.flip_fluid.get_domain_object() is not None
+
+
+    def transfer_gn_modifer_settings(self, old_gn_modifier, new_gn_modifier, old_new_key_pairs):
+        for key in old_new_key_pairs:
+            old_key = key[0]
+            new_key = key[1]
+            if old_key in old_gn_modifier:
+                try:
+                    new_gn_modifier[new_key] = old_gn_modifier[old_key]
+                except:
+                    pass
+
+
+    def transfer_gn_modifier_settings_surface(self, old_gn_modifier, new_gn_modifier):
+        # Old Key, New Key
+        keys = [
+            ("Input_6", "Input_6"),    # Enable Motion Blur
+            ("Input_4", "Input_4"),    # Motion Blur Scale
+        ]
+
+        self.transfer_gn_modifer_settings(old_gn_modifier, new_gn_modifier, keys)
+
+
+    def transfer_gn_modifier_settings_fluid_particle(self, old_gn_modifier, new_gn_modifier):
+        # Old Key, New Key
+        keys = [
+            ("Input_5",  "Input_5"),    # Material
+            ("Input_8",  "Input_8"),    # Enable Motion Blur
+            ("Input_4",  "Input_4"),    # Motion Blur Scale
+            ("Input_6",  "Input_6"),    # Particle Scale
+            ("Socket_2", "Socket_2"),   # Particle Scale Random
+            ("Socket_1", "Socket_1"),   # Fading Width
+            ("Socket_0", "Socket_0"),   # Fading Strength
+            ("Socket_4", "Socket_4"),   # Fading Density
+        ]
+
+        self.transfer_gn_modifer_settings(old_gn_modifier, new_gn_modifier, keys)
+
+
+    def transfer_gn_modifier_settings_whitewater(self, old_gn_modifier, new_gn_modifier):
+        # Old Key, New Key
+        keys = [
+            ("Input_5",  "Input_5"),    # Material
+            ("Input_8",  "Input_8"),    # Enable Motion Blur
+            ("Input_4",  "Input_4"),    # Motion Blur Scale
+            ("Input_6",  "Input_6"),    # Particle Scale
+            ("Socket_2", "Socket_2"),   # Particle Scale Random
+            ("Socket_1", "Socket_1"),   # Fading Width
+            ("Socket_0", "Socket_0"),   # Fading Strength
+            ("Socket_4", "Socket_4"),   # Fading Density
+        ]
+
+        self.transfer_gn_modifer_settings(old_gn_modifier, new_gn_modifier, keys)
+
+
+    def get_ff_geometry_node_modifiers(self, bl_object):
+        modifiers = []
+        if bl_object is None:
+            return modifiers
+        for mod in bl_object.modifiers:
+            if mod.type == "NODES" and mod.node_group and mod.node_group.name.startswith("FF_GeometryNodes"):
+                modifiers.append(mod)
+        return modifiers
+
+
+    def execute(self, context):
+        if not context.scene.flip_fluid.is_domain_in_active_scene():
+            self.report({"ERROR"}, 
+                         "Active scene must contain domain object to use this operator. Select the scene that contains the domain object and try again.")
+            return {'CANCELLED'}
+
+        dprops = context.scene.flip_fluid.get_domain_properties()
+
+        # Gather Blender cache objects
+        surface_mesh_caches = [dprops.mesh_cache.surface]
+        surface_cache_objects = []
+        for m in surface_mesh_caches:
+            bl_object = m.get_cache_object()
+            if bl_object is not None:
+                 surface_cache_objects.append(bl_object)
+
+        fluid_particle_mesh_caches = [dprops.mesh_cache.particles]
+        fluid_particle_cache_objects = []
+        for m in fluid_particle_mesh_caches:
+            bl_object = m.get_cache_object()
+            if bl_object is not None:
+                 fluid_particle_cache_objects.append(bl_object)
+
+        whitewater_mesh_caches = [
+                dprops.mesh_cache.foam, 
+                dprops.mesh_cache.bubble, 
+                dprops.mesh_cache.spray, 
+                dprops.mesh_cache.dust
+                ]
+        whitewater_cache_objects = []
+        for m in whitewater_mesh_caches:
+            bl_object = m.get_cache_object()
+            if bl_object is not None:
+                 whitewater_cache_objects.append(bl_object)
+
+        bl_cache_objects = surface_cache_objects + fluid_particle_cache_objects + whitewater_cache_objects
+
+        # Search for the last FF_GeometryNodes modifier in the stack for each cache object for transferring settings
+        surface_gn_modifiers = []
+        for bl_object in surface_cache_objects:
+            existing_gn_modifiers = self.get_ff_geometry_node_modifiers(bl_object)
+            if existing_gn_modifiers:
+                surface_gn_modifiers.append(existing_gn_modifiers[-1])
+            else:
+                surface_gn_modifiers.append(None)
+
+        fluid_particle_gn_modifiers = []
+        for bl_object in fluid_particle_cache_objects:
+            existing_gn_modifiers = self.get_ff_geometry_node_modifiers(bl_object)
+            if existing_gn_modifiers:
+                fluid_particle_gn_modifiers.append(existing_gn_modifiers[-1])
+            else:
+                fluid_particle_gn_modifiers.append(None)
+
+        whitewater_gn_modifiers = []
+        for bl_object in whitewater_cache_objects:
+            existing_gn_modifiers = self.get_ff_geometry_node_modifiers(bl_object)
+            if existing_gn_modifiers:
+                whitewater_gn_modifiers.append(existing_gn_modifiers[-1])
+            else:
+                whitewater_gn_modifiers.append(None)
+
+        # Disable existing FF_GeometryNode modifiers and rename with BACKUP_ prefix
+        for bl_object in bl_cache_objects:
+            existing_gn_modifiers = self.get_ff_geometry_node_modifiers(bl_object)
+            for mod in existing_gn_modifiers:
+                mod.show_viewport = False
+                mod.show_render = False
+                mod.show_expanded = False
+                mod.name = "BACKUP_" + mod.name
+                mod.node_group.name = "BACKUP_" + mod.node_group.name
+
+        # Initialize current FF_GeometryNode modifiers
+        geometry_nodes_library = "geometry_nodes_library.blend"
+        parent_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        resource_filepath = os.path.join(parent_path, "resources", "geometry_nodes", geometry_nodes_library)
+
+        surface_resource = self.resource_prefix + "Surface"
+        fluid_particle_resource = self.resource_prefix + "FluidParticles"
+        whitewater_foam_resource = self.resource_prefix + "WhitewaterFoam"
+        whitewater_bubble_resource = self.resource_prefix + "WhitewaterBubble"
+        whitewater_spray_resource = self.resource_prefix + "WhitewaterSpray"
+        whitewater_dust_resource = self.resource_prefix + "WhitewaterDust"
+
+        for idx, bl_surface in enumerate(surface_cache_objects):
+            old_gn_modifier = surface_gn_modifiers[idx]
+            new_gn_modifier = add_geometry_node_modifier(bl_surface, resource_filepath, surface_resource)
+            if old_gn_modifier and new_gn_modifier:
+                self.transfer_gn_modifier_settings_surface(old_gn_modifier, new_gn_modifier)
+
+        for idx, bl_fluid_particle in enumerate(fluid_particle_cache_objects):
+            old_gn_modifier = fluid_particle_gn_modifiers[idx]
+            new_gn_modifier = add_geometry_node_modifier(bl_fluid_particle, resource_filepath, fluid_particle_resource)
+            if old_gn_modifier and new_gn_modifier:
+                self.transfer_gn_modifier_settings_fluid_particle(old_gn_modifier, new_gn_modifier)
+
+        for idx, bl_whitewater in enumerate(whitewater_cache_objects):
+            whitewater_resource = ""
+            if bl_whitewater == dprops.mesh_cache.foam.get_cache_object():
+                whitewater_resource = whitewater_foam_resource
+            elif bl_whitewater == dprops.mesh_cache.bubble.get_cache_object():
+                whitewater_resource = whitewater_bubble_resource
+            elif bl_whitewater == dprops.mesh_cache.spray.get_cache_object():
+                whitewater_resource = whitewater_spray_resource
+            elif bl_whitewater == dprops.mesh_cache.dust.get_cache_object():
+                whitewater_resource = whitewater_dust_resource
+
+            old_gn_modifier = whitewater_gn_modifiers[idx]
+            new_gn_modifier = add_geometry_node_modifier(bl_whitewater, resource_filepath, whitewater_resource)
+            if old_gn_modifier and new_gn_modifier:
+                self.transfer_gn_modifier_settings_whitewater(old_gn_modifier, new_gn_modifier)
+
+        self.report({'INFO'}, "Updated FLIP Fluids Geometry Node Modifiers")
+
+        return {'FINISHED'}
+
+
 class FlipFluidHelperInitializeCacheObjects(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.helper_initialize_cache_objects"
     bl_label = "Initialize Cache Objects"
     bl_description = ("Initialize simulation meshes, modifiers, and data")
 
-    cache_object_type = StringProperty(default="CACHE_OBJECT_TYPE_NONE")
-    exec(vcu.convert_attribute_to_28("cache_object_type"))
+    cache_object_type: StringProperty(default="CACHE_OBJECT_TYPE_NONE")
 
 
     @classmethod
@@ -2139,8 +2344,7 @@ class FlipFluidHelperStableRendering28(bpy.types.Operator):
                       " during render (Blender > Render > Lock Interface) and is highly"
                       " recommended")
 
-    enable_state = BoolProperty(True)
-    exec(vcu.convert_attribute_to_28("enable_state"))
+    enable_state: BoolProperty(True)
 
 
     @classmethod
@@ -2188,8 +2392,7 @@ class FlipFluidHelperSaveBlendFile(bpy.types.Operator):
     bl_label = "Save File"
     bl_description = "Open the Blender file window to save the current .blend file"
 
-    save_as_blend_file = BoolProperty(default=True)
-    exec(vcu.convert_attribute_to_28("save_as_blend_file"))
+    save_as_blend_file: BoolProperty(default=True)
 
 
     @classmethod
@@ -2241,8 +2444,7 @@ class FlipFluidHelperBatchExportAnimatedMesh(bpy.types.Operator):
     bl_description = "Enable or Disable the 'Export Animated Mesh' option for all objects in list"
 
 
-    enable_state = BoolProperty(True)
-    exec(vcu.convert_attribute_to_28("enable_state"))
+    enable_state: BoolProperty(True)
 
 
     @classmethod
@@ -2265,8 +2467,7 @@ class FlipFluidHelperBatchSkipReexport(bpy.types.Operator):
     bl_description = "Enable or Disable the 'Skip Re-Export' option for all objects in list"
 
 
-    enable_state = BoolProperty(True)
-    exec(vcu.convert_attribute_to_28("enable_state"))
+    enable_state: BoolProperty(True)
 
 
     @classmethod
@@ -2289,8 +2490,7 @@ class FlipFluidHelperBatchForceReexport(bpy.types.Operator):
     bl_description = "Enable or Disable the 'Force Re-Export On Next Bake' option for all objects in list"
 
 
-    enable_state = BoolProperty(True)
-    exec(vcu.convert_attribute_to_28("enable_state"))
+    enable_state: BoolProperty(True)
 
 
     @classmethod
@@ -2538,20 +2738,12 @@ class FlipFluidCopySettingsFromActive(bpy.types.Operator):
     def toggle_cycles_ray_visibility(self, obj, is_enabled):
         # Cycles may not be enabled in the user's preferences
         try:
-            if vcu.is_blender_30():
-                obj.visible_camera = is_enabled
-                obj.visible_diffuse = is_enabled
-                obj.visible_glossy = is_enabled
-                obj.visible_transmission = is_enabled
-                obj.visible_volume_scatter = is_enabled
-                obj.visible_shadow = is_enabled
-            else:
-                obj.cycles_visibility.camera = is_enabled
-                obj.cycles_visibility.transmission = is_enabled
-                obj.cycles_visibility.diffuse = is_enabled
-                obj.cycles_visibility.scatter = is_enabled
-                obj.cycles_visibility.glossy = is_enabled
-                obj.cycles_visibility.shadow = is_enabled
+            obj.visible_camera = is_enabled
+            obj.visible_diffuse = is_enabled
+            obj.visible_glossy = is_enabled
+            obj.visible_transmission = is_enabled
+            obj.visible_volume_scatter = is_enabled
+            obj.visible_shadow = is_enabled
         except:
             pass
 
@@ -4507,11 +4699,7 @@ class FlipFluidPassesImportMedia(bpy.types.Operator):
     bl_idname = "flip_fluid.passes_import_media"
     bl_label = "Import Media"
 
-    option_path_supports_blend_relative = set()
-    if vcu.is_blender_45():
-        # required for relative path support in Blender 4.5+
-        # https://docs.blender.org/api/4.5/bpy_types_enum_items/property_flag_items.html#rna-enum-property-flag-items
-        option_path_supports_blend_relative = {'PATH_SUPPORTS_BLEND_RELATIVE'}
+    option_path_supports_blend_relative = {'PATH_SUPPORTS_BLEND_RELATIVE'}
 
     filter_glob: StringProperty(
         default="*.png;*.jpg;*.jpeg;*.bmp;*.tiff;*.tif;*.mp4;*.avi;*.mov",
@@ -5992,6 +6180,7 @@ def register():
         FlipFluidHelperInitializeMotionBlur,
         FlipFluidHelperRemoveMotionBlur,
         FlipFluidHelperToggleMotionBlurRendering,
+        FlipFluidHelperUpdateGeometryNodeModifiers,
         FlipFluidHelperInitializeCacheObjects,
         FlipFluidHelperStableRendering279,
         FlipFluidHelperStableRendering28,
@@ -6013,6 +6202,9 @@ def register():
         FlipFluidEnableViscosityAttribute,
         FlipFluidEnableViscosityAttributeMenu,
         FlipFluidEnableViscosityAttributeTooltip,
+        FlipFluidEnableDensityAttribute,
+        FlipFluidEnableDensityAttributeMenu,
+        FlipFluidEnableDensityAttributeTooltip,
         FlipFluidEnableLifetimeAttribute,
         FlipFluidEnableLifetimeAttributeMenu,
         FlipFluidEnableLifetimeAttributeTooltip,
@@ -6103,6 +6295,7 @@ def unregister():
     bpy.utils.unregister_class(FlipFluidHelperInitializeMotionBlur)
     bpy.utils.unregister_class(FlipFluidHelperRemoveMotionBlur)
     bpy.utils.unregister_class(FlipFluidHelperToggleMotionBlurRendering)
+    bpy.utils.unregister_class(FlipFluidHelperUpdateGeometryNodeModifiers)
     bpy.utils.unregister_class(FlipFluidHelperInitializeCacheObjects)
     bpy.utils.unregister_class(FlipFluidHelperStableRendering279)
     bpy.utils.unregister_class(FlipFluidHelperStableRendering28)
@@ -6124,6 +6317,9 @@ def unregister():
     bpy.utils.unregister_class(FlipFluidEnableViscosityAttribute)
     bpy.utils.unregister_class(FlipFluidEnableViscosityAttributeMenu)
     bpy.utils.unregister_class(FlipFluidEnableViscosityAttributeTooltip)
+    bpy.utils.unregister_class(FlipFluidEnableDensityAttribute)
+    bpy.utils.unregister_class(FlipFluidEnableDensityAttributeMenu)
+    bpy.utils.unregister_class(FlipFluidEnableDensityAttributeTooltip)
     bpy.utils.unregister_class(FlipFluidEnableLifetimeAttribute)
     bpy.utils.unregister_class(FlipFluidEnableLifetimeAttributeMenu)
     bpy.utils.unregister_class(FlipFluidEnableLifetimeAttributeTooltip)

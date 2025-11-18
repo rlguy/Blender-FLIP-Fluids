@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_MESHFLUIDSOURCE_H
-#define FLUIDENGINE_MESHFLUIDSOURCE_H
+#pragma once
 
 #include "meshobject.h"
 #include "macvelocityfield.h"
@@ -116,6 +115,9 @@ public:
     void setViscosity(float v);
     float getViscosity();
 
+    void setDensity(float d);
+    float getDensity();
+
     void setLifetime(float v);
     float getLifetime();
     void setLifetimeVariance(float v);
@@ -164,5 +166,3 @@ private:
 
 bool compareMeshFluidSourcePointer(MeshFluidSource *a, MeshFluidSource *b);
 bool compareMeshFluidSourcePointerDescending(MeshFluidSource *a, MeshFluidSource *b);
-
-#endif

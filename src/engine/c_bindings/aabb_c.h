@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef AABB_T_H
-#define AABB_T_H
+#pragma once
 
 #include "vector3_c.h"
 
@@ -33,5 +32,3 @@ typedef struct AABB_t {
 	float height;
 	float depth;
 } AABB_t;
-
-#endif

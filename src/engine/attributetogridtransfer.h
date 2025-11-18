@@ -49,9 +49,7 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_ATTRIBUTETOGRIDTRANSFER_H
-#define FLUIDENGINE_ATTRIBUTETOGRIDTRANSFER_H
-
+#pragma once
 
 #include "blockarray3d.h"
 #include "boundedbuffer.h"
@@ -63,6 +61,7 @@ struct AttributeTransferParameters {
     std::vector<T> *attributes;
     Array3d<T> *attributeGrid;
     Array3d<bool> *validGrid;
+    vmath::vec3 gridOffset;
     double particleRadius = 1.0;
     double dx = 1.0;
     bool normalize = true;
@@ -208,6 +207,7 @@ private:
         _attributes = *(params.attributes);
         _attributeGrid = params.attributeGrid;
         _validGrid = params.validGrid;
+        _gridOffset = params.gridOffset;
         _particleRadius = params.particleRadius;
         _dx = params.dx;
         _chunkdx = _dx * _chunkWidth;
@@ -503,7 +503,7 @@ private:
 
 
     vmath::vec3 _getGridOffset() {
-        return vmath::vec3(0.0f, 0.0f, 0.0f);
+        return _gridOffset;
     }
 
 
@@ -511,6 +511,7 @@ private:
     std::vector<T> _attributes;
     Array3d<T> *_attributeGrid;
     Array3d<bool> *_validGrid;
+    vmath::vec3 _gridOffset;
     double _particleRadius = 1.0;
     double _dx = 0.0;
     bool _normalize = true;
@@ -521,5 +522,3 @@ private:
     int _numBlocksPerJob = 10;
     
 };
-
-#endif

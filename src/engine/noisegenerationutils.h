@@ -22,9 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-
-#ifndef FLUIDENGINE_NOISEGENERATIONUTILS_H
-#define FLUIDENGINE_NOISEGENERATIONUTILS_H
+#pragma once
 
 #include "vmath.h"
 
@@ -120,5 +118,3 @@ namespace NoiseGenerationUtils {
     extern void test();
 
 }
-
-#endif

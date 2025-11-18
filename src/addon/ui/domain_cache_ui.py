@@ -59,21 +59,16 @@ class FLIPFLUID_PT_DomainTypeCachePanel(bpy.types.Panel):
         dprops = domain_object.flip_fluid.domain
         cprops = dprops.cache
 
+        #
+        # Cache Directory Panel
+        #
         box = self.layout.box()
-        row = box.row(align=True)
-        row.prop(cprops, "cache_directory_expanded",
-            icon="TRIA_DOWN" if cprops.cache_directory_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
+        header, body = box.panel("cache_directory", default_closed=False)
+
+        row = header.row(align=True)
         row.label(text="Cache Directory:")
-
-        if not cprops.cache_directory_expanded:
-            row = row.row()
-            row.prop(cprops, "cache_directory")
-
-        if cprops.cache_directory_expanded:
-            column = box.column(align=True)
+        if body:
+            column = body.column(align=True)
             subcolumn = column.column(align=True)
             subcolumn.enabled = not dprops.bake.is_simulation_running
             row = subcolumn.row(align=True)
@@ -85,18 +80,22 @@ class FLIPFLUID_PT_DomainTypeCachePanel(bpy.types.Panel):
             row.operator("flip_fluid_operators.relative_cache_directory")
             row.operator("flip_fluid_operators.absolute_cache_directory")
             row.operator("flip_fluid_operators.match_filename_cache_directory")
+        else:
+            row = row.row(align=True)
+            row.prop(cprops, "cache_directory")
+            row.operator("flip_fluid_operators.increase_decrease_cache_directory", text="", icon="REMOVE").increment_mode = "DECREASE"
+            row.operator("flip_fluid_operators.increase_decrease_cache_directory", text="", icon="ADD").increment_mode = "INCREASE"
 
+        #
+        # Link Existing Exported Geometry Panel
+        #
         box = self.layout.box()
-        row = box.row(align=True)
-        row.prop(cprops, "link_exported_geometry_expanded",
-            icon="TRIA_DOWN" if cprops.link_exported_geometry_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
-        row.label(text="Link existing exported geometry:")
+        header, body = box.panel("link_existing_exported_geometry", default_closed=True)
 
-        if cprops.link_exported_geometry_expanded:
-            column = box.column(align=True)
+        row = header.row(align=True)
+        row.label(text="Link Existing Exported Geometry:")
+        if body:
+            column = body.column(align=True)
             subcolumn = column.column(align=True)
             subcolumn.enabled = not dprops.bake.is_simulation_running
             subcolumn.prop(cprops, "linked_geometry_directory")
@@ -106,56 +105,38 @@ class FLIPFLUID_PT_DomainTypeCachePanel(bpy.types.Panel):
             column = column.column(align=True)
             column.operator("flip_fluid_operators.clear_linked_geometry_directory")
             column.separator()
+        else:
+            row = row.row(align=True)
+            row.prop(cprops, "linked_geometry_directory")
+
+        
+        #
+        # Cache Operators Panel
+        #
+        if dprops.stats.is_cache_info_available:
+            free_text = "Free (" + format_bytes(self, dprops.stats.cache_bytes.get()) + ")"
+        else:
+            free_text = "Free"
 
         box = self.layout.box()
-        row = box.row(align=True)
-        row.prop(cprops, "cache_operators_expanded",
-            icon="TRIA_DOWN" if cprops.cache_operators_expanded else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
+        header, body = box.panel("cache_operators", default_closed=True)
+
+        row = header.row(align=True)
         row.label(text="Cache Operators:")
-
-        if not cprops.cache_operators_expanded:
-            if dprops.stats.is_cache_info_available:
-                free_text = "Free (" + format_bytes(self, dprops.stats.cache_bytes.get()) + ")"
-            else:
-                free_text = "Free"
-            row.operator("flip_fluid_operators.free_cache", text=free_text)
-
-
-        if cprops.cache_operators_expanded:
-            column = box.column(align=True)
-
-            # The move, rename, and copy cache operations should not be performed
-            # in Blender and are removed from the UI. There is a potential for Blender 
-            # to crash, which could lead to loss of data. It is best to perform these 
-            # operations through the OS filesystem which is cabable of handling failures.
-            """
-            row = column.row(align=True)
-            row.operator("flip_fluid_operators.move_cache", text="Move")
-            row.prop(cprops, "move_cache_directory")
-
-            row = column.row(align=True)
-            row.operator("flip_fluid_operators.rename_cache", text="Rename")
-            row.prop(cprops, "rename_cache_directory")
-
-            row = column.row(align=True)
-            row.operator("flip_fluid_operators.copy_cache", text="Copy")
-            row.prop(cprops, "copy_cache_directory")
-            """
-
-            if dprops.stats.is_cache_info_available:
-                free_text = "Free (" + format_bytes(self, dprops.stats.cache_bytes.get()) + ")"
-            else:
-                free_text = "Free"
-
+        if body:
+            column = body.column(align=True)
             split = column.split(align=True)
             column_left = split.column(align=True)
             column_right = split.column(align=True)
             column_left.operator("flip_fluid_operators.free_cache", text=free_text)
             column_right.prop(cprops, "clear_cache_directory_logs", text="Free log files")
             column_right.prop(cprops, "clear_cache_directory_export", text="Free export files")
+        else:
+            if dprops.stats.is_cache_info_available:
+                free_text = "Free (" + format_bytes(self, dprops.stats.cache_bytes.get()) + ")"
+            else:
+                free_text = "Free"
+            row.operator("flip_fluid_operators.free_cache", text=free_text)
     
 
 def register():

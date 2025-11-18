@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_ARRAY3D_H
-#define FLUIDENGINE_ARRAY3D_H
+#pragma once
 
 #include <stdexcept>
 #include <sstream>
@@ -796,5 +795,3 @@ private:
     T _outOfRangeValue;
     int _numElements = 0;
 };
-
-#endif

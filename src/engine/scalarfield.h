@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_SCALARFIELD_H
-#define FLUIDENGINE_SCALARFIELD_H
+#pragma once
 
 #include "vmath.h"
 #include "array3d.h"
@@ -127,5 +126,3 @@ private:
 
     vmath::vec3 _gridOffset;
 };
-
-#endif

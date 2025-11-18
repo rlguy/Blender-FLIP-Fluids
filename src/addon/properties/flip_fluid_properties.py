@@ -25,22 +25,21 @@ from ..utils import version_compatibility_utils as vcu
 
 
 class FlipFluidProperties(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
     
-    show_render = BoolProperty(
+    show_render: BoolProperty(
             name="Show Render",
             description="Display simulation in render. If disabled, simulation data will not be loaded in the render",
             default=True,
-            ); exec(conv("show_render"))
-    show_viewport = BoolProperty(
+            )
+    show_viewport: BoolProperty(
             name="Show Viewport",
             description="Display simulation in viewport. If disabled, simulation data will not be loaded in the viewport."
                 " Disable to speed up playback while working on other areas of your scene",
             default=True,
-            ); exec(conv("show_viewport"))
+            )
 
-    logo_name = StringProperty("flip_fluids_logo"); exec(conv("logo_name"))
-    domain_object_name = StringProperty(default=""); exec(conv("domain_object_name"))
+    logo_name: StringProperty("flip_fluids_logo")
+    domain_object_name: StringProperty(default="")
 
 
     @classmethod
@@ -242,10 +241,7 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
 
     def _initialize_custom_icons(self):
         addon_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        if vcu.is_blender_28():
-            icon_filename = "flip_fluids_logo_28.png"
-        else:
-            icon_filename = "flip_fluids_logo_27.png"
+        icon_filename = "flip_fluids_logo_28.png"
         logo_path = os.path.join(addon_dir, "icons", icon_filename)
         self.custom_icons.clear()
         if os.path.isfile(logo_path):

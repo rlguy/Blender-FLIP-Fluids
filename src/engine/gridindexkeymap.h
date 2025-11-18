@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_GRIDINDEXKEYMAP_H
-#define FLUIDENGINE_GRIDINDEXKEYMAP_H
+#pragma once
 
 #include "array3d.h"
 
@@ -60,5 +59,3 @@ private:
     int _notFoundValue = -1;
 
 };
-
-#endif

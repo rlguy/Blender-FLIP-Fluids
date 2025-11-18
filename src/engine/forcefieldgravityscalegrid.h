@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_FORCEFIELDGRAVITYSCALEGRID_H
-#define FLUIDENGINE_FORCEFIELDGRAVITYSCALEGRID_H
+#pragma once
 
 #include "array3d.h"
 #include "interpolation.h"
@@ -79,5 +78,3 @@ struct ForceFieldGravityScaleGrid {
         return gravityScale(g);
     }
 };
-
-#endif

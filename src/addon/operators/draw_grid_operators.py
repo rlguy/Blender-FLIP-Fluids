@@ -25,9 +25,8 @@ from ..utils import ui_utils
 from ..utils import version_compatibility_utils as vcu
 from .. import render
 
-if vcu.is_blender_28():
-    import gpu
-    from gpu_extras.batch import batch_for_shader
+import gpu
+from gpu_extras.batch import batch_for_shader
 
 
 x_coords = []
@@ -195,33 +194,11 @@ class FlipFluidDrawDebugGrid(bpy.types.Operator):
         if not dprops.debug.display_simulation_grid:
             return
 
-        if not vcu.is_blender_28():
-            dlayers = [i for i,v in enumerate(domain.layers) if v]
-            slayers = [i for i,v in enumerate(context.scene.layers) if v]
-            if not (set(dlayers) & set(slayers)):
-                return
-
         if dprops.debug.grid_display_mode == 'GRID_DISPLAY_SIMULATION':
             isize, jsize, ksize, viewport_dx = dprops.simulation.get_viewport_grid_dimensions()
             _, _, _, simulation_dx = dprops.simulation.get_simulation_grid_dimensions()
         elif dprops.debug.grid_display_mode == 'GRID_DISPLAY_PREVIEW':
             presolution = dprops.simulation.preview_resolution
-
-            """
-
-            isize, jsize, ksize, viewport_dx = dprops.simulation.get_viewport_grid_dimensions(resolution=presolution)
-            _, _, _, simulation_dx = dprops.simulation.get_simulation_grid_dimensions(resolution=presolution)
-        else:
-            isize, jsize, ksize, viewport_dx = dprops.simulation.get_viewport_grid_dimensions()
-            _, _, _, simulation_dx = dprops.simulation.get_simulation_grid_dimensions()
-
-        if dprops.debug.grid_display_mode == 'GRID_DISPLAY_MESH':
-            isize *= (dprops.surface.subdivisions + 1)
-            jsize *= (dprops.surface.subdivisions + 1)
-            ksize *= (dprops.surface.subdivisions + 1)
-            viewport_dx /= (dprops.surface.subdivisions + 1)
-            """
-
             isize, jsize, ksize, viewport_dx = dprops.simulation.get_viewport_grid_dimensions(resolution=presolution)
             _, _, _, simulation_dx = dprops.simulation.get_simulation_grid_dimensions(resolution=presolution)
         elif dprops.debug.grid_display_mode == 'GRID_DISPLAY_MESH':
@@ -249,12 +226,8 @@ class FlipFluidDrawDebugGrid(bpy.types.Operator):
             simulation_dx *= reduction
 
         width = context.region.width
-        if vcu.is_blender_28():
-            height = 200
-            xstart = context.region.width - 400
-        else:
-            height = context.region.height
-            xstart = 50
+        height = 200
+        xstart = context.region.width - 400
 
         font_id = 0
         try:
@@ -360,12 +333,6 @@ class FlipFluidDrawDebugGrid(bpy.types.Operator):
         if vcu.get_object_hide_viewport(domain):
             return
 
-        if not vcu.is_blender_28():
-            dlayers = [i for i,v in enumerate(domain.layers) if v]
-            slayers = [i for i,v in enumerate(context.scene.layers) if v]
-            if not (set(dlayers) & set(slayers)):
-                return
-
         x_color = dprops.debug.x_grid_color
         y_color = dprops.debug.y_grid_color
         z_color = dprops.debug.z_grid_color
@@ -373,86 +340,49 @@ class FlipFluidDrawDebugGrid(bpy.types.Operator):
 
         # Draw
         display_grid = dprops.debug.display_simulation_grid
-        if vcu.is_blender_28():
-            line_draw_mode = '3D_UNIFORM_COLOR'
-            if vcu.is_blender_36():
-                # 3D/2D prefix deprecated in recent versions of Blender
-                line_draw_mode = 'UNIFORM_COLOR'
-            if display_grid and dprops.debug.enabled_debug_grids[2]:
-                shader = gpu.shader.from_builtin(line_draw_mode)
-                batch = batch_for_shader(shader, 'LINES', {"pos": z_coords})
-                shader.bind()
-                shader.uniform_float("color", (z_color[0], z_color[1], z_color[2], 1.0))
+        line_draw_mode = 'UNIFORM_COLOR'
 
-                if vcu.is_blender_35():
-                    # Can be drawn with depth in Blender 3.5 or later
-                    gpu.state.depth_test_set('LESS_EQUAL')
-                    gpu.state.depth_mask_set(True)
-                batch.draw(shader)
-                if vcu.is_blender_35():
-                    gpu.state.depth_mask_set(False)
-            if display_grid and dprops.debug.enabled_debug_grids[1]:
-                shader = gpu.shader.from_builtin(line_draw_mode)
-                batch = batch_for_shader(shader, 'LINES', {"pos": y_coords})
-                shader.bind()
-                shader.uniform_float("color", (y_color[0], y_color[1], y_color[2], 1.0))
-                if vcu.is_blender_35():
-                    # Can be drawn with depth in Blender 3.5 or later
-                    gpu.state.depth_test_set('LESS_EQUAL')
-                    gpu.state.depth_mask_set(True)
-                batch.draw(shader)
-                if vcu.is_blender_35():
-                    gpu.state.depth_mask_set(False)
-            if display_grid and dprops.debug.enabled_debug_grids[0]:
-                shader = gpu.shader.from_builtin(line_draw_mode)
-                batch = batch_for_shader(shader, 'LINES', {"pos": x_coords})
-                shader.bind()
-                shader.uniform_float("color", (x_color[0], x_color[1], x_color[2], 1.0))
-                if vcu.is_blender_35():
-                    # Can be drawn with depth in Blender 3.5 or later
-                    gpu.state.depth_test_set('LESS_EQUAL')
-                    gpu.state.depth_mask_set(True)
-                batch.draw(shader)
-                if vcu.is_blender_35():
-                    gpu.state.depth_mask_set(False)
-            if dprops.debug.display_domain_bounds:
-                shader = gpu.shader.from_builtin(line_draw_mode)
-                batch = batch_for_shader(shader, 'LINES', {"pos": bounds_coords})
-                shader.bind()
-                shader.uniform_float("color", (bounds_color[0], bounds_color[1], bounds_color[2], 1.0))
-                if vcu.is_blender_35():
-                    # Can be drawn with depth in Blender 3.5 or later
-                    gpu.state.depth_test_set('LESS_EQUAL')
-                    gpu.state.depth_mask_set(True)
-                batch.draw(shader)
-                if vcu.is_blender_35():
-                    gpu.state.depth_mask_set(False)
-        else:
-            import bgl
-            bgl.glLineWidth(1)
-            bgl.glBegin(bgl.GL_LINES)
+        if display_grid and dprops.debug.enabled_debug_grids[2]:
+            shader = gpu.shader.from_builtin(line_draw_mode)
+            batch = batch_for_shader(shader, 'LINES', {"pos": z_coords})
+            shader.bind()
+            shader.uniform_float("color", (z_color[0], z_color[1], z_color[2], 1.0))
 
-            if display_grid and dprops.debug.enabled_debug_grids[2]:
-                bgl.glColor4f(*z_color, 1.0)
-                for c in z_coords:
-                    bgl.glVertex3f(*c)
-            if display_grid and dprops.debug.enabled_debug_grids[1]:
-                bgl.glColor4f(*y_color, 1.0)
-                for c in y_coords:
-                    bgl.glVertex3f(*c)
-            if display_grid and dprops.debug.enabled_debug_grids[0]:
-                bgl.glColor4f(*x_color, 1.0)
-                for c in x_coords:
-                    bgl.glVertex3f(*c)
-            if dprops.debug.display_domain_bounds:
-                bgl.glColor4f(*(bounds_color), 1.0)
-                for c in bounds_coords:
-                    bgl.glVertex3f(*c)
+            gpu.state.depth_test_set('LESS_EQUAL')
+            gpu.state.depth_mask_set(True)
+            batch.draw(shader)
+            gpu.state.depth_mask_set(False)
 
-            bgl.glEnd()
-            bgl.glLineWidth(1)
-            bgl.glEnable(bgl.GL_DEPTH_TEST)
-            bgl.glColor4f(0.0, 0.0, 0.0, 1.0)
+        if display_grid and dprops.debug.enabled_debug_grids[1]:
+            shader = gpu.shader.from_builtin(line_draw_mode)
+            batch = batch_for_shader(shader, 'LINES', {"pos": y_coords})
+            shader.bind()
+            shader.uniform_float("color", (y_color[0], y_color[1], y_color[2], 1.0))
+
+            gpu.state.depth_test_set('LESS_EQUAL')
+            gpu.state.depth_mask_set(True)
+            batch.draw(shader)
+            gpu.state.depth_mask_set(False)
+
+        if display_grid and dprops.debug.enabled_debug_grids[0]:
+            shader = gpu.shader.from_builtin(line_draw_mode)
+            batch = batch_for_shader(shader, 'LINES', {"pos": x_coords})
+            shader.bind()
+            shader.uniform_float("color", (x_color[0], x_color[1], x_color[2], 1.0))
+            gpu.state.depth_test_set('LESS_EQUAL')
+            gpu.state.depth_mask_set(True)
+            batch.draw(shader)
+            gpu.state.depth_mask_set(False)
+
+        if dprops.debug.display_domain_bounds:
+            shader = gpu.shader.from_builtin(line_draw_mode)
+            batch = batch_for_shader(shader, 'LINES', {"pos": bounds_coords})
+            shader.bind()
+            shader.uniform_float("color", (bounds_color[0], bounds_color[1], bounds_color[2], 1.0))
+            gpu.state.depth_test_set('LESS_EQUAL')
+            gpu.state.depth_mask_set(True)
+            batch.draw(shader)
+            gpu.state.depth_mask_set(False)
 
 
     def modal(self, context, event):

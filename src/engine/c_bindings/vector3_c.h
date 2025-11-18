@@ -22,13 +22,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_VECTOR3_T_H
-#define FLUIDENGINE_VECTOR3_T_H
+#pragma once
 
 typedef struct Vector3_t {
 	float x;
     float y;
     float z;  
 } Vector3_t;
-
-#endif

@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_PARTICLEMESHER_H
-#define FLUIDENGINE_PARTICLEMESHER_H
+#pragma once
 
 #include <vector>
 
@@ -194,5 +193,3 @@ private:
     ScalarFieldSeam _seamData;
 
 };
-
-#endif

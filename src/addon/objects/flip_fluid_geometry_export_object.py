@@ -29,7 +29,7 @@ from ..utils import cache_utils
 
 def find_fcurve(id_data, path, index=0):
     anim_data = id_data.animation_data
-    for fcurve in anim_data.action.fcurves:
+    for fcurve in anim_data.action.layers[0].strips[0].channelbag(anim_data.action.slots[0]).fcurves:
         if fcurve.data_path == path and fcurve.array_index == index:
             return fcurve
         
@@ -81,6 +81,32 @@ def get_rotation_mode_at_frame(obj, frame_id):
     return mode
 
 
+def get_delta_transforms_at_frame(obj, frame_id):
+    rotation_mode = get_rotation_mode_at_frame(obj, frame_id)
+    if rotation_mode == 'AXIS_ANGLE':
+        # No delta rotation for AXIS_ANGLE mode
+        rotation_matrix = Matrix.Identity(4)
+    elif rotation_mode == 'QUATERNION':
+        rotation_quat = get_vector4_at_frame(obj, "delta_rotation_quaternion", frame_id)
+        quaternion = Quaternion(rotation_quat)
+        rotation_matrix = quaternion.to_euler().to_matrix().to_4x4()
+    else:
+        rotation = get_vector3_at_frame(obj, "delta_rotation_euler", frame_id)
+        euler_rotation = Euler(rotation, rotation_mode)
+        rotation_matrix = euler_rotation.to_matrix().to_4x4()
+        
+    location = get_vector3_at_frame(obj, "delta_location", frame_id)
+    location_matrix = Matrix.Translation(location).to_4x4()
+    
+    scale = get_vector3_at_frame(obj, "delta_scale", frame_id)
+    scale_matrix = Matrix.Identity(4)
+    scale_matrix[0][0] = scale[0]
+    scale_matrix[1][1] = scale[1]
+    scale_matrix[2][2] = scale[2]
+
+    return location_matrix, rotation_matrix, scale_matrix
+
+
 def get_matrix_world_at_frame(obj, frame_id):
     rotation_mode = get_rotation_mode_at_frame(obj, frame_id)
     if rotation_mode == 'AXIS_ANGLE':
@@ -105,8 +131,13 @@ def get_matrix_world_at_frame(obj, frame_id):
     scale_matrix[0][0] = scale[0]
     scale_matrix[1][1] = scale[1]
     scale_matrix[2][2] = scale[2]
+
+    delta_location_matrix, delta_rotation_matrix, delta_scale_matrix = get_delta_transforms_at_frame(obj, frame_id)
+    total_location_matrix = delta_location_matrix @ location_matrix
+    total_rotation_matrix = delta_rotation_matrix @ rotation_matrix
+    total_scale_matrix = delta_scale_matrix @ scale_matrix
     
-    return vcu.element_multiply(vcu.element_multiply(location_matrix, rotation_matrix), scale_matrix)
+    return vcu.element_multiply(vcu.element_multiply(total_location_matrix, total_rotation_matrix), total_scale_matrix)
 
 
 def get_mesh_centroid(obj, apply_transforms=True):

@@ -10,8 +10,7 @@ You can copy, modify, distribute and perform the work, even for commercial
 purposes, all without asking permission. See Other Information below.
 */
 
-#ifndef FLUIDENGINE_BLAS_WRAPPER_H
-#define FLUIDENGINE_BLAS_WRAPPER_H
+#pragma once
 
 // Simple placeholder code for BLAS calls - replace with calls to a real BLAS library
 
@@ -158,4 +157,3 @@ inline void addScaled(float alpha, std::vector<T> &x, std::vector<T> &y) {
 }
 
 }
-#endif

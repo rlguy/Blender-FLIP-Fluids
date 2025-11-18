@@ -28,18 +28,15 @@ from .. import exit_handler
 from ..utils import version_compatibility_utils as vcu
 
 class DomainCacheProperties(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
     temp_directory = vcu.get_blender_preferences_temporary_directory()
     default_cache_directory_str = os.path.join(temp_directory, "untitled_flip_fluid_cache")
 
-    option_path_supports_blend_relative = set()
-    if vcu.is_blender_45():
-        # required for relative path support in Blender 4.5+
-        # https://docs.blender.org/api/4.5/bpy_types_enum_items/property_flag_items.html#rna-enum-property-flag-items
-        option_path_supports_blend_relative = {'PATH_SUPPORTS_BLEND_RELATIVE'}
+    # required for relative path support in Blender 4.5+
+    # https://docs.blender.org/api/4.5/bpy_types_enum_items/property_flag_items.html#rna-enum-property-flag-items
+    option_path_supports_blend_relative = {'PATH_SUPPORTS_BLEND_RELATIVE'}
 
     
-    cache_directory = StringProperty(
+    cache_directory: StringProperty(
             name="",
             description="Simulation files will be saved to this directory."
                 " It is recommended to save your .blend file before beginning a simulation",
@@ -47,46 +44,46 @@ class DomainCacheProperties(bpy.types.PropertyGroup):
             subtype='DIR_PATH',
             options=option_path_supports_blend_relative,
             update=lambda self, context: self._update_cache_directory(context),
-            ); exec(conv("cache_directory"))
-    default_cache_directory = StringProperty(
+            )
+    default_cache_directory: StringProperty(
             default=default_cache_directory_str, 
             subtype='DIR_PATH',
             options=option_path_supports_blend_relative,
-            ); exec(conv("default_cache_directory"))
-    move_cache_directory = StringProperty(
+            )
+    move_cache_directory: StringProperty(
             name="",
             description="Cache directory will be moved to this location",
             default=temp_directory, 
             subtype='DIR_PATH',
             options=option_path_supports_blend_relative,
-            ); exec(conv("move_cache_directory"))
-    rename_cache_directory = StringProperty(
+            )
+    rename_cache_directory: StringProperty(
             name="",
             description="Cache directory will be renamed to this value",
             default="untitled_flip_fluid_cache",
-            ); exec(conv("rename_cache_directory"))
-    copy_cache_directory = StringProperty(
+            )
+    copy_cache_directory: StringProperty(
             name="",
             description="Cache directory contents will be copied to this location",
             default=default_cache_directory_str, 
             subtype='DIR_PATH',
             options=option_path_supports_blend_relative,
-            ); exec(conv("copy_cache_directory"))
-    clear_cache_directory_logs = BoolProperty(
+            )
+    clear_cache_directory_logs: BoolProperty(
             name="Clear log files",
             description="Also delete log files when freeing cache directory",
             default=False,
-            ); exec(conv("clear_cache_directory_logs"))
-    clear_cache_directory_export = BoolProperty(
+            )
+    clear_cache_directory_export: BoolProperty(
             name="Clear export files",
             description="Also delete exported settings and objects when freeing cache directory",
             default=False,
-            ); exec(conv("clear_cache_directory_export"))
-    logfile_name = StringProperty(
+            )
+    logfile_name: StringProperty(
             default=os.path.join(temp_directory, "flip_fluid_log.txt"), 
             subtype='FILE_NAME',
-            ); exec(conv("logfile_name"))
-    linked_geometry_directory = StringProperty(
+            )
+    linked_geometry_directory: StringProperty(
             name="",
             description="select an existing cache directory. Link exported geometry data from another cache directory."
                 " Use if you want to re-use exported geometry that is located in another cache. Useful if you have a"
@@ -94,13 +91,9 @@ class DomainCacheProperties(bpy.types.PropertyGroup):
             default="", 
             subtype='DIR_PATH',
             options=option_path_supports_blend_relative,
-            ); exec(conv("linked_geometry_directory"))
+            )
 
-    is_cache_directory_set = BoolProperty(default=False); exec(conv("is_cache_directory_set"))
-
-    cache_directory_expanded = BoolProperty(default=True); exec(conv("cache_directory_expanded"))
-    link_exported_geometry_expanded = BoolProperty(default=False); exec(conv("link_exported_geometry_expanded"))
-    cache_operators_expanded = BoolProperty(default=False); exec(conv("cache_operators_expanded"))
+    is_cache_directory_set: BoolProperty(default=False)
 
 
     def register_preset_properties(self, registry, path):

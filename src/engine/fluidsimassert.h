@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_FLUIDSIMASSERT_H
-#define FLUIDENGINE_FLUIDSIMASSERT_H
+#pragma once
 
 #ifndef NFLUIDSIMDEBUG
     #include <cassert>
@@ -42,6 +41,4 @@ SOFTWARE.
     }
 #else
     #define FLUIDSIM_ASSERT(condition) (condition)
-#endif
-
 #endif

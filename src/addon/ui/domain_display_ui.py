@@ -25,16 +25,14 @@ def draw_simulation_display_settings(self, context):
     rprops = domain_object.flip_fluid.domain.render
     scene_props = context.scene.flip_fluid
 
+    #
+    # Simulation Visibility Panel
+    #
+
     box = self.layout.box()
-    column = box.column()
+    header, body = box.panel("simulation_display_settings", default_closed=True)
 
-    row = column.row(align=True)
-    row.prop(rprops, "simulation_display_settings_expanded",
-        icon="TRIA_DOWN" if rprops.simulation_display_settings_expanded else "TRIA_RIGHT",
-        icon_only=True, 
-        emboss=False
-    )
-
+    row = header.row(align=True)
     row.label(text="Simulation Visibility:")
     if not scene_props.show_viewport or not scene_props.show_render:
         visibility_text = ""
@@ -55,15 +53,14 @@ def draw_simulation_display_settings(self, context):
         row.alignment = 'RIGHT'
         row.label(text="Visibility Enabled", icon="CHECKMARK")
 
-    if not rprops.simulation_display_settings_expanded:
-        return
+    if body:
+        column = body.column()
+        split = vcu.ui_split(column)
+        column_left = split.column()
+        column_left.prop(scene_props, "show_render", text="Show In Render", icon="RESTRICT_RENDER_OFF")
 
-    split = vcu.ui_split(column)
-    column_left = split.column()
-    column_left.prop(scene_props, "show_render", text="Show In Render", icon="RESTRICT_RENDER_OFF")
-
-    column_right = split.column()
-    column_right.prop(scene_props, "show_viewport", text="Show In Viewport", icon="RESTRICT_VIEW_OFF")
+        column_right = split.column()
+        column_right.prop(scene_props, "show_viewport", text="Show In Viewport", icon="RESTRICT_VIEW_OFF")
 
 
 def draw_surface_display_settings(self, context, menu_expand_prop_group=None):
@@ -71,18 +68,28 @@ def draw_surface_display_settings(self, context, menu_expand_prop_group=None):
     rprops = domain_object.flip_fluid.domain.render
     mprops = domain_object.flip_fluid.domain.materials
 
+    #
+    # Surface Display and Render Panel
+    #
     box = self.layout.box()
-    column = box.column()
+    header, body = box.panel("surface_display_settings", default_closed=False)
 
-    row = column.row(align=True)
-    row.prop(menu_expand_prop_group, "surface_display_settings_expanded",
-        icon="TRIA_DOWN" if getattr(menu_expand_prop_group, "surface_display_settings_expanded") else "TRIA_RIGHT",
-        icon_only=True, 
-        emboss=False
-    )
+    row = header.row(align=True)
     row.label(text="Surface Display and Render:")
+    if body:
+        column = body.column()
+        split = vcu.ui_split(column, factor=0.5)
+        column_left = split.column()
+        column_left.label(text="Render Display Mode:")
+        column_left.prop(rprops, "render_display", expand=True)
 
-    if not getattr(menu_expand_prop_group, "surface_display_settings_expanded"):
+        column_right = split.column()
+        column_right.label(text="Viewport Display Mode:")
+        column_right.prop(rprops, "viewport_display", expand=True)
+
+        column_left.label(text="Surface Material:")
+        column_right.prop(mprops, "surface_material", text="")
+    else:
         info_text = ""
         if rprops.render_display == 'DISPLAY_FINAL':
             info_text += "Render Final"
@@ -100,19 +107,6 @@ def draw_surface_display_settings(self, context, menu_expand_prop_group=None):
         row = row.row(align=True)
         row.alignment='RIGHT'
         row.label(text=info_text)
-        return
-
-    split = vcu.ui_split(column, factor=0.5)
-    column_left = split.column()
-    column_left.label(text="Render Display Mode:")
-    column_left.prop(rprops, "render_display", expand=True)
-
-    column_right = split.column()
-    column_right.label(text="Viewport Display Mode:")
-    column_right.prop(rprops, "viewport_display", expand=True)
-
-    column_left.label(text="Surface Material:")
-    column_right.prop(mprops, "surface_material", text="")
 
 
 def draw_fluid_particle_display_settings(self, context, menu_expand_prop_group=None):
@@ -122,61 +116,25 @@ def draw_fluid_particle_display_settings(self, context, menu_expand_prop_group=N
     mprops = domain_object.flip_fluid.domain.materials
     is_fluid_particles_enabled = domain_object.flip_fluid.domain.particles.enable_fluid_particle_output
 
+    #
+    # Fluid Particle Display and Render Panel
+    #
     box = self.layout.box()
-    column = box.column()
+    header, body = box.panel("fluid_particle_display_settings", default_closed=True)
 
-    if is_fluid_particles_enabled:
-        row = column.row(align=True)
-        row.prop(menu_expand_prop_group, "fluid_particle_display_settings_expanded",
-            icon="TRIA_DOWN" if getattr(menu_expand_prop_group, "fluid_particle_display_settings_expanded") else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
-        row.label(text="Fluid Particle Display and Render:")
-    else:
-        split = column.split()
-        left_column = split.column()
-        row = left_column.row(align=True)
-        row.prop(menu_expand_prop_group, "fluid_particle_display_settings_expanded",
-            icon="TRIA_DOWN" if getattr(menu_expand_prop_group, "fluid_particle_display_settings_expanded") else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
-        row.label(text="Fluid Particle Display and Render:")
-
-        right_column = split.column()
-        row = right_column.row()
+    row = header.row(align=True)
+    row.label(text="Fluid Particle Display and Render:")
+    if not is_fluid_particles_enabled:
+        row = row.row()
         row.alignment = 'RIGHT'
         c = row.row(align=True)
         c.alignment = 'RIGHT'
         c.enabled = False
         c.label(text="Enable in 'Particles' panel")
-        row.operator("flip_fluid_operators.display_enable_fluid_particles_tooltip", 
-                     text="", icon="QUESTION", emboss=False)
+        row.operator("flip_fluid_operators.display_enable_fluid_particles_tooltip", text="", icon="QUESTION", emboss=False)
 
-    if not getattr(menu_expand_prop_group, "fluid_particle_display_settings_expanded"):
-        if is_fluid_particles_enabled:
-            info_text = ""
-            if rprops.fluid_particle_render_display == 'DISPLAY_FINAL':
-                info_text += "Render Final"
-            elif rprops.fluid_particle_render_display == 'DISPLAY_PREVIEW':
-                info_text += "Render Preview"
-            elif rprops.fluid_particle_render_display == 'DISPLAY_NONE':
-                info_text += "Render None"
-            info_text += " / "
-            if rprops.fluid_particle_viewport_display == 'DISPLAY_FINAL':
-                info_text += "View Final"
-            elif rprops.fluid_particle_viewport_display == 'DISPLAY_PREVIEW':
-                info_text += "View Preview"
-            elif rprops.fluid_particle_viewport_display == 'DISPLAY_NONE':
-                info_text += "View None"
-            row = row.row(align=True)
-            row.alignment='RIGHT'
-            row.label(text=info_text)
-            return
-
-    if getattr(menu_expand_prop_group, "fluid_particle_display_settings_expanded"):
-        subbox = box.box()
+    if body:
+        subbox = body.box()
         column = subbox.column(align=True)
         column.enabled = is_fluid_particles_enabled
         split = vcu.ui_split(column, factor=0.5)
@@ -229,6 +187,25 @@ def draw_fluid_particle_display_settings(self, context, menu_expand_prop_group=N
         column_right = split.column()
         column_left.label(text="Fluid Particle Material:")
         column_right.prop(mprops, "fluid_particles_material", text="")
+    else:
+        if is_fluid_particles_enabled:
+            info_text = ""
+            if rprops.fluid_particle_render_display == 'DISPLAY_FINAL':
+                info_text += "Render Final"
+            elif rprops.fluid_particle_render_display == 'DISPLAY_PREVIEW':
+                info_text += "Render Preview"
+            elif rprops.fluid_particle_render_display == 'DISPLAY_NONE':
+                info_text += "Render None"
+            info_text += " / "
+            if rprops.fluid_particle_viewport_display == 'DISPLAY_FINAL':
+                info_text += "View Final"
+            elif rprops.fluid_particle_viewport_display == 'DISPLAY_PREVIEW':
+                info_text += "View Preview"
+            elif rprops.fluid_particle_viewport_display == 'DISPLAY_NONE':
+                info_text += "View None"
+            row = row.row(align=True)
+            row.alignment='RIGHT'
+            row.label(text=info_text)
 
 
 def get_motion_blur_geometry_node_modifier(bl_object):
@@ -244,7 +221,7 @@ def draw_whitewater_particles_motion_blur_geometry_node_properties(ui_row, bl_mo
         ui_row.alert = True
         ui_row.operator(
             "flip_fluid_operators.helper_initialize_cache_objects", 
-            text="Initialize Geometry Nodes - Missing FF_GeometryNodesWhitewater modifier",
+            text="Click To Initialize Geometry Nodes - Missing FF_GeometryNodesWhitewater modifier",
             icon="ERROR"
             ).cache_object_type = 'CACHE_OBJECT_TYPE_WHITEWATER_PARTICLES'
         return
@@ -256,8 +233,6 @@ def draw_whitewater_particles_motion_blur_geometry_node_properties(ui_row, bl_mo
         ui_row.prop(bl_mod, '["Input_4"]',  text="Blur Scale")
     if "Input_8" in bl_mod:
         ui_row.prop(bl_mod, '["Input_8"]',  text="Motion Blur")
-    if "Input_9" in bl_mod:
-        ui_row.prop(bl_mod, '["Input_9"]',  text="Point Cloud")
 
 
 def draw_fluid_particles_motion_blur_geometry_node_properties(ui_row, bl_mod):
@@ -265,7 +240,7 @@ def draw_fluid_particles_motion_blur_geometry_node_properties(ui_row, bl_mod):
         ui_row.alert = True
         ui_row.operator(
             "flip_fluid_operators.helper_initialize_cache_objects", 
-            text="Initialize Geometry Nodes - Missing FF_GeometryNodesFluidParticles modifier",
+            text="Click To Initialize Geometry Nodes - Missing FF_GeometryNodesFluidParticles modifier",
             icon="ERROR"
             ).cache_object_type = 'CACHE_OBJECT_TYPE_FLUID_PARTICLES'
         return
@@ -277,8 +252,6 @@ def draw_fluid_particles_motion_blur_geometry_node_properties(ui_row, bl_mod):
         ui_row.prop(bl_mod, '["Input_4"]',  text="Blur Scale")
     if "Input_8" in bl_mod:
         ui_row.prop(bl_mod, '["Input_8"]',  text="Motion Blur")
-    if "Input_9" in bl_mod:
-        ui_row.prop(bl_mod, '["Input_9"]',  text="Point Cloud")
 
 
 def draw_whitewater_display_settings(self, context, menu_expand_prop_group=None):
@@ -287,61 +260,25 @@ def draw_whitewater_display_settings(self, context, menu_expand_prop_group=None)
     rprops = dprops.render
     is_whitewater_enabled = dprops.whitewater.enable_whitewater_simulation
 
-    master_box = self.layout.box()
-    column = master_box.column()
+    #
+    # Whitewater Display and Render Panel
+    #
+    box = self.layout.box()
+    header, body = box.panel("whitewater_display_settings", default_closed=True)
 
-    if is_whitewater_enabled:
-        row = column.row(align=True)
-        row.prop(menu_expand_prop_group, "whitewater_display_settings_expanded",
-            icon="TRIA_DOWN" if getattr(menu_expand_prop_group, "whitewater_display_settings_expanded") else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
-        row.label(text="Whitewater Display and Render:")
-    else:
-        split = column.split()
-        left_column = split.column()
-        row = left_column.row(align=True)
-        row.prop(menu_expand_prop_group, "whitewater_display_settings_expanded",
-            icon="TRIA_DOWN" if getattr(menu_expand_prop_group, "whitewater_display_settings_expanded") else "TRIA_RIGHT",
-            icon_only=True, 
-            emboss=False
-        )
-        row.label(text="Whitewater Display and Render:")
-
-        right_column = split.column()
-        row = right_column.row()
+    row = header.row(align=True)
+    row.label(text="Whitewater Display and Render:")
+    if not is_whitewater_enabled:
+        row = row.row()
         row.alignment = 'RIGHT'
         c = row.row(align=True)
         c.alignment = 'RIGHT'
         c.enabled = False
         c.label(text="Enable in 'Whitewater' panel")
-        row.operator("flip_fluid_operators.display_enable_whitewater_tooltip", 
-                     text="", icon="QUESTION", emboss=False)
+        row.operator("flip_fluid_operators.display_enable_whitewater_tooltip", text="", icon="QUESTION", emboss=False)
 
-    if not getattr(menu_expand_prop_group, "whitewater_display_settings_expanded"):
-        if is_whitewater_enabled:
-            info_text = ""
-            if rprops.whitewater_render_display == 'DISPLAY_FINAL':
-                info_text += "Render Final"
-            elif rprops.whitewater_render_display == 'DISPLAY_PREVIEW':
-                info_text += "Render Preview"
-            elif rprops.whitewater_render_display == 'DISPLAY_NONE':
-                info_text += "Render None"
-            info_text += " / "
-            if rprops.whitewater_viewport_display == 'DISPLAY_FINAL':
-                info_text += "View Final"
-            elif rprops.whitewater_viewport_display == 'DISPLAY_PREVIEW':
-                info_text += "View Preview"
-            elif rprops.whitewater_viewport_display == 'DISPLAY_NONE':
-                info_text += "View None"
-            row = row.row(align=True)
-            row.alignment='RIGHT'
-            row.label(text=info_text)
-            return
-
-    if getattr(menu_expand_prop_group, "whitewater_display_settings_expanded"):
-        box = master_box.box()
+    if body:
+        box = body.box()
         box.enabled = is_whitewater_enabled
 
         column = box.column(align=True)
@@ -354,21 +291,7 @@ def draw_whitewater_display_settings(self, context, menu_expand_prop_group=None)
         column.label(text="Viewport Display Mode:")
         column.prop(rprops, "whitewater_viewport_display", expand=True)
 
-        # Whitewater motion blur rendering is currently too resource intensive
-        # for Blender Cycles
-        """
-        column = box.column()
-        column.label(text="Motion Blur:")
-
-        split = vcu.ui_split(column, factor=0.5)
-        column_left = split.column()
-        column_left.prop(rprops, "render_whitewater_motion_blur")
-
-        column_right = split.column()
-        column_right.prop(rprops, "whitewater_motion_blur_scale")
-        """
-
-        box = master_box.box()
+        box = body.box()
         box.enabled = is_whitewater_enabled
 
         column = box.column(align=True)
@@ -387,7 +310,7 @@ def draw_whitewater_display_settings(self, context, menu_expand_prop_group=None)
         column.prop(rprops, "viewport_spray_pct", slider=True)
         column.prop(rprops, "viewport_dust_pct", slider=True)
 
-        box = master_box.box()
+        box = body.box()
         box.enabled = is_whitewater_enabled
 
         column = box.column(align=True)
@@ -416,7 +339,7 @@ def draw_whitewater_display_settings(self, context, menu_expand_prop_group=None)
             else:
                 row.label(text="Enable Whitewater feature to view full particle settings", icon='INFO')
 
-        box = master_box.box()
+        box = body.box()
         box.enabled = is_whitewater_enabled
 
         mprops = dprops.materials
@@ -426,6 +349,25 @@ def draw_whitewater_display_settings(self, context, menu_expand_prop_group=None)
         column.prop(mprops, "whitewater_bubble_material", text="Bubble")
         column.prop(mprops, "whitewater_spray_material", text="Spray")
         column.prop(mprops, "whitewater_dust_material", text="Dust")
+    else:
+        if is_whitewater_enabled:
+            info_text = ""
+            if rprops.whitewater_render_display == 'DISPLAY_FINAL':
+                info_text += "Render Final"
+            elif rprops.whitewater_render_display == 'DISPLAY_PREVIEW':
+                info_text += "Render Preview"
+            elif rprops.whitewater_render_display == 'DISPLAY_NONE':
+                info_text += "Render None"
+            info_text += " / "
+            if rprops.whitewater_viewport_display == 'DISPLAY_FINAL':
+                info_text += "View Final"
+            elif rprops.whitewater_viewport_display == 'DISPLAY_PREVIEW':
+                info_text += "View Preview"
+            elif rprops.whitewater_viewport_display == 'DISPLAY_NONE':
+                info_text += "View None"
+            row = row.row(align=True)
+            row.alignment='RIGHT'
+            row.label(text=info_text)
 
 
 class FLIPFLUID_PT_DomainTypeDisplayPanel(bpy.types.Panel):

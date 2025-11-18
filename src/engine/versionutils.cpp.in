@@ -24,10 +24,12 @@ SOFTWARE.
 
 #include "versionutils.h"
 
-int VersionUtils::_major = @FLUIDENGINE_VERSION_MAJOR@;
-int VersionUtils::_minor = @FLUIDENGINE_VERSION_MINOR@;
-int VersionUtils::_revision = @FLUIDENGINE_VERSION_REVISION@;
-std::string VersionUtils::_label = "@FLUIDENGINE_VERSION_LABEL@";
+int VersionUtils::_major = @FFENGINE_VERSION_MAJOR@;
+int VersionUtils::_minor = @FFENGINE_VERSION_MINOR@;
+int VersionUtils::_revision = @FFENGINE_VERSION_REVISION@;
+std::string VersionUtils::_label = "@FFENGINE_VERSION_LABEL@";
+std::string VersionUtils::_support_license_type = "@FFENGINE_VERSION_SUPPORT_LICENSE_TYPE@";
+std::string VersionUtils::_support_license_id = "@FFENGINE_VERSION_SUPPORT_LICENSE_ID@";
 
 void VersionUtils::getVersion(int *major, int *minor, int *revision) {
     *major = _major;
@@ -49,4 +51,12 @@ int VersionUtils::getRevision() {
 
 std::string VersionUtils::getLabel() {
     return _label;
+}
+
+std::string VersionUtils::getSupportLabel() {
+    return _support_license_type + " " + _support_license_id;
+}
+
+std::string VersionUtils::getSupportLicenseID() {
+    return _support_license_id;
 }

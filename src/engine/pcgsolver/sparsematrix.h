@@ -10,8 +10,7 @@ You can copy, modify, distribute and perform the work, even for commercial
 purposes, all without asking permission. See Other Information below.
 */
 
-#ifndef FLUIDENGINE_SPARSE_MATRIX_H
-#define FLUIDENGINE_SPARSE_MATRIX_H
+#pragma once
 
 #include <iostream>
 #include <vector>
@@ -214,5 +213,3 @@ void multiply(FixedSparseMatrix<T> &matrix, std::vector<T> &x, std::vector<T> &r
         threads[i].join();
     }
 }
-
-#endif

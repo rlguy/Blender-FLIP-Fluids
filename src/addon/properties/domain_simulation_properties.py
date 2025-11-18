@@ -36,16 +36,15 @@ from ..utils import export_utils
 
 
 class DomainSimulationProperties(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
 
-    frame_range_mode = EnumProperty(
+    frame_range_mode: EnumProperty(
             name="Frame Range Mode",
             description="Frame range to use for baking the simulation",
             items=types.frame_range_modes,
             default='FRAME_RANGE_TIMELINE',
             options={'HIDDEN'},
-            ); exec(conv("frame_range_mode"))
-    frame_range_custom = NewMinMaxIntProperty(
+            )
+    frame_range_custom: NewMinMaxIntProperty(
             name_min="Start Frame", 
             description_min="First frame of the simulation cache", 
             min_min=0,
@@ -57,63 +56,63 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
             min_max=0,
             default_max=250,
             options_max={'HIDDEN'},
-            ); exec(conv("frame_range_custom"))
-    update_settings_on_resume = BoolProperty(
+            )
+    update_settings_on_resume: BoolProperty(
             name="Update Settings on Resume",
             description="Update simulation settings and meshes when resuming a bake."
                 " If disabled, the simulator will use the original settings and meshes"
                 " from when the bake was started",
             default=True,
             options={'HIDDEN'},
-            ); exec(conv("update_settings_on_resume"))
-    mesh_reexport_type_filter = EnumProperty(
+            )
+    mesh_reexport_type_filter: EnumProperty(
             name="Object Motion Type",
             description="Filter objects by motion type for skip re-export list display",
             items=types.motion_filter_types,
             default='MOTION_FILTER_TYPE_ANIMATED',
-            ); exec(conv("mesh_reexport_type_filter"))
-    enable_savestates = BoolProperty(
+            )
+    enable_savestates: BoolProperty(
             name="Enable Savestates",
             description="Generate savestates/checkpoints as the simulation progresses."
                 " Savestates will allow you to rollback the simulation to an earlier"
                 " point so that you can re-simulate from a previous frame",
             default=True,
             options = {'HIDDEN'},
-            ); exec(conv("enable_savestates"))
-    savestate_interval = IntProperty(
+            )
+    savestate_interval: IntProperty(
             name="Savestate Interval",
             description="Number of frames between each savestate",
             min=1,
             default=50,
             options={'HIDDEN'},
-            ); exec(conv("savestate_interval"))
-    delete_outdated_savestates = BoolProperty(
+            )
+    delete_outdated_savestates: BoolProperty(
             name="Delete Outdated Savestates on Resume",
             description="When resuming a simulation from a previous frame, delete"
                 " all savestates that are ahead in the timeline",
             default=True,
             options = {'HIDDEN'},
-            ); exec(conv("delete_outdated_savestates"))
-    delete_outdated_meshes = BoolProperty(
+            )
+    delete_outdated_meshes: BoolProperty(
             name="Delete Outdated Meshes on Resume",
             description="When resuming a simulation from a previous frame, delete"
                 " all simulation meshes that are ahead in the timeline",
             default=True,
             options = {'HIDDEN'},
-            ); exec(conv("delete_outdated_meshes"))
-    selected_savestate = EnumProperty(
+            )
+    selected_savestate: EnumProperty(
             name="Selected Savestate",
             description="Resume simulation from this savestate frame",
             update=lambda self, context: self._update_selected_savestate(context),
             items=lambda self, context: self._get_savestate_enums(context),
-            ); exec(conv("selected_savestate"))
-    selected_savestate_int = IntProperty(
+            )
+    selected_savestate_int: IntProperty(
             name="Selected Savestate",
             description="Resume simulation from this savestate frame",
             update=lambda self, context: self._update_selected_savestate_int(context),
             options={'HIDDEN'},
-            ); exec(conv("selected_savestate_int"))
-    resolution = IntProperty(
+            )
+    resolution: IntProperty(
             name="Resolution",
             description="Domain grid resolution. This value specifies the number of"
                 " grid voxels on the longest side of the domain. See the tooltips in"
@@ -123,8 +122,8 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
             default=65,
             update=lambda self, context: self._update_resolution(context),
             options={'HIDDEN'},
-            ); exec(conv("resolution"))
-    preview_resolution = IntProperty(
+            )
+    preview_resolution: IntProperty(
             name="Preview Resolution",
             description="The resolution to use for generating lower quality meshes for"
                 " the preview fluid surface. Increasing this value will take no extra time"
@@ -133,16 +132,16 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
             default=45,
             update=lambda self, context: self._update_preview_resolution(context),
             options={'HIDDEN'},
-            ); exec(conv("preview_resolution"))
-    auto_preview_resolution = BoolProperty(
+            )
+    auto_preview_resolution: BoolProperty(
             name="Recommended",
             description="Set recommended preview resolution based on domain resolution and"
                 " mesh generation settings",
             default=True,
             update=lambda self, context: self._update_auto_preview_resolution(context),
             options={'HIDDEN'},
-            ); exec(conv("auto_preview_resolution"))
-    lock_cell_size = BoolProperty(
+            )
+    lock_cell_size: BoolProperty(
             name="Lock Voxel Size",
             description="Lock the current voxel size and update the grid"
                 " resolution as the domain dimensions are changed. Enable this"
@@ -151,16 +150,16 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
             default=False,
             update=lambda self, context: self._update_lock_cell_size(context),
             options = {'HIDDEN'},
-            ); exec(conv("lock_cell_size"))
-    fluid_boundary_collisions = BoolVectorProperty(
+            )
+    fluid_boundary_collisions: BoolVectorProperty(
             name="",
             description="Enable collisions on the corresponding side of the domain."
                 " If disabled, this side of the boundary will be open and will act"
                 " as an outflow",
             default=(True, True, True, True, True, True),
             size=6,
-            ); exec(conv("fluid_boundary_collisions"))
-    fluid_open_boundary_width = IntProperty(
+            )
+    fluid_open_boundary_width: IntProperty(
             name="Open Boundary Width",
             description="The distance (in number of voxels) from the domain boundary that fluid will be"
                 " removed for open boundary sides. Note: This setting is for testing purposes and may"
@@ -168,22 +167,22 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
             soft_min=2, min=1,
             soft_max=10,
             default=4,
-            ); exec(conv("fluid_open_boundary_width"))
-    frame_rate_mode = EnumProperty(
+            )
+    frame_rate_mode: EnumProperty(
             name="Frame Rate Mode",
             description="Select the frame rate for the simulation animation",
             items=types.frame_rate_modes,
             default='FRAME_RATE_MODE_SCENE',
             options={'HIDDEN'},
-            ); exec(conv("frame_rate_mode"))
-    frame_rate_custom = FloatProperty(
+            )
+    frame_rate_custom: FloatProperty(
             name="Frame Rate", 
             description="Frame rate in frames per second", 
             min=0.001,
             default=60.0,
             precision=2,
-            ); exec(conv("frame_rate_custom"))
-    time_scale_mode = EnumProperty(
+            )
+    time_scale_mode: EnumProperty(
             name="Time Scale Mode",
             description="Select the time scale mode for the simulation. Use either a custom"
                 " value or match the value of another simulation. The simulation speed will be"
@@ -191,13 +190,16 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
             items=types.time_scale_modes,
             default='TIME_SCALE_MODE_CUSTOM',
             options={'HIDDEN'},
-            ); exec(conv("time_scale_mode"))
+            )
+
 
     def time_scale_object_soft_body_poll(self, bl_object):
         for mod in bl_object.modifiers:
             if mod.type == 'SOFT_BODY':
                 return True
         return False
+
+
     def get_selected_time_scale_object_soft_body_modifier(self):
         if self.time_scale_object_soft_body is None:
             return None
@@ -205,18 +207,23 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
             if mod.type == 'SOFT_BODY':
                 return mod
         return None
-    time_scale_object_soft_body = PointerProperty(
+
+
+    time_scale_object_soft_body: PointerProperty(
             name="Soft Body Object", 
             type=bpy.types.Object,
             poll=time_scale_object_soft_body_poll,
             options={'HIDDEN'},
-            ); exec(conv("time_scale_object_soft_body"))
+            )
+
 
     def time_scale_object_cloth_poll(self, bl_object):
         for mod in bl_object.modifiers:
             if mod.type == 'CLOTH':
                 return True
         return False
+
+
     def get_selected_time_scale_object_cloth_modifier(self):
         if self.time_scale_object_cloth is None:
             return None
@@ -224,37 +231,40 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
             if mod.type == 'CLOTH':
                 return mod
         return None
-    time_scale_object_cloth = PointerProperty(
+
+
+    time_scale_object_cloth: PointerProperty(
             name="Cloth Object", 
             type=bpy.types.Object,
             poll=time_scale_object_cloth_poll,
             options={'HIDDEN'},
-            ); exec(conv("time_scale_object_cloth"))
+            )
+
 
     def time_scale_object_fluid_poll(self, bl_object):
-        if not vcu.is_blender_282():
-            return False
         for mod in bl_object.modifiers:
             if mod.type == 'FLUID' and mod.fluid_type == 'DOMAIN':
                 return True
         return False
+
+
     def get_selected_time_scale_object_fluid_modifier(self):
-        if not vcu.is_blender_282():
-            return False
         if self.time_scale_object_fluid is None:
             return None
         for mod in self.time_scale_object_fluid.modifiers:
             if mod.type == 'FLUID' and mod.fluid_type == 'DOMAIN':
                 return mod
         return None
-    time_scale_object_fluid = PointerProperty(
+
+
+    time_scale_object_fluid: PointerProperty(
             name="Fluid Domain Object", 
             type=bpy.types.Object,
             poll=time_scale_object_fluid_poll,
             options={'HIDDEN'},
-            ); exec(conv("time_scale_object_fluid"))
+            )
 
-    time_scale = FloatProperty(
+    time_scale: FloatProperty(
             name="Custom Time Scale", 
             description="Scale the simulation speed by this value. If set to less than"
                 " 1.0, the simulation will appear in slow motion. If set to greater than"
@@ -262,60 +272,52 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
             min=0.0,
             default=1.0,
             precision=3,
-            ); exec(conv("time_scale"))
+            )
     
-    locked_cell_size = FloatProperty(default=-1.0); exec(conv("locked_cell_size"))
-    frame_start = IntProperty(default=-1); exec(conv("frame_start"))
-    frame_end = IntProperty(default=-1); exec(conv("frame_end"))
+    locked_cell_size: FloatProperty(default=-1.0)
+    frame_start: IntProperty(default=-1)
+    frame_end: IntProperty(default=-1)
+    
+    last_selected_savestate_int: IntProperty(default=-1)
+    selected_savestate_int_label: StringProperty(default="")
 
-    more_bake_settings_expanded = BoolProperty(default=False); exec(conv("more_bake_settings_expanded"))
-    skip_mesh_reexport_expanded = BoolProperty(default=False); exec(conv("skip_mesh_reexport_expanded"))
-    simulation_resolution_expanded = BoolProperty(default=False); exec(conv("simulation_resolution_expanded"))
-    grid_info_expanded = BoolProperty(default=False); exec(conv("grid_info_expanded"))
-    simulation_method_expanded = BoolProperty(default=False); exec(conv("simulation_method_expanded"))
-    world_scale_expanded = BoolProperty(default=False); exec(conv("world_scale_expanded"))
-    boundary_collisions_expanded = BoolProperty(default=False); exec(conv("boundary_collisions_expanded"))
-    frame_rate_and_time_scale_expanded = BoolProperty(default=False); exec(conv("frame_rate_and_time_scale_expanded"))
-    last_selected_savestate_int = IntProperty(default=-1); exec(conv("last_selected_savestate_int"))
-    selected_savestate_int_label = StringProperty(default=""); exec(conv("selected_savestate_int_label"))
+    current_isize: IntProperty(default=-1)
+    current_jsize: IntProperty(default=-1)
+    current_ksize: IntProperty(default=-1)
+    current_dx: FloatProperty(default=-1.0)
 
-    current_isize = IntProperty(default=-1); exec(conv("current_isize"))
-    current_jsize = IntProperty(default=-1); exec(conv("current_jsize"))
-    current_ksize = IntProperty(default=-1); exec(conv("current_ksize"))
-    current_dx = FloatProperty(default=-1.0); exec(conv("current_dx"))
+    savestate_isize: IntProperty(default=-1)
+    savestate_jsize: IntProperty(default=-1)
+    savestate_ksize: IntProperty(default=-1)
+    savestate_dx: FloatProperty(default=-1.0)
 
-    savestate_isize = IntProperty(default=-1); exec(conv("savestate_isize"))
-    savestate_jsize = IntProperty(default=-1); exec(conv("savestate_jsize"))
-    savestate_ksize = IntProperty(default=-1); exec(conv("savestate_ksize"))
-    savestate_dx = FloatProperty(default=-1.0); exec(conv("savestate_dx"))
+    upscale_trigger_factor: FloatProperty(default=0.05)
 
-    upscale_trigger_factor = FloatProperty(default=0.05); exec(conv("upscale_trigger_factor"))
-
-    upscale_resolution_tooltip = BoolProperty(
+    upscale_resolution_tooltip: BoolProperty(
             name="Upscale Resolution Tooltip", 
             description="Upscaling converts a lower resolution savestate to a higher resolution savestate"
                 " so that the simulation can resume baking at the increased resolution", 
             default=True,
-            ); exec(conv("upscale_resolution_tooltip"))
+            )
 
-    grid_voxels_tooltip = BoolProperty(
+    grid_voxels_tooltip: BoolProperty(
             name="Grid Voxels Tooltip", 
             description="The domain is a 3D grid of cubes called voxels, or cells. This info shows the"
             " number of voxels on each of the X/Y/Z axis of the domain. The voxels in the 3D grid are"
             " similar to the 2D pixels in a 2D image, except instead of storing color data, the voxels store"
             " physics data", 
             default=True,
-            ); exec(conv("grid_voxels_tooltip"))
+            )
 
-    grid_dimensions_tooltip = BoolProperty(
+    grid_dimensions_tooltip: BoolProperty(
             name="Grid Dimensions Tooltip", 
             description="Displays the physical scale of the domain on the X/Y/Z axis in meters."
             " Setting an appropriate scale can be an important factor for realistic motion and speed"
             " of your simulated fluid", 
             default=True,
-            ); exec(conv("grid_dimensions_tooltip"))
+            )
 
-    grid_voxel_size_tooltip = BoolProperty(
+    grid_voxel_size_tooltip: BoolProperty(
             name="Voxel Size Tooltip", 
             description="Displays the physical size of a single voxel. You can think of a voxel as"
             " the 3D version of a 2D image pixel. In an image, the pixel size is the minimum"
@@ -323,16 +325,16 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
             " the minimum amount of physics detail that can be resolved in the simulation such as the"
             " smallest droplets and ripples or the thinnest splashes", 
             default=True,
-            ); exec(conv("grid_voxel_size_tooltip"))
+            )
 
-    grid_voxel_count_tooltip = BoolProperty(
+    grid_voxel_count_tooltip: BoolProperty(
             name="Voxel Count Tooltip", 
             description="Displays the total number of voxels in the domain. Physics are computed for each"
             " voxel and the total count can be a measure for how much work your system will be doing."
             " Small simulation = around 2 Million. Medium = around 10M. Large = around 40M."
             " Very Large = over 80M", 
             default=True,
-            ); exec(conv("grid_voxel_count_tooltip"))
+            )
 
 
     def register_preset_properties(self, registry, path):

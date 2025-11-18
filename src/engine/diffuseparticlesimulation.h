@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_DIFFUSEPARTICLESIMULATION_H
-#define FLUIDENGINE_DIFFUSEPARTICLESIMULATION_H
+#pragma once
 
 #if __MINGW32__ && !_WIN64
     #include "mingw32_threads/mingw.thread.h"
@@ -541,5 +540,3 @@ private:
     int _currentDiffuseParticleID = 0;
     int _diffuseParticleIDLimit = 256;
 };
-
-#endif

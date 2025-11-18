@@ -55,4 +55,6 @@ void write_alembic_example();
 
 void read_bobj(fs::path bobj_filepath, MeshData &mesh);
 std::string zero_pad_int_to_string(int n, int width);
-void flip_fluids_cache_to_alembic();
+std::string format_seconds_to_MMSS(float total_seconds);
+std::string get_time_elapsed_string(std::chrono::time_point<std::chrono::steady_clock> time_start);
+void flip_fluids_cache_to_alembic(std::string config_json_string);

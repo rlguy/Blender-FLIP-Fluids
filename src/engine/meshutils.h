@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_MESHUTILS_H
-#define FLUIDENGINE_MESHUTILS_H
+#pragma once
 
 #include "array3d.h"
 #include "vmath.h"
@@ -109,5 +108,3 @@ namespace MeshUtils {
     void extrapolateGrid(Array3d<float> *grid, Array3d<bool> *valid, int numLayers);
 
 }
-
-#endif

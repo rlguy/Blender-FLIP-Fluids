@@ -30,17 +30,16 @@ from ..objects import flip_fluid_cache
 from ..utils import version_compatibility_utils as vcu
 
 class DomainSurfaceProperties(bpy.types.PropertyGroup):
-    conv = vcu.convert_attribute_to_28
     
-    enable_surface_mesh_generation = BoolProperty(
+    enable_surface_mesh_generation: BoolProperty(
             name="Enable Surface Mesh Generation",
             description="Enable the generation of the liquid surface mesh. If disabled, "
                 "the surface mesh and any surface attributes will not be generated or exported"
                 " to the simulation cache",
             default=True,
             update=lambda self, context: self._update_enable_surface_mesh_generation(context),
-            ); exec(conv("enable_surface_mesh_generation"))
-    subdivisions = IntProperty(
+            )
+    subdivisions: IntProperty(
             name="Subdivisions",
             description="The level of detail of the generated surface mesh."
                 " This value is the number of times that the simulation grid"
@@ -51,88 +50,88 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
             min=0,
             soft_max=2,
             default=1,
-            ); exec(conv("subdivisions"))
-    compute_chunks_auto = IntProperty(
+            )
+    compute_chunks_auto: IntProperty(
             name="Compute Chunks",
             description="Number of chunks to break up mesh into during"
                 " computation. Increase to reduce memory usage",
             min=1,
             default=1,
-            ); exec(conv("compute_chunks_auto"))
-    compute_chunks_fixed = IntProperty(
+            )
+    compute_chunks_fixed: IntProperty(
             name="Compute Chunks",
             description="Number of chunks to break up surface into during"
                 " mesh generation. Increase to reduce memory usage",
             min=1,
             default=1,
-            ); exec(conv("compute_chunks_fixed"))
-    compute_chunk_mode = EnumProperty(
+            )
+    compute_chunk_mode: EnumProperty(
             name="Threading Mode",
             description="Determine the number of compute chunks to use when"
                 " generating the surface mesh",
             items=types.surface_compute_chunk_modes,
             default='COMPUTE_CHUNK_MODE_AUTO',
             options={'HIDDEN'},
-            ); exec(conv("compute_chunk_mode"))
-    meshing_volume_mode = EnumProperty(
+            )
+    meshing_volume_mode: EnumProperty(
             name="Meshing Volume Mode",
             description="Determing which parts of the fluid will be meshed",
             items=types.meshing_volume_modes,
             default='MESHING_VOLUME_MODE_DOMAIN',
             options={'HIDDEN'},
-            ); exec(conv("meshing_volume_mode"))
-    meshing_volume_object = PointerProperty(
+            )
+    meshing_volume_object: PointerProperty(
             name="Meshing Object", 
             description="Only fluid that is inside of this object will be meshed",
             type=bpy.types.Object,
             update=lambda self, context: self._update_meshing_volume_object(context),
             poll=lambda self, obj: self._poll_meshing_volume_object(obj),
-            ); exec(conv("meshing_volume_object"))
-    export_animated_meshing_volume_object = BoolProperty(
+            )
+    export_animated_meshing_volume_object: BoolProperty(
             name="Export Animated Mesh",
             description="Export this mesh as an animated one (slower, only use"
                 " if really necessary [e.g. armatures or parented objects],"
                 " animated pos/rot/scale F-curves do not require it",
             default=False,
             options={'HIDDEN'},
-            ); exec(conv("export_animated_meshing_volume_object"))
-    enable_meshing_offset = BoolProperty(
+            )
+    enable_meshing_offset: BoolProperty(
             name="Enable",
             description="Enable smooth meshing against obstacles. If disabled,"
                 " obstacles will not be considered during meshing and all fluid"
                 " particles will be converted to a mesh",
             default=True,
-            ); exec(conv("enable_meshing_offset"))
-    obstacle_meshing_mode = EnumProperty(
+            )
+    obstacle_meshing_mode: EnumProperty(
             name="Obstacle Meshing Mode",
             description="How the fluid surface will be meshed against obstacles",
             items=types.obstacle_meshing_modes,
             default='MESHING_MODE_INSIDE_SURFACE',
-            ); exec(conv("obstacle_meshing_mode"))
-    remove_mesh_near_domain = BoolProperty(
+            )
+    remove_mesh_near_domain: BoolProperty(
             name="Remove Mesh Near Boundary",
             description="Remove parts of the surface mesh that are near the"
                 " domain boundary. If a meshing volume object is set, parts"
                 " of the mesh that are near the volume object boundary will"
                 " also be removed",
             default=False,
-            ); exec(conv("remove_mesh_near_domain"))
-    remove_mesh_near_domain_distance = IntProperty(
+            )
+    remove_mesh_near_domain_distance: IntProperty(
             name="Distance",
             description="Distance from domain boundary to remove mesh parts."
                 " This value is in number of voxels. If a meshing volume"
                 " object is set, this distance will be limited to 1 voxel",
             min=1,
             default=1,
-            ); exec(conv("remove_mesh_near_domain_distance"))
-    remove_mesh_near_domain_sides = BoolVectorProperty(
+            )
+    remove_mesh_near_domain_sides: BoolVectorProperty(
             name="",
             description="Remove mesh on the corresponding side of the domain."
                 " If disabled, this side of the mesh will not be removed",
             default=(True, True, True, True, True, True),
             size=6,
-            ); exec(conv("remove_mesh_near_domain_sides"))
-    smoothing_value = FloatProperty(
+            )
+    smoothing_value: FloatProperty(
             name="Factor", 
             description="Amount of surface smoothing. Tip: use a smooth modifier"
                 " to increase amount of smoothing", 
@@ -140,37 +139,37 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
             default=0.5,
             precision=3,
             subtype='FACTOR',
-            ); exec(conv("smoothing_value"))
-    smoothing_iterations = IntProperty(
+            )
+    smoothing_iterations: IntProperty(
             name="Repeat",
             description="Number of smoothing iterations Tip: use a smooth modifier"
                 " to increase amount of iterations",
             min=0, max=30,
             default=2,
-            ); exec(conv("smoothing_iterations"))
-    particle_scale = FloatProperty(
+            )
+    particle_scale: FloatProperty(
             name="Particle Scale", 
             description = "Size of particles for mesh generation. A value less than 1.0"
                 " is not recommended and may result in an incomplete mesh", 
             soft_min=1.0, soft_max=3.0,
             default=1.0,
             precision=2,
-            ); exec(conv("particle_scale"))
-    invert_contact_normals = BoolProperty(
+            )
+    invert_contact_normals: BoolProperty(
             name="Invert Fluid-Obstacle Contact Normals",
             description="Invert surface mesh normals that contact obstacle"
                 " surfaces. Enable for correct refraction rendering with"
                 " water-glass interfaces. Note: 'Mesh Around Obstacles'"
                 " should be enabled when using this feature",
             default=False,
-            ); exec(conv("invert_contact_normals"))
-    generate_motion_blur_data = BoolProperty(
+            )
+    generate_motion_blur_data: BoolProperty(
             name="Generate Motion Blur Vectors",
             description="Generate fluid surface speed vectors for motion blur"
                 " rendering. See documentation for limitations",
             default=False,
-            ); exec(conv("generate_motion_blur_data"))
-    enable_velocity_vector_attribute = BoolProperty(
+            )
+    enable_velocity_vector_attribute: BoolProperty(
             name="Generate Velocity Attributes",
             description="Generate fluid 3D velocity vector attributes for the fluid surface. After"
                 " baking, the velocity vectors (in m/s) can be accessed in a Cycles Attribute"
@@ -179,8 +178,8 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
                 " direction is not needed, use Generate Speed Attributes instead",
             default=False,
             options={'HIDDEN'},
-            ); exec(conv("enable_velocity_vector_attribute"))
-    enable_velocity_vector_attribute_against_obstacles = BoolProperty(
+            )
+    enable_velocity_vector_attribute_against_obstacles: BoolProperty(
             name="Generate Against Obstacles",
             description="Generate velocity-based attribute data against obstacles."
                 " Velocity-based attributes are the velocity/speed/vorticity attributes."
@@ -192,24 +191,24 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
                 " in the render",
             default=True,
             options={'HIDDEN'},
-            ); exec(conv("enable_velocity_vector_attribute_against_obstacles"))
-    enable_speed_attribute = BoolProperty(
+            )
+    enable_speed_attribute: BoolProperty(
             name="Generate Speed Attributes",
             description="Generate fluid speed attributes for the fluid surface. After"
                 " baking, the speed values (in m/s) can be accessed in a Cycles Attribute"
                 " Node or in Geometry Nodes with the name 'flip_speed' from the Fac output",
             default=False,
             options={'HIDDEN'},
-            ); exec(conv("enable_speed_attribute"))
-    enable_vorticity_vector_attribute = BoolProperty(
+            )
+    enable_vorticity_vector_attribute: BoolProperty(
             name="Generate Vorticity Attributes",
             description="Generate fluid 3D vorticity vector attributes for the fluid surface. After"
                 " baking, the vorticity vectors can be accessed in a Cycles Attribute"
                 " Node or in Geometry Nodes with the name 'flip_vorticity' from the Vector output",
             default=False,
             options={'HIDDEN'},
-            ); exec(conv("enable_vorticity_vector_attribute"))
-    enable_age_attribute = BoolProperty(
+            )
+    enable_age_attribute: BoolProperty(
             name="Generate Age Attributes",
             description="Generate fluid age attributes for the fluid surface."
                 " The age attribute starts at 0.0 when the liquid is spawned and counts up in"
@@ -217,8 +216,8 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
                 " Node or in Geometry Nodes with the name 'flip_age' from the Fac output",
             default=False,
             options={'HIDDEN'},
-            ); exec(conv("enable_age_attribute"))
-    age_attribute_radius = FloatProperty(
+            )
+    age_attribute_radius: FloatProperty(
             name="Smoothing Radius", 
             description = "Amount of smoothing when transferring the age attribute to the surface mesh."
                 " Higher values result in smoother attribute transitions at the cost of simulation"
@@ -227,8 +226,8 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
             min=0.0,
             default=3.0,
             precision=1,
-            ); exec(conv("age_attribute_radius"))
-    enable_lifetime_attribute = BoolProperty(
+            )
+    enable_lifetime_attribute: BoolProperty(
             name="Generate Lifetime Attributes",
             description="Generate fluid lifetime attributes for the fluid surface. This attribute allows the"
                 " fluid to start with a lifetime value that counts down in seconds and once the lifetime reaches 0,"
@@ -238,8 +237,8 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
                 " the Fac output",
             default=False,
             options={'HIDDEN'},
-            ); exec(conv("enable_lifetime_attribute"))
-    lifetime_attribute_radius = FloatProperty(
+            )
+    lifetime_attribute_radius: FloatProperty(
             name="Smoothing Radius", 
             description = "Amount of smoothing when transferring the lifetime attribute to the surface mesh."
                 " Higher values result in smoother attribute transitions at the cost of simulation"
@@ -248,8 +247,8 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
             min=0.0,
             default=3.0,
             precision=1,
-            ); exec(conv("lifetime_attribute_radius"))
-    lifetime_attribute_death_time = FloatProperty(
+            )
+    lifetime_attribute_death_time: FloatProperty(
             name="Base Death Time", 
             description = "Base time in seconds at which fluid is removed from the simulation. At the default of 0.0,"
                 " fluid will be removed when their lifetime attribute counts down to 0.0. Increase or decrease this"
@@ -257,8 +256,8 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
                 " Decreasing will result in fluid dying later", 
             default=0.0,
             precision=2,
-            ); exec(conv("lifetime_attribute_death_time"))
-    enable_whitewater_proximity_attribute = BoolProperty(
+            )
+    enable_whitewater_proximity_attribute: BoolProperty(
             name="Whitewater Proximity Attributes",
             description="Generate whitewater proximity attributes for the fluid surface. The attribute values represent"
                 " how many foam, bubble, or spray particles are near the surface mesh and can be used in a material to shade"
@@ -267,8 +266,8 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
                 " and 'flip_spray_proximity' from the Fac output",
             default=False,
             options={'HIDDEN'},
-            ); exec(conv("enable_whitewater_proximity_attribute"))
-    whitewater_proximity_attribute_radius = FloatProperty(
+            )
+    whitewater_proximity_attribute_radius: FloatProperty(
             name="Smoothing Radius", 
             description = "Amount of smoothing when transferring the whitewater proximity attribute to the surface mesh."
                 " Higher values result in smoother attribute transitions at the cost of simulation"
@@ -277,8 +276,8 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
             min=0.0,
             default=2.0,
             precision=1,
-            ); exec(conv("whitewater_proximity_attribute_radius"))
-    enable_color_attribute = BoolProperty(
+            )
+    enable_color_attribute: BoolProperty(
             name="Generate Color Attributes",
             description="Generate fluid color attributes for the fluid surface. Each"
                 " Inflow/Fluid object can set to assign color to the generated fluid. After"
@@ -287,8 +286,8 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
                 " liquid effects",
             default=False,
             options={'HIDDEN'},
-            ); exec(conv("enable_color_attribute"))
-    color_attribute_radius = FloatProperty(
+            )
+    color_attribute_radius: FloatProperty(
             name="Smoothing Radius", 
             description = "Amount of smoothing when transferring the color attribute to the surface mesh."
                 " Higher values result in smoother attribute transitions at the cost of simulation"
@@ -297,14 +296,14 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
             min=0.0,
             default=3.0,
             precision=1,
-            ); exec(conv("color_attribute_radius"))
-    enable_color_attribute_mixing = BoolProperty(
+            )
+    enable_color_attribute_mixing: BoolProperty(
             name="Enable Mixing",
             description="Simulate basic color mixing. If enabled, particles will absorb color attributes"
                 " from nearby particles. If disabled, particles will hold a static color value",
             default=False,
-            ); exec(conv("enable_color_attribute_mixing"))
-    color_attribute_mixing_rate = FloatProperty(
+            )
+    color_attribute_mixing_rate: FloatProperty(
             name="Mixing Rate", 
             description = "Controls how quickly particles will absorb color from nearby particles. Higher"
                 " values will cause colors to mix and spread more quickly. Lower values will cause colors to"
@@ -313,8 +312,8 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
             min=0.0,
             default=12,
             precision=2,
-            ); exec(conv("color_attribute_mixing_rate"))
-    color_attribute_mixing_radius = FloatProperty(
+            )
+    color_attribute_mixing_radius: FloatProperty(
             name="Mixing Radius", 
             description = "Radius in which a particle can absorb color from nearby particles. Increasing"
                 " this value can result in smoother mixing transitions at the cost of simulation performance."
@@ -323,15 +322,15 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
             min=0.0,
             default=1.0,
             precision=2,
-            ); exec(conv("color_attribute_mixing_radius"))
-    color_attribute_mixing_mode = EnumProperty(
+            )
+    color_attribute_mixing_mode: EnumProperty(
             name="Mixing Mode",
             description="Method of simulating color attribute mixing",
             items=types.color_mixing_modes,
             default='COLOR_MIXING_MODE_MIXBOX',
             options={'HIDDEN'},
-            ); exec(conv("color_attribute_mixing_mode"))
-    enable_source_id_attribute = BoolProperty(
+            )
+    enable_source_id_attribute: BoolProperty(
             name="Generate Source ID Attributes",
             description="Generate fluid source identifiers for the fluid surface. Each"
                 " Inflow/Fluid object can set to assign a source ID to the generated fluid. After"
@@ -341,43 +340,33 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
                 " not supported with sheeting effects or resolution upscaling features",
             default=False,
             options={'HIDDEN'},
-            ); exec(conv("enable_source_id_attribute"))
-    enable_viscosity_attribute = BoolProperty(
+            )
+    enable_viscosity_attribute: BoolProperty(
             name="Enable Variable Viscosity",
             description="Enable the variable viscosity solver for mixed viscosity simulations."
                 " After enabling, each Fluid/Inflow object can be set to assign a viscosity value"
                 " to the generated fluid. When enabled, viscosity value attributes will also"
-                " be generated for the fluid surface. After baking, the viscosity values can"
+                " be generated for the fluid surface and fluid particles. After baking, the viscosity values can"
                 " be accessed in a Cycles Attribute Node with the name 'flip_viscosity' from"
                 " the Fac output",
             default=False,
             options={'HIDDEN'},
-            ); exec(conv("enable_viscosity_attribute"))
+            )
 
-    native_particle_scale = FloatProperty(default=3.0); exec(conv("native_particle_scale"))
-    default_cells_per_compute_chunk = FloatProperty(default=15.0); exec(conv("default_cells_per_compute_chunk"))   # in millions
+    native_particle_scale: FloatProperty(default=3.0)
+    default_cells_per_compute_chunk: FloatProperty(default=15.0)   # in millions
 
-    surface_mesh_expanded = BoolProperty(default=True); exec(conv("surface_mesh_expanded"))
-    meshing_volume_expanded = BoolProperty(default=False); exec(conv("meshing_volume_expanded"))
-    meshing_against_boundary_expanded = BoolProperty(default=False); exec(conv("meshing_against_boundary_expanded"))
-    meshing_against_obstacles_expanded = BoolProperty(default=False); exec(conv("meshing_against_obstacles_expanded"))
-    surface_display_settings_expanded = BoolProperty(default=False); exec(conv("surface_display_settings_expanded"))
-    geometry_attributes_expanded = BoolProperty(default=False); exec(conv("geometry_attributes_expanded"))
-    velocity_attributes_expanded = BoolProperty(default=False); exec(conv("velocity_attributes_expanded"))
-    color_attributes_expanded = BoolProperty(default=False); exec(conv("color_attributes_expanded"))
-    other_attributes_expanded = BoolProperty(default=False); exec(conv("other_attributes_expanded"))
+    show_smoothing_radius_in_ui: BoolProperty(default=False)
+    is_smoothing_radius_updated_to_default: BoolProperty(default=False)
 
-    show_smoothing_radius_in_ui = BoolProperty(default=False); exec(conv("show_smoothing_radius_in_ui"))
-    is_smoothing_radius_updated_to_default = BoolProperty(default=False); exec(conv("is_smoothing_radius_updated_to_default"))
-
-    preview_mode_attributes_tooltip = BoolProperty(
+    preview_mode_attributes_tooltip: BoolProperty(
             name="Preview Mode Attributes Tooltip", 
             description="The fluid surface mesh is currently set to Preview Mode within the viewport and attributes"
                 " will not be loaded. Attributes will not be displayed correctly in viewport render mode."
                 " Surface attributes will only be loaded in Final Mode. The surface mesh display"
                 " mode can be set in the 'Domain > Display Settings' panel", 
             default=True,
-            ); exec(conv("preview_mode_attributes_tooltip"))
+            )
 
 
     def register_preset_properties(self, registry, path):
@@ -511,20 +500,12 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
 
         try:
             # Cycles may not be enabled in the user's preferences
-            if vcu.is_blender_30():
-                obj.visible_camera = is_enabled
-                obj.visible_diffuse = is_enabled
-                obj.visible_glossy = is_enabled
-                obj.visible_transmission = is_enabled
-                obj.visible_volume_scatter = is_enabled
-                obj.visible_shadow = is_enabled
-            else:
-                obj.cycles_visibility.camera = is_enabled
-                obj.cycles_visibility.transmission = is_enabled
-                obj.cycles_visibility.diffuse = is_enabled
-                obj.cycles_visibility.scatter = is_enabled
-                obj.cycles_visibility.glossy = is_enabled
-                obj.cycles_visibility.shadow = is_enabled
+            obj.visible_camera = is_enabled
+            obj.visible_diffuse = is_enabled
+            obj.visible_glossy = is_enabled
+            obj.visible_transmission = is_enabled
+            obj.visible_volume_scatter = is_enabled
+            obj.visible_shadow = is_enabled
         except:
             pass
 

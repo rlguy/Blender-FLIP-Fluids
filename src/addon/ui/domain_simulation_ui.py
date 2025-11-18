@@ -112,211 +112,313 @@ def draw_bake_operator(self, context, box):
     draw_bake_operator_UI_element(context, box)
 
 
-def draw_more_bake_settings(self, context, box):
+def draw_more_bake_settings(self, context, master_column):
     obj = vcu.get_active_object(context)
     dprops = obj.flip_fluid.domain
     sprops = dprops.simulation
 
-    row = box.row(align=True)
-    row.prop(sprops, "more_bake_settings_expanded",
-        icon="TRIA_DOWN" if sprops.more_bake_settings_expanded else "TRIA_RIGHT",
-        icon_only=True, 
-        emboss=False
-    )
-    row.label(text="More Bake Settings")
+    #
+    # More Bake Settings Panel
+    #
+    box = master_column.box()
+    header, body = box.panel("more_bake_settings", default_closed=True)
 
-    if not sprops.more_bake_settings_expanded:
-        return
+    row = header.row(align=True)
+    row.label(text="More Bake Settings:")
 
-    subbox = box.box()
-    column = subbox.column(align=True)
-    column.label(text="Frame Range:")
-    row = column.row()
-    row.prop(sprops, "frame_range_mode", expand=True)
-    row = column.row(align=True)
-    if sprops.frame_range_mode == 'FRAME_RANGE_TIMELINE':
-        row_left = row.row(align=True)
-        row_right = row.row(align=True)
-        if dprops.bake.is_autosave_available:
-            row_left.enabled = False
-            row_left.prop(dprops.bake, "original_frame_start")
-        else:
-            row_left.prop(context.scene, "frame_start")
-        row_right.prop(context.scene, "frame_end")
-    else:
-        row_left = row.row(align=True)
-        row_right = row.row(align=True)
-        if dprops.bake.is_autosave_available:
-            row_left.enabled = False
-            row_left.prop(dprops.bake, "original_frame_start")
-        else:
-            row_left.prop(sprops.frame_range_custom, "value_min")
-        row_right.prop(sprops.frame_range_custom, "value_max")
-
-    subbox = box.box()
-    column = subbox.column(align=True)
-    column.label(text="Settings and Mesh Export:")
-    column.prop(sprops, "update_settings_on_resume")
-
-    indent_str = 5 * " "
-
-    subbox = subbox.box()
-    row = subbox.row(align=True)
-    row.prop(sprops, "skip_mesh_reexport_expanded",
-        icon="TRIA_DOWN" if sprops.skip_mesh_reexport_expanded else "TRIA_RIGHT",
-        icon_only=True, 
-        emboss=False
-    )
-    row.label(text="Skip Mesh Re-Export:")
-
-    if sprops.skip_mesh_reexport_expanded:
-        flip_props = context.scene.flip_fluid
-        flip_objects = (flip_props.get_obstacle_objects() + 
-                       flip_props.get_fluid_objects() + 
-                       flip_props.get_inflow_objects() + 
-                       flip_props.get_outflow_objects() + 
-                       flip_props.get_force_field_objects())
-
-        num_flip_objects = len(flip_objects)
-        flip_object_count_limit = 128
-        if num_flip_objects > flip_object_count_limit:
-            column = subbox.column()
-            column.alert = True
-            column.label(text="Menu Unavailable", icon="ERROR")
-            column.label(text="This menu is only available in scenes containing " + str(flip_object_count_limit) + " FLIP objects or fewer", icon="ERROR")
-            column.label(text="Current number of FLIP objects: " + str(num_flip_objects), icon="ERROR")
-        else:
-            column = subbox.column()
-            column.label(text="Object Motion Type:")
-            row = column.row(align=True)
-            row.prop(sprops, "mesh_reexport_type_filter", expand=True)
-
-            flip_objects.sort(key=lambda x: x.name)
-
-            is_all_filter_selected = sprops.mesh_reexport_type_filter == 'MOTION_FILTER_TYPE_ALL'
-            if sprops.mesh_reexport_type_filter == 'MOTION_FILTER_TYPE_ALL':
-                filtered_objects = flip_objects
-                motion_type_string = "simulation"
-            elif sprops.mesh_reexport_type_filter == 'MOTION_FILTER_TYPE_STATIC':
-                filtered_objects = [x for x in flip_objects if _get_object_motion_type(self, x) == 'STATIC']
-                motion_type_string = "static"
-            elif sprops.mesh_reexport_type_filter == 'MOTION_FILTER_TYPE_KEYFRAMED':
-                filtered_objects = [x for x in flip_objects if _get_object_motion_type(self, x) == 'KEYFRAMED']
-                motion_type_string = "keyframed"
-            elif sprops.mesh_reexport_type_filter == 'MOTION_FILTER_TYPE_ANIMATED':
-                filtered_objects = [x for x in flip_objects if _get_object_motion_type(self, x) == 'ANIMATED']
-                motion_type_string = "animated"
-
-            if len(filtered_objects) == 0:
-                column.label(text=indent_str + "No " + motion_type_string + " objects found...")
+    if body:
+        subbox = body.column()
+        column = subbox.column(align=True)
+        column.label(text="Frame Range:")
+        row = column.row()
+        row.prop(sprops, "frame_range_mode", expand=True)
+        row = column.row(align=True)
+        if sprops.frame_range_mode == 'FRAME_RANGE_TIMELINE':
+            row_left = row.row(align=True)
+            row_right = row.row(align=True)
+            if dprops.bake.is_autosave_available:
+                row_left.enabled = False
+                row_left.prop(dprops.bake, "original_frame_start")
             else:
-                split = column.split()
-                column_left = split.column(align=True)
-                if is_all_filter_selected:
-                    column_animated = split.column(align=True)
+                row_left.prop(context.scene, "frame_start")
+            row_right.prop(context.scene, "frame_end")
+        else:
+            row_left = row.row(align=True)
+            row_right = row.row(align=True)
+            if dprops.bake.is_autosave_available:
+                row_left.enabled = False
+                row_left.prop(dprops.bake, "original_frame_start")
+            else:
+                row_left.prop(sprops.frame_range_custom, "value_min")
+            row_right.prop(sprops.frame_range_custom, "value_max")
 
-                column_middle = split.column(align=True)
-                column_right = split.column(align=True)
+        subbox = body.column()
+        column = subbox.column(align=True)
+        column.label(text="Settings and Mesh Export:")
+        column.prop(sprops, "update_settings_on_resume")
 
-                column_left.label(text="")
-                column_left.label(text="Object")
-                op_box = column_left.box()
-                op_box.label(text="")
+        indent_str = 5 * " "
 
-                if is_all_filter_selected:
-                    column_animated.label(text="")
-                    column_animated.label(text="Export Animated")
-                    op_box = column_animated.box()
-                    row = op_box.row(align=True)
-                    row.alignment = 'LEFT'
-                    row.operator("flip_fluid_operators.helper_batch_export_animated_mesh", icon='CHECKBOX_HLT', text="").enable_state = True
-                    row.operator("flip_fluid_operators.helper_batch_export_animated_mesh", icon='CHECKBOX_DEHLT', text="").enable_state = False
-                    row.label(text="All")
+        #
+        # Skip Re-Export Settings Panel
+        #
+        box = body.box()
+        header_skip_reexport, body_skip_reexport = box.panel("skip_reexport_settings", default_closed=True)
 
-                column_middle.label(text="")
-                column_middle.label(text="Skip Re-Export")
-                op_box = column_middle.box()
-                row = op_box.row(align=True)
-                row.alignment = 'LEFT'
-                row.operator("flip_fluid_operators.helper_batch_skip_reexport", icon='CHECKBOX_HLT', text="").enable_state = True
-                row.operator("flip_fluid_operators.helper_batch_skip_reexport", icon='CHECKBOX_DEHLT', text="").enable_state = False
-                row.label(text="All")
+        row_skip_reexport = header_skip_reexport.row(align=True)
+        row_skip_reexport.label(text="Skip Mesh Re-Export:")
 
-                column_right.label(text="Force Export")
-                column_right.label(text="On Next Bake")
-                op_box = column_right.box()
-                row = op_box.row(align=True)
-                row.alignment = 'LEFT'
-                row.operator("flip_fluid_operators.helper_batch_force_reexport", icon='CHECKBOX_HLT', text="").enable_state = True
-                row.operator("flip_fluid_operators.helper_batch_force_reexport", icon='CHECKBOX_DEHLT', text="").enable_state = False
-                row.label(text="All")
+        if body_skip_reexport:
+            flip_props = context.scene.flip_fluid
+            flip_objects = (flip_props.get_obstacle_objects() + 
+                           flip_props.get_fluid_objects() + 
+                           flip_props.get_inflow_objects() + 
+                           flip_props.get_outflow_objects() + 
+                           flip_props.get_force_field_objects())
 
-                is_export_hint_enabled = not vcu.get_addon_preferences().dismiss_export_animated_mesh_parented_relation_hint
-                for ob in filtered_objects:
-                    pgroup = ob.flip_fluid.get_property_group()
-                    column_left_row = column_left.row(align=True)
-                    column_left_row.alignment = 'LEFT'
-                    column_left_row.label(text=ob.name, icon="OBJECT_DATA")
+            num_flip_objects = len(flip_objects)
+            flip_object_count_limit = 128
+            if num_flip_objects > flip_object_count_limit:
+                column = body_skip_reexport.column()
+                column.alert = True
+                column.label(text="Menu Unavailable", icon="ERROR")
+                column.label(text="This menu is only available in scenes containing " + str(flip_object_count_limit) + " FLIP objects or fewer", icon="ERROR")
+                column.label(text="Current number of FLIP objects: " + str(num_flip_objects), icon="ERROR")
+            else:
+                column = body_skip_reexport.column()
+                column.label(text="Object Motion Type:")
+                row = column.row(align=True)
+                row.prop(sprops, "mesh_reexport_type_filter", expand=True)
 
-                    is_child_object = ob.parent is not None
-                    if is_export_hint_enabled and not pgroup.export_animated_mesh and is_child_object:
-                        column_left_row.prop(context.scene.flip_fluid_helper, "export_animated_mesh_parent_tooltip", 
-                            icon="INFO", emboss=False, text=""
-                            )
+                flip_objects.sort(key=lambda x: x.name)
+
+                is_all_filter_selected = sprops.mesh_reexport_type_filter == 'MOTION_FILTER_TYPE_ALL'
+                if sprops.mesh_reexport_type_filter == 'MOTION_FILTER_TYPE_ALL':
+                    filtered_objects = flip_objects
+                    motion_type_string = "simulation"
+                elif sprops.mesh_reexport_type_filter == 'MOTION_FILTER_TYPE_STATIC':
+                    filtered_objects = [x for x in flip_objects if _get_object_motion_type(self, x) == 'STATIC']
+                    motion_type_string = "static"
+                elif sprops.mesh_reexport_type_filter == 'MOTION_FILTER_TYPE_KEYFRAMED':
+                    filtered_objects = [x for x in flip_objects if _get_object_motion_type(self, x) == 'KEYFRAMED']
+                    motion_type_string = "keyframed"
+                elif sprops.mesh_reexport_type_filter == 'MOTION_FILTER_TYPE_ANIMATED':
+                    filtered_objects = [x for x in flip_objects if _get_object_motion_type(self, x) == 'ANIMATED']
+                    motion_type_string = "animated"
+
+                if len(filtered_objects) == 0:
+                    column.label(text=indent_str + "No " + motion_type_string + " objects found...")
+                else:
+                    split = column.split()
+                    column_left = split.column(align=True)
+                    if is_all_filter_selected:
+                        column_animated = split.column(align=True)
+
+                    column_middle = split.column(align=True)
+                    column_right = split.column(align=True)
+
+                    column_left.label(text="")
+                    column_left.label(text="Object")
+                    op_box = column_left.box()
+                    op_box.label(text="")
 
                     if is_all_filter_selected:
-                        column_animated.prop(pgroup, "export_animated_mesh", text="animated", toggle=True)
-                    column_middle.prop(pgroup, "skip_reexport", text="skip", toggle=True)
-                    column_right.prop(pgroup, "force_reexport_on_next_bake", text="force", toggle=True)
+                        column_animated.label(text="")
+                        column_animated.label(text="Export Animated")
+                        op_box = column_animated.box()
+                        row = op_box.row(align=True)
+                        row.alignment = 'LEFT'
+                        row.operator("flip_fluid_operators.helper_batch_export_animated_mesh", icon='CHECKBOX_HLT', text="").enable_state = True
+                        row.operator("flip_fluid_operators.helper_batch_export_animated_mesh", icon='CHECKBOX_DEHLT', text="").enable_state = False
+                        row.label(text="All")
 
-    subbox = box.box()
-    column = subbox.column(align=True)
-    column.label(text="Savestates:")
-    column.prop(sprops, "enable_savestates")
-    column = subbox.column(align=True)
-    column.enabled = sprops.enable_savestates
-    split = column.split()
-    column = split.column()
-    row = column.row()
-    row.alignment = 'RIGHT'
-    row.label(text="Generate savestate every")
-    column = split.column()
-    split = column.split()
-    column = split.column()
-    row = column.row(align=True)
-    row.prop(sprops, "savestate_interval", text="")
-    row.label(text="frames")
-    column = subbox.column(align=True)
-    column.enabled = sprops.enable_savestates
-    column.prop(sprops, "delete_outdated_savestates")
-    column.prop(sprops, "delete_outdated_meshes")
+                    column_middle.label(text="")
+                    column_middle.label(text="Skip Re-Export")
+                    op_box = column_middle.box()
+                    row = op_box.row(align=True)
+                    row.alignment = 'LEFT'
+                    row.operator("flip_fluid_operators.helper_batch_skip_reexport", icon='CHECKBOX_HLT', text="").enable_state = True
+                    row.operator("flip_fluid_operators.helper_batch_skip_reexport", icon='CHECKBOX_DEHLT', text="").enable_state = False
+                    row.label(text="All")
+
+                    column_right.label(text="Force Export")
+                    column_right.label(text="On Next Bake")
+                    op_box = column_right.box()
+                    row = op_box.row(align=True)
+                    row.alignment = 'LEFT'
+                    row.operator("flip_fluid_operators.helper_batch_force_reexport", icon='CHECKBOX_HLT', text="").enable_state = True
+                    row.operator("flip_fluid_operators.helper_batch_force_reexport", icon='CHECKBOX_DEHLT', text="").enable_state = False
+                    row.label(text="All")
+
+                    is_export_hint_enabled = not vcu.get_addon_preferences().dismiss_export_animated_mesh_parented_relation_hint
+                    for ob in filtered_objects:
+                        pgroup = ob.flip_fluid.get_property_group()
+                        column_left_row = column_left.row(align=True)
+                        column_left_row.alignment = 'LEFT'
+                        column_left_row.label(text=ob.name, icon="OBJECT_DATA")
+
+                        is_child_object = ob.parent is not None
+                        if is_export_hint_enabled and not pgroup.export_animated_mesh and is_child_object:
+                            column_left_row.prop(context.scene.flip_fluid_helper, "export_animated_mesh_parent_tooltip", 
+                                icon="INFO", emboss=False, text=""
+                                )
+
+                        if is_all_filter_selected:
+                            column_animated.prop(pgroup, "export_animated_mesh", text="animated", toggle=True)
+                        column_middle.prop(pgroup, "skip_reexport", text="skip", toggle=True)
+                        column_right.prop(pgroup, "force_reexport_on_next_bake", text="force", toggle=True)
+
+        """
+        subbox = subbox.column()
+        row = subbox.row(align=True)
+        row.prop(sprops, "skip_mesh_reexport_expanded",
+            icon="TRIA_DOWN" if sprops.skip_mesh_reexport_expanded else "TRIA_RIGHT",
+            icon_only=True, 
+            emboss=False
+        )
+        row.label(text="Skip Mesh Re-Export:")
+
+        if sprops.skip_mesh_reexport_expanded:
+            flip_props = context.scene.flip_fluid
+            flip_objects = (flip_props.get_obstacle_objects() + 
+                           flip_props.get_fluid_objects() + 
+                           flip_props.get_inflow_objects() + 
+                           flip_props.get_outflow_objects() + 
+                           flip_props.get_force_field_objects())
+
+            num_flip_objects = len(flip_objects)
+            flip_object_count_limit = 128
+            if num_flip_objects > flip_object_count_limit:
+                column = subbox.column()
+                column.alert = True
+                column.label(text="Menu Unavailable", icon="ERROR")
+                column.label(text="This menu is only available in scenes containing " + str(flip_object_count_limit) + " FLIP objects or fewer", icon="ERROR")
+                column.label(text="Current number of FLIP objects: " + str(num_flip_objects), icon="ERROR")
+            else:
+                column = subbox.column()
+                column.label(text="Object Motion Type:")
+                row = column.row(align=True)
+                row.prop(sprops, "mesh_reexport_type_filter", expand=True)
+
+                flip_objects.sort(key=lambda x: x.name)
+
+                is_all_filter_selected = sprops.mesh_reexport_type_filter == 'MOTION_FILTER_TYPE_ALL'
+                if sprops.mesh_reexport_type_filter == 'MOTION_FILTER_TYPE_ALL':
+                    filtered_objects = flip_objects
+                    motion_type_string = "simulation"
+                elif sprops.mesh_reexport_type_filter == 'MOTION_FILTER_TYPE_STATIC':
+                    filtered_objects = [x for x in flip_objects if _get_object_motion_type(self, x) == 'STATIC']
+                    motion_type_string = "static"
+                elif sprops.mesh_reexport_type_filter == 'MOTION_FILTER_TYPE_KEYFRAMED':
+                    filtered_objects = [x for x in flip_objects if _get_object_motion_type(self, x) == 'KEYFRAMED']
+                    motion_type_string = "keyframed"
+                elif sprops.mesh_reexport_type_filter == 'MOTION_FILTER_TYPE_ANIMATED':
+                    filtered_objects = [x for x in flip_objects if _get_object_motion_type(self, x) == 'ANIMATED']
+                    motion_type_string = "animated"
+
+                if len(filtered_objects) == 0:
+                    column.label(text=indent_str + "No " + motion_type_string + " objects found...")
+                else:
+                    split = column.split()
+                    column_left = split.column(align=True)
+                    if is_all_filter_selected:
+                        column_animated = split.column(align=True)
+
+                    column_middle = split.column(align=True)
+                    column_right = split.column(align=True)
+
+                    column_left.label(text="")
+                    column_left.label(text="Object")
+                    op_box = column_left.box()
+                    op_box.label(text="")
+
+                    if is_all_filter_selected:
+                        column_animated.label(text="")
+                        column_animated.label(text="Export Animated")
+                        op_box = column_animated.box()
+                        row = op_box.row(align=True)
+                        row.alignment = 'LEFT'
+                        row.operator("flip_fluid_operators.helper_batch_export_animated_mesh", icon='CHECKBOX_HLT', text="").enable_state = True
+                        row.operator("flip_fluid_operators.helper_batch_export_animated_mesh", icon='CHECKBOX_DEHLT', text="").enable_state = False
+                        row.label(text="All")
+
+                    column_middle.label(text="")
+                    column_middle.label(text="Skip Re-Export")
+                    op_box = column_middle.box()
+                    row = op_box.row(align=True)
+                    row.alignment = 'LEFT'
+                    row.operator("flip_fluid_operators.helper_batch_skip_reexport", icon='CHECKBOX_HLT', text="").enable_state = True
+                    row.operator("flip_fluid_operators.helper_batch_skip_reexport", icon='CHECKBOX_DEHLT', text="").enable_state = False
+                    row.label(text="All")
+
+                    column_right.label(text="Force Export")
+                    column_right.label(text="On Next Bake")
+                    op_box = column_right.box()
+                    row = op_box.row(align=True)
+                    row.alignment = 'LEFT'
+                    row.operator("flip_fluid_operators.helper_batch_force_reexport", icon='CHECKBOX_HLT', text="").enable_state = True
+                    row.operator("flip_fluid_operators.helper_batch_force_reexport", icon='CHECKBOX_DEHLT', text="").enable_state = False
+                    row.label(text="All")
+
+                    is_export_hint_enabled = not vcu.get_addon_preferences().dismiss_export_animated_mesh_parented_relation_hint
+                    for ob in filtered_objects:
+                        pgroup = ob.flip_fluid.get_property_group()
+                        column_left_row = column_left.row(align=True)
+                        column_left_row.alignment = 'LEFT'
+                        column_left_row.label(text=ob.name, icon="OBJECT_DATA")
+
+                        is_child_object = ob.parent is not None
+                        if is_export_hint_enabled and not pgroup.export_animated_mesh and is_child_object:
+                            column_left_row.prop(context.scene.flip_fluid_helper, "export_animated_mesh_parent_tooltip", 
+                                icon="INFO", emboss=False, text=""
+                                )
+
+                        if is_all_filter_selected:
+                            column_animated.prop(pgroup, "export_animated_mesh", text="animated", toggle=True)
+                        column_middle.prop(pgroup, "skip_reexport", text="skip", toggle=True)
+                        column_right.prop(pgroup, "force_reexport_on_next_bake", text="force", toggle=True)
+        """
+
+        subbox = body.column()
+        column = subbox.column(align=True)
+        column.label(text="Savestates:")
+        column.prop(sprops, "enable_savestates")
+        column = subbox.column(align=True)
+        column.enabled = sprops.enable_savestates
+        split = column.split()
+        column = split.column()
+        row = column.row()
+        row.alignment = 'RIGHT'
+        row.label(text="Generate savestate every")
+        column = split.column()
+        split = column.split()
+        column = split.column()
+        row = column.row(align=True)
+        row.prop(sprops, "savestate_interval", text="")
+        row.label(text="frames")
+        column = subbox.column(align=True)
+        column.enabled = sprops.enable_savestates
+        column.prop(sprops, "delete_outdated_savestates")
+        column.prop(sprops, "delete_outdated_meshes")
 
 
-def draw_resolution_settings(self, context, master_column):
+def draw_simulation_settings(self, context, master_column):
     obj = vcu.get_active_object(context)
     dprops = obj.flip_fluid.domain
     sprops = dprops.simulation
     wprops = dprops.world
     aprops = dprops.advanced
 
+    #
+    # Grid Resolution Panel
+    #
     box = master_column.box()
-    column = box.column(align=True)
-    split = column.split(align=True)
-    column_left = split.column(align=True)
-    column_right = split.column(align=True)
-    row = column_left.row(align=True)
-    row.prop(sprops, "simulation_resolution_expanded",
-        icon="TRIA_DOWN" if sprops.simulation_resolution_expanded else "TRIA_RIGHT",
-        icon_only=True, 
-        emboss=False
-    )
-    row.label(text="Grid Resolution:")
+    header, body = box.panel("simulation_resolution", default_closed=True)
 
-    if not sprops.simulation_resolution_expanded:
-        row = column_right.row(align=True)
-        row.prop(sprops, "resolution", text="Resolution")
-    else:
-        column = box.column(align=True)
+    row = header.row(align=True)
+    row.label(text="Grid Resolution:")
+    if body:
+        column = body.column(align=True)
         split = vcu.ui_split(column, factor=0.5, align=True)
         
         column_left = split.column(align=True)
@@ -327,7 +429,7 @@ def draw_resolution_settings(self, context, master_column):
         column_right.enabled = not sprops.auto_preview_resolution
         column_right.prop(sprops, "preview_resolution")
 
-        column = box.column(align=True)
+        column = body.column(align=True)
         split = vcu.ui_split(column, factor=0.5)
         column_left = split.column(align=True)
         column_right = split.column(align=True)
@@ -339,7 +441,7 @@ def draw_resolution_settings(self, context, master_column):
             old_resolution = max(sprops.savestate_isize, sprops.savestate_jsize, sprops.savestate_ksize)
 
             indent = 7
-            subbox = box.box()
+            subbox = body.box()
             column = subbox.column(align=True)
             column.label(text="Increased resolution detected")
             row = column.row()
@@ -347,22 +449,24 @@ def draw_resolution_settings(self, context, master_column):
             row.label(text="Simulation will be upscaled on resume.")
             column.label(text=indent*" " + "     Cache resolution:    " + str(old_resolution))
             column.label(text=indent*" " + "     Current resolution:  " + str(sprops.resolution))
+    else:
+        row.prop(sprops, "resolution", text="Resolution")
 
+    #
+    # Grid Info Panel
+    #
     box = master_column.box()
-    row = box.row(align=True)
-    row.prop(sprops, "grid_info_expanded",
-        icon="TRIA_DOWN" if sprops.grid_info_expanded else "TRIA_RIGHT",
-        icon_only=True, 
-        emboss=False
-    )
+    header, body = box.panel("grid_info", default_closed=True)
+
+    row = header.row(align=True)
     row.label(text="Grid Info:")
     row = row.row()
     row.alignment = 'RIGHT'
     row.prop(dprops.debug, "grid_display_mode", text="")
     row.prop(dprops.debug, "display_simulation_grid", text="Visualize Grid")
 
-    if sprops.grid_info_expanded:
-        column = box.column(align=True)
+    if body:
+        column = body.column(align=True)
 
         split = vcu.ui_split(column, factor=0.05, align=True)
         column_left = split.column(align=True)
@@ -444,25 +548,17 @@ def draw_resolution_settings(self, context, master_column):
         column_right.label(text=voxel_size_str)
         column_right.label(text=voxel_count_str)
 
+    #
+    # Simulation Method Panel
+    #
     box = master_column.box()
-    column = box.column(align=True)
-    split = column.split(align=True)
-    column_left = split.column(align=True)
-    column_right = split.column(align=True)
-    row = column_left.row(align=True)
-    row.prop(sprops, "simulation_method_expanded",
-        icon="TRIA_DOWN" if sprops.simulation_method_expanded else "TRIA_RIGHT",
-        icon_only=True, 
-        emboss=False
-    )
+    header, body = box.panel("simulation_method", default_closed=True)
+
+    row = header.row(align=True)
     row.label(text="Simulation Method:")
 
-    if not sprops.simulation_method_expanded:
-        row = column_right.row()
-        row.prop(aprops, "velocity_transfer_method", expand=True)
-        pass
-    else:
-        column = box.column(align=True)
+    if body:
+        column = body.column(align=True)
         row = column.row(align=True)
         row.prop(aprops, "velocity_transfer_method", expand=True)
         row = column.row(align=True)
@@ -470,15 +566,12 @@ def draw_resolution_settings(self, context, master_column):
             row.prop(aprops, "PICFLIP_ratio", slider=True)
         else:
             row.label(text="")
+    else:
+        row.prop(aprops, "velocity_transfer_method", expand=True)
 
-    box = master_column.box()
-    row = box.row(align=True)
-    row.prop(sprops, "world_scale_expanded",
-        icon="TRIA_DOWN" if sprops.world_scale_expanded else "TRIA_RIGHT",
-        icon_only=True, 
-        emboss=False
-    )
-
+    #
+    # World Scale Panel
+    #
     xdims, ydims, zdims = wprops.get_simulation_dimensions(context)
     xdims_str = '{:.2f}'.format(round(xdims, 2))
     ydims_str = '{:.2f}'.format(round(ydims, 2))
@@ -487,18 +580,21 @@ def draw_resolution_settings(self, context, master_column):
     ydims_str = ydims_str.rstrip("0").rstrip(".") + "m"
     zdims_str = zdims_str.rstrip("0").rstrip(".") + "m"
     dimensions_str = str(xdims_str) + "  x  " + str(ydims_str) + "  x  " + str(zdims_str)
+
+    box = master_column.box()
+    header, body = box.panel("world_scale", default_closed=True)
+
+    row = header.row(align=True)
     row.label(text="World Scale:")
-    row = row.row(align=True)
-    row.alignment = 'LEFT'
+    row = header.row(align=True)
+    row.alignment = 'RIGHT'
     row.label(text=dimensions_str)
 
-    if not sprops.world_scale_expanded:
-        pass
-    else:
-        row = box.row(align=True)
+    if body:
+        row = body.row(align=True)
         row.prop(wprops, "world_scale_mode", expand=True)
 
-        column = box.column(align=True)
+        column = body.column(align=True)
         split = column.split(align=True)
         column_left = split.column()
         column_right = split.column()
@@ -514,15 +610,9 @@ def draw_resolution_settings(self, context, master_column):
             row.label(text="Domain Length = ")
             column_right.prop(wprops, "world_scale_absolute")
 
-    box = master_column.box()
-    row = box.row(align=True)
-    row.prop(sprops, "boundary_collisions_expanded",
-        icon="TRIA_DOWN" if sprops.boundary_collisions_expanded else "TRIA_RIGHT",
-        icon_only=True, 
-        emboss=False
-    )
-    row.label(text="Domain Boundary Collisions:")
-
+    #
+    # Boundary Collisions Panel
+    #
     if all(sprops.fluid_boundary_collisions):
         boundary_collision_status_str = "Closed"
     elif not any(sprops.fluid_boundary_collisions):
@@ -530,14 +620,17 @@ def draw_resolution_settings(self, context, master_column):
     else:
         boundary_collision_status_str = "Mixed"
 
-    row = row.row(align=True)
+    box = master_column.box()
+    header, body = box.panel("boundary_collisions", default_closed=True)
+
+    row = header.row(align=True)
+    row.label(text="Domain Boundary Collisions:")
+    row = header.row(align=True)
     row.alignment = 'RIGHT'
     row.label(text=boundary_collision_status_str)
 
-    if not sprops.boundary_collisions_expanded:
-        pass
-    else:
-        column = box.column(align=True)
+    if body:
+        column = body.column(align=True)
         row = column.row(align=True)
         row.prop(sprops, "fluid_boundary_collisions", index=0, text="X –")
         row.prop(sprops, "fluid_boundary_collisions", index=1, text="X+")
@@ -550,99 +643,86 @@ def draw_resolution_settings(self, context, master_column):
         column.prop(sprops, "fluid_open_boundary_width", slider=True)
 
 
-def _get_object_motion_type(self, obj):
-    props = obj.flip_fluid.get_property_group()
-    if hasattr(props, 'export_animated_mesh') and props.export_animated_mesh:
-        return 'ANIMATED'
-    if export_utils.is_object_keyframe_animated(obj):
-        return 'KEYFRAMED'
-    return 'STATIC'
+    #
+    # Draw Frame Rate and Time Scale Panel
+    #
+    fps_str = "{:.2f}".format(sprops.get_frame_rate()) + " FPS"
+    row = row.row(align =True)
 
+    box = master_column.box()
+    header, body = box.panel("frame_rate_and_time_scale", default_closed=True)
 
-def draw_time_settings(self, context, box):
-    obj = vcu.get_active_object(context)
-    sprops = obj.flip_fluid.domain.simulation
-
-    row = box.row(align=True)
-    row.prop(sprops, "frame_rate_and_time_scale_expanded",
-        icon="TRIA_DOWN" if sprops.frame_rate_and_time_scale_expanded else "TRIA_RIGHT",
-        icon_only=True, 
-        emboss=False
-    )
+    row = header.row(align=True)
     row.label(text="Frame Rate and Time Scale:")
+    row = row.row(align=True)
+    row.alignment = 'RIGHT'
+    row.label(text=fps_str)
 
-    if not sprops.frame_rate_and_time_scale_expanded:
-        fps_str = "{:.2f}".format(sprops.get_frame_rate()) + " FPS"
-        row = row.row(align =True)
-        row.alignment = 'RIGHT'
-        row.label(text=fps_str)
-        return
+    if body:
+        column = body.column(align=True)
+        column.label(text="Frame Rate:")
 
-    column = box.column(align=True)
-    column.label(text="Frame Rate:")
-
-    row = column.row(align=True)
-    row.prop(sprops, "frame_rate_mode", expand=True)
-    column = column.column(align=True)
-    column.enabled = sprops.frame_rate_mode == 'FRAME_RATE_MODE_CUSTOM'
-    if sprops.frame_rate_mode == 'FRAME_RATE_MODE_SCENE':
-        column.prop(context.scene.render, "fps", text="Scene Frame Rate")
-    else:
-        column.prop(sprops, "frame_rate_custom", text="Custom Frame Rate")
-
-    column = box.column(align=True)
-    column.label(text="Time Scale:")
-
-    row = column.row(align=True)
-    row.prop(sprops, "time_scale_mode", expand=True)
-    column = column.column(align=True)
-
-    if sprops.time_scale_mode == 'TIME_SCALE_MODE_CUSTOM':
-        column.prop(sprops, "time_scale", text="Custom Time Scale")
-    elif sprops.time_scale_mode == 'TIME_SCALE_MODE_RIGID_BODY':
-        if bpy.context.scene.rigidbody_world is not None:
-            column.prop(bpy.context.scene.rigidbody_world, "time_scale", text="Rigid Body Time Scale")
+        row = column.row(align=True)
+        row.prop(sprops, "frame_rate_mode", expand=True)
+        column = column.column(align=True)
+        column.enabled = sprops.frame_rate_mode == 'FRAME_RATE_MODE_CUSTOM'
+        if sprops.frame_rate_mode == 'FRAME_RATE_MODE_SCENE':
+            column.prop(context.scene.render, "fps", text="Scene Frame Rate")
         else:
+            column.prop(sprops, "frame_rate_custom", text="Custom Frame Rate")
+
+        column = body.column(align=True)
+        column.label(text="Time Scale:")
+
+        row = column.row(align=True)
+        row.prop(sprops, "time_scale_mode", expand=True)
+        column = column.column(align=True)
+
+        if sprops.time_scale_mode == 'TIME_SCALE_MODE_CUSTOM':
+            column.prop(sprops, "time_scale", text="Custom Time Scale")
+        elif sprops.time_scale_mode == 'TIME_SCALE_MODE_RIGID_BODY':
+            if bpy.context.scene.rigidbody_world is not None:
+                column.prop(bpy.context.scene.rigidbody_world, "time_scale", text="Rigid Body Time Scale")
+            else:
+                row = column.row(align=True)
+                row.label(text="No Rigid Body World: ")
+                row.operator("rigidbody.world_add")
+
+        elif sprops.time_scale_mode == 'TIME_SCALE_MODE_SOFT_BODY':
+            split = column.split(align=True)
+            column_left = split.column(align=True)
+            column_right = split.column(align=True)
+            column_left.label(text="Soft Body Object:")
+            column_right.prop(sprops, "time_scale_object_soft_body", text="")
+            
             row = column.row(align=True)
-            row.label(text="No Rigid Body World: ")
-            row.operator("rigidbody.world_add")
-
-    elif sprops.time_scale_mode == 'TIME_SCALE_MODE_SOFT_BODY':
-        split = column.split(align=True)
-        column_left = split.column(align=True)
-        column_right = split.column(align=True)
-        column_left.label(text="Soft Body Object:")
-        column_right.prop(sprops, "time_scale_object_soft_body", text="")
-        
-        row = column.row(align=True)
-        soft_body_modifier = sprops.get_selected_time_scale_object_soft_body_modifier()
-        if soft_body_modifier is not None:
-            row.prop(soft_body_modifier.settings, "speed", text="Soft Body Time Scale")
-        else:
-            if sprops.time_scale_object_soft_body is not None:
-                row.label(text="No soft body simulation found on object")
+            soft_body_modifier = sprops.get_selected_time_scale_object_soft_body_modifier()
+            if soft_body_modifier is not None:
+                row.prop(soft_body_modifier.settings, "speed", text="Soft Body Time Scale")
             else:
-                row.label(text="No soft body object selected")
+                if sprops.time_scale_object_soft_body is not None:
+                    row.label(text="No soft body simulation found on object")
+                else:
+                    row.label(text="No soft body object selected")
 
-    elif sprops.time_scale_mode == 'TIME_SCALE_MODE_CLOTH':
-        split = column.split(align=True)
-        column_left = split.column(align=True)
-        column_right = split.column(align=True)
-        column_left.label(text="Cloth Object:")
-        column_right.prop(sprops, "time_scale_object_cloth", text="")
-        
-        row = column.row(align=True)
-        cloth_modifier = sprops.get_selected_time_scale_object_cloth_modifier()
-        if cloth_modifier is not None:
-            row.prop(cloth_modifier.settings, "time_scale", text="Cloth Time Scale")
-        else:
-            if sprops.time_scale_object_cloth is not None:
-                row.label(text="No cloth simulation found on object")
+        elif sprops.time_scale_mode == 'TIME_SCALE_MODE_CLOTH':
+            split = column.split(align=True)
+            column_left = split.column(align=True)
+            column_right = split.column(align=True)
+            column_left.label(text="Cloth Object:")
+            column_right.prop(sprops, "time_scale_object_cloth", text="")
+            
+            row = column.row(align=True)
+            cloth_modifier = sprops.get_selected_time_scale_object_cloth_modifier()
+            if cloth_modifier is not None:
+                row.prop(cloth_modifier.settings, "time_scale", text="Cloth Time Scale")
             else:
-                row.label(text="No cloth object selected")
+                if sprops.time_scale_object_cloth is not None:
+                    row.label(text="No cloth simulation found on object")
+                else:
+                    row.label(text="No cloth object selected")
 
-    elif sprops.time_scale_mode == 'TIME_SCALE_MODE_FLUID':
-        if vcu.is_blender_282():
+        elif sprops.time_scale_mode == 'TIME_SCALE_MODE_FLUID':
             split = column.split(align=True)
             column_left = split.column(align=True)
             column_right = split.column(align=True)
@@ -658,9 +738,15 @@ def draw_time_settings(self, context, box):
                     row.label(text="No Mantaflow domain found on object")
                 else:
                     row.label(text="No Mantaflow domain object selected")
-        else:
-            column.label(text="Mantaflow fluid simulation time scale mode")
-            column.label(text="only supported in Blender 2.82 or later")
+
+
+def _get_object_motion_type(self, obj):
+    props = obj.flip_fluid.get_property_group()
+    if hasattr(props, 'export_animated_mesh') and props.export_animated_mesh:
+        return 'ANIMATED'
+    if export_utils.is_object_keyframe_animated(obj):
+        return 'KEYFRAMED'
+    return 'STATIC'
 
 
 class FLIPFLUID_PT_DomainTypePanel(bpy.types.Panel):
@@ -700,10 +786,7 @@ class FLIPFLUID_PT_DomainTypePanel(bpy.types.Panel):
         draw_more_bake_settings(self, context, box)
 
         column = self.layout.column()
-        draw_resolution_settings(self, context, column)
-
-        box = self.layout.box()
-        draw_time_settings(self, context, box)
+        draw_simulation_settings(self, context, column)
         
 
 def register():

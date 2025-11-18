@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_INFLUENCEGRID_H
-#define FLUIDENGINE_INFLUENCEGRID_H
+#pragma once
 
 #include "array3d.h"
 
@@ -65,5 +64,3 @@ private:
     Array3d<float> _influence;
     Array3d<float> _tempinfluence;
 };
-
-#endif

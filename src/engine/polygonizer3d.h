@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef FLUIDENGINE_POLYGONIZER3D_H
-#define FLUIDENGINE_POLYGONIZER3D_H
+#pragma once
 
 #if __MINGW32__ && !_WIN64
     #include "mingw32_threads/mingw.thread.h"
@@ -104,5 +103,3 @@ private:
     bool _isSurfaceCellMaskSet = false;
 
 };
-
-#endif
