@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+# Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ if "bpy" in locals():
         'domain_ui',
         'cache_object_ui',
         'helper_ui',
+        'compositing_tools_ui',
         'flip_fluids_addon_disabled_ui',
     ]
     for module_name in reloadable_modules:
@@ -147,15 +148,6 @@ def append_to_PHYSICS_PT_add_panel(self, context):
         box.label(text="Restart Blender", icon="ERROR")
 
     is_installation_complete = installation_utils.is_installation_complete()
-    feature_dict = api_utils.get_enabled_features_affected_by_T88811()
-    if feature_dict is not None and not addon_prefs.dismiss_T88811_crash_warning and is_installation_complete:
-        box = self.layout.box()
-        api_utils.draw_T88811_ui_warning(box, addon_prefs, feature_dict)
-
-    is_persistent_data_enabled = api_utils.is_persistent_data_issue_relevant()
-    if is_persistent_data_enabled and not addon_prefs.dismiss_persistent_data_render_warning and is_installation_complete:
-        box = self.layout.box()
-        api_utils.draw_persistent_data_warning(box, addon_prefs)
 
 
 def register():

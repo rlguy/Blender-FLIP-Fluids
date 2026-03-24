@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+# Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -177,7 +177,9 @@ class FLIPFluidsAlembicExporter(bpy.types.Operator, bpy_extras.io_utils.ExportHe
     bl_idname = "flip_fluid_operators.flip_fluids_alembic_exporter"
     bl_label = "Export FF Alembic"
     bl_options = {'PRESET', 'UNDO'}
-    bl_description = ("Prepare a FLIP Fluids simulation for Alembic export. After the file dialog, this exporter will" + 
+    bl_description = ("Prepare a FLIP Fluids simulation for Alembic export. If possible, export to the" + 
+                      " Universal Scene Description (.usdc) format instead of Alembic. USD supports more" + 
+                      " features and full FLIP Fluids export compatibility. After the file dialog, this exporter will" + 
                       " launch a new command line window and start exporting the simulation to the" +
                       " Alembic (.abc) format. This Blend file will need to be saved before accessing"
                       " this operator")

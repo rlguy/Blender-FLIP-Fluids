@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+# Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,73 @@ import bpy, os, json, csv, math
 
 from ..objects import flip_fluid_geometry_exporter as geometry_exporter
 from .. import export
+
+
+OBJECT_MODIFIERS_IGNORE_LIST = []
+
+
+def handler_export_pre(context):
+    global OBJECT_MODIFIERS_IGNORE_LIST
+    OBJECT_MODIFIERS_IGNORE_LIST = []
+
+    ignore_substring = "ff_sim_disable"
+    for bl_object in bpy.data.objects:
+        for modifier in bl_object.modifiers:
+            if not modifier.show_viewport:
+                continue
+
+            mod_name = modifier.name
+            node_group_name = modifier.node_group.name if modifier.type == 'NODES' else ""
+            if (ignore_substring in mod_name.lower()) or (ignore_substring in node_group_name.lower()):
+                modifier.show_viewport = False
+                OBJECT_MODIFIERS_IGNORE_LIST.append((bl_object.name, mod_name, node_group_name))
+
+    print("\nDisabling Modifiers From Simulation:")
+    print("------------------------------------------------------------")
+    if OBJECT_MODIFIERS_IGNORE_LIST:
+        table_entries = []
+        col_width1 = 0
+        col_width2 = 0
+        col_width3 = 0
+        for item in OBJECT_MODIFIERS_IGNORE_LIST:
+            object_string = "Object: <" + item[0] + ">"
+            modifier_string = "Modifier: <" + item[1] + ">"
+            node_group_string = "Node Group: N/A"
+            if item[2]:
+                node_group_string = "Node Group: <" + item[2] + ">"
+
+            col_width1 = max(col_width1, len(object_string))
+            col_width2 = max(col_width2, len(modifier_string))
+            col_width3 = max(col_width3, len(node_group_string))
+
+            table_entries.append((object_string, modifier_string, node_group_string))
+
+        col_pad = 4
+        col_width1 += col_pad
+        col_width2 += col_pad
+        col_width3 += col_pad
+        for entry in table_entries:
+            print(f"{entry[0]:<{col_width1}}{entry[1]:<{col_width2}}{entry[2]:<{col_width3}}")
+    else:
+        print("No modifiers are disabled from the FLIP Fluids simulation.")
+        print("To disable a modifier from the simulation, include the text FF_SIM_DISABLE in the modifier name or node group name.")
+    print("------------------------------------------------------------")
+
+def handler_export_post(context):
+    global OBJECT_MODIFIERS_IGNORE_LIST
+
+    for item in OBJECT_MODIFIERS_IGNORE_LIST:
+        bl_object = bpy.data.objects.get(item[0])
+        if bl_object is None:
+            continue
+
+        modifier = bl_object.modifiers.get(item[1])
+        if modifier is None:
+            continue
+
+        modifier.show_viewport = True
+
+    OBJECT_MODIFIERS_IGNORE_LIST = []
 
 
 class ExportFluidSimulation(bpy.types.Operator):
@@ -179,6 +246,7 @@ class ExportFluidSimulation(bpy.types.Operator):
 
 
     def execute(self, context):
+        handler_export_pre(context)
         self._initialize_geometry_exporter(context)
         self._initialize_operator(context)
         return {'RUNNING_MODAL'}
@@ -188,6 +256,8 @@ class ExportFluidSimulation(bpy.types.Operator):
         if self.timer:
             context.window_manager.event_timer_remove(self.timer)
             self.timer = None
+
+        handler_export_post(context)
 
         dprops = self._get_domain_properties()
         if dprops is None:

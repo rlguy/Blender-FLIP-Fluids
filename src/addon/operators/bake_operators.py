@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+# Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@ import bpy, os, glob, json, threading
 from .. import bake
 from ..objects import flip_fluid_geometry_exporter
 from .. import export
+from . import export_operators
 from ..utils import installation_utils
 from ..utils import audio_utils
 from ..filesystem import filesystem_protection_layer as fpl
@@ -546,7 +547,11 @@ class BakeFluidSimulationCommandLine(bpy.types.Operator):
 
         self._reset_bake(context)
         self._initialize_domain(context)
+
+        export_operators.handler_export_pre(context)
         success = self._export_simulation_data(context)
+        export_operators.handler_export_post(context)
+
         if not success:
             self.cancel(context)
             return {'FINISHED'}

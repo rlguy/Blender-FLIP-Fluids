@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+# Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, os, sys, json, datetime
+import bpy, os, sys, json, datetime, subprocess, platform
 
 from . import version_compatibility_utils as vcu
 
@@ -31,6 +31,8 @@ MIXBOX_BOOST_FACTOR = 1.2
 
 IS_PRESET_LIBRARY_INSTALLATION_COMPLETE = False
 PRESET_LIBRARY_INSTALLATIONS = []
+
+IS_LINUX_BLENDER_FLATPAK_INSTALLATION = False
 
 IS_ADDON_ACTIVE = False
 
@@ -132,6 +134,14 @@ def tag_addon_inactive():
     IS_ADDON_ACTIVE = False
 
 
+def get_mixbox_plugin_install_directory():
+    utils_directory = os.path.dirname(os.path.realpath(__file__))
+    addon_directory = os.path.dirname(utils_directory)
+    extensions_directory = os.path.dirname(addon_directory)
+    mixbox_directory = os.path.join(extensions_directory, "flip_fluids_mixbox_plugin")
+    return mixbox_directory
+
+
 def update_mixbox_installation_status():
     global IS_MIXBOX_INSTALLATION_COMPLETE
     if not is_mixbox_supported():
@@ -139,8 +149,8 @@ def update_mixbox_installation_status():
         return
 
     lut_filename = "mixbox_lut_data.bin"
-    addon_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    mixbox_lut_filepath = os.path.join(addon_directory, "third_party", "mixbox", lut_filename)
+    mixbox_directory = get_mixbox_plugin_install_directory()
+    mixbox_lut_filepath = os.path.join(mixbox_directory, lut_filename)
     IS_MIXBOX_INSTALLATION_COMPLETE = os.path.isfile(mixbox_lut_filepath)
     return IS_MIXBOX_INSTALLATION_COMPLETE
 
@@ -200,6 +210,38 @@ def is_preset_library_installation_complete():
 def get_preset_library_installations():
     global PRESET_LIBRARY_INSTALLATIONS
     return PRESET_LIBRARY_INSTALLATIONS
+
+
+def update_linux_blender_flatpak_installation_status():
+    # Method not currently needed
+    pass
+
+    """
+    global IS_LINUX_BLENDER_FLATPAK_INSTALLATION
+
+    prefs = vcu.get_addon_preferences()
+    if platform.system() != "Linux" or not prefs.enable_linux_flatpak_compatibility:
+        IS_LINUX_BLENDER_FLATPAK_INSTALLATION = False
+        return
+
+    if prefs.force_linux_flatpak_compatibility:
+        # Due to sandboxing, it may not be possible to automatically detect a Blender Flatpak installation
+        # The addon preferences contain an option to force Flatpak compatibility
+        IS_LINUX_BLENDER_FLATPAK_INSTALLATION = True
+        return
+
+    # If the addon is installed to a path that contains "org.blender.Blender", this is a hint that
+    # this is a Flatpak installation of Blender.
+    # This check may only be correct for default addon installation locations.
+    IS_LINUX_BLENDER_FLATPAK_INSTALLATION = "org.blender.Blender" in __file__
+    """
+
+
+def is_linux_blender_flatpak_installation():
+    if platform.system() != "Linux":
+        return False
+    prefs = vcu.get_addon_preferences()
+    return prefs.enable_linux_flatpak_compatibility
 
 
 def is_turbo_tools_addon_enabled():
@@ -269,6 +311,7 @@ def __load_post_update_is_addon_active():
 def load_post():
     complete_installation()
     update_mixbox_installation_status()
+    update_linux_blender_flatpak_installation_status()
     __load_post_update_is_addon_active()
 
 

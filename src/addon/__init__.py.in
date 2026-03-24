@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+# Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,7 +37,6 @@ if "bpy" in locals():
         'properties',
         'operators',
         'ui',
-        'presets',
         'export',
         'bake',
         'render',
@@ -61,7 +60,6 @@ from . import (
         properties,
         operators,
         ui,
-        presets,
         export,
         bake,
         render,
@@ -150,7 +148,6 @@ def load_post(nonedata):
     installation_utils.load_post()
     materials.load_post()
     properties.load_post()
-    presets.load_post()
     exit_handler.load_post()
     
 
@@ -197,7 +194,6 @@ def register():
     properties.register()
     operators.register()
     ui.register()
-    presets.register()
 
     bpy.app.handlers.depsgraph_update_post.append(scene_update_post)
     bpy.app.handlers.render_init.append(render_init)
@@ -213,6 +209,8 @@ def register():
     atexit.register(on_exit)
 
     bpy.utils.register_class(FlipFluidCompleteInstallation)
+    
+    installation_utils.update_mixbox_installation_status()
 
 
 def unregister():
@@ -221,7 +219,6 @@ def unregister():
     properties.unregister()
     operators.unregister()
     ui.unregister()
-    presets.unregister()
 
     bpy.app.handlers.depsgraph_update_post.remove(scene_update_post)
     bpy.app.handlers.render_init.remove(render_init)

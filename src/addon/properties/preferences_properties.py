@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+# Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -157,15 +157,6 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
             ); 
     FAKE_PREFERENCES.enable_experimental_build_warning = True
 
-    enable_extra_features: BoolProperty(
-            name="Enable Extra Features", 
-            description="Enable to unlock extra features"
-                " that may be considered unstable for rendering, baking, and exporting due to current bugs in Blender."
-                " Rendering issues can be completely avoided by rendering from the command line", 
-            default=True,
-            ); 
-    FAKE_PREFERENCES.enable_extra_features = False
-
     enable_support_tools: BoolProperty(
             name="Enable Technical Support Tools", 
             description="Used by the developers to assist in technical support requests", 
@@ -181,6 +172,14 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
             default=True,
             ); 
     FAKE_PREFERENCES.cmd_save_blend_file_before_launch = True
+
+    enable_linux_flatpak_compatibility: BoolProperty(
+            name="Enable Linux Flatpak Compatibility",
+            description="If enabled, command line tools will launch Blender using <flatpak run org.blender.Blender> instead using Blender's binary path. This option is only relevant or supported on Linux OS",
+            default=False,
+            options={'HIDDEN'},
+            )
+    FAKE_PREFERENCES.enable_linux_flatpak_compatibility = False
 
     cmd_bake_max_attempts: IntProperty(
             name="Max Attempts",
@@ -292,40 +291,6 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
 
     preset_library_installations_expanded: BoolProperty(default=True); 
 
-    dismiss_T88811_crash_warning: BoolProperty(
-            name="Dismiss render crash bug warnings", 
-            description="Dismiss warnings in UI when features are enabled that can trigger a"
-                " bug in Blender (T88811) that can cause frequent render crashes or incorrect"
-                " renders. The workaround to this issue is to render from the command line. See"
-                " the FLIP Fluids sidebar helper menu for tools to help automatically launch a"
-                " cmd render. This option can be reset in the addon preferences", 
-            default=False,
-            ); 
-    FAKE_PREFERENCES.dismiss_T88811_crash_warning = False
-
-    dismiss_persistent_data_render_warning: BoolProperty(
-            name="Dismiss persistent data warnings", 
-            description="Dismiss warnings in UI when the Cycles Persistent Data option is enabled."
-            " This render option is not compatible with the simulation meshes and can cause render"
-            " crashes, incorrect renders, or static renders. The workaround to this issue is to"
-            " disable the 'Render Properties > Performance > Persistent Data' option or to render"
-            " from the command line. See the FLIP Fluids sidebar helper menu for tools to help"
-            " automatically launch a cmd render. This option can be reset in the addon preferences", 
-            default=False,
-            ); 
-    FAKE_PREFERENCES.dismiss_persistent_data_render_warning = False
-
-    dismiss_rtx_driver_warning: BoolProperty(
-            name="Dismiss NVIDIA GeForce RTX Driver Warning", 
-            description="Dismiss warning in the FLIP Fluids preferences menu related to a recent NVIDIA"
-                " GeForce RTX 'Game Ready Driver' update that may cause Blender to crash frequently when baking"
-                " a simulation. If you are experiencing this issue, the current solution is to update to"
-                " the NVIDIA 'Studio Driver' version. Studio drivers are typically more stable for content"
-                " creation software",
-            default=False,
-            ); 
-    FAKE_PREFERENCES.dismiss_rtx_driver_warning = False
-
     dismiss_export_animated_mesh_parented_relation_hint: BoolProperty(
             name="Dismiss 'Export Animated Mesh' parented relation hint", 
             description="Dismiss hints about enabling 'Export Animated Mesh' in the FLIP object UI"
@@ -346,10 +311,6 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
                 options={'HIDDEN'},
                 )
     FAKE_PREFERENCES.enable_tabbed_domain_settings_view = True
-
-
-    def is_extra_features_enabled(self):
-        return self.enable_extra_features or installation_utils.is_experimental_build()
 
 
     def _update_enable_helper(self, context):
@@ -403,27 +364,6 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         box = self.layout.box()
         column = box.column(align=True)
         column.label(text="Install Mixbox Color Blending Plugin:")
-
-        if not self.is_extra_features_enabled():
-            if installation_utils.is_mixbox_supported():
-                column.label(text="Activate the 'Enable Extra Features' option to access this feature:", icon='INFO')
-
-                row = column.row(align=True)
-                row.alignment = 'LEFT'
-                row.prop(self, "enable_extra_features")
-                row.operator(
-                    "wm.url_open", 
-                    text="What are the extra features?", 
-                    icon="URL"
-                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Preferences-Menu-Settings#developer-tools"
-
-                column.separator()
-                column.operator(
-                    "wm.url_open", 
-                    text="Mixbox Installation Instructions", 
-                    icon="URL"
-                ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Mixbox-Installation-and-Uninstallation"
-                return
 
         if not installation_utils.is_mixbox_supported():
             column.label(text="Mixbox color blending features are not supported in this version of the FLIP Fluids addon.", icon="ERROR")
@@ -769,6 +709,11 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         helper_column.label(text="Command Line Tools:")
         row = helper_column.row(align=True)
         row.prop(self, "cmd_save_blend_file_before_launch")
+
+        row = helper_column.row(align=True)
+        row.alignment = 'LEFT'
+        row.prop(self, "enable_linux_flatpak_compatibility")
+
         row = helper_column.row(align=True)
         row.alignment = 'LEFT'
         row.label(text="Re-launch bake after crash:", icon='FILE_REFRESH')
@@ -789,18 +734,6 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         box.enabled = is_installation_complete
         helper_column = box.column(align=True)
         helper_column.label(text="Experimental and Extra Features:")
-
-        if installation_utils.is_experimental_build():
-            helper_column.prop(self, "enable_experimental_build_warning")
-
-        row = helper_column.row(align=True)
-        row.alignment = 'LEFT'
-        row.prop(self, "enable_extra_features")
-        row.operator(
-            "wm.url_open", 
-            text="What are the extra features?", 
-            icon="URL"
-        ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Preferences-Menu-Settings#developer-tools"
         
         helper_column.prop(self, "enable_blend_file_logging")
         helper_column.prop(self, "enable_support_tools")
@@ -813,28 +746,6 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         split = vcu.ui_split(column, factor=0.666, align=True)
         column_left = split.column(align=True)
         column_right = split.column(align=True)
-
-        row = column_left.row(align=True)
-        row.alignment = 'LEFT'
-        row.prop(self, "dismiss_T88811_crash_warning")
-
-        row = column_left.row(align=True)
-        row.alignment = 'LEFT'
-        row.prop(self, "dismiss_persistent_data_render_warning")
-
-        row = column_right.row(align=True)
-        row.alignment = 'EXPAND'
-        row.operator(
-                "wm.url_open", 
-                text="Bug Report: T88811", 
-            ).url = "https://projects.blender.org/blender/blender/issues/88811"
-
-        row = column_right.row(align=True)
-        row.alignment = 'EXPAND'
-        row.operator(
-                "wm.url_open", 
-                text="Related Bug Reports", 
-            ).url = "https://projects.blender.org/blender/blender/issues?type=all&state=open&labels=&milestone=0&project=0&assignee=0&poster=0&q=Persistent+Data"
 
         row = column_left.row(align=True)
         row.alignment = 'LEFT'

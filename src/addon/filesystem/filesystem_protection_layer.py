@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+# Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -84,6 +84,9 @@ def get_directory_whitelist():
     preset_library_installations = installation_utils.get_preset_library_installations()
     for install in preset_library_installations:
         whitelist.append(install["path"])
+
+    mixbox_installation_directory = installation_utils.get_mixbox_plugin_install_directory()
+    whitelist.append(mixbox_installation_directory)
 
     if bpy.data.filepath:
         compositing_tools_filepath = os.path.dirname(bpy.data.filepath)

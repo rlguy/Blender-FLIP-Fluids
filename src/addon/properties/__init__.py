@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+# Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,8 @@ if "bpy" in locals():
         'flip_fluid_properties',
         'object_properties',
         'material_properties',
-        'helper_properties'
+        'helper_properties',
+        'compositing_tools_properties'
     ]
     for module_name in reloadable_modules:
         if module_name in locals():
@@ -38,18 +39,21 @@ from . import (
     flip_fluid_properties,
     object_properties,
     material_properties,
-    helper_properties
+    helper_properties,
+    compositing_tools_properties
     )
 
 
 def scene_update_post(scene):
     object_properties.scene_update_post(scene)
     helper_properties.scene_update_post(scene)
+    compositing_tools_properties.scene_update_post(scene)
 
 
 def frame_change_post(scene, depsgraph=None):
     object_properties.frame_change_post(scene, depsgraph)
     helper_properties.frame_change_post(scene, depsgraph)
+    compositing_tools_properties.frame_change_post(scene, depsgraph)
 
 
 def load_pre():
@@ -61,6 +65,7 @@ def load_post():
     preferences_properties.load_post()
     object_properties.load_post()
     helper_properties.load_post()
+    compositing_tools_properties.load_post()
 
 
 def save_pre():
@@ -70,6 +75,7 @@ def save_pre():
 def save_post():
     object_properties.save_post()
     helper_properties.save_post()
+    compositing_tools_properties.save_post()
 
 
 def register():
@@ -80,6 +86,7 @@ def register():
     object_properties.register()
     material_properties.register()
     helper_properties.register()
+    compositing_tools_properties.register()
 
 
 def unregister():
@@ -90,3 +97,4 @@ def unregister():
     object_properties.unregister()
     material_properties.unregister()
     helper_properties.unregister()
+    compositing_tools_properties.unregister()

@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+# Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -1137,8 +1137,11 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
         threshold = __get_parameter_data(world.sheet_fill_threshold, frameno, value_min=0.0, value_max=1.0)
         fluidsim.sheet_fill_threshold = threshold - 1
 
-    friction = __get_parameter_data(world.boundary_friction, frameno, value_min=0.0, value_max=1.0)
-    fluidsim.boundary_friction = friction
+    boundary_friction_sides = __get_parameter_data(world.boundary_friction_sides, frameno)
+    fluidsim.boundary_friction_sides = boundary_friction_sides
+
+    fluid_boundary_collisions = __get_parameter_data(dprops.simulation.fluid_boundary_collisions, frameno)
+    fluidsim.fluid_boundary_collisions = fluid_boundary_collisions
 
     # Fluid Particle Settings
     particles = dprops.particles
@@ -1255,6 +1258,7 @@ def __initialize_fluid_simulation_settings(fluidsim, data):
     fluidsim.enable_surface_color_attribute_mixing = __get_parameter_data(surface.enable_color_attribute_mixing, frameno)
     fluidsim.surface_color_attribute_mixing_rate = __get_parameter_data(surface.color_attribute_mixing_rate, frameno)
     fluidsim.surface_color_attribute_mixing_radius = __get_parameter_data(surface.color_attribute_mixing_radius, frameno)
+    fluidsim.enable_mixbox_grayscale_mode = __get_parameter_data(surface.enable_mixbox_grayscale_mode, frameno)
 
     if fluidsim.enable_surface_color_attribute_mixing:
         mixing_mode = __get_parameter_data(surface.color_attribute_mixing_mode, frameno)
@@ -1616,8 +1620,11 @@ def __add_force_field_objects(fluidsim, data, bakedata):
 
 
 def __initialize_mixbox(fluidsim):
-    module_dir = os.path.dirname(os.path.realpath(__file__))
-    lut_filepath = os.path.join(module_dir, "third_party", "mixbox", "mixbox_lut_data.bin")
+    addon_directory = os.path.dirname(os.path.realpath(__file__))
+    extensions_directory = os.path.dirname(addon_directory)
+    mixbox_directory = os.path.join(extensions_directory, "flip_fluids_mixbox_plugin")
+    lut_filepath = os.path.join(mixbox_directory, "mixbox_lut_data.bin")
+
     if os.path.isfile(lut_filepath):
         with open(lut_filepath, 'rb') as f:
             lut_data = f.read()
@@ -2106,8 +2113,8 @@ def __update_animatable_domain_properties(fluidsim, data, frameno):
         __set_property(fluidsim, 'sheet_fill_rate', sheet_fill_rate, value_min=0, value_max=1.0)
         __set_property(fluidsim, 'sheet_fill_threshold', threshold - 1, value_min=-1.0, value_max=0.0)
 
-    friction = __get_parameter_data(world.boundary_friction, frameno)
-    __set_property(fluidsim, 'boundary_friction', friction, value_min=0.0, value_max=1.0)
+    boundary_friction_sides = __get_parameter_data(world.boundary_friction_sides, frameno)
+    __set_property(fluidsim, 'boundary_friction_sides', boundary_friction_sides)
 
     # Fluid Particle Settings
 
@@ -2198,6 +2205,9 @@ def __update_animatable_domain_properties(fluidsim, data, frameno):
 
     mixing_radius = __get_parameter_data(surface.color_attribute_mixing_radius, frameno)
     __set_property(fluidsim, 'surface_color_attribute_mixing_radius', mixing_radius)
+
+    enable_grayscale_mode = __get_parameter_data(surface.enable_mixbox_grayscale_mode, frameno)
+    __set_property(fluidsim, 'enable_mixbox_grayscale_mode', enable_grayscale_mode)
 
     # Advanced Settings
 

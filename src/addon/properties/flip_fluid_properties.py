@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+# Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -94,6 +94,30 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
         if domain is not None and domain.flip_fluid.object_type != 'TYPE_DOMAIN':
             return None
         return domain
+
+
+    def get_orphaned_domain_objects(self):
+        # Domain objects that are in Blend file data, but not in any scene or view layer
+        domain_objects = []
+        for obj in bpy.data.objects:
+            if obj.flip_fluid.is_active and obj.flip_fluid.is_domain():
+                domain_objects.append(obj)
+
+        orphaned_domain_objects = []
+        for obj in domain_objects:
+            is_orphaned = True
+            for scene in bpy.data.scenes:
+                for view_layer in scene.view_layers:
+                    if obj.name in view_layer.objects:
+                        is_orphaned = False
+                        break
+                if not is_orphaned:
+                    continue
+
+            if is_orphaned:
+                orphaned_domain_objects.append(obj)
+
+        return orphaned_domain_objects
 
 
     def get_domain_properties(self):

@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+# Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -158,11 +158,11 @@ class FlipFluidAddQuickLiquid(bpy.types.Operator):
 
         # Create Domain
         bpy.ops.mesh.primitive_cube_add(size=4.0, location=(0.0, 0.0, 0.0 + z_offset))
-        bl_cube = bpy.context.active_object
-        bl_cube.name = "FLIP Domain"
+        bl_domain = bpy.context.active_object
+        bl_domain.name = "FLIP Domain"
 
         bpy.ops.flip_fluid_operators.flip_fluid_add()
-        bl_cube.flip_fluid.object_type = 'TYPE_DOMAIN'
+        bl_domain.flip_fluid.object_type = 'TYPE_DOMAIN'
 
         # Create Fluid Cube
         bpy.ops.mesh.primitive_cube_add(size=4.0, location=(0.0, 0.0, -1.75 + z_offset), scale=(1.0, 1.0, 0.125))
@@ -202,6 +202,11 @@ class FlipFluidAddQuickLiquid(bpy.types.Operator):
 
         bpy.ops.flip_fluid_operators.flip_fluid_add()
         bl_sphere.flip_fluid.object_type = 'TYPE_OBSTACLE'
+
+        # Select Domain
+        bpy.ops.object.select_all(action='DESELECT')
+        bl_domain.select_set(True)
+        bpy.context.view_layer.objects.active = bl_domain
 
         # Domain Settings
         domain_properties = bpy.context.scene.flip_fluid.get_domain_properties()
@@ -330,6 +335,11 @@ class FlipFluidAddThickViscousLiquid(bpy.types.Operator):
         mod.operation = 'INTERSECT'
         mod.object = bl_domain
 
+        # Select Domain
+        bpy.ops.object.select_all(action='DESELECT')
+        bl_domain.select_set(True)
+        bpy.context.view_layer.objects.active = bl_domain
+
         # Surface Settings
         domain_properties = bpy.context.scene.flip_fluid.get_domain_properties()
         bl_fluid_surface = domain_properties.mesh_cache.surface.get_cache_object()
@@ -448,6 +458,11 @@ class FlipFluidAddThinViscousLiquid(bpy.types.Operator):
         mod = bl_sphere.modifiers.new("Boolean", "BOOLEAN")
         mod.operation = 'INTERSECT'
         mod.object = bl_domain
+
+        # Select Domain
+        bpy.ops.object.select_all(action='DESELECT')
+        bl_domain.select_set(True)
+        bpy.context.view_layer.objects.active = bl_domain
 
         # Surface Settings
         domain_properties = bpy.context.scene.flip_fluid.get_domain_properties()

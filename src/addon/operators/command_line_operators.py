@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+# Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,445 +19,30 @@ from bpy.props import (
         BoolProperty,
         )
 
+from . import compositing_tools_operators
 from ..utils import version_compatibility_utils as vcu
+from ..utils import installation_utils
 from ..filesystem import filesystem_protection_layer as fpl
-from ..presets import render_passes 
 
 
-### PREPARE VISIBLITY SETTINGS FOR PASSES ###
+def get_blender_launch_command(enable_render_logging=False):
+    if installation_utils.is_linux_blender_flatpak_installation():
+        command_text = "flatpak run org.blender.Blender"
+    else:
+        command_text = '"' + bpy.app.binary_path + '"'
 
-# Console output can be toggled with "Domain > Debug > Display Render Passes Console Output" option
-# This function can be used exactly like Python print()
-def print_render_pass_debug(*args, **kwargs):
-    dprops = bpy.context.scene.flip_fluid.get_domain_properties()
-    if dprops is not None and dprops.debug.display_render_passes_console_output:
-        print(*args, **kwargs)
+    logging_commands = get_blender_logging_commands()
+    if enable_render_logging and logging_commands:
+        command_text += " " + get_blender_logging_commands()
 
+    return command_text
 
-def toggle_footageprojection(value):
-    """Sets the blend input of the 'ff_fluidsurface_projection' node to the given value."""
-    material = bpy.data.materials.get("FF ClearWater_Passes")
-    if not material or not material.use_nodes:
-        return
 
-    node_tree = material.node_tree
-    target_node = node_tree.nodes.get("ff_fluidsurface_projection")
-    if target_node:
-        blend_input = target_node.inputs[0]
-        if blend_input:
-            blend_input.default_value = float(value)
-
-
-def toggle_fluidfinder(value):
-    """Sets the render_passes_toggle_projectiontester property in flip_fluid_helper to the given boolean."""
-    bpy.context.scene.flip_fluid_helper.render_passes_toggle_projectiontester = value
-
-
-def toggle_onlyreflections(value):
-    """Sets ff_onlyreflections node (Mix Shader FAC input) to the given value."""
-    material = bpy.data.materials.get("FF ClearWater_Passes")
-    if not material or not material.use_nodes:
-        return
-
-    node_tree = material.node_tree
-    node_prefix = "ff_onlyreflections"
-    
-    # Look for Mix Shader nodes with the prefix "ff_onlyreflections"
-    relevant_nodes = [
-        node for node in node_tree.nodes
-        if node.name.startswith(node_prefix) and node.type == 'MIX_SHADER'
-    ]
-
-    for node in relevant_nodes:
-        # Adjust the FAC (inputs[0]) value of the Mix Shader
-        node.inputs[0].default_value = float(value)
-
-
-def toggle_transparent_or_holdout(value):
-    """Sets ff_transparent_or_holdout node (Mix Shader FAC input) to the given value."""
-    material = bpy.data.materials.get("FF ClearWater_Passes")
-    if not material or not material.use_nodes:
-        return
-
-    node_tree = material.node_tree
-    node_prefix = "ff_transparent_or_holdout"
-
-    # Look for Mix Shader nodes named ff_transparent_or_holdout
-    relevant_nodes = [
-        node for node in node_tree.nodes
-        if node.name.startswith(node_prefix) and node.type == 'MIX_SHADER'
-    ]
-
-    for node in relevant_nodes:
-        # Adjust the FAC (inputs[0]) value
-        node.inputs[0].default_value = float(value)
-
-
-def transfer_elements_to_elements_lists(hprops):
-    # Clear elements lists
-    hprops.render_passes_fg_elementslist.clear()
-    hprops.render_passes_bg_elementslist.clear()
-    hprops.render_passes_ref_elementslist.clear()
-   
-    for obj_prop in hprops.render_passes_objectlist:
-        if obj_prop.fg_elements:
-            new_fg_element = hprops.render_passes_fg_elementslist.add()
-            print_render_pass_debug("added fg elemt")
-            new_fg_element.name = obj_prop.name
-        elif obj_prop.bg_elements:
-            new_bg_element = hprops.render_passes_bg_elementslist.add()
-            print_render_pass_debug("added bg elemt")
-            new_bg_element.name = obj_prop.name
-        elif obj_prop.ref_elements:
-            new_ref_element = hprops.render_passes_ref_elementslist.add()
-            print_render_pass_debug("added ref elemt")
-            new_ref_element.name = obj_prop.name
-          
-
-def apply_visibility_settings_for_pass(pass_name):
-    visibility_settings = render_passes.visibility_settings
-    settings = visibility_settings.get(pass_name, {})
-    hprops = bpy.context.scene.flip_fluid_helper
-
-    # Aktualisiere die Listen basierend auf den Flags
-    transfer_elements_to_elements_lists(hprops)
-
-    print_render_pass_debug(f"Applying settings for pass: {pass_name}")
-    print_render_pass_debug(f"Settings being applied: {settings}")
-
-    # World- und Render-Einstellungen
-    if 'world' in settings:
-        apply_visibility_settings_for_world(bpy.context.scene.world, settings['world'])
-    if 'film_transparent' in settings:
-        apply_film_transparency(settings['film_transparent'])
-    if 'transparent_glass' in settings:
-        apply_transparent_glass_settings(settings['transparent_glass'])
-    #if 'denoiser' in settings:
-    #    apply_denoiser(settings['denoiser'])
-
-    # Objekt-Sichtbarkeitseinstellungen
-    for obj_name, obj_visibility in settings.items():
-        if obj_name in ["selected_objects", "world", "film_transparent", "transparent_glass"]:
-            continue 
-        obj = bpy.data.objects.get(obj_name)
-        if obj:
-            print_render_pass_debug(f"Applying general settings to {obj_name}: {obj_visibility}")
-            apply_visibility_settings_for_object(obj, obj_visibility, pass_name)
-        else:
-            print_render_pass_debug(f"Object not found in Blender: {obj_name}")
-
-    # Einstellungen für ausgewaehlte Objekte
-    if "selected_objects" in settings:
-        object_list_settings = settings["selected_objects"]
-        print_render_pass_debug(f"Settings for 'selected_objects' in pass '{pass_name}': {object_list_settings}")
-
-        for obj_prop in hprops.render_passes_objectlist:
-            obj = bpy.data.objects.get(obj_prop.name)
-            if obj:
-                # Falls "reset" → Sonderlogik, sonst direkt aus 'selected_objects'
-                if pass_name == "reset":
-                    # Ganz normal die Dictionary‐Werte anwenden
-                    obj_visibility = object_list_settings
-                else:
-                    obj_visibility = object_list_settings
-                
-                apply_visibility_settings_for_object(obj, obj_visibility, pass_name)
-            else:
-                print_render_pass_debug(f"Selected object not found in Blender: {obj_prop.name}")
-
-    # Einstellungen fuer Foreground-Elemente
-    if "fg_elements" in settings:
-        fg_elements_list_settings = settings["fg_elements"]
-        print_render_pass_debug(f"Settings for 'fg_elements' in pass '{pass_name}': {fg_elements_list_settings}")
-
-        for fg_elements_prop in hprops.render_passes_fg_elementslist:
-            fg_elements = bpy.data.objects.get(fg_elements_prop.name)
-            if fg_elements:
-                print_render_pass_debug(f"Applying '{pass_name}' settings to foreground object {fg_elements_prop.name}")
-                apply_visibility_settings_for_object(fg_elements, fg_elements_list_settings, pass_name)
-            else:
-                print_render_pass_debug(f"Foreground object not found in Blender: {fg_elements_prop.name}")
-
-    # Einstellungen fuer Background-Elemente
-    if "bg_elements" in settings:
-        bg_elements_list_settings = settings["bg_elements"]
-        print_render_pass_debug(f"Settings for 'bg_elements' in pass '{pass_name}': {bg_elements_list_settings}")
-
-        for bg_elements_prop in hprops.render_passes_bg_elementslist:
-            bg_elements = bpy.data.objects.get(bg_elements_prop.name)
-            if bg_elements:
-                print_render_pass_debug(f"Applying '{pass_name}' settings to background object {bg_elements_prop.name}")
-                apply_visibility_settings_for_object(bg_elements, bg_elements_list_settings, pass_name)
-            else:
-                print_render_pass_debug(f"Background object not found in Blender: {bg_elements_prop.name}")
-
-    # Einstellungen fuer Reflexionselemente
-    if "ref_elements" in settings:
-        ref_elements_list_settings = settings["ref_elements"]
-        print_render_pass_debug(f"Settings for 'ref_elements' in pass '{pass_name}': {ref_elements_list_settings}")
-
-        for ref_elements_prop in hprops.render_passes_ref_elementslist:
-            ref_elements = bpy.data.objects.get(ref_elements_prop.name)
-            if ref_elements:
-                print_render_pass_debug(f"Applying '{pass_name}' settings to reflective object {ref_elements_prop.name}")
-                apply_visibility_settings_for_object(ref_elements, ref_elements_list_settings, pass_name)
-            else:
-                print_render_pass_debug(f"Reflective object not found in Blender: {ref_elements_prop.name}")
-
-    # Einstellungen fuer Ground-Objekte
-    if "ground" in settings:
-        ground_list_settings = settings["ground"]
-        print_render_pass_debug(f"Settings for 'ground' in pass '{pass_name}': {ground_list_settings}")
-
-        for obj_prop in hprops.render_passes_objectlist:
-            if obj_prop.ground:
-                ground = bpy.data.objects.get(obj_prop.name)
-                if ground:
-                    print_render_pass_debug(f"Applying '{pass_name}' settings to ground object {obj_prop.name}")
-                    apply_visibility_settings_for_object(ground, ground_list_settings, pass_name)
-                else:
-                    print_render_pass_debug(f"Ground object not found in Blender: {obj_prop.name}")
-
-
-def apply_film_transparency(film_transparent):
-    bpy.context.scene.render.film_transparent = film_transparent
-    print_render_pass_debug(f"Film transparency set to: {film_transparent}")
-
-def apply_transparent_glass_settings(transparent_glass):
-    bpy.context.scene.cycles.film_transparent_glass = transparent_glass
-    print_render_pass_debug(f"Transparent glass set to: {transparent_glass}")
-
-def apply_denoiser(denoiser):
-    bpy.context.scene.cycles.use_denoising = denoiser
-    print_render_pass_debug(f"Denoiser set to: {denoiser}")
-
-def apply_visibility_settings_for_world(world, world_settings):
-    if not world:
-        print_render_pass_debug("No world found in the current scene.")
-        return
-
-    # Visibility settings for the world
-    visibility_attributes = ['camera', 'diffuse', 'glossy', 'transmission', 'scatter', 'shadow']
-    for attr in visibility_attributes:
-        if attr in world_settings:
-            setattr(world.cycles_visibility, attr, world_settings[attr])
-            print_render_pass_debug(f"Set world ray visibility for {attr} to {world_settings[attr]}")
-
-
-def apply_visibility_settings_for_object(obj, obj_visibility, pass_name=""):
-    hprops = bpy.context.scene.flip_fluid_helper
-
-    if not isinstance(obj_visibility, dict):
-        print_render_pass_debug(f"Warning: obj_visibility for {obj.name} is not a dictionary! Received: {obj_visibility}")
-        return
-
-    if pass_name == "reset":
-        # 1) Alle Werte aus dem "reset"-Dict übernehmen, inkl. is_shadow_catcher
-        obj.visible_camera         = obj_visibility.get("camera", obj.visible_camera)
-        obj.visible_diffuse        = obj_visibility.get("diffuse", obj.visible_diffuse)
-        obj.visible_glossy         = obj_visibility.get("glossy", obj.visible_glossy)
-        obj.visible_transmission   = obj_visibility.get("transmission", obj.visible_transmission)
-        obj.visible_volume_scatter = obj_visibility.get("scatter", obj.visible_volume_scatter)
-        obj.visible_shadow         = obj_visibility.get("shadow", obj.visible_shadow)
-        obj.is_holdout             = obj_visibility.get("is_holdout", obj.is_holdout)
-        obj.is_shadow_catcher      = obj_visibility.get("is_shadow_catcher", obj.is_shadow_catcher)
-
-        # 2) Gibt es einen gespeicherten ShadowCatcher-Zustand?
-        existing_entry = next(
-            (s for s in hprops.render_passes_shadowcatcher_state if s.name == obj.name),
-            None
-        )
-        if existing_entry:
-            # Wenn ja: diesen Zustand *nachträglich* anwenden
-            obj.is_shadow_catcher = existing_entry.is_shadow_catcher
-            print_render_pass_debug(f"Reset: {obj.name} - Shadow Catcher auf gespeicherten Wert: {obj.is_shadow_catcher}")
-        else:
-            print_render_pass_debug(f"Reset: {obj.name} - Shadow Catcher laut reset-Dict: {obj.is_shadow_catcher}")
-
-        return
-
-    # -- Falls nicht reset, also normales Rendering --
-    # Hier kommt das ganz normale Standardprozedere:
-    obj.visible_camera        = obj_visibility.get("camera", obj.visible_camera)
-    obj.visible_diffuse       = obj_visibility.get("diffuse", obj.visible_diffuse)
-    obj.visible_glossy        = obj_visibility.get("glossy", obj.visible_glossy)
-    obj.visible_transmission  = obj_visibility.get("transmission", obj.visible_transmission)
-    obj.visible_volume_scatter= obj_visibility.get("scatter", obj.visible_volume_scatter)
-    obj.visible_shadow        = obj_visibility.get("shadow", obj.visible_shadow)
-
-    # Shadow Catcher
-    obj.is_shadow_catcher     = obj_visibility.get("is_shadow_catcher", obj.is_shadow_catcher)
-    obj.is_holdout            = obj_visibility.get("is_holdout", obj.is_holdout)
-
-    print_render_pass_debug(f"Applied visibility settings for {obj.name} in pass {pass_name}")
-
-
-def prepare_render_passes_blend_files():
-    props = bpy.context.scene.flip_fluid_helper
-
-    # Print message if render_passes is disabled
-    if not props.render_passes:
-        print_render_pass_debug("Render passes are disabled, but blend files will still be generated.")
-
-    blend_file_directory = os.path.dirname(bpy.data.filepath)
-    base_file_name = pathlib.Path(bpy.path.basename(bpy.data.filepath)).stem
-
-    transfer_elements_to_elements_lists(props)
-
-    # Initial list of suffixes with their corresponding lists
-    pass_suffixes = [
-        ("BG_elements_only",    props.render_passes_elements_only,         props.render_passes_bg_elementslist),
-        ("REF_elements_only",   props.render_passes_elements_only,         props.render_passes_ref_elementslist),
-        ("objects_only",        props.render_passes_objects_only,          None),
-        ("fluidparticles_only", props.render_passes_fluidparticles_only,   None),
-        ("fluid_only",          props.render_passes_fluid_only,            None),
-        ("fluid_shadows_only",  props.render_passes_fluid_shadows_only,    None),
-        ("reflr_only",          props.render_passes_reflr_only,            None),
-        ("bubblesanddust_only", props.render_passes_bubblesanddust_only,   None),
-        ("foamandspray_only",   props.render_passes_foamandspray_only,     None),
-        ("FG_elements_only",    props.render_passes_elements_only,         props.render_passes_fg_elementslist),
-    ]
-
-    # Filter out suffixes with inactive flags or empty element lists
-    filtered_suffixes = []
-    for suffix, is_active, elements_list in pass_suffixes:
-        if not is_active:
-            continue
-        if elements_list is not None and len(elements_list) == 0:
-            print_render_pass_debug(f"Skipping {suffix} because the associated list is empty.")
-            continue
-        filtered_suffixes.append((suffix, is_active, elements_list))
-
-    # Debug-Ausgabe
-    print_render_pass_debug("Enabled passes after filtering:", [suffix for suffix, _, _ in filtered_suffixes])
-
-    # Delete all existing passes-blendfiles before generating new ones
-    for file_name in os.listdir(blend_file_directory):
-        if any(suffix in file_name for suffix, _, _ in pass_suffixes):
-            file_path = os.path.join(blend_file_directory, file_name)
-
-            # Safe method for deleting files to avoid accidental data loss
-            fpl.delete_file(file_path)
-            print_render_pass_debug(f"Deleted old blend file: {file_path}")
-
-    # Reset cache if needed
-    clear_simulation_meshes_before_saving = True
-    if clear_simulation_meshes_before_saving:
-        dprops = bpy.context.scene.flip_fluid.get_domain_properties()
-        dprops.mesh_cache.reset_cache_objects()
-
-    original_render_output_path = bpy.context.scene.render.filepath
-
-    # For property retrieval/restoration
-    hprops = bpy.context.scene.flip_fluid_helper
-
-    # Generate new files
-    for idx, (suffix, _, _) in enumerate(filtered_suffixes):
-        number = idx + 1
-
-        # -- Always store and override fluidfinder for each suffix --
-        original_finder_val = hprops.render_passes_toggle_projectiontester
-        toggle_fluidfinder(False)
-
-        # We'll define original_fade_val here, so we can use it conditionally below
-        original_fade_val = None
-
-        if suffix == "reflr_only":
-            toggle_onlyreflections(1.0)
-            toggle_transparent_or_holdout(1.0)
-            bpy.context.scene.render.use_compositing = True
-
-            # Save original fade value and set it to 0
-            original_fade_val = hprops.render_passes_blend_footage_to_fluidsurface
-            toggle_footageprojection(0.0)
-
-        elif suffix == "objects_only":
-            toggle_transparent_or_holdout(1.0)
-
-        elif suffix == "fluid_only":
-            toggle_transparent_or_holdout(1.0)
-
-            # Save original fade value and set it to 0
-            original_fade_val = hprops.render_passes_blend_footage_to_fluidsurface
-            toggle_footageprojection(0.0)
-
-        # Apply visibility settings for the current pass
-        apply_visibility_settings_for_pass(suffix)
-        # Set render output path
-        apply_render_output_path_for_pass(suffix, number, base_file_name)
-
-        # Save the blend file
-        blend_name = f"{number}_{base_file_name}_{suffix}.blend"
-        blend_path = os.path.join(blend_file_directory, blend_name)
-        bpy.ops.wm.save_as_mainfile(filepath=blend_path, copy=True)
-
-        # -- Revert pass-specific toggles --
-        if suffix == "reflr_only":
-            toggle_onlyreflections(0.0)
-            toggle_transparent_or_holdout(0.0)
-            bpy.context.scene.render.use_compositing = False
-
-            # Restore fade value if it was changed
-            if original_fade_val is not None:
-                toggle_footageprojection(original_fade_val)
-
-        elif suffix == "objects_only":
-            toggle_transparent_or_holdout(0.0)
-
-        elif suffix == "fluid_only":
-            toggle_transparent_or_holdout(0.0)
-
-            # Restore fade value if it was changed
-            if original_fade_val is not None:
-                toggle_footageprojection(original_fade_val)
-
-        # -- Restore fluidfinder for all suffixes --
-        toggle_fluidfinder(original_finder_val)
-
-        # Restore the render output path
-        bpy.context.scene.render.filepath = original_render_output_path
-
-
-def apply_render_output_path_for_pass(suffix, number, base_file_name):
-
-    # Path to render directory
-    original_output_folder = bpy.path.abspath(bpy.context.scene.render.filepath)
-    # Remove filename
-    output_folder = os.path.dirname(original_output_folder)
-    
-    # Add subdirectories
-    render_output_subfolder = f"{number}_{suffix}"
-    full_output_path = os.path.join(output_folder, render_output_subfolder)
-    if not os.path.exists(full_output_path):
-        os.makedirs(full_output_path)
-    
-    # Add new filenames
-    output_filename = os.path.basename(original_output_folder)
-    bpy.context.scene.render.filepath = os.path.join(full_output_path, f"{number}_{output_filename}_{suffix}")
-
-
-def cleanup_object_list_for_operator(object_list):
-        indices_to_remove = [index for index, obj in enumerate(object_list) if not bpy.data.objects.get(obj.name)]
-
-        for index in reversed(indices_to_remove):
-            object_list.remove(index)
-
-        if indices_to_remove:
-            print_render_pass_debug(f"Removed {len(indices_to_remove)} non-existent objects from the object list.")
-
-
-def prepare_render_passes_for_operator(context):
-    ### EXECUTE PREPARE RENDERPASSES ###
-    prepare_render_passes_blend_files()
-  
-    bpy.ops.flip_fluid_operators.reset_passes_settings('INVOKE_DEFAULT')
-
-    # Clean object list if objects were deleted
-    hprops = context.scene.flip_fluid_helper
-    cleanup_object_list_for_operator(hprops.render_passes_objectlist)
-
-
-### END OF PREPARE VISIBLITY SETTINGS FOR PASSES ###
+def get_blender_logging_commands():
+    logging_commands = ""
+    if vcu.is_blender_50():
+        logging_commands = "--log-level info"
+    return logging_commands
 
 
 def get_command_line_script_filepath(script_filename):
@@ -625,7 +210,7 @@ def launch_command_universal_os(command_text, script_prefix_string, keep_window_
                 subprocess.call(["xterm", "-hold", "-e", script_filepath])
             else:
                 errmsg = "This feature requires the GNOME Terminal or XTERM terminal emulator to be"
-                errmsg += " installed and to be accessible on the system path. Either install these programs, restart Blender, and try again or use the"
+                errmsg += " installed and to be accessible on the system path and accessible within Blender. Either install these programs, restart Blender, and try again or use the"
                 errmsg += " Copy Command to Clipboard operator and paste into a terminal program of your choice."
                 bpy.ops.flip_fluid_operators.display_error(
                     'INVOKE_DEFAULT',
@@ -653,11 +238,12 @@ def get_command_line_baking_script_filepath():
 def get_command_line_bake_command_text():
     hprops = bpy.context.scene.flip_fluid_helper
     script_filepath = get_command_line_baking_script_filepath()
-    command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" --python \"" + script_filepath + "\""
+    command_text = get_blender_launch_command() + " --background \"" +  bpy.data.filepath + "\" --python \"" + script_filepath + "\""
     if hprops.cmd_bake_and_render and hprops.cmd_bake_and_render_mode == 'CMD_BAKE_AND_RENDER_MODE_INTERLEAVED':
         num_instance_string = str(hprops.cmd_bake_and_render_interleaved_instances)
         use_overwrite_string = "0" if hprops.cmd_bake_and_render_interleaved_no_overwrite else "1"
-        command_text += " -- " + num_instance_string + " " + use_overwrite_string
+        run_as_flatpak = "1" if installation_utils.is_linux_blender_flatpak_installation() else "0"
+        command_text += " -- " + num_instance_string + " " + use_overwrite_string + " " + run_as_flatpak
     return command_text
 
 
@@ -730,6 +316,7 @@ class FlipFluidHelperCommandLineBake(bpy.types.Operator):
 
     def execute(self, context):
         hprops = context.scene.flip_fluid_helper
+        cprops = context.scene.flip_fluid_compositing_tools
 
         error_return = self.check_and_report_operator_context_errors(context)
         if error_return:
@@ -740,9 +327,9 @@ class FlipFluidHelperCommandLineBake(bpy.types.Operator):
 
         # Only for passes rendering during bake and render interleaved
         is_bake_and_render_interleaved = hprops.cmd_bake_and_render and hprops.cmd_bake_and_render_mode == 'CMD_BAKE_AND_RENDER_MODE_INTERLEAVED'
-        is_render_passes_interleaved = hprops.render_passes and is_bake_and_render_interleaved
+        is_render_passes_interleaved = cprops.render_passes and is_bake_and_render_interleaved
         if is_render_passes_interleaved:
-            prepare_render_passes_for_operator(context)
+            compositing_tools_operators.compositing_tools_operators.prepare_render_passes_for_operator(context)
 
         command_text = get_command_line_bake_command_text()
         if platform.system() == "Windows" and vcu.get_addon_preferences().cmd_bake_max_attempts > 0:
@@ -786,21 +373,6 @@ class FlipFluidHelperCommandLineBakeToClipboard(bpy.types.Operator):
         return {'FINISHED'}
 
 
-### DF Add Passes here:
-
-class FlipFluidPassesResetSettings(bpy.types.Operator):
-    """Reset all visiblity settings to default"""
-    bl_idname = "flip_fluid_operators.reset_passes_settings"
-    bl_label = "Reset Passes Settings"
-    bl_options = {'REGISTER', 'UNDO'}
-    
-    def execute(self, context):
-        apply_visibility_settings_for_pass('reset')
-        bpy.ops.flip_fluid_operators.reload_frame('INVOKE_DEFAULT')
-
-        self.report({'INFO'}, "Pass settings have been reset.")
-        return {'FINISHED'}
-
 class FlipFluidHelperCommandLineRender(bpy.types.Operator):
     bl_idname = "flip_fluid_operators.helper_command_line_render"
     bl_label = "Launch Render"
@@ -818,8 +390,9 @@ class FlipFluidHelperCommandLineRender(bpy.types.Operator):
 
 
     def is_render_output_format_image_required(self, context):
-        hprops = context.scene.flip_fluid_helper 
-        if hprops.render_passes:
+        hprops = context.scene.flip_fluid_helper
+        cprops = context.scene.flip_fluid_compositing_tools
+        if cprops.render_passes:
             return True
         else:
             return hprops.cmd_launch_render_animation_mode in ['CMD_RENDER_MODE_BATCH', 'CMD_RENDER_MODE_MULTI_INSTANCE']
@@ -835,8 +408,8 @@ class FlipFluidHelperCommandLineRender(bpy.types.Operator):
             self.report({'ERROR'}, "Render output format must be an image format for this render mode. Change render output to an image, save, and try again.")
             return {'CANCELLED'}
 
-        if context.scene.flip_fluid_helper.render_passes:
-            if not context.scene.flip_fluid_helper.render_passes_is_any_pass_enabled:
+        if context.scene.flip_fluid_compositing_tools.render_passes:
+            if not context.scene.flip_fluid_compositing_tools.render_passes_is_any_pass_enabled:
                 self.report({'ERROR'}, "No Compositing Tools Render Passes are enabled. Enable at least 1 pass to begin render.")
                 return {'CANCELLED'}
 
@@ -852,15 +425,15 @@ class FlipFluidHelperCommandLineRender(bpy.types.Operator):
 
         if self.use_turbo_tools:
             python_expr_string = " --python-expr \"import bpy; bpy.context.scene.render.use_overwrite = " + bool_string + "; bpy.ops.threedi.render_animation()\""
-            command_text = "\"" + bpy.app.binary_path + "\" -b \"" + bpy.data.filepath + "\" " + python_expr_string
+            command_text = get_blender_launch_command(enable_render_logging=True) + " -b \"" + bpy.data.filepath + "\" " + python_expr_string
         else:
             python_expr_string = " --python-expr \"import bpy; bpy.context.scene.render.use_overwrite = " + bool_string + "\""
-            command_text = "\"" + bpy.app.binary_path + "\" -b \"" + bpy.data.filepath + "\" " + python_expr_string + " -a"
+            command_text = get_blender_launch_command(enable_render_logging=True) + " -b \"" + bpy.data.filepath + "\" " + python_expr_string + " -a"
         return command_text
 
 
     def get_single_frame_render_command_text(self, frameno):
-        return "\"" + bpy.app.binary_path + "\" -b \"" + bpy.data.filepath + "\" -f " + str(frameno)
+        return get_blender_launch_command(enable_render_logging=True) + " -b \"" + bpy.data.filepath + "\" -f " + str(frameno)
 
 
     def wrap_command_in_no_overwrite_conditional(self, command_text, frame_filepath):
@@ -908,10 +481,11 @@ class FlipFluidHelperCommandLineRender(bpy.types.Operator):
         hprops = bpy.context.scene.flip_fluid_helper
         num_instance_string = str(hprops.cmd_launch_render_animation_instances)
         use_overwrite_string = "0" if hprops.cmd_launch_render_animation_no_overwrite else "1"
+        run_as_flatpak = "1" if installation_utils.is_linux_blender_flatpak_installation() else "0"
         script_filepath = get_command_line_script_filepath("render_animation_multi_instance.py")
 
-        command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" --python \"" + script_filepath + "\""
-        command_text += " -- " + num_instance_string + " " + use_overwrite_string
+        command_text = get_blender_launch_command(enable_render_logging=True) + " --background \"" +  bpy.data.filepath + "\" --python \"" + script_filepath + "\""
+        command_text += " -- " + num_instance_string + " " + use_overwrite_string + " " + run_as_flatpak
 
         return command_text
 
@@ -925,7 +499,8 @@ class FlipFluidHelperCommandLineRender(bpy.types.Operator):
         restore_blender_original_cwd()
 
         hprops = bpy.context.scene.flip_fluid_helper
-        if hprops.render_passes:
+        cprops = context.scene.flip_fluid_compositing_tools
+        if cprops.render_passes:
             # Redirect to FlipFluidHelperCommandLineRenderPassAnimation operator
             bpy.ops.flip_fluid_operators.helper_cmd_render_pass_animation('INVOKE_DEFAULT', skip_launch=self.skip_launch)
             return {'FINISHED'}
@@ -1017,7 +592,8 @@ class FlipFluidHelperCommandLineRenderFrame(bpy.types.Operator):
 
     def execute(self, context):
         hprops = context.scene.flip_fluid_helper
-        if hprops.render_passes:
+        cprops = context.scene.flip_fluid_compositing_tools
+        if cprops.render_passes:
             # Redirect to FlipFluidHelperCommandLineRenderPassFrame operator
             bpy.ops.flip_fluid_operators.helper_cmd_render_pass_frame('INVOKE_DEFAULT', skip_launch=self.skip_launch)
             return {'FINISHED'}
@@ -1043,7 +619,7 @@ class FlipFluidHelperCommandLineRenderFrame(bpy.types.Operator):
         if self.use_turbo_tools:
             script_path = get_command_line_script_filepath("render_single_frame_turbo_tools.py")
 
-        command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" --python \"" + script_path + "\"" + " -- " + frame_string + " " + open_image_after
+        command_text = get_blender_launch_command(enable_render_logging=True) + " --background \"" +  bpy.data.filepath + "\" --python \"" + script_path + "\"" + " -- " + frame_string + " " + open_image_after
 
         script_filepath = launch_command_universal_os(command_text, "FF_RENDER_FRAME_", keep_window_open=not hprops.cmd_close_window_after_render, skip_launch=self.skip_launch)
 
@@ -1105,7 +681,7 @@ class FlipFluidHelperCommandLineAlembicExport(bpy.types.Operator):
         restore_blender_original_cwd()
 
         script_path = get_command_line_script_filepath("alembic_export.py")
-        command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" --python \"" + script_path + "\""
+        command_text = get_blender_launch_command() + " --background \"" +  bpy.data.filepath + "\" --python \"" + script_path + "\""
 
         script_filepath = launch_command_universal_os(command_text, "FF_ALEMBIC_EXPORT_", keep_window_open=True, skip_launch=self.skip_launch)
 
@@ -1174,7 +750,7 @@ class FlipFluidHelperCommandLineCustomAlembicExport(bpy.types.Operator):
         restore_blender_original_cwd()
 
         script_path = get_command_line_script_filepath("flip_fluids_alembic_export.py")
-        command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" --python \"" + script_path + "\""
+        command_text = get_blender_launch_command() + " --background \"" +  bpy.data.filepath + "\" --python \"" + script_path + "\""
 
         script_filepath = launch_command_universal_os(command_text, "FF_ALEMBIC_EXPORT_", keep_window_open=True, skip_launch=self.skip_launch)
 
@@ -1214,6 +790,65 @@ class FlipFluidHelperCommandLineCustomAlembicExportToClipboard(bpy.types.Operato
         return {'FINISHED'}
 
 
+class FlipFluidHelperCommandLineUSDExport(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_command_line_usd_export"
+    bl_label = "Launch USD Export"
+    bl_description = ("Launch a new command line window and start exporting the simulation meshes to the Universal Scene Description (.usdc) format." +
+                     " The .blend file will need to be saved before using this operator for changes to take effect")
+
+    skip_launch: BoolProperty(False)
+
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.flip_fluid.get_domain_object() is not None and bool(bpy.data.filepath)
+
+
+    def execute(self, context):
+        save_blend_file_before_launch(override_preferences=False)
+        restore_blender_original_cwd()
+
+        script_path = get_command_line_script_filepath("usd_export.py")
+        command_text = get_blender_launch_command() + " --background \"" +  bpy.data.filepath + "\" --python \"" + script_path + "\""
+        
+        script_filepath = launch_command_universal_os(command_text, "FF_USD_EXPORT_", keep_window_open=True, skip_launch=self.skip_launch)
+
+        if not self.skip_launch:
+            info_msg = "Launched command line USD export window. If the USD export process did not begin,"
+            info_msg += " this may be caused by a conflict with another addon or a security feature of your OS that restricts"
+            info_msg += " automatic command execution. You may try running following script file manually:\n\n"
+            info_msg += script_filepath + "\n\n"
+            info_msg += "For more information on command line operators, visit our documentation:\n"
+            info_msg += "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Helper-Menu-Settings#command-line-usd-export"
+            self.report({'INFO'}, info_msg)
+
+        return {'FINISHED'}
+
+
+class FlipFluidHelperCommandLineUSDExportToClipboard(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_cmd_usd_export_to_clipboard"
+    bl_label = "Launch USD Export"
+    bl_description = ("Copy command for Universal Scene Description (USD) export to your system clipboard." +
+                     " The .blend file will need to be saved before running this command for changes to take effect")
+
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.flip_fluid.get_domain_object() is not None and bool(bpy.data.filepath)
+
+
+    def execute(self, context):
+        bpy.ops.flip_fluid_operators.helper_command_line_usd_export('INVOKE_DEFAULT', skip_launch=True)
+          
+        info_msg = "Copied the following Universal Scene Description (USD) export command to your clipboard:\n\n"
+        info_msg += bpy.context.window_manager.clipboard + "\n\n"
+        info_msg += "For more information on command line tools, visit our documentation:\n"
+        info_msg += "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Helper-Menu-Settings#command-line-usd-export"
+        self.report({'INFO'}, info_msg)
+
+        return {'FINISHED'}
+
+
 def get_render_output_info():
     full_path = bpy.path.abspath(bpy.context.scene.render.filepath)
     directory_path = full_path
@@ -1223,6 +858,7 @@ def get_render_output_info():
        directory_path = os.path.dirname(directory_path)
 
     file_format_to_suffix = {
+        "AVIF"                : ".avif",
         "BMP"                 : ".bmp",
         "IRIS"                : ".rgb",
         "PNG"                 : ".png",
@@ -1250,6 +886,7 @@ def get_render_output_info():
 
 def is_render_output_format_image():
     image_file_format_to_suffix = {
+        "AVIF"                : ".avif",
         "BMP"                 : ".bmp",
         "IRIS"                : ".rgb",
         "PNG"                 : ".png",
@@ -1272,6 +909,7 @@ def is_render_output_format_image():
 
 def is_render_output_format_image_with_transparency():
     image_file_format_to_suffix = {
+        "AVIF"                : ".avif",
         "IRIS"                : ".rgb",
         "PNG"                 : ".png",
         "JPEG2000"            : ".jp2",
@@ -1395,20 +1033,48 @@ class FlipFluidHelperOpenAlembicOutputFolder(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class FlipFluidHelperOpenUSDOutputFolder(bpy.types.Operator):
+    bl_idname = "flip_fluid_operators.helper_open_usd_output_folder"
+    bl_label = "Open USD Output Directory"
+    bl_description = ("Opens the USD output directory set in the USD export tool. If the directory does not exist, it will be created." +
+                      " The .blend file will need to be saved before using this operator for changes to take effect")
+
+
+    @classmethod
+    def poll(cls, context):
+        return bool(bpy.data.filepath) and context.scene.flip_fluid.get_domain_object() is not None
+
+
+    def execute(self, context):
+        save_blend_file_before_launch(override_preferences=False)
+        
+        usd_filepath = context.scene.flip_fluid_helper.get_usd_output_abspath()
+        directory_path = os.path.dirname(usd_filepath)
+        success = open_file_browser_directory(directory_path)
+
+        if not success:
+            if directory_path == "":
+                directory_path = "No directory set"
+            self.report({"ERROR"}, "Invalid cache output directory: <" + directory_path + ">")
+            return {'CANCELLED'}
+
+        return {'FINISHED'}
+
+
 def get_render_passes_info(context):
     # Pass-Suffix-Liste mit den zugehoerigen Listen
-    hprops = context.scene.flip_fluid_helper
+    get_render_passes_info
     pass_suffixes = [
-        ("BG_elements_only", hprops.render_passes_elements_only, hprops.render_passes_bg_elementslist),
-        ("REF_elements_only", hprops.render_passes_elements_only, hprops.render_passes_ref_elementslist),
-        ("objects_only", hprops.render_passes_objects_only, None),
-        ("fluidparticles_only", hprops.render_passes_fluidparticles_only, None),
-        ("fluid_only", hprops.render_passes_fluid_only, None),
-        ("fluid_shadows_only", hprops.render_passes_fluid_shadows_only, None),
-        ("reflr_only", hprops.render_passes_reflr_only, None),
-        ("bubblesanddust_only", hprops.render_passes_bubblesanddust_only, None),
-        ("foamandspray_only", hprops.render_passes_foamandspray_only, None),
-        ("FG_elements_only", hprops.render_passes_elements_only, hprops.render_passes_fg_elementslist),
+        ("BG_elements_only", cprops.render_passes_elements_only, cprops.render_passes_bg_elementslist),
+        ("REF_elements_only", cprops.render_passes_elements_only, cprops.render_passes_ref_elementslist),
+        ("objects_only", cprops.render_passes_objects_only, None),
+        ("fluidparticles_only", cprops.render_passes_fluidparticles_only, None),
+        ("fluid_only", cprops.render_passes_fluid_only, None),
+        ("fluid_shadows_only", cprops.render_passes_fluid_shadows_only, None),
+        ("reflr_only", cprops.render_passes_reflr_only, None),
+        ("bubblesanddust_only", cprops.render_passes_bubblesanddust_only, None),
+        ("foamandspray_only", cprops.render_passes_foamandspray_only, None),
+        ("FG_elements_only", cprops.render_passes_elements_only, cprops.render_passes_fg_elementslist),
     ]
 
     # Entferne leere Listen-Suffixe
@@ -1459,14 +1125,14 @@ class FlipFluidHelperCommandLineRenderPassAnimation(bpy.types.Operator):
         return (
             context.scene.flip_fluid.get_domain_object() is not None and
             bool(bpy.data.filepath) and
-            context.scene.flip_fluid_helper.render_passes and
-            context.scene.flip_fluid_helper.render_passes_is_any_pass_enabled and 
-            not context.scene.flip_fluid_helper.render_passes_stillimagemode_toggle
+            context.scene.flip_fluid_compositing_tools.render_passes and
+            context.scene.flip_fluid_compositing_tools.render_passes_is_any_pass_enabled and 
+            not context.scene.flip_fluid_compositing_tools.render_passes_stillimagemode_toggle
         )
 
 
     def get_single_frame_render_pass_command_text(self, blend_filepath, frameno):
-        return "\"" + bpy.app.binary_path + "\" -b \"" + blend_filepath + "\" -f " + str(frameno)
+        return get_blender_launch_command(enable_render_logging=True) + " -b \"" + blend_filepath + "\" -f " + str(frameno)
 
 
     def get_render_passes_batch_command_text(self, context):
@@ -1507,10 +1173,11 @@ class FlipFluidHelperCommandLineRenderPassAnimation(bpy.types.Operator):
         hprops = context.scene.flip_fluid_helper
         num_instance_string = str(hprops.cmd_launch_render_passes_animation_instances)
         use_overwrite_string = "0" if hprops.cmd_launch_render_passes_animation_no_overwrite else "1"
+        run_as_flatpak = "1" if installation_utils.is_linux_blender_flatpak_installation() else "0"
         script_filepath = get_command_line_script_filepath("render_animation_render_passes_multi_instance.py")
 
-        command_text = "\"" + bpy.app.binary_path + "\" --background \"" +  bpy.data.filepath + "\" --python \"" + script_filepath + "\""
-        command_text += " -- " + num_instance_string + " " + use_overwrite_string
+        command_text = get_blender_launch_command(enable_render_logging=True) + " --background \"" +  bpy.data.filepath + "\" --python \"" + script_filepath + "\""
+        command_text += " -- " + num_instance_string + " " + use_overwrite_string + " " + run_as_flatpak
 
         return command_text
 
@@ -1563,7 +1230,7 @@ class FlipFluidHelperCommandLineRenderPassAnimation(bpy.types.Operator):
         save_blend_file_before_launch(override_preferences=False)
         restore_blender_original_cwd()
 
-        prepare_render_passes_for_operator(context)
+        compositing_tools_operators.prepare_render_passes_for_operator(context)
 
         command_text = self.get_render_passes_multi_instance_command_text(context)
 
@@ -1591,9 +1258,9 @@ class FlipFluidHelperCommandLineRenderPassAnimationToClipboard(bpy.types.Operato
         return (
             context.scene.flip_fluid.get_domain_object() is not None and
             bool(bpy.data.filepath) and
-            context.scene.flip_fluid_helper.render_passes and
-            context.scene.flip_fluid_helper.render_passes_is_any_pass_enabled and 
-            not context.scene.flip_fluid_helper.render_passes_stillimagemode_toggle
+            context.scene.flip_fluid_compositing_tools.render_passes and
+            context.scene.flip_fluid_compositing_tools.render_passes_is_any_pass_enabled and 
+            not context.scene.flip_fluid_compositing_tools.render_passes_stillimagemode_toggle
         )
 
 
@@ -1622,14 +1289,14 @@ class FlipFluidHelperCommandLineRenderPassFrame(bpy.types.Operator):
         return (
             context.scene.flip_fluid.get_domain_object() is not None and
             bool(bpy.data.filepath) and
-            context.scene.flip_fluid_helper.render_passes and
-            context.scene.flip_fluid_helper.render_passes_is_any_pass_enabled and 
-            not context.scene.flip_fluid_helper.render_passes_stillimagemode_toggle
+            context.scene.flip_fluid_compositing_tools.render_passes and
+            context.scene.flip_fluid_compositing_tools.render_passes_is_any_pass_enabled and 
+            not context.scene.flip_fluid_compositing_tools.render_passes_stillimagemode_toggle
         )
 
 
     def get_single_frame_render_pass_command_text(self, blend_filepath, frameno):
-        return "\"" + bpy.app.binary_path + "\" -b \"" + blend_filepath + "\" -f " + str(frameno)
+        return get_blender_launch_command(enable_render_logging=True) + " -b \"" + blend_filepath + "\" -f " + str(frameno)
 
 
     def get_render_passes_single_frame_command_text(self, context):
@@ -1702,7 +1369,7 @@ class FlipFluidHelperCommandLineRenderPassFrame(bpy.types.Operator):
         save_blend_file_before_launch(override_preferences=False)
         restore_blender_original_cwd()
 
-        prepare_render_passes_for_operator(context)
+        compositing_tools_operators.prepare_render_passes_for_operator(context)
 
         command_text = self.get_render_passes_single_frame_command_text(context)
 
@@ -1731,9 +1398,9 @@ class FlipFluidHelperCommandLineRenderPassFrameToClipboard(bpy.types.Operator):
         return (
             context.scene.flip_fluid.get_domain_object() is not None and
             bool(bpy.data.filepath) and
-            context.scene.flip_fluid_helper.render_passes and
-            context.scene.flip_fluid_helper.render_passes_is_any_pass_enabled and 
-            not context.scene.flip_fluid_helper.render_passes_stillimagemode_toggle
+            context.scene.flip_fluid_compositing_tools.render_passes and
+            context.scene.flip_fluid_compositing_tools.render_passes_is_any_pass_enabled and 
+            not context.scene.flip_fluid_compositing_tools.render_passes_stillimagemode_toggle
         )
 
 
@@ -1787,10 +1454,12 @@ def register():
     bpy.utils.register_class(FlipFluidHelperCommandLineAlembicExportToClipboard)
     bpy.utils.register_class(FlipFluidHelperCommandLineCustomAlembicExport)
     bpy.utils.register_class(FlipFluidHelperCommandLineCustomAlembicExportToClipboard)
+    bpy.utils.register_class(FlipFluidHelperCommandLineUSDExport)
+    bpy.utils.register_class(FlipFluidHelperCommandLineUSDExportToClipboard)
     bpy.utils.register_class(FlipFluidHelperOpenRenderOutputFolder)
     bpy.utils.register_class(FlipFluidHelperOpenCacheOutputFolder)
     bpy.utils.register_class(FlipFluidHelperOpenAlembicOutputFolder)
-    bpy.utils.register_class(FlipFluidPassesResetSettings)
+    bpy.utils.register_class(FlipFluidHelperOpenUSDOutputFolder)
     bpy.utils.register_class(FlipFluidHelperCommandLineRenderPassAnimation)
     bpy.utils.register_class(FlipFluidHelperCommandLineRenderPassAnimationToClipboard)
     bpy.utils.register_class(FlipFluidHelperCommandLineRenderPassFrame)
@@ -1827,10 +1496,12 @@ def unregister():
     bpy.utils.unregister_class(FlipFluidHelperCommandLineAlembicExportToClipboard)
     bpy.utils.unregister_class(FlipFluidHelperCommandLineCustomAlembicExport)
     bpy.utils.unregister_class(FlipFluidHelperCommandLineCustomAlembicExportToClipboard)
+    bpy.utils.unregister_class(FlipFluidHelperCommandLineUSDExport)
+    bpy.utils.unregister_class(FlipFluidHelperCommandLineUSDExportToClipboard)
     bpy.utils.unregister_class(FlipFluidHelperOpenRenderOutputFolder)
     bpy.utils.unregister_class(FlipFluidHelperOpenCacheOutputFolder)
     bpy.utils.unregister_class(FlipFluidHelperOpenAlembicOutputFolder)
-    bpy.utils.unregister_class(FlipFluidPassesResetSettings)
+    bpy.utils.unregister_class(FlipFluidHelperOpenUSDOutputFolder)
     bpy.utils.unregister_class(FlipFluidHelperCommandLineRenderPassAnimation)
     bpy.utils.unregister_class(FlipFluidHelperCommandLineRenderPassAnimationToClipboard)
     bpy.utils.unregister_class(FlipFluidHelperCommandLineRenderPassFrame)

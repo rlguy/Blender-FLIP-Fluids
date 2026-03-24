@@ -1,6 +1,6 @@
 # MIT License
 # 
-# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+# Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -1113,6 +1113,21 @@ class FluidSimulation(object):
         libfunc = lib.FluidSimulation_set_surface_color_attribute_mixing_radius
         pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), radius])
+
+    @property
+    def enable_mixbox_grayscale_mode(self):
+        libfunc = lib.FluidSimulation_is_mixbox_grayscale_mode_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_mixbox_grayscale_mode.setter
+    def enable_mixbox_grayscale_mode(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_mixbox_grayscale_mode
+        else:
+            libfunc = lib.FluidSimulation_disable_mixbox_grayscale_mode
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
 
     @property
     def enable_mixbox(self):
@@ -2347,18 +2362,28 @@ class FluidSimulation(object):
         pb.execute_lib_func(libfunc, [self(), r])
 
     @property
-    def boundary_friction(self):
-        libfunc = lib.FluidSimulation_get_boundary_friction
-        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
-        return pb.execute_lib_func(libfunc, [self()])
+    def boundary_friction_sides(self):
+        friction_values = (c_double * 6)()
+        libfunc = lib.FluidSimulation_get_boundary_friction_sides
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p, c_void_p], c_int)
+        pb.execute_lib_func(libfunc, [self(), friction_values])
 
-    @boundary_friction.setter
-    @decorators.check_ge_zero
-    @decorators.check_le(1.0)
-    def boundary_friction(self, s):
-        libfunc = lib.FluidSimulation_set_boundary_friction
-        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
-        pb.execute_lib_func(libfunc, [self(), s])
+        result = []
+        for f in friction_values:
+            result.append(f)
+
+        return result
+
+    @boundary_friction_sides.setter
+    def boundary_friction_sides(self, values):
+        c_friction_values = (c_double * 6)()
+        for i in range(6):
+            f = max(0.0, min(float(values[i]), 1.0))
+            c_friction_values[i] = f
+
+        libfunc = lib.FluidSimulation_set_boundary_friction_sides
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), c_friction_values])
 
     @property
     def CFL_condition_number(self):

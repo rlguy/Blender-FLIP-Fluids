@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -592,6 +592,9 @@ public:
     void enableMixbox();
     void disableMixbox();
     bool isMixboxEnabled();
+    void enableMixboxGrayscaleMode();
+    void disableMixboxGrayscaleMode();
+    bool isMixboxGrayscaleModeEnabled();
 
     /*
         Generate source ID attributes at fluid surface mesh vertices
@@ -1164,10 +1167,10 @@ public:
 
     /*
         Friction on the domain boundary walls. 
-        Must be in range [0.0,1.0]. 
+        Must be in range [0.0, 1.0]. 
     */
-    double getBoundaryFriction();
-    void setBoundaryFriction(double f);
+    std::vector<double> getBoundaryFrictionSides();
+    void setBoundaryFrictionSides(std::vector<double> values);
 
     /*
         Courant Safety Factor - Maximum number of grid cells a particle can 
@@ -1883,6 +1886,7 @@ private:
     /*
         Constrain Velocity Field
     */
+    float _getDomainFriction(int i, int j, int k);
     float _getFaceFrictionU(GridIndex g);
     float _getFaceFrictionV(GridIndex g);
     float _getFaceFrictionW(GridIndex g);
@@ -1929,8 +1933,12 @@ private:
                                                      Array3d<bool> &viscosityAttributeValidGrid);
     void _updateMarkerParticleViscosityAttribute();
     void _updateMarkerParticleDensityAttributeGrid(Array3d<float> &densityAttributeGrid,
-                                                     Array3d<bool> &densityAttributeValidGrid);
+                                                 Array3d<bool> &densityAttributeValidGrid);
     void _updateMarkerParticleDensityAttribute();
+    void _updateMarkerParticleSourceIDAttributeGrid(ParticleSystem *markerParticles,
+                                                    double dx,
+                                                    Array3d<int> &sourceIDAttributeGrid,
+                                                    Array3d<bool> &sourceIDAttributeValidGrid);
     void _updateMarkerParticleColorAttributeGrid(Array3d<float> &colorAttributeGridR,
                                                  Array3d<float> &colorAttributeGridG,
                                                  Array3d<float> &colorAttributeGridB,
@@ -2227,7 +2235,12 @@ private:
     MeshLevelSet _staticSolidSDF;
     MeshLevelSet _tempSolidSDF;
     MeshObject _domainMeshObject;
-    float _domainBoundaryFriction = 0.0f;
+    double _boundaryFrictionXNeg = 0.0;
+    double _boundaryFrictionXPos = 0.0;
+    double _boundaryFrictionYNeg = 0.0;
+    double _boundaryFrictionYPos = 0.0;
+    double _boundaryFrictionZNeg = 0.0;
+    double _boundaryFrictionZPos = 0.0;
     bool _isStaticSolidLevelSetPrecomputed = false;
     bool _isTempSolidLevelSetEnabled = true;
     bool _isSolidLevelSetUpToDate = false;
@@ -2440,6 +2453,7 @@ private:
     float _colorAttributeMixingRate = 1.0f;
     float _colorAttributeMixingRadius = 1.0f;   // In # of voxels
     bool _isMixboxEnabled = false;
+    bool _isMixboxGrayscaleModeEnabled = false;
     float _mixboxSaturationFactor = 1.2f;
 
     // Advance MarkerParticles

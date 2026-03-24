@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+# Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,6 @@ if "bpy" in locals():
         'domain_particles_ui',
         'domain_whitewater_ui',
         'domain_world_ui',
-        'domain_presets_ui',
         'domain_materials_ui',
         'domain_advanced_ui',
         'domain_debug_ui',
@@ -45,7 +44,6 @@ from . import(
         domain_particles_ui,
         domain_whitewater_ui,
         domain_world_ui,
-        domain_presets_ui,
         domain_materials_ui,
         domain_advanced_ui,
         domain_debug_ui,
@@ -62,7 +60,6 @@ def register():
     domain_particles_ui.register()
     domain_whitewater_ui.register()
     domain_world_ui.register()
-    domain_presets_ui.register()
     domain_materials_ui.register()
     domain_advanced_ui.register()
     domain_debug_ui.register()
@@ -79,7 +76,6 @@ def unregister():
     domain_whitewater_ui.unregister()
     domain_world_ui.unregister()
     domain_materials_ui.unregister()
-    domain_presets_ui.unregister()
     domain_advanced_ui.unregister()
     domain_debug_ui.unregister()
     domain_stats_ui.unregister()

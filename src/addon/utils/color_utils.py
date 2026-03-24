@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+# Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,9 +27,17 @@ def mixbox_lerp_srgb32f(r1, g1, b1, r2, g2, b2, t):
     return mixbox.lerp_srgb32f(r1, g1, b1, r2, g2, b2, t)
 
 
+def get_mixbox_plugin_install_directory():
+    utils_directory = os.path.dirname(os.path.realpath(__file__))
+    addon_directory = os.path.dirname(utils_directory)
+    extensions_directory = os.path.dirname(addon_directory)
+    mixbox_directory = os.path.join(extensions_directory, "flip_fluids_mixbox_plugin")
+    return mixbox_directory
+
+
 def __initialize_mixbox():
-    module_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    lut_filepath = os.path.join(module_dir, "third_party", "mixbox", "mixbox_lut_data.bin")
+    mixbox_directory = get_mixbox_plugin_install_directory()
+    lut_filepath = os.path.join(mixbox_directory, "mixbox_lut_data.bin")
     with open(lut_filepath, 'rb') as f:
         lut_data = f.read()
         lut_data_bytes = len(lut_data)

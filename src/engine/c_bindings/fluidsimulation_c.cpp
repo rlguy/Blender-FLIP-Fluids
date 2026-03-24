@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -1344,6 +1344,27 @@ extern "C" {
                                                                     double rate, int *err) {
         CBindings::safe_execute_method_void_1param(
             obj, &FluidSimulation::setSurfaceColorAttributeMixingRadius, rate, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_enable_mixbox_grayscale_mode(FluidSimulation* obj,
+                                                                int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableMixboxGrayscaleMode, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_mixbox_grayscale_mode(FluidSimulation* obj,
+                                                                 int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableMixboxGrayscaleMode, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_mixbox_grayscale_mode_enabled(FluidSimulation* obj,
+                                                                   int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isMixboxGrayscaleModeEnabled, err
         );
     }
 
@@ -2810,15 +2831,26 @@ extern "C" {
         );
     }
 
-    EXPORTDLL void FluidSimulation_set_boundary_friction(FluidSimulation* obj, double f, int *err) {
-        CBindings::safe_execute_method_void_1param(
-            obj, &FluidSimulation::setBoundaryFriction, f, err
+    EXPORTDLL void FluidSimulation_get_boundary_friction_sides(FluidSimulation* obj, 
+                                                               double *result, int *err) {
+        std::vector<double> values = CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getBoundaryFrictionSides, err
         );
+
+        for (int i = 0; i < 6; i++) {
+            result[i] = values[i];
+        }
     }
 
-    EXPORTDLL double FluidSimulation_get_boundary_friction(FluidSimulation* obj, int *err) {
-        return CBindings::safe_execute_method_ret_0param(
-            obj, &FluidSimulation::getBoundaryFriction, err
+    EXPORTDLL void FluidSimulation_set_boundary_friction_sides(FluidSimulation* obj, 
+                                                               double *values, int *err) {
+        std::vector<double> frictionValues;
+        for (int i = 0; i < 6; i++) {
+            frictionValues.push_back(values[i]);
+        }
+
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setBoundaryFrictionSides, frictionValues, err
         );
     }
 

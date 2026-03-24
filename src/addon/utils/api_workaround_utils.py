@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+# Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@ from . import version_compatibility_utils as vcu
 from .. import render
 
 
-# Workaround for https://developer.blender.org/T71908
+# Workaround for https://projects.blender.org/blender/blender/issues/71908
 # This bug can cause keyframed parameters not to be evaluated during rendering
 # when a frame_change handler is used.
 #
@@ -110,11 +110,19 @@ def frame_change_post_apply_T71908_workaround(context, depsgraph=None):
         "Socket_2",   # Particle Scale Random
         "Socket_21",  # Random Bias
         "Socket_14",  # Instancing Mode
-        "Socket_18",  # Randomize Instance Rotation 
-        "Socket_19",  # Align Instance to Velocity
+        "Socket_18",  # Randomize Instance Rotation (FF 1.8.5)
+        "Socket_19",  # Align Instance to Velocity  (FF 1.8.5)
+        "Socket_53",  # Randomize Instance Rotation (FF 1.8.6)
+        "Socket_54",  # Align Instance to Velocity  (FF 1.8.6)
         "Socket_10",  # Shade Smooth Instances
         "Socket_17",  # Realize Instances
-        "Socket_51",  # Matched Flattened Surface Displacement
+        "Socket_59",  # Duplicate and Randomize Particles
+        "Socket_60",  # Num Duplicates
+        "Socket_61",  # Distribution Radius
+        "Socket_62",  # Distribution Radius Multiplier
+        "Socket_51",  # Match Flattened Surface Displacement
+        "Socket_55",  # Store Transition Mask Attribute
+        "Socket_56",  # Scale Particle With Transition Mask
         "Socket_30",  # Age Based Particle Scaling
         "Socket_31",  # Starting Scale Factor
         "Socket_32",  # Scaling Duration (Age)
@@ -152,11 +160,19 @@ def frame_change_post_apply_T71908_workaround(context, depsgraph=None):
         "Socket_2",   # Particle Scale Random
         "Socket_21",  # Random Bias
         "Socket_14",  # Instancing Mode
-        "Socket_18",  # Randomize Instance Rotation 
-        "Socket_19",  # Align Instance to Velocity
+        "Socket_18",  # Randomize Instance Rotation (FF 1.8.5)
+        "Socket_19",  # Align Instance to Velocity  (FF 1.8.5)
+        "Socket_36",  # Randomize Instance Rotation (FF 1.8.6)
+        "Socket_37",  # Align Instance to Velocity  (FF 1.8.6)
         "Socket_10",  # Shade Smooth Instances
         "Socket_17",  # Realize Instances
+        "Socket_41",  # Duplicate and Randomize Particles
+        "Socket_42",  # Num Duplicates
+        "Socket_43",  # Distribution Radius
+        "Socket_44",  # Distribution Radius Multiplier
         "Socket_34",  # Matched Flattened Surface Displacement
+        "Socket_38",  # Store Transition Mask Attribute
+        "Socket_39",  # Scale Particle With Transition Mask
         "Socket_24",  # Lifetime Based Particle Scaling
         "Socket_23",  # Final Scale Factor
         "Socket_25",  # Scaling Duration (Lifetime)
@@ -184,6 +200,42 @@ def frame_change_post_apply_T71908_workaround(context, depsgraph=None):
                 for input_name in input_name_list:
                     if input_name in obj.modifiers[i]:
                         obj.modifiers[i][input_name] = obj_eval.modifiers[i][input_name]
+
+
+# Workaround for https://projects.blender.org/blender/blender/issues/71908
+#
+# If a FLIP Fluids Domain was previously initialized as a Mantaflow Liquid Domain,
+# the object will contain a "Liquid" particle system. Particle systems on the domain
+# trigger an issue where keyframed parameters are not evaluated during render.
+# The 'frame_change_post_apply_T71908_workaround()' workaround does not work
+# when the domain contains this particle system.
+#
+# To work around this issue, the particle systems should be removed when
+# initializing the domain object.
+def remove_domain_particle_systems_T71908_workaround(bl_object):
+    particle_system_count = 0
+    for mod in bl_object.modifiers:
+        if mod.type == 'PARTICLE_SYSTEM':
+            particle_system_count += 1
+
+    if particle_system_count == 0:
+        return
+
+    infomsg =  "************************************************\n"
+    infomsg += "FLIP Fluids: Removing the following particle system(s) from the Domain <" + bl_object.name + "> object:"
+    print(infomsg)
+    for mod in bl_object.modifiers:
+        if mod.type == 'PARTICLE_SYSTEM':
+            print("\t<" + mod.name + ">")
+            try:
+                bl_object.modifiers.remove(mod)
+            except:
+                pass
+
+    infomsg =  "Particle Systems on the domain are not supported and can trigger a current\n"
+    infomsg += "render bug in Blender (https://projects.blender.org/blender/blender/issues/71908).\n"
+    infomsg += "************************************************\n"
+    print(infomsg)
 
 
 # In some versions of Blender the viewport rendered view is 
@@ -247,144 +299,6 @@ def load_post_update_cycles_visibility_forward_compatibility_from_blender_3():
         toggle_viewport_visibility_to_update_rendered_viewport_workaround(bl_object)
 
 
-def get_enabled_features_affected_by_T88811(domain_properties=None):
-    if domain_properties is None:
-        domain_properties = bpy.context.scene.flip_fluid.get_domain_properties()
-    if domain_properties is None:
-        return None
-    dprops = domain_properties
-
-    data_dict = {}
-    data_dict["attributes"] = {}
-    data_dict["attributes"]["surface"] = []
-    data_dict["attributes"]["whitewater"] = []
-    data_dict["fluidparticles"] = []
-    data_dict["viscosity"] = []
-
-    if dprops.surface.enable_velocity_vector_attribute:
-        data_dict["attributes"]["surface"].append("Velocity")
-    if dprops.surface.enable_speed_attribute:
-        data_dict["attributes"]["surface"].append("Speed")
-    if dprops.surface.enable_vorticity_vector_attribute:
-        data_dict["attributes"]["surface"].append("Vorticity")
-    if dprops.surface.enable_color_attribute:
-        data_dict["attributes"]["surface"].append("Color")
-    if dprops.surface.enable_age_attribute:
-        data_dict["attributes"]["surface"].append("Age")
-    if dprops.surface.enable_lifetime_attribute:
-        data_dict["attributes"]["surface"].append("Lifetime")
-    if dprops.surface.enable_whitewater_proximity_attribute:
-        data_dict["attributes"]["surface"].append("Whitewater Proximity")
-    if dprops.surface.enable_source_id_attribute:
-        data_dict["attributes"]["surface"].append("Source ID")
-
-    if dprops.whitewater.enable_velocity_vector_attribute:
-        data_dict["attributes"]["whitewater"].append("Velocity")
-
-    # Disabled to prevent the warning popup from displaying on default settings (Whitewater ID enabled by default)
-    # TODO: Rework this warning to be less intrusive
-    """
-    if dprops.whitewater.enable_id_attribute:
-        data_dict["attributes"]["whitewater"].append("ID")
-    """
-
-    if dprops.whitewater.enable_lifetime_attribute:
-        data_dict["attributes"]["whitewater"].append("Lifetime")
-
-    if dprops.particles.enable_fluid_particle_output:
-        data_dict["fluidparticles"].append("Fluid particle export and particle attributes")
-
-    if dprops.world.enable_viscosity and dprops.surface.enable_viscosity_attribute:
-        data_dict["viscosity"].append("Variable Viscosity")
-
-    contains_info = (
-            data_dict["attributes"]["surface"] or 
-            data_dict["attributes"]["whitewater"] or 
-            data_dict["fluidparticles"] or 
-            data_dict["viscosity"]
-            )
-    if not contains_info:
-        return None
-
-    return data_dict
-
-
-def get_enabled_features_string_T88811(feature_list):
-    features_str = ""
-    for i, item in enumerate(feature_list):
-        features_str += item
-        if i != len(feature_list) - 1:
-            features_str += ", "
-    return features_str
-
-
-def draw_T88811_ui_warning(ui_box, preferences, feature_dict):
-    row = ui_box.row(align=True)
-    row.alert = True
-    row.label(text="FLIP Fluids: Possible Render Crash Warning:", icon="ERROR")
-    column = ui_box.column(align=True)
-    column.label(text="A current bug in Blender may cause frequent") 
-    column.label(text="render crashes or incorrect renders when") 
-    column.label(text="using the following enabled features:")
-    column.separator()
-
-    if feature_dict["attributes"]["surface"]:
-        column.label(text="Surface Attributes:", icon="ERROR")
-        column.label(text=get_enabled_features_string_T88811(feature_dict["attributes"]["surface"]), icon="DOT")
-    if feature_dict["attributes"]["whitewater"]:
-        column.label(text="Whitewater Attributes:", icon="ERROR")
-        column.label(text=get_enabled_features_string_T88811(feature_dict["attributes"]["whitewater"]), icon="DOT")
-    if feature_dict["fluidparticles"]:
-        column.label(text="Fluid Particle Features:", icon="ERROR")
-        column.label(text=get_enabled_features_string_T88811(feature_dict["fluidparticles"]), icon="DOT")
-    if feature_dict["viscosity"]:
-        column.label(text="Viscosity Features:", icon="ERROR")
-        column.label(text=get_enabled_features_string_T88811(feature_dict["viscosity"]), icon="DOT")
-    column.separator()
-
-    column.label(text="This bug can be prevented by rendering", icon="INFO")
-    column.label(text="from the command line. See the cmd")
-    column.label(text="rendering tools in the FLIP Fluids sidebar.")
-
-    column.operator(
-            "wm.url_open", 
-            text="Documentation: Command Line Tools", 
-            icon="URL"
-        ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Helper-Menu-Settings#command-line-tools"
-    column.operator(
-            "wm.url_open", 
-            text="Bug Report: T88811", 
-            icon="URL"
-        ).url = "https://projects.blender.org/blender/blender/issues/88811"
-
-    column.prop(preferences, "dismiss_T88811_crash_warning", text="Do not show this warning again")
-
-def get_T88811_cmd_warning_string(feature_dict):
-    warning = ""
-    warning += "************************************************\n"
-    warning += "FLIP Fluids: Possible Render Crash Warning\n\n"
-    warning += "A current bug in Blender may cause frequent render crashes or incorrect renders when using the following enabled features:\n\n"
-
-    if feature_dict["attributes"]["surface"]:
-        warning += "* Surface Attributes:\n"
-        warning += "    - " + get_enabled_features_string_T88811(feature_dict["attributes"]["surface"]) + "\n"
-    if feature_dict["attributes"]["whitewater"]:
-        warning += "* Whitewater Attributes:\n"
-        warning += "    - " + get_enabled_features_string_T88811(feature_dict["attributes"]["whitewater"]) + "\n"
-    if feature_dict["viscosity"]:
-        warning += "* Viscosity Features:\n"
-        warning += "    - " + get_enabled_features_string_T88811(feature_dict["viscosity"]) + "\n"
-
-    warning += "\n"
-    warning += "This bug can be prevented by rendering from the command line.\n"
-    warning += "See the command line rendering tools in the FLIP Fluids sidebar.\n\n"
-    warning += "Command Line Tools Documentation:\n    https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Helper-Menu-Settings#command-line-tools\n"
-    warning += "Bug Report T88811:\n    https://developer.blender.org/T88811\n"
-    warning += "************************************************\n"
-
-    return warning
-
-
 def is_persistent_data_issue_relevant():
     if bpy.context.scene.render.engine != 'CYCLES':
         return False
@@ -392,36 +306,6 @@ def is_persistent_data_issue_relevant():
     if domain_properties is None:
         return False
     return bpy.context.scene.render.use_persistent_data
-
-
-def draw_persistent_data_warning(ui_box, preferences):
-    row = ui_box.row(align=True)
-    row.alert = True
-    row.label(text="FLIP Fluids: Incompatible Render Option Warning:", icon="ERROR")
-    column = ui_box.column(align=True)
-    column.label(text="The Cycles 'Persistent Data' render option is not")
-    column.label(text="compatible with the simulation meshes. This may")
-    column.label(text="cause static renders, incorrect renders, or")
-    column.label(text="render crashes.")
-    column.separator()
-    column.label(text="This issue can be prevented by disabling")
-    column.label(text="Render Properties > Performance > Persistent Data:")
-
-    row = column.row(align=True)
-    row.alignment = 'LEFT'
-    row.label(text="     ")
-    row.prop(bpy.context.scene.render, "use_persistent_data")
-
-    column.label(text="Or by rendering from the command line. See the")
-    column.label(text="cmd rendering tools in the FLIP Fluids sidebar.")
-
-    column.operator(
-            "wm.url_open", 
-            text="Documentation: Command Line Tools", 
-            icon="URL"
-        ).url = "https://github.com/rlguy/Blender-FLIP-Fluids/wiki/Helper-Menu-Settings#command-line-tools"
-
-    column.prop(preferences, "dismiss_persistent_data_render_warning", text="Do not show this warning again")
 
 
 def get_persistent_data_warning_string():

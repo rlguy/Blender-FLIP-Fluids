@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -1005,6 +1005,24 @@ void FluidSimulation::disableMixbox() {
 
 bool FluidSimulation::isMixboxEnabled() {
     return _isMixboxEnabled;
+}
+
+void FluidSimulation::enableMixboxGrayscaleMode() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " enableMixboxGrayscaleMode" << std::endl);
+
+    _isMixboxGrayscaleModeEnabled = true;
+}
+
+void FluidSimulation::disableMixboxGrayscaleMode() {
+    _logfile.log(std::ostringstream().flush() << 
+                 _logfile.getTime() << " disableMixboxGrayscaleMode" << std::endl);
+
+    _isMixboxGrayscaleModeEnabled = false;
+}
+
+bool FluidSimulation::isMixboxGrayscaleModeEnabled() {
+    return _isMixboxGrayscaleModeEnabled;
 }
 
 void FluidSimulation::enableSurfaceSourceIDAttribute() {
@@ -2672,22 +2690,33 @@ void FluidSimulation::setSheetFillRate(double r) {
     _sheetFillRate = r;
 }
 
-double FluidSimulation::getBoundaryFriction() {
-    return _domainBoundaryFriction;
+std::vector<double> FluidSimulation::getBoundaryFrictionSides() {
+    std::vector<double> frictionSides{
+        _boundaryFrictionXNeg, _boundaryFrictionXPos,
+        _boundaryFrictionYNeg, _boundaryFrictionYPos,
+        _boundaryFrictionZNeg, _boundaryFrictionZPos,
+    };
+    return frictionSides;
 }
 
-void FluidSimulation::setBoundaryFriction(double f) {
-    if (f < 0.0 || f > 1.0) {
-        std::string msg = "Error: boundary friction must be in range [0.0, 1.0].\n";
-        msg += "friction: " + _toString(f) + "\n";
+void FluidSimulation::setBoundaryFrictionSides(std::vector<double> values) {
+    if (values.size() != 6) {
+        std::string msg = "Error: fluid boundary friction sides vector must be of length 6.\n";
+        msg += "length: " + _toString(values.size()) + "\n";
         throw std::domain_error(msg);
     }
 
     _logfile.log(std::ostringstream().flush() << 
-                 _logfile.getTime() << " setBoundaryFriction: " << f << std::endl);
+                 _logfile.getTime() << " setBoundaryFrictionSides: " << 
+                 values[0] << " " << values[1] << " " << values[2] << " " << 
+                 values[3] << " " << values[4] << " " << values[5] << std::endl);
 
-    _domainMeshObject.setFriction(f);
-    _domainBoundaryFriction = f;
+    _boundaryFrictionXNeg = values[0];
+    _boundaryFrictionXPos = values[1];
+    _boundaryFrictionYNeg = values[2];
+    _boundaryFrictionYPos = values[3];
+    _boundaryFrictionZNeg = values[4];
+    _boundaryFrictionZPos = values[5];
 }
 
 int FluidSimulation::getCFLConditionNumber() {
@@ -4111,7 +4140,7 @@ void FluidSimulation::_initializeSimulationGrids(int isize, int jsize, int ksize
     TriangleMesh domainBoundaryMesh = _getBoundaryTriangleMesh();
     _domainMeshObject = MeshObject(isize, jsize, ksize, dx);
     _domainMeshObject.updateMeshStatic(domainBoundaryMesh);
-    _domainMeshObject.setFriction(_domainBoundaryFriction);
+    _domainMeshObject.setFriction(0.0);
     _domainMeshObject.setWhitewaterInfluence(1.0);
     _domainMeshObject.setDustEmissionStrength(1.0);
     _domainMeshObject.setAsDomainObject();
@@ -9450,7 +9479,7 @@ void FluidSimulation::_upscaleParticleData() {
 
     bool isAgeDataAvailable = false;
     std::vector<float> *ages;
-    if (_isSurfaceAgeAttributeEnabled) {
+    if (_isSurfaceAgeAttributeEnabled || _isFluidParticleAgeAttributeEnabled) {
         if (_markerParticleAgeLoadQueue.size() == _markerParticleLoadQueue.size()) {
             isAgeDataAvailable = true;
             for (size_t i = 0; i < _markerParticleLoadQueue.size(); i++) {
@@ -9469,7 +9498,7 @@ void FluidSimulation::_upscaleParticleData() {
 
     bool isLifetimeDataAvailable = false;
     std::vector<float> *lifetimes;
-    if (_isSurfaceLifetimeAttributeEnabled) {
+    if (_isSurfaceLifetimeAttributeEnabled || _isFluidParticleLifetimeAttributeEnabled) {
         if (_markerParticleLifetimeLoadQueue.size() == _markerParticleLoadQueue.size()) {
             isLifetimeDataAvailable = true;
             for (size_t i = 0; i < _markerParticleLoadQueue.size(); i++) {
@@ -9507,7 +9536,7 @@ void FluidSimulation::_upscaleParticleData() {
 
     bool isDensityDataAvailable = false;
     std::vector<float> *densities;
-    if (_isSurfaceDensityAttributeEnabled) {
+    if (_isSurfaceDensityAttributeEnabled || _isFluidParticleDensityAttributeEnabled) {
         if (_markerParticleDensityLoadQueue.size() == _markerParticleLoadQueue.size()) {
             isDensityDataAvailable = true;
             for (size_t i = 0; i < _markerParticleLoadQueue.size(); i++) {
@@ -9521,6 +9550,25 @@ void FluidSimulation::_upscaleParticleData() {
         if (isDensityDataAvailable) {
             markerParticles.addAttributeFloat("DENSITY");
             markerParticles.getAttributeValues("DENSITY", densities);
+        }
+    }
+
+    bool isSourceIDDataAvailable = false;
+    std::vector<int> *sourceids;
+    if (_isSurfaceSourceIDAttributeEnabled || _isFluidParticleSourceIDAttributeEnabled) {
+        if (_markerParticleSourceIDLoadQueue.size() == _markerParticleLoadQueue.size()) {
+            isSourceIDDataAvailable = true;
+            for (size_t i = 0; i < _markerParticleLoadQueue.size(); i++) {
+                if (_markerParticleSourceIDLoadQueue[i].particles.size() != _markerParticleLoadQueue[i].particles.size()) {
+                    isSourceIDDataAvailable = false;
+                    break;
+                }
+            }
+        }
+
+        if (isSourceIDDataAvailable) {
+            markerParticles.addAttributeInt("SOURCEID");
+            markerParticles.getAttributeValues("SOURCEID", sourceids);
         }
     }
 
@@ -9608,6 +9656,11 @@ void FluidSimulation::_upscaleParticleData() {
                 if (isDensityDataAvailable) {
                     MarkerParticleDensity mdensity = _markerParticleDensityLoadQueue[j].particles[i];
                     densities->push_back(mdensity.density);
+                }
+
+                if (isSourceIDDataAvailable) {
+                    MarkerParticleSourceID msourceid = _markerParticleSourceIDLoadQueue[j].particles[i];
+                    sourceids->push_back(msourceid.sourceid);
                 }
 
                 if (isIDDataAvailable) {
@@ -9725,6 +9778,7 @@ void FluidSimulation::_upscaleParticleData() {
     }
 
     // Compute Density Grids
+    int defaultSourceID = 0;
     Array3d<float> densityAttributeGrid;
     Array3d<bool> densityAttributeValidGrid;
     if (isDensityDataAvailable) {
@@ -9732,7 +9786,11 @@ void FluidSimulation::_upscaleParticleData() {
         densityAttributeValidGrid = Array3d<bool>(isize, jsize, ksize, false);
 
         markerParticles.getAttributeValues("POSITION", positions);
-        markerParticles.getAttributeValues("DENSITY", densities);
+        markerParticles.getAttributeValues("DENSITY", sourceids);
+
+        if (!sourceids->empty()) {
+            defaultSourceID = sourceids->at(0);
+        }
 
         AttributeTransferParameters<float> params;
         params.positions = positions;
@@ -9747,6 +9805,20 @@ void FluidSimulation::_upscaleParticleData() {
         attributeTransfer.transfer(params);
 
         GridUtils::extrapolateGrid(&densityAttributeGrid, &densityAttributeValidGrid, _CFLConditionNumber);
+    }
+
+    // Compute Source ID Grids
+    Array3d<int> sourceIDAttributeGrid;
+    Array3d<bool> sourceIDAttributeValidGrid;
+    if (isSourceIDDataAvailable) {
+        sourceIDAttributeGrid = Array3d<int>(isize, jsize, ksize, -1);
+        sourceIDAttributeValidGrid = Array3d<bool>(isize, jsize, ksize, false);
+
+        markerParticles.getAttributeValues("POSITION", positions);
+        markerParticles.getAttributeValues("SOURCEID", sourceids);
+
+        _updateMarkerParticleSourceIDAttributeGrid(&markerParticles, dx, sourceIDAttributeGrid, sourceIDAttributeValidGrid);
+        GridUtils::extrapolateGrid(&sourceIDAttributeGrid, &sourceIDAttributeValidGrid, _CFLConditionNumber);
     }
 
     // Compute Color Grids
@@ -9824,6 +9896,7 @@ void FluidSimulation::_upscaleParticleData() {
     MarkerParticleLifetimeLoadData loadLifetimeData;
     MarkerParticleViscosityLoadData loadViscosityData;
     MarkerParticleDensityLoadData loadDensityData;
+    MarkerParticleSourceIDLoadData loadSourceIDData;
     MarkerParticleIDLoadData loadIDData;
     MarkerParticleUIDLoadData loadUIDData;
     MarkerParticleColorLoadData loadColorData;
@@ -9868,6 +9941,18 @@ void FluidSimulation::_upscaleParticleData() {
                             float density = Interpolation::trilinearInterpolate(p, dx, densityAttributeGrid);
                             MarkerParticleDensity mdensity(density);
                             loadDensityData.particles.push_back(mdensity);
+                        }
+
+                        if (isSourceIDDataAvailable) {
+                            GridIndex g = Grid3d::positionToGridIndex(p, dx);
+                            int sourceidval = sourceIDAttributeGrid.get(g);
+
+                            MarkerParticleSourceID msourceid(defaultSourceID);
+                            if (sourceidval != -1) {
+                                msourceid = MarkerParticleSourceID(sourceidval);
+                            }
+
+                            loadSourceIDData.particles.push_back(msourceid);
                         }
 
                         uint16_t idval = 0;
@@ -9918,6 +10003,10 @@ void FluidSimulation::_upscaleParticleData() {
 
     if (isDensityDataAvailable) {
         _markerParticleDensityLoadQueue.push_back(loadDensityData);
+    }
+
+    if (isSourceIDDataAvailable) {
+        _markerParticleSourceIDLoadQueue.push_back(loadSourceIDData);
     }
 
     if (isIDDataAvailable) {
@@ -11324,6 +11413,49 @@ void FluidSimulation::_extrapolateFluidVelocities(MACVelocityField &MACGrid,
     #. Constrain Velocity Field
 ********************************************************************************/
 
+float FluidSimulation::_getDomainFriction(int i, int j, int k) {
+    int dxneg = i;
+    int dyneg = j;
+    int dzneg = k;
+    int dxpos = std::abs(_isize - i);
+    int dypos = std::abs(_jsize - j);
+    int dzpos = std::abs(_ksize - k);
+
+    double friction = 0.0f;
+    int mindist = std::numeric_limits<int>::max();
+    if (dxneg < mindist) {
+        mindist = dxneg;
+        friction = _boundaryFrictionXNeg;
+    }
+
+    if (dyneg < mindist) {
+        mindist = dyneg;
+        friction = _boundaryFrictionYNeg;
+    }
+
+    if (dzneg < mindist) {
+        mindist = dzneg;
+        friction = _boundaryFrictionZNeg;
+    }
+
+    if (dxpos < mindist) {
+        mindist = dxpos;
+        friction = _boundaryFrictionXPos;
+    }
+
+    if (dypos < mindist) {
+        mindist = dypos;
+        friction = _boundaryFrictionYPos;
+    }
+
+    if (dzpos < mindist) {
+        mindist = dzpos;
+        friction = _boundaryFrictionZPos;
+    }
+
+    return (float)friction;
+}
+
 float FluidSimulation::_getFaceFrictionU(GridIndex g) {
     int i = g.i;
     int j = g.j;
@@ -11331,16 +11463,32 @@ float FluidSimulation::_getFaceFrictionU(GridIndex g) {
 
     float friction = 0.0f;
     MeshObject *m = _solidSDF.getClosestMeshObject(i, j, k);
-    friction += m == nullptr ? 0.0f : m->getFriction();
+    if (m != nullptr && m->isDomainObject()) {
+        friction += _getDomainFriction(i, j, k);
+    } else {
+        friction += m == nullptr ? 0.0f : m->getFriction();
+    }
 
     m = _solidSDF.getClosestMeshObject(i, j + 1, k);
-    friction += m == nullptr ? 0.0f : m->getFriction();
+    if (m != nullptr && m->isDomainObject()) {
+        friction += _getDomainFriction(i, j + 1, k);
+    } else {
+        friction += m == nullptr ? 0.0f : m->getFriction();
+    }
 
     m = _solidSDF.getClosestMeshObject(i, j, k + 1);
-    friction += m == nullptr ? 0.0f : m->getFriction();
+    if (m != nullptr && m->isDomainObject()) {
+        friction += _getDomainFriction(i, j, k + 1);
+    } else {
+        friction += m == nullptr ? 0.0f : m->getFriction();
+    }
 
     m = _solidSDF.getClosestMeshObject(i, j + 1, k + 1);
-    friction += m == nullptr ? 0.0f : m->getFriction();
+    if (m != nullptr && m->isDomainObject()) {
+        friction += _getDomainFriction(i, j + 1, k + 1);
+    } else {
+        friction += m == nullptr ? 0.0f : m->getFriction();
+    }
 
     return 0.25f * friction;
 }
@@ -11352,16 +11500,32 @@ float FluidSimulation::_getFaceFrictionV(GridIndex g) {
 
     float friction = 0.0f;
     MeshObject *m = _solidSDF.getClosestMeshObject(i, j, k);
-    friction += m == nullptr ? 0.0f : m->getFriction();
+    if (m != nullptr && m->isDomainObject()) {
+        friction += _getDomainFriction(i, j, k);
+    } else {
+        friction += m == nullptr ? 0.0f : m->getFriction();
+    }
 
     m = _solidSDF.getClosestMeshObject(i + 1, j, k);
-    friction += m == nullptr ? 0.0f : m->getFriction();
+    if (m != nullptr && m->isDomainObject()) {
+        friction += _getDomainFriction(i + 1, j, k);
+    } else {
+        friction += m == nullptr ? 0.0f : m->getFriction();
+    }
 
     m = _solidSDF.getClosestMeshObject(i, j, k + 1);
-    friction += m == nullptr ? 0.0f : m->getFriction();
+    if (m != nullptr && m->isDomainObject()) {
+        friction += _getDomainFriction(i, j, k + 1);
+    } else {
+        friction += m == nullptr ? 0.0f : m->getFriction();
+    }
 
     m = _solidSDF.getClosestMeshObject(i + 1, j, k + 1);
-    friction += m == nullptr ? 0.0f : m->getFriction();
+    if (m != nullptr && m->isDomainObject()) {
+        friction += _getDomainFriction(i + 1, j, k + 1);
+    } else {
+        friction += m == nullptr ? 0.0f : m->getFriction();
+    }
 
     return 0.25f * friction;
 }
@@ -11373,16 +11537,32 @@ float FluidSimulation::_getFaceFrictionW(GridIndex g) {
 
     float friction = 0.0f;
     MeshObject *m = _solidSDF.getClosestMeshObject(i, j, k);
-    friction += m == nullptr ? 0.0f : m->getFriction();
+    if (m != nullptr && m->isDomainObject()) {
+        friction += _getDomainFriction(i, j, k);
+    } else {
+        friction += m == nullptr ? 0.0f : m->getFriction();
+    }
 
     m = _solidSDF.getClosestMeshObject(i + 1, j, k);
-    friction += m == nullptr ? 0.0f : m->getFriction();
+    if (m != nullptr && m->isDomainObject()) {
+        friction += _getDomainFriction(i + 1, j, k);
+    } else {
+        friction += m == nullptr ? 0.0f : m->getFriction();
+    }
 
     m = _solidSDF.getClosestMeshObject(i, j + 1, k);
-    friction += m == nullptr ? 0.0f : m->getFriction();
+    if (m != nullptr && m->isDomainObject()) {
+        friction += _getDomainFriction(i, j + 1, k);
+    } else {
+        friction += m == nullptr ? 0.0f : m->getFriction();
+    }
 
     m = _solidSDF.getClosestMeshObject(i + 1, j + 1, k);
-    friction += m == nullptr ? 0.0f : m->getFriction();
+    if (m != nullptr && m->isDomainObject()) {
+        friction += _getDomainFriction(i + 1, j + 1, k);
+    } else {
+        friction += m == nullptr ? 0.0f : m->getFriction();
+    }
 
     return 0.25f * friction;
 }
@@ -11637,6 +11817,21 @@ void FluidSimulation::_updateSheetSeeding() {
             _updateMarkerParticleDensityAttributeGrid(tempDensityAttributeGrid, tempDensityAttributeValidGrid);
         }
 
+        int defaultSourceID = 0;
+        std::vector<int> *sourceids;
+        Array3d<int> tempSourceIDAttributeGrid;
+        Array3d<bool> tempSourceIDAttributeValidGrid;
+        if (_isSurfaceSourceIDAttributeEnabled || _isFluidParticleSourceIDAttributeEnabled) {
+            tempSourceIDAttributeGrid = Array3d<int>(_isize, _jsize, _ksize, -1);
+            tempSourceIDAttributeValidGrid = Array3d<bool>(_isize, _jsize, _ksize, false);
+            _markerParticles.getAttributeValues("SOURCEID", sourceids);
+            _updateMarkerParticleSourceIDAttributeGrid(&_markerParticles, _dx, tempSourceIDAttributeGrid, tempSourceIDAttributeValidGrid);
+
+            if (!sourceids->empty()) {
+                defaultSourceID = sourceids->at(0);
+            }
+        }
+
         std::vector<uint16_t> *ids;
         if (_isFluidParticleIDAttributeEnabled) {
             _markerParticles.getAttributeValues("ID", ids);
@@ -11702,9 +11897,19 @@ void FluidSimulation::_updateSheetSeeding() {
                 viscosities->push_back(viscosity);
             }
 
-            if (_isSurfaceDensityAttributeEnabled || _isSurfaceDensityAttributeEnabled) {
+            if (_isSurfaceDensityAttributeEnabled || _isFluidParticleDensityAttributeEnabled) {
                 float density = Interpolation::trilinearInterpolate(p, _dx, tempDensityAttributeGrid);
                 densities->push_back(density);
+            }
+
+            if (_isSurfaceSourceIDAttributeEnabled || _isFluidParticleSourceIDAttributeEnabled) {
+                GridIndex g = Grid3d::positionToGridIndex(p, _dx);
+                int sourceID = tempSourceIDAttributeGrid.get(g);
+                if (sourceID == -1) {
+                    sourceids->push_back(defaultSourceID);
+                } else {
+                    sourceids->push_back(sourceID);
+                }
             }
 
             uint16_t idval = 0;
@@ -12175,6 +12380,45 @@ void FluidSimulation::_updateMarkerParticleDensityAttributeGrid(Array3d<float> &
     GridUtils::extrapolateGrid(&densityAttributeGrid, &densityAttributeValidGrid, _CFLConditionNumber);
 }
 
+void FluidSimulation::_updateMarkerParticleSourceIDAttributeGrid(ParticleSystem *markerParticles,
+                                                                 double dx,
+                                                                 Array3d<int> &sourceIDAttributeGrid, 
+                                                                 Array3d<bool> &sourceIDAttributeValidGrid) {
+    std::vector<vmath::vec3> *positions;
+    std::vector<int> *sourceids;
+    markerParticles->getAttributeValues("POSITION", positions);
+    markerParticles->getAttributeValues("SOURCEID", sourceids);
+
+    std::vector<int> indices(positions->size());
+    for (size_t i = 0; i < indices.size(); i++) {
+        indices[i] = i;
+    }
+
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(indices.begin(), indices.end(), g);
+    
+    std::vector<vmath::vec3> positionsRandom(indices.size());
+    std::vector<int> sourceidsRandom(indices.size());
+    for (size_t i = 0; i < indices.size(); i++) {
+        positionsRandom[i] = positions->at(indices[i]);
+        sourceidsRandom[i] = sourceids->at(indices[i]);
+    }
+
+    sourceIDAttributeGrid.fill(-1);
+    sourceIDAttributeValidGrid.fill(false);
+    for (size_t i = 0; i < positionsRandom.size(); i++) {
+        vmath::vec3 p = positionsRandom[i];
+        GridIndex g = Grid3d::positionToGridIndex(p, dx);
+        if (sourceIDAttributeGrid.get(g) == -1) {
+            sourceIDAttributeGrid.set(g, sourceidsRandom[i]);
+            sourceIDAttributeValidGrid.set(g, true);
+        }
+    }
+
+    GridUtils::extrapolateGrid(&sourceIDAttributeGrid, &sourceIDAttributeValidGrid, _CFLConditionNumber);
+}
+
 void FluidSimulation::_updateMarkerParticleColorAttributeGrid(Array3d<float> &colorAttributeGridR,
                                                               Array3d<float> &colorAttributeGridG,
                                                               Array3d<float> &colorAttributeGridB,
@@ -12381,6 +12625,21 @@ void FluidSimulation::_updateMarkerParticleColorAttributeMixingThread(int starti
     std::vector<GridPointReference> refs;
     if (_isMixboxEnabled) {
         // Mixbox Blending
+
+        if (_isMixboxGrayscaleModeEnabled) {
+            float eps = 1e-6f;
+            for (int i = startidx; i < endidx; i++) {
+                vmath::vec3 c = colors->at(i);
+                if (std::abs(c.x - c.y) > eps || std::abs(c.x - c.z) > eps || std::abs(c.y - c.z) > eps) {
+                    float grayscale = 0.299f * c.x + 0.587f * c.y + 0.114f * c.z;
+                    c.x = grayscale;
+                    c.y = grayscale;
+                    c.z = grayscale;
+                    colors->at(i) = c;
+                }
+            }
+        }
+
         for (int i = startidx; i < endidx; i++) {
             GridPointReference ref(i);
         
@@ -12404,6 +12663,14 @@ void FluidSimulation::_updateMarkerParticleColorAttributeMixingThread(int starti
 
             if (refs.size() > 0) {
                 mixbox_lerp_srgb32f(colorOld.x, colorOld.y, colorOld.z, r, g, b, mixRate, &r,&g,&b);
+
+                if (_isMixboxGrayscaleModeEnabled) {
+                    float avgColor = (r + g + b) / 3.0f;
+                    r = avgColor;
+                    g = avgColor;
+                    b = avgColor;
+                }
+
                 vmath::vec3 colorNew(r, g, b);
                 colorsNew->at(i) = colorNew;
                 colorsNewValid->at(i) = true;
@@ -13201,7 +13468,18 @@ void FluidSimulation::_updateInflowMeshFluidSource(MeshFluidSource *source,
     attributes.sourceDensity = source->getDensity();
     attributes.sourceLifetime = source->getLifetime();
     attributes.sourceLifetimeVariance = source->getLifetimeVariance();
-    attributes.sourceColor = source->getSourceColor();
+
+    vmath::vec3 c = source->getSourceColor();
+    if (_isMixboxEnabled && _isMixboxGrayscaleModeEnabled) {
+        float eps = 1e-6f;
+        if (std::abs(c.x - c.y) > eps || std::abs(c.x - c.z) > eps || std::abs(c.y - c.z) > eps) {
+            float grayscale = 0.299f * c.x + 0.587f * c.y + 0.114f * c.z;
+            c.x = grayscale;
+            c.y = grayscale;
+            c.z = grayscale;
+        }
+    }
+    attributes.sourceColor = c;
 
     for (int i = 0; i < numSubsteps; i++) {
         float frameInterpolation = frameProgress + (float)i * substepFactor;
@@ -13426,7 +13704,18 @@ void FluidSimulation::_updateAddedFluidMeshObjectQueue() {
         attributes.sourceDensity = object.getDensity();
         attributes.sourceLifetime = object.getLifetime();
         attributes.sourceLifetimeVariance = object.getLifetimeVariance();
-        attributes.sourceColor = object.getSourceColor();
+
+        vmath::vec3 c = object.getSourceColor();
+        if (_isMixboxEnabled && _isMixboxGrayscaleModeEnabled) {
+            float eps = 1e-6f;
+            if (std::abs(c.x - c.y) > eps || std::abs(c.x - c.z) > eps || std::abs(c.y - c.z) > eps) {
+                float grayscale = 0.299f * c.x + 0.587f * c.y + 0.114f * c.z;
+                c.x = grayscale;
+                c.y = grayscale;
+                c.z = grayscale;
+            }
+        }
+        attributes.sourceColor = c;
 
         bool isAABB = object.isGeometryAABB();
         if (isAABB && !object.isAnimated()) {

@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+# Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -457,6 +457,7 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
             obj.hide_render = True
             vcu.set_object_display_type(obj, 'BOUNDS')
             obj.show_name = True
+            api_workaround_utils.remove_domain_particle_systems_T71908_workaround(obj)
 
         elif self.object_type == 'TYPE_FLUID':
             obj.hide_render = True
@@ -509,8 +510,17 @@ class FlipFluidObjectProperties(bpy.types.PropertyGroup):
 
 
 def scene_update_post(scene):
-    domain_properties.scene_update_post(scene)
+    orphaned_domain_objects = scene.flip_fluid.get_orphaned_domain_objects()
+    for domain_object in orphaned_domain_objects:
+        try:
+            print("FLIP Fluids: Orphaned Domain object detected, removing <" + domain_object.name + "> from Blend file data.")
+            print("\tTip: Use the 'FLIP Fluids Sidebar > Add/Remove Objects > Delete Domain' operator to safely delete Domain objects from the Blend file.")
+            vcu.delete_object(domain_object, remove_mesh_data=False)
+        except:
+            print("FLIP Fluids Error: Failed to remove <" + domain_object.name + "> Domain object data from Blend file data.")
+            print("\tUse the 'FLIP Fluids Sidebar > Add/Remove Objects > Delete Domain' operator if there is any remaining Domain object data in the Blend file.")
 
+    domain_properties.scene_update_post(scene)
     flip_objects = scene.flip_fluid.get_simulation_objects()
     domain_object = scene.flip_fluid.get_domain_object()
     if domain_object is not None:

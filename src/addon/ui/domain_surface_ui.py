@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+# Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -135,7 +135,9 @@ def _draw_geometry_attributes_menu(self, context):
 
                 if installation_utils.is_mixbox_supported():
                     if installation_utils.is_mixbox_installation_complete():
-                        column.label(text="Mixbox Plugin Status: Installed", icon="CHECKMARK")
+                        row = column.row(align=True)
+                        row.label(text="Mixbox Plugin Status: Installed", icon="CHECKMARK")
+                        row.prop(sprops, "enable_mixbox_grayscale_mode", expand=True)
                     else:
                         column.label(text="Install the Mixbox plugin in the", icon="INFO")
                         column.label(text="FLIP Fluids Addon preferences", icon="INFO")
@@ -143,6 +145,8 @@ def _draw_geometry_attributes_menu(self, context):
                                 "flip_fluid_operators.open_preferences", 
                                 text="Open Preferences", icon="PREFERENCES"
                                 ).view_mode = 'PREFERENCES_MENU_VIEW_MIXBOX'
+            else:
+                column.label(text="")
         else:
             row = row_color.row(align=True)
             row.alignment = 'RIGHT'

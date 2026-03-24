@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+# Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@ if "bpy" in locals():
         'domain_surface_properties',
         'domain_whitewater_properties',
         'domain_world_properties',
-        'domain_presets_properties',
         'domain_materials_properties',
         'domain_advanced_properties',
         'domain_debug_properties',
@@ -55,7 +54,6 @@ from . import (
         domain_surface_properties,
         domain_whitewater_properties,
         domain_world_properties,
-        domain_presets_properties,
         domain_materials_properties,
         domain_advanced_properties,
         domain_stats_properties,
@@ -111,11 +109,6 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
             description="",
             type=domain_world_properties.DomainWorldProperties,
             )
-    presets: PointerProperty(
-            name="Domain Presets Properties",
-            description="",
-            type=domain_presets_properties.DomainPresetsProperties,
-            )
     materials: PointerProperty(
             name="Domain Materials Properties",
             description="",
@@ -158,6 +151,7 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
     is_updated_to_flip_fluids_version_180: BoolProperty(default=False)
     is_updated_to_flip_fluids_version_184: BoolProperty(default=False)
     is_updated_to_flip_fluids_version_185: BoolProperty(default=False)
+    is_updated_to_flip_fluids_version_186: BoolProperty(default=False)
 
 
     def initialize(self):
@@ -167,10 +161,11 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
         self.materials.initialize()
         self._initialize_cache()
         self._initialize_property_registry()
-        self.presets.initialize()
 
         self.is_updated_to_flip_fluids_version_180 = True
         self.is_updated_to_flip_fluids_version_184 = True
+        self.is_updated_to_flip_fluids_version_185 = True
+        self.is_updated_to_flip_fluids_version_186 = True
 
 
     def dummy_initialize(self):
@@ -260,7 +255,6 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
         self.surface.register_preset_properties(    self.property_registry, "domain.surface")
         self.whitewater.register_preset_properties( self.property_registry, "domain.whitewater")
         self.world.register_preset_properties(      self.property_registry, "domain.world")
-        self.presets.register_preset_properties(    self.property_registry, "domain.presets")
         self.materials.register_preset_properties(  self.property_registry, "domain.materials")
         self.advanced.register_preset_properties(   self.property_registry, "domain.advanced")
         self.debug.register_preset_properties(      self.property_registry, "domain.debug")
@@ -462,6 +456,25 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
         self.is_updated_to_flip_fluids_version_185 = True
 
 
+    def _update_to_flip_fluids_version_186(self):
+        dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+        if dprops is None:
+            return
+
+        if self.is_updated_to_flip_fluids_version_186:
+            return
+
+        print("\n*** Begin updating FLIP Domain to FLIP Fluids version 1.8.6+ ***")
+
+        f = dprops.world.boundary_friction
+        if f > 0.0:
+            print("\tApplying original domain friction value of <" + "{:.2f}".format(f) + "> to all ±XYZ sides.")
+            dprops.world.boundary_friction_sides = (f, f, f, f, f, f)
+
+        print("*** Finished updating FLIP Domain to FLIP Fluids version 1.8.6+ ***\n")
+        self.is_updated_to_flip_fluids_version_186 = True
+
+
     def scene_update_post(self, scene):
         self.render.scene_update_post(scene)
         self.simulation.scene_update_post(scene)
@@ -489,7 +502,6 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
         self.surface.load_post()
         self.stats.load_post()
         self.debug.load_post()
-        #self.presets.load_post()
         self.advanced.load_post()
         self.materials.load_post()
         self.mesh_cache.load_post()
@@ -499,6 +511,7 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
         self._update_to_flip_fluids_version_180()
         self._update_to_flip_fluids_version_184()
         self._update_to_flip_fluids_version_185()
+        self._update_to_flip_fluids_version_186()
 
 
     def save_pre(self):
@@ -562,7 +575,6 @@ def register():
     domain_surface_properties.register()
     domain_whitewater_properties.register()
     domain_world_properties.register()
-    domain_presets_properties.register()
     domain_materials_properties.register()
     domain_advanced_properties.register()
     domain_debug_properties.register()
@@ -579,7 +591,6 @@ def unregister():
     domain_surface_properties.unregister()
     domain_whitewater_properties.unregister()
     domain_world_properties.unregister()
-    domain_presets_properties.unregister()
     domain_materials_properties.unregister()
     domain_advanced_properties.unregister()
     domain_debug_properties.unregister()

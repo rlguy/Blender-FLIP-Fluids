@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+# Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,13 +21,31 @@ argv = sys.argv
 argv = argv[argv.index("--") + 1:]
 num_render_instances_option = int(argv[0])
 use_overwrite_option = int(argv[1])
+run_as_flatpak = int(argv[2])
 
 _NUM_RENDER_INSTANCES = num_render_instances_option
 _USE_OVERWRITE = bool(use_overwrite_option)
+_RUN_AS_FLATPAK = bool(run_as_flatpak)
 _RENDER_THREADS = []
 _IS_SIMULATION_FINISHED = False
 
 RenderCommandInfo = namedtuple('RenderCommandInfo', ['blendfile', 'frame'])
+
+def get_blender_launch_command_list():
+    global _RUN_AS_FLATPAK
+    if _RUN_AS_FLATPAK:
+        command_list = ["flatpak", "run", "org.blender.Blender"]
+    else:
+        command_list = [bpy.app.binary_path]
+    command_list += get_blender_logging_command_list()
+    return command_list
+
+
+def get_blender_logging_command_list():
+    logging_command_list = []
+    if bpy.app.version >= (5, 0, 0):
+        logging_command_list = ["--log-level", "info"]
+    return logging_command_list
 
 
 def get_max_bakefile_frame(bakefiles_directory):
@@ -58,6 +76,7 @@ def get_render_output_info():
        directory_path = os.path.dirname(directory_path)
 
     file_format_to_suffix = {
+        "AVIF"                : ".avif",
         "BMP"                 : ".bmp",
         "IRIS"                : ".rgb",
         "PNG"                 : ".png",
@@ -85,18 +104,18 @@ def get_render_output_info():
 
 def get_render_passes_info():
     # Pass-Suffix-Liste mit den zugehoerigen Listen
-    hprops = bpy.context.scene.flip_fluid_helper
+    cprops = bpy.context.scene.flip_fluid_compositing_tools
     pass_suffixes = [
-        ("BG_elements_only", hprops.render_passes_elements_only, hprops.render_passes_bg_elementslist),
-        ("REF_elements_only", hprops.render_passes_elements_only, hprops.render_passes_ref_elementslist),
-        ("objects_only", hprops.render_passes_objects_only, None),
-        ("fluidparticles_only", hprops.render_passes_fluidparticles_only, None),
-        ("fluid_only", hprops.render_passes_fluid_only, None),
-        ("fluid_shadows_only", hprops.render_passes_fluid_shadows_only, None),
-        ("reflr_only", hprops.render_passes_reflr_only, None),
-        ("bubblesanddust_only", hprops.render_passes_bubblesanddust_only, None),
-        ("foamandspray_only", hprops.render_passes_foamandspray_only, None),
-        ("FG_elements_only", hprops.render_passes_elements_only, hprops.render_passes_fg_elementslist),
+        ("BG_elements_only", cprops.render_passes_elements_only, cprops.render_passes_bg_elementslist),
+        ("REF_elements_only", cprops.render_passes_elements_only, cprops.render_passes_ref_elementslist),
+        ("objects_only", cprops.render_passes_objects_only, None),
+        ("fluidparticles_only", cprops.render_passes_fluidparticles_only, None),
+        ("fluid_only", cprops.render_passes_fluid_only, None),
+        ("fluid_shadows_only", cprops.render_passes_fluid_shadows_only, None),
+        ("reflr_only", cprops.render_passes_reflr_only, None),
+        ("bubblesanddust_only", cprops.render_passes_bubblesanddust_only, None),
+        ("foamandspray_only", cprops.render_passes_foamandspray_only, None),
+        ("FG_elements_only", cprops.render_passes_elements_only, cprops.render_passes_fg_elementslist),
     ]
 
     # Entferne leere Listen-Suffixe
@@ -180,12 +199,12 @@ def get_render_command_list_render_passes():
 
 
 def _render_thread(command):
-    subprocess_command = [bpy.app.binary_path, "-b", command.blendfile, "-f", str(command.frame)] 
+    subprocess_command = get_blender_launch_command_list() + ["-b", command.blendfile, "-f", str(command.frame)] 
     subprocess.call(subprocess_command, shell=False)  
 
 
 def _render_sequence_thread(command, frame_start, frame_end):
-    subprocess_command = [bpy.app.binary_path, "-b", command.blendfile, "-s", str(frame_start), "-e", str(frame_end), "-a"] 
+    subprocess_command = get_blender_launch_command_list() + ["-b", command.blendfile, "-s", str(frame_start), "-e", str(frame_end), "-a"] 
     subprocess.call(subprocess_command, shell=False)  
 
 
@@ -200,8 +219,8 @@ def render_loop(render_command_list):
     frame_end = bpy.context.scene.frame_end
     frame_step = bpy.context.scene.frame_step
 
-    hprops = bpy.context.scene.flip_fluid_helper
-    render_single_blend_file = not hprops.render_passes
+    cprops = bpy.context.scene.flip_fluid_compositing_tools
+    render_single_blend_file = not cprops.render_passes
     render_single_threaded = _NUM_RENDER_INSTANCES == 1
     is_render_sequence_optimization_available = render_single_blend_file and render_single_threaded and frame_step == 1
 
@@ -283,8 +302,8 @@ def render_loop(render_command_list):
         time.sleep(1.0/updates_per_second)
 
 
-hprops = bpy.context.scene.flip_fluid_helper
-if hprops.render_passes:
+cprops = bpy.context.scene.flip_fluid_compositing_tools
+if cprops.render_passes:
     render_command_list = get_render_command_list_render_passes()
 else:
     render_command_list = get_render_command_list_single_blend()

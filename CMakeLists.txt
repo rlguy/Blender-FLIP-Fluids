@@ -1,7 +1,7 @@
 #[[
 MIT License
 
-Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -38,6 +38,7 @@ include(CheckLinkerFlag)
 # Build Options
 set(BUILD_DEBUG OFF CACHE BOOL "Turn on to build a debug release")
 option(DISTRIBUTE_SOURCE "Include source code in addon" ON)
+option(DISTRIBUTE_MEDIA "Include media files in addon" OFF) # For future feature
 option(WITH_MIXBOX "Compile with Mixbox pigment mixing feature" OFF)
 
 # Configure Project
@@ -52,10 +53,10 @@ endif()
 set(FFENGINE_VERSION_TYPE_IS_STABLE_BUILD TRUE)
 set(FFENGINE_VERSION_MAJOR 1)
 set(FFENGINE_VERSION_MINOR 8)
-set(FFENGINE_VERSION_REVISION 5)
-set(FFENGINE_VERSION_DATE_YYYY "2025")
-set(FFENGINE_VERSION_DATE_MM "11")
-set(FFENGINE_VERSION_DATE_DD "18")
+set(FFENGINE_VERSION_REVISION 6)
+set(FFENGINE_VERSION_DATE_YYYY "2026")
+set(FFENGINE_VERSION_DATE_MM "03")
+set(FFENGINE_VERSION_DATE_DD "26")
 set(FFENGINE_VERSION_SUPPORT_LICENSE_TYPE "Demo")
 set(FFENGINE_VERSION_RELEASE_TYPE "Release")
 
@@ -277,6 +278,10 @@ add_library(ffengine SHARED $<TARGET_OBJECTS:fluid_engine_objects>)
 file(COPY "${CMAKE_SOURCE_DIR}/src/addon/" DESTINATION "${BLENDER_ADDON_DIR}")
 file(COPY "${CMAKE_SOURCE_DIR}/src/engine/ffengine/" DESTINATION "${BLENDER_ADDON_DIR}/ffengine")
 
+if(NOT DISTRIBUTE_MEDIA)
+    file(REMOVE_RECURSE "${BLENDER_ADDON_DIR}/resources/media")
+endif()
+
 # Package Sources
 if(DISTRIBUTE_SOURCE)
     set(SOURCES_ARCHIVE_ROOT
@@ -291,6 +296,12 @@ if(DISTRIBUTE_SOURCE)
     )
 
     file(GLOB_RECURSE SOURCES_ARCHIVE "${CMAKE_SOURCE_DIR}/src/*")
+    
+    if(NOT DISTRIBUTE_MEDIA)
+        file(GLOB_RECURSE MEDIA_FILES "${CMAKE_SOURCE_DIR}/src/addon/resources/media/*")
+        list(REMOVE_ITEM SOURCES_ARCHIVE ${MEDIA_FILES})
+    endif()
+
     list (APPEND SOURCES_ARCHIVE ${SOURCES_ARCHIVE_ROOT})
     file(MAKE_DIRECTORY ${BLENDER_ADDON_DIR}/source)
     file(ARCHIVE_CREATE OUTPUT "${BLENDER_ADDON_DIR}/source/flip_fluids_addon_source.zip" PATHS ${SOURCES_ARCHIVE} FORMAT "zip")

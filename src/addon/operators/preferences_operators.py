@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+# Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -323,7 +323,7 @@ class FLIPFluidInstallMixboxPlugin(bpy.types.Operator, ImportHelper):
                         self.report_error_message(context, "Error: Invalid plugin data. File may be corrupted.")
                         return {'CANCELLED'}
 
-                dst_path = os.path.join(_get_addon_directory(), "third_party", "mixbox")
+                dst_path = installation_utils.get_mixbox_plugin_install_directory()
                 zip.extractall(path=dst_path)
 
         except zipfile.BadZipFile as e:
@@ -350,11 +350,11 @@ class FLIPFluidUninstallMixboxPlugin(bpy.types.Operator):
     def execute(self, context):
         installation_utils.update_mixbox_installation_status()
 
-        mixbox_base_directory = os.path.join(_get_addon_directory(), "third_party", "mixbox")
+        mixbox_base_directory = installation_utils.get_mixbox_plugin_install_directory()
         mixbox_src_directory = os.path.join(mixbox_base_directory, "src")
 
-        fpl.delete_files_in_directory(mixbox_base_directory, [".bin", ".txt"], remove_directory=False)
         fpl.delete_files_in_directory(mixbox_src_directory, [".h", ".cpp", ".png", ".md"], remove_directory=True)
+        fpl.delete_files_in_directory(mixbox_base_directory, [".bin", ".txt"], remove_directory=True)
 
         installation_utils.update_mixbox_installation_status()
         success_message = "The Mixbox plugin has been uninstalled successfully."
@@ -899,14 +899,6 @@ def get_system_info_dict():
         print(traceback.format_exc())
         print(e)
 
-    developer_tools_string = "Unknown"
-    try:
-        preferences = vcu.get_addon_preferences()
-        developer_tools_string = "Enabled" if preferences.enable_extra_features else "Disabled"
-    except Exception as e:
-        print(traceback.format_exc())
-        print(e)
-
     mixbox_installed_string = "Unknown"
     try:
         is_mixbox_installed = installation_utils.is_mixbox_installation_complete()
@@ -938,25 +930,6 @@ def get_system_info_dict():
         print(traceback.format_exc())
         print(e)
         features_string = "Unknown"
-
-    attributes_string = "N/A"
-    try:
-        dprops = bpy.context.scene.flip_fluid.get_domain_properties()
-        if dprops is not None:
-            d = api_utils.get_enabled_features_affected_by_T88811()
-            if d is not None:
-                if d["attributes"]["surface"] or d["attributes"]["whitewater"] or d["viscosity"]:
-                    attributes_string = ""
-                    for att in d["attributes"]["surface"]:
-                        attributes_string += "Surface " + att + ", "
-                    if d["viscosity"]:
-                        attributes_string += "Surface Viscosity, "
-                    for att in d["attributes"]["whitewater"]:
-                        attributes_string += "Whitewater " + att + ", "
-                    attributes_string = vcu.str_removesuffix(attributes_string, ", ")
-    except Exception as e:
-        print(traceback.format_exc())
-        print(e)
 
     lock_interface_string = "Unknown"
     try:
@@ -1024,6 +997,14 @@ def get_system_info_dict():
         print(traceback.format_exc())
         print(e)
         viewport_modes_string = "Unknown"
+
+    is_flatpak_compatibility_enabled = "Unknown"
+    try:
+        preferences = vcu.get_addon_preferences()
+        is_flatpak_compatibility_enabled = "Enabled" if preferences.enable_linux_flatpak_compatibility else "Disabled"
+    except Exception as e:
+        print(traceback.format_exc())
+        print(e)
 
     domains_string = "N/A"
     domain_count = 0
@@ -1195,6 +1176,7 @@ def get_system_info_dict():
     d['blender_binary'] = blender_binary_string
     d['compiler_info'] = compiler_info_string
     d['library_info'] = library_info_string
+    d['is_flatpak_compatibility_enabled'] = is_flatpak_compatibility_enabled
     d['renderer'] = renderer_string
     d['cycles_device'] = cycles_device_string
     d['viewport_modes'] = viewport_modes_string
@@ -1213,10 +1195,8 @@ def get_system_info_dict():
     d['surface_visibility'] = surface_visibility_string
     d['whitewater_visibility'] = whitewater_visibility_string
     d['features'] = features_string
-    d['attributes'] = attributes_string
     d['lock_interface'] = lock_interface_string
     d['persistent_data'] = persistent_data_string
-    d['developer_tools'] = developer_tools_string
     d['mixbox'] = mixbox_installed_string
     d['addons'] = addons_string
     return d
@@ -1254,6 +1234,7 @@ class FlipFluidReportBugPrefill(bpy.types.Operator):
         user_info += "**Addon Path:** " + sys_info['addon_path'] + "\n"
         user_info += "**Compiler Info:** " + sys_info['compiler_info'] + "\n"
         user_info += "**Library Info:** " + sys_info['library_info'] + "\n"
+        user_info += "**Linux Flatpak Compatibility:** " + sys_info['is_flatpak_compatibility_enabled'] + "\n"
         user_info += "**Renderer:** " + sys_info['renderer'] + "\n"
         user_info += "**Cycles Device:** " + sys_info['cycles_device'] + "\n"
         user_info += "**Viewport Modes:** " + sys_info['viewport_modes'] + "\n"
@@ -1272,10 +1253,8 @@ class FlipFluidReportBugPrefill(bpy.types.Operator):
         user_info += "**Surface Visibility:** " + sys_info['surface_visibility'] + "\n"
         user_info += "**Whitewater Visibility:** " + sys_info['whitewater_visibility'] + "\n"
         user_info += "**Enabled Features:** " + sys_info['features'] + "\n"
-        user_info += "**Enabled Attributes:** " + sys_info['attributes'] + "\n"
         user_info += "**Lock Interface:** " + sys_info['lock_interface'] + "\n"
         user_info += "**Cycles Persistent Data:** " + sys_info['persistent_data'] + "\n"
-        user_info += "**Developer Tools:** " + sys_info['developer_tools'] + "\n"
         user_info += "**Mixbox Plugin:** " + sys_info['mixbox'] + "\n"
         user_info += "**Enabled Addons:** " + sys_info['addons'] + "\n\n"
         user_info += "#### Describe the bug\n\n"
@@ -1317,6 +1296,7 @@ def get_system_info_string():
     user_info += "Addon Path: " + sys_info['addon_path'] + "\n"
     user_info += "Compiler Info: " + sys_info['compiler_info'] + "\n"
     user_info += "Library Info: " + sys_info['library_info'] + "\n"
+    user_info += "Linux Flatpak Compatibility: " + sys_info['is_flatpak_compatibility_enabled'] + "\n"
     user_info += "Renderer: " + sys_info['renderer'] + "\n"
     user_info += "Cycles Device: " + sys_info['cycles_device'] + "\n"
     user_info += "Viewport Modes: " + sys_info['viewport_modes'] + "\n"
@@ -1335,10 +1315,8 @@ def get_system_info_string():
     user_info += "Surface Visibility: " + sys_info['surface_visibility'] + "\n"
     user_info += "Whitewater Visibility: " + sys_info['whitewater_visibility'] + "\n"
     user_info += "Enabled Features: " + sys_info['features'] + "\n"
-    user_info += "Enabled Attributes: " + sys_info['attributes'] + "\n"
     user_info += "Lock Interface: " + sys_info['lock_interface'] + "\n"
     user_info += "Cycles Persistent Data: " + sys_info['persistent_data'] + "\n"
-    user_info += "Developer Tools: " + sys_info['developer_tools'] + "\n"
     user_info += "Mixbox Plugin: " + sys_info['mixbox'] + "\n"
     user_info += "Enabled Addons: " + sys_info['addons']
     return user_info

@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+# Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,14 +20,33 @@ argv = sys.argv
 argv = argv[argv.index("--") + 1:]
 num_render_instances_option = int(argv[0])
 use_overwrite_option = int(argv[1])
+run_as_flatpak = int(argv[2])
 
 _NUM_RENDER_INSTANCES = num_render_instances_option
 _USE_OVERWRITE = bool(use_overwrite_option)
+_RUN_AS_FLATPAK = bool(run_as_flatpak)
 _RENDER_THREADS = []
 
 
+def get_blender_launch_command_list():
+    global _RUN_AS_FLATPAK
+    if _RUN_AS_FLATPAK:
+        command_list = ["flatpak", "run", "org.blender.Blender"]
+    else:
+        command_list = [bpy.app.binary_path]
+    command_list += get_blender_logging_command_list()
+    return command_list
+
+
+def get_blender_logging_command_list():
+    logging_command_list = []
+    if bpy.app.version >= (5, 0, 0):
+        logging_command_list = ["--log-level", "info"]
+    return logging_command_list
+
+
 def _render_thread(settings, frameno):
-    command = [settings["blender_binary_path"], "-b", settings["blend_filepath"], "-f", str(frameno)] 
+    command = get_blender_launch_command_list() + ["-b", settings["blend_filepath"], "-f", str(frameno)] 
     subprocess.call(command, shell=False)
 
 
@@ -79,6 +98,7 @@ def get_render_output_info():
        directory_path = os.path.dirname(directory_path)
 
     file_format_to_suffix = {
+        "AVIF"                : ".avif",
         "BMP"                 : ".bmp",
         "IRIS"                : ".rgb",
         "PNG"                 : ".png",
@@ -133,7 +153,6 @@ else:
         rendered_frame_filepaths.append(frame_filepath)
 
 settings = {}
-settings["blender_binary_path"] = bpy.app.binary_path
 settings["blend_filepath"] = bpy.data.filepath
 settings["frame_start"] = bpy.context.scene.frame_start
 settings["frame_end"] = bpy.context.scene.frame_end

@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+# Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,16 +20,35 @@ argv = sys.argv
 argv = argv[argv.index("--") + 1:]
 num_render_instances_option = int(argv[0])
 use_overwrite_option = int(argv[1])
+run_as_flatpak = int(argv[2])
 
 _NUM_RENDER_INSTANCES = num_render_instances_option
 _USE_OVERWRITE = bool(use_overwrite_option)
+_RUN_AS_FLATPAK = bool(run_as_flatpak)
 _RENDER_THREADS = []
+
+
+def get_blender_launch_command_list():
+    global _RUN_AS_FLATPAK
+    if _RUN_AS_FLATPAK:
+        command_list = ["flatpak", "run", "org.blender.Blender"]
+    else:
+        command_list = [bpy.app.binary_path]
+    command_list += get_blender_logging_command_list()
+    return command_list
+
+
+def get_blender_logging_command_list():
+    logging_command_list = []
+    if bpy.app.version >= (5, 0, 0):
+        logging_command_list = ["--log-level", "info"]
+    return logging_command_list
 
 
 def _render_thread(command_info):
     blend_filepath = command_info['blend_filepath']
     frameno = command_info['frameno']
-    command = [bpy.app.binary_path, "-b", blend_filepath, "-f", str(frameno)] 
+    command = get_blender_launch_command_list() + ["-b", blend_filepath, "-f", str(frameno)] 
     subprocess.call(command, shell=False)
 
 
@@ -81,6 +100,7 @@ def get_render_output_info():
        directory_path = os.path.dirname(directory_path)
 
     file_format_to_suffix = {
+        "AVIF"                : ".avif",
         "BMP"                 : ".bmp",
         "IRIS"                : ".rgb",
         "PNG"                 : ".png",
@@ -108,18 +128,18 @@ def get_render_output_info():
 
 def get_render_passes_info():
     # Pass-Suffix-Liste mit den zugehoerigen Listen
-    hprops = bpy.context.scene.flip_fluid_helper
+    cprops = bpy.context.scene.flip_fluid_compositing_tools
     pass_suffixes = [
-        ("BG_elements_only", hprops.render_passes_elements_only, hprops.render_passes_bg_elementslist),
-        ("REF_elements_only", hprops.render_passes_elements_only, hprops.render_passes_ref_elementslist),
-        ("objects_only", hprops.render_passes_objects_only, None),
-        ("fluidparticles_only", hprops.render_passes_fluidparticles_only, None),
-        ("fluid_only", hprops.render_passes_fluid_only, None),
-        ("fluid_shadows_only", hprops.render_passes_fluid_shadows_only, None),
-        ("reflr_only", hprops.render_passes_reflr_only, None),
-        ("bubblesanddust_only", hprops.render_passes_bubblesanddust_only, None),
-        ("foamandspray_only", hprops.render_passes_foamandspray_only, None),
-        ("FG_elements_only", hprops.render_passes_elements_only, hprops.render_passes_fg_elementslist),
+        ("BG_elements_only", cprops.render_passes_elements_only, cprops.render_passes_bg_elementslist),
+        ("REF_elements_only", cprops.render_passes_elements_only, cprops.render_passes_ref_elementslist),
+        ("objects_only", cprops.render_passes_objects_only, None),
+        ("fluidparticles_only", cprops.render_passes_fluidparticles_only, None),
+        ("fluid_only", cprops.render_passes_fluid_only, None),
+        ("fluid_shadows_only", cprops.render_passes_fluid_shadows_only, None),
+        ("reflr_only", cprops.render_passes_reflr_only, None),
+        ("bubblesanddust_only", cprops.render_passes_bubblesanddust_only, None),
+        ("foamandspray_only", cprops.render_passes_foamandspray_only, None),
+        ("FG_elements_only", cprops.render_passes_elements_only, cprops.render_passes_fg_elementslist),
     ]
 
     # Entferne leere Listen-Suffixe
@@ -157,7 +177,6 @@ def get_render_passes_info():
     return info_dict_items
 
 
-hprops = bpy.context.scene.flip_fluid_helper
 render_passes_info = get_render_passes_info()
 _, _, image_file_extension = get_render_output_info()
 skip_rendered_frames = not _USE_OVERWRITE

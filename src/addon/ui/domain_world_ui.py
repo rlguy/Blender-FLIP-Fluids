@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+# Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -200,11 +200,10 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
             column = body.column(align=True)
             row = column.row(align=True)
             row.prop(wprops, "enable_viscosity")
-
-            if vcu.get_addon_preferences().is_extra_features_enabled():
-                row = row.row(align=True)
-                row.enabled = wprops.enable_viscosity
-                row.prop(attrprops, "enable_viscosity_attribute", text="Variable Viscosity")
+            
+            row = row.row(align=True)
+            row.enabled = wprops.enable_viscosity
+            row.prop(attrprops, "enable_viscosity_attribute", text="Variable Viscosity")
 
             column = body.column(align=True)
             column.enabled = wprops.enable_viscosity
@@ -349,12 +348,17 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
         row = header.row(align=True)
         row.label(text="Friction:")
         if body:
-            column = body.column()
-            split = column.split(align=True)
-            column_left = split.column()
-            column_left.label(text="Boundary Friction:")
-            column_right = split.column()
-            column_right.prop(wprops, "boundary_friction", text="")
+            column = body.column(align=True)
+            column.label(text="Domain Friction:")
+            row = column.row(align=True)
+            row.prop(wprops, "boundary_friction_sides", index=0, slider=True, text="X –")
+            row.prop(wprops, "boundary_friction_sides", index=1, slider=True, text="X+")
+            row = column.row(align=True)
+            row.prop(wprops, "boundary_friction_sides", index=2, slider=True, text="Y –")
+            row.prop(wprops, "boundary_friction_sides", index=3, slider=True, text="Y+")
+            row = column.row(align=True)
+            row.prop(wprops, "boundary_friction_sides", index=4, slider=True, text="Z –")
+            row.prop(wprops, "boundary_friction_sides", index=5, slider=True, text="Z+")
 
             #
             # Obstacle Friction Panel
@@ -380,10 +384,7 @@ class FLIPFLUID_PT_DomainTypeFluidWorldPanel(bpy.types.Panel):
                         column_left.label(text=ob.name, icon="OBJECT_DATA")
                         column_right.prop(pgroup, "friction")
         else:
-            row = row.row(align=True)
-            row.alignment = 'RIGHT'
-            row.label(text="Boundary Friction  ")
-            row.prop(wprops, "boundary_friction", text="")
+            pass
 
     
 def register():

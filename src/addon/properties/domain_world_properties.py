@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+# Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -255,6 +255,14 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
             precision=2,
             subtype='FACTOR',
             )
+    boundary_friction_sides: FloatVectorProperty(
+            name="Domain Friction",
+            description="Amount of friction on the corresponding side of the domain",
+            min=0.0,
+            max=1.0,
+            default=(0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+            size=6,
+            )
 
     last_viscosity_exponent: IntProperty(default=0)
     last_surface_tension_exponent: IntProperty(default=0)
@@ -321,6 +329,7 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
         add(path + ".sheet_fill_threshold",                 "Sheeting Thickness",        group_id=0)
         add(path + ".enable_density_attribute",             "Enable Variable Density",   group_id=0)
         add(path + ".boundary_friction",                    "Boundary Friction",         group_id=0)
+        add(path + ".boundary_friction_sides",              "Boundary Friction Sides",   group_id=0)
 
 
     def get_gravity_data_dict(self):

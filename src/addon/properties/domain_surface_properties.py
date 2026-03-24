@@ -1,5 +1,5 @@
 # Blender FLIP Fluids Add-on
-# Copyright (C) 2025 Ryan L. Guy & Dennis Fassbaender
+# Copyright (C) 2026 Ryan L. Guy & Dennis Fassbaender
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -330,6 +330,11 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
             default='COLOR_MIXING_MODE_MIXBOX',
             options={'HIDDEN'},
             )
+    enable_mixbox_grayscale_mode: BoolProperty(
+            name="Enable Grayscale Mixing",
+            description="Enable grayscale mixing mode. Enable to avoid color biases when mixing white, black, or shades of gray",
+            default=False,
+            )
     enable_source_id_attribute: BoolProperty(
             name="Generate Source ID Attributes",
             description="Generate fluid source identifiers for the fluid surface. Each"
@@ -404,6 +409,7 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
         add(path + ".color_attribute_mixing_rate",                        "Color Attribute Mixing Rate",                    group_id=0)
         add(path + ".color_attribute_mixing_radius",                      "Color Attribute Mixing Radius",                  group_id=0)
         add(path + ".color_attribute_mixing_mode",                        "Color Attribute Mixing Mode",                    group_id=0)
+        add(path + ".enable_mixbox_grayscale_mode",                       "Enable Mixbox Grayscale Mode",                   group_id=0)
         add(path + ".enable_source_id_attribute",                         "Generate Source ID Attributes",                  group_id=0)
         add(path + ".enable_viscosity_attribute",                         "Generate Viscosity Attributes",                  group_id=0)
 
