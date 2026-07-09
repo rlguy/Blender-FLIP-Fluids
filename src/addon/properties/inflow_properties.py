@@ -227,6 +227,12 @@ class FlipFluidInflowProperties(bpy.types.PropertyGroup):
                 " simulation, use the outliner Hide in Viewport option instead (Eye Icon)", 
             default=True,
             )
+    disabled_in_viewport_modifiers_tooltip: BoolProperty(
+            name="Object Modifiers Disabled in Viewport", 
+            description="This inflow object modifier stack contains modifiers that are currently disabled"
+                " in the viewport (Monitor Icon) and will not be included within the simulation.", 
+            default=True,
+            )
 
 
 

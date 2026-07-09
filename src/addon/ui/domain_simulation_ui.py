@@ -462,8 +462,10 @@ def draw_simulation_settings(self, context, master_column):
     row.label(text="Grid Info:")
     row = row.row()
     row.alignment = 'RIGHT'
+    row.label(text="Visualize")
     row.prop(dprops.debug, "grid_display_mode", text="")
-    row.prop(dprops.debug, "display_simulation_grid", text="Visualize Grid")
+    row.prop(dprops.debug, "display_simulation_grid", text="Grid")
+    row.prop(dprops.debug, "display_domain_bounds", text="Bounds")
 
     if body:
         column = body.column(align=True)

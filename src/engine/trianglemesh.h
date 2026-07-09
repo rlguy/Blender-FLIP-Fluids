@@ -53,8 +53,8 @@ public:
     void getMeshFileDataBOBJ(std::vector<char> &data);
     static std::string getFileExtension(TriangleMeshFormat fmt);
 
-    int numVertices();
-    int numTriangles();
+    size_t numVertices();
+    size_t numTriangles();
     void clear();
     void removeDuplicateTriangles();
     void updateVertexTriangles();

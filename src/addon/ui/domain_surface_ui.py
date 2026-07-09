@@ -183,6 +183,7 @@ def _draw_geometry_attributes_menu(self, context):
             if sprops.show_smoothing_radius_in_ui:
                 row.prop(sprops, "whitewater_proximity_attribute_radius", text="Smoothing", slider=True)
             column.prop(sprops, "enable_source_id_attribute", text="Source ID Attributes")
+            column.prop(sprops, "enable_uvw_attribute", text="UVW Attributes")
         else:
             row = row_other.row(align=True)
             row.alignment = 'RIGHT'
@@ -190,6 +191,7 @@ def _draw_geometry_attributes_menu(self, context):
             row.prop(sprops, "enable_lifetime_attribute", text="Life")
             row.prop(sprops, "enable_whitewater_proximity_attribute", text="WW Prox.")
             row.prop(sprops, "enable_source_id_attribute", text="Source ID")
+            row.prop(sprops, "enable_uvw_attribute", text="UVW")
 
     
 class FLIPFLUID_PT_DomainTypeFluidSurfacePanel(bpy.types.Panel):

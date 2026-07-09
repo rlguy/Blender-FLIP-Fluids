@@ -61,9 +61,9 @@ enum class LimitBehaviour : char;
 
 struct FluidSimulationMeshStats {
     int enabled = 0;
-    int vertices = -1;
-    int triangles = -1;
-    unsigned int bytes = 0;
+    size_t vertices = 0;
+    size_t triangles = 0;
+    size_t bytes = 0;
 };
 
 struct FluidSimulationTimingStats {
@@ -107,6 +107,7 @@ struct FluidSimulationFrameStats {
     FluidSimulationMeshStats surfacelifetime;
     FluidSimulationMeshStats surfacewhitewaterproximity;
     FluidSimulationMeshStats surfacecolor;
+    FluidSimulationMeshStats surfaceuvw;
     FluidSimulationMeshStats surfacesourceid;
     FluidSimulationMeshStats surfaceviscosity;
     FluidSimulationMeshStats surfacedensity;
@@ -137,6 +138,7 @@ struct FluidSimulationFrameStats {
     FluidSimulationMeshStats fluidparticlesspeed;
     FluidSimulationMeshStats fluidparticlesvorticity;
     FluidSimulationMeshStats fluidparticlescolor;
+    FluidSimulationMeshStats fluidparticlesuvw;
     FluidSimulationMeshStats fluidparticlesage;
     FluidSimulationMeshStats fluidparticleslifetime;
     FluidSimulationMeshStats fluidparticlesviscosity;
@@ -151,60 +153,65 @@ struct FluidSimulationFrameStats {
 };
 
 struct FluidSimulationMarkerParticleData {
-    int size = 0;
+    size_t size = 0;
     char *positions;
     char *velocities;
 };
 
 struct FluidSimulationMarkerParticleAffineData {
-    int size = 0;
+    size_t size = 0;
     char *affineX;
     char *affineY;
     char *affineZ;
 };
 
 struct FluidSimulationMarkerParticleAgeData {
-    int size = 0;
+    size_t size = 0;
     char *age;
 };
 
 struct FluidSimulationMarkerParticleLifetimeData {
-    int size = 0;
+    size_t size = 0;
     char *lifetime;
 };
 
 struct FluidSimulationMarkerParticleColorData {
-    int size = 0;
+    size_t size = 0;
     char *color;
 };
 
+struct FluidSimulationMarkerParticleUVWData {
+    size_t size = 0;
+    char *uvw;
+};
+
 struct FluidSimulationMarkerParticleSourceIDData {
-    int size = 0;
+    size_t size = 0;
     char *sourceid;
 };
 
 struct FluidSimulationMarkerParticleUIDData {
-    int size = 0;
+    size_t size = 0;
     char *uid;
 };
 
 struct FluidSimulationMarkerParticleViscosityData {
-    int size = 0;
+    size_t size = 0;
     char *viscosity;
 };
 
 struct FluidSimulationMarkerParticleDensityData {
-    int size = 0;
+    size_t size = 0;
     char *density;
 };
 
 struct FluidSimulationMarkerParticleIDData {
-    int size = 0;
+    size_t size = 0;
     char *id;
 };
 
 struct FluidSimulationDiffuseParticleData {
-    int size = 0;
+    size_t size = 0;
     char *positions;
     char *velocities;
     char *lifetimes;
@@ -259,6 +266,11 @@ public:
         Advance the fluid simulation for a single frame time of dt seconds.
     */
     void update(double dt);
+
+    /*
+        Set Blend filepath string for logging.
+    */
+    void setBlendFilepathString(std::string filepath);
 
     /*
         Get/Set current frame of the simulation. Frame numbering starts
@@ -597,6 +609,13 @@ public:
     bool isMixboxGrayscaleModeEnabled();
 
     /*
+        Generate UVW attributes at fluid surface mesh vertices
+    */
+    void enableSurfaceUVWAttribute();
+    void disableSurfaceUVWAttribute();
+    bool isSurfaceUVWAttributeEnabled();
+
+    /*
         Generate source ID attributes at fluid surface mesh vertices
     */
     void enableSurfaceSourceIDAttribute();
@@ -642,7 +661,7 @@ public:
 
     /*
         Generate velocity vector, speed, vorticity vector,
-        color, age, lifetime, whitewater proximity 
+        color, UVW, age, lifetime, whitewater proximity 
         attributes at fluid particles
 
     */
@@ -661,6 +680,10 @@ public:
     void enableFluidParticleColorAttribute();
     void disableFluidParticleColorAttribute();
     bool isFluidParticleColorAttributeEnabled();
+
+    void enableFluidParticleUVWAttribute();
+    void disableFluidParticleUVWAttribute();
+    bool isFluidParticleUVWAttributeEnabled();
 
     void enableFluidParticleAgeAttribute();
     void disableFluidParticleAgeAttribute();
@@ -861,7 +884,7 @@ public:
         simulation will be limited by this number.
     */
     int getMaxNumDiffuseParticles();
-    void setMaxNumDiffuseParticles(int n);
+    void setMaxNumDiffuseParticles(size_t n);
 
     /*
         Bounding box where diffuse particle emitters are allowed to be generated
@@ -1351,7 +1374,7 @@ public:
         Returns the number of marker particles in the simulation. Marker particles
         track where the fluid is and carry velocity data.
     */
-    unsigned int getNumMarkerParticles();
+    size_t getNumMarkerParticles();
 
     /*
         Returns a vector of all marker particles in the simulation. Marker
@@ -1379,7 +1402,7 @@ public:
     /*
         Returns the number of diffuse particles in the simulation.
     */
-    unsigned int getNumDiffuseParticles();
+    size_t getNumDiffuseParticles();
 
     /*
         Returns a vector of diffuse particle positions. If range indices
@@ -1439,6 +1462,7 @@ public:
     std::vector<char>* getSurfaceLifetimeAttributeData();
     std::vector<char>* getSurfaceWhitewaterProximityAttributeData();
     std::vector<char>* getSurfaceColorAttributeData();
+    std::vector<char>* getSurfaceUVWAttributeData();
     std::vector<char>* getSurfaceSourceIDAttributeData();
     std::vector<char>* getSurfaceViscosityAttributeData();
     std::vector<char>* getSurfaceDensityAttributeData();
@@ -1469,6 +1493,7 @@ public:
     std::vector<char>* getFluidParticleSpeedAttributeData();
     std::vector<char>* getFluidParticleVorticityAttributeData();
     std::vector<char>* getFluidParticleColorAttributeData();
+    std::vector<char>* getFluidParticleUVWAttributeData();
     std::vector<char>* getFluidParticleAgeAttributeData();
     std::vector<char>* getFluidParticleLifetimeAttributeData();
     std::vector<char>* getFluidParticleViscosityAttributeData();
@@ -1483,23 +1508,25 @@ public:
     std::vector<char>* getLogFileData();
     FluidSimulationFrameStats getFrameStatsData();
 
-    void getMarkerParticlePositionDataRange(int start_idx, int end_idx, char *data);
-    void getMarkerParticleVelocityDataRange(int start_idx, int end_idx, char *data);
-    void getMarkerParticleAffineXDataRange(int start_idx, int end_idx, char *data);
-    void getMarkerParticleAffineYDataRange(int start_idx, int end_idx, char *data);
-    void getMarkerParticleAffineZDataRange(int start_idx, int end_idx, char *data);
-    void getMarkerParticleAgeDataRange(int start_idx, int end_idx, char *data);
-    void getMarkerParticleLifetimeDataRange(int start_idx, int end_idx, char *data);
-    void getMarkerParticleColorDataRange(int start_idx, int end_idx, char *data);
-    void getMarkerParticleSourceIDDataRange(int start_idx, int end_idx, char *data);
-    void getMarkerParticleUIDDataRange(int start_idx, int end_idx, char *data);
-    void getMarkerParticleViscosityDataRange(int start_idx, int end_idx, char *data);
-    void getMarkerParticleDensityDataRange(int start_idx, int end_idx, char *data);    void getMarkerParticleIDDataRange(int start_idx, int end_idx, char *data);
-    void getDiffuseParticlePositionDataRange(int start_idx, int end_idx, char *data);
-    void getDiffuseParticleVelocityDataRange(int start_idx, int end_idx, char *data);
-    void getDiffuseParticleLifetimeDataRange(int start_idx, int end_idx, char *data);
-    void getDiffuseParticleTypeDataRange(int start_idx, int end_idx, char *data);
-    void getDiffuseParticleIdDataRange(int start_idx, int end_idx, char *data);
+    void getMarkerParticlePositionDataRange(size_t start_idx, size_t end_idx, char *data);
+    void getMarkerParticleVelocityDataRange(size_t start_idx, size_t end_idx, char *data);
+    void getMarkerParticleAffineXDataRange(size_t start_idx, size_t end_idx, char *data);
+    void getMarkerParticleAffineYDataRange(size_t start_idx, size_t end_idx, char *data);
+    void getMarkerParticleAffineZDataRange(size_t start_idx, size_t end_idx, char *data);
+    void getMarkerParticleAgeDataRange(size_t start_idx, size_t end_idx, char *data);
+    void getMarkerParticleLifetimeDataRange(size_t start_idx, size_t end_idx, char *data);
+    void getMarkerParticleColorDataRange(size_t start_idx, size_t end_idx, char *data);
+    void getMarkerParticleUVWDataRange(size_t start_idx, size_t end_idx, char *data);
+    void getMarkerParticleSourceIDDataRange(size_t start_idx, size_t end_idx, char *data);
+    void getMarkerParticleUIDDataRange(size_t start_idx, size_t end_idx, char *data);
+    void getMarkerParticleViscosityDataRange(size_t start_idx, size_t end_idx, char *data);
+    void getMarkerParticleDensityDataRange(size_t start_idx, size_t end_idx, char *data);    
+    void getMarkerParticleIDDataRange(size_t start_idx, size_t end_idx, char *data);
+    void getDiffuseParticlePositionDataRange(size_t start_idx, size_t end_idx, char *data);
+    void getDiffuseParticleVelocityDataRange(size_t start_idx, size_t end_idx, char *data);
+    void getDiffuseParticleLifetimeDataRange(size_t start_idx, size_t end_idx, char *data);
+    void getDiffuseParticleTypeDataRange(size_t start_idx, size_t end_idx, char *data);
+    void getDiffuseParticleIdDataRange(size_t start_idx, size_t end_idx, char *data);
 
     void getMarkerParticlePositionData(char *data);
     void getMarkerParticleVelocityData(char *data);
@@ -1508,13 +1535,13 @@ public:
     void getDiffuseParticleLifetimeData(char *data);
     void getDiffuseParticleTypeData(char *data);
     void getDiffuseParticleIdData(char *data);
-    unsigned int getMarkerParticlePositionDataSize();
-    unsigned int getMarkerParticleVelocityDataSize();
-    unsigned int getDiffuseParticlePositionDataSize();
-    unsigned int getDiffuseParticleVelocityDataSize();
-    unsigned int getDiffuseParticleLifetimeDataSize();
-    unsigned int getDiffuseParticleTypeDataSize();
-    unsigned int getDiffuseParticleIdDataSize();
+    size_t getMarkerParticlePositionDataSize();
+    size_t getMarkerParticleVelocityDataSize();
+    size_t getDiffuseParticlePositionDataSize();
+    size_t getDiffuseParticleVelocityDataSize();
+    size_t getDiffuseParticleLifetimeDataSize();
+    size_t getDiffuseParticleTypeDataSize();
+    size_t getDiffuseParticleIdDataSize();
 
     /*
         Load char data representing marker/diffuse particles into the simulator
@@ -1524,6 +1551,7 @@ public:
     void loadMarkerParticleAgeData(FluidSimulationMarkerParticleAgeData data);
     void loadMarkerParticleLifetimeData(FluidSimulationMarkerParticleLifetimeData data);
     void loadMarkerParticleColorData(FluidSimulationMarkerParticleColorData data);
+    void loadMarkerParticleUVWData(FluidSimulationMarkerParticleUVWData data);
     void loadMarkerParticleSourceIDData(FluidSimulationMarkerParticleSourceIDData data);
     void loadMarkerParticleUIDData(FluidSimulationMarkerParticleUIDData data);
     void loadMarkerParticleViscosityData(FluidSimulationMarkerParticleViscosityData data);
@@ -1582,6 +1610,7 @@ private:
         std::vector<char> surfaceLifetimeAttributeData;
         std::vector<char> surfaceWhitewaterProximityAttributeData;
         std::vector<char> surfaceColorAttributeData;
+        std::vector<char> surfaceUVWAttributeData;
         std::vector<char> surfaceSourceIDAttributeData;
         std::vector<char> surfaceViscosityAttributeData;
         std::vector<char> surfaceDensityAttributeData;
@@ -1612,6 +1641,7 @@ private:
         std::vector<char> fluidParticleSpeedAttributeData;
         std::vector<char> fluidParticleVorticityAttributeData;
         std::vector<char> fluidParticleColorAttributeData;
+        std::vector<char> fluidParticleUVWAttributeData;
         std::vector<char> fluidParticleAgeAttributeData;
         std::vector<char> fluidParticleLifetimeAttributeData;
         std::vector<char> fluidParticleViscosityAttributeData;
@@ -1646,6 +1676,10 @@ private:
 
     struct MarkerParticleColorLoadData {
         FragmentedVector<MarkerParticleColor> particles;
+    };
+
+    struct MarkerParticleUVWLoadData {
+        FragmentedVector<MarkerParticleUVW> particles;
     };
 
     struct MarkerParticleSourceIDLoadData {
@@ -1778,6 +1812,7 @@ private:
                               MarkerParticleAgeLoadData &ageData,
                               MarkerParticleLifetimeLoadData &lifetimeData,
                               MarkerParticleColorLoadData &colorData,
+                              MarkerParticleUVWLoadData &uvwData,
                               MarkerParticleSourceIDLoadData &sourceIDData,
                               MarkerParticleViscosityLoadData &viscosityData,
                               MarkerParticleDensityLoadData &vdensityData,
@@ -1952,6 +1987,11 @@ private:
                                                          std::vector<vmath::vec3> *colorsNew,
                                                          std::vector<bool> *colorsNewValid);
     void _updateMarkerParticleColorAttribute(double dt);
+    void _updateMarkerParticleUVWAttributeGrid(Array3d<float> &uvwAttributeGridU,
+                                                 Array3d<float> &uvwAttributeGridV,
+                                                 Array3d<float> &uvwAttributeGridW,
+                                                 Array3d<bool> &uvwAttributeValidGrid);
+    void _updateMarkerParticleUVWAttribute(double dt);
     void _updateMarkerParticleUIDAttribute();
     void _updateMarkerParticleAttributes(double dt);
 
@@ -2027,6 +2067,7 @@ private:
     void _generateSurfaceLifetimeAttributeData(TriangleMesh &surface);
     void _generateSurfaceWhitewaterProximityAttributeData(TriangleMesh &surface);
     void _generateSurfaceColorAttributeData(TriangleMesh &surface);
+    void _generateSurfaceUVWAttributeData(TriangleMesh &surface);
     void _generateSurfaceSourceIDAttributeData(TriangleMesh &surface, std::vector<vmath::vec3> &positions, std::vector<int> *sourceID);
     void _generateSurfaceViscosityAttributeData(TriangleMesh &surface);
     void _generateSurfaceDensityAttributeData(TriangleMesh &surface);
@@ -2178,6 +2219,7 @@ private:
     double _upscalingPreviousCellSize = 0.0;
 
     // Update
+    std::string _blendFilepath;
     int _currentFrame = 0;
     int _timelineFrameStart = 0;
     int _timelineFrameEnd = 0;
@@ -2215,6 +2257,7 @@ private:
     std::vector<MarkerParticleAgeLoadData> _markerParticleAgeLoadQueue;
     std::vector<MarkerParticleLifetimeLoadData> _markerParticleLifetimeLoadQueue;
     std::vector<MarkerParticleColorLoadData> _markerParticleColorLoadQueue;
+    std::vector<MarkerParticleUVWLoadData> _markerParticleUVWLoadQueue;
     std::vector<MarkerParticleSourceIDLoadData> _markerParticleSourceIDLoadQueue;
     std::vector<MarkerParticleUIDLoadData> _markerParticleUIDLoadQueue;
     std::vector<MarkerParticleViscosityLoadData> _markerParticleViscosityLoadQueue;
@@ -2265,6 +2308,7 @@ private:
     bool _isFluidParticleSpeedAttributeEnabled = false;
     bool _isFluidParticleVorticityAttributeEnabled = false;
     bool _isFluidParticleSourceColorAttributeEnabled = false;
+    bool _isFluidParticleSourceUVWAttributeEnabled = false;
     bool _isFluidParticleAgeAttributeEnabled = false;
     bool _isFluidParticleLifetimeAttributeEnabled = false;
     bool _isFluidParticleWhitewaterProximityAttributeEnabled = false;
@@ -2301,6 +2345,7 @@ private:
     bool _isSurfaceWhitewaterProximityAttributeEnabled = false;
     bool _isSurfaceSourceColorAttributeEnabled = false;
     bool _isSurfaceSourceColorAttributeMixingEnabled = false;
+    bool _isSurfaceSourceUVWAttributeEnabled = false;
     bool _isSurfaceSourceIDAttributeEnabled = false;
     bool _isSurfaceSourceViscosityAttributeEnabled = false;
     bool _isSurfaceDensityAttributeEnabled = false;
@@ -2455,6 +2500,12 @@ private:
     bool _isMixboxEnabled = false;
     bool _isMixboxGrayscaleModeEnabled = false;
     float _mixboxSaturationFactor = 1.2f;
+
+    Array3d<float> _uvwAttributeGridU;
+    Array3d<float> _uvwAttributeGridV;
+    Array3d<float> _uvwAttributeGridW;
+    Array3d<bool> _uvwAttributeValidGrid;
+    float _uvwAttributeRadius = 1.0f;   // In # of voxels
 
     // Advance MarkerParticles
     int _maxParticlesPerParticleAdvection = 10e6;

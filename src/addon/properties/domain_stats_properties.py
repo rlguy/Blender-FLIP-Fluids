@@ -240,6 +240,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
     surfacelifetime_mesh: PointerProperty(type=MeshStatsProperties)
     surfacewhitewaterproximity_mesh: PointerProperty(type=MeshStatsProperties)
     surfacecolor_mesh: PointerProperty(type=MeshStatsProperties)
+    surfaceuvw_mesh: PointerProperty(type=MeshStatsProperties)
     surfacesourceid_mesh: PointerProperty(type=MeshStatsProperties)
     surfaceviscosity_mesh: PointerProperty(type=MeshStatsProperties)
     surfacedensity_mesh: PointerProperty(type=MeshStatsProperties)
@@ -269,6 +270,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
     fluid_particle_speed_mesh: PointerProperty(type=MeshStatsProperties)
     fluid_particle_vorticity_mesh: PointerProperty(type=MeshStatsProperties)
     fluid_particle_color_mesh: PointerProperty(type=MeshStatsProperties)
+    fluid_particle_uvw_mesh: PointerProperty(type=MeshStatsProperties)
     fluid_particle_age_mesh: PointerProperty(type=MeshStatsProperties)
     fluid_particle_lifetime_mesh: PointerProperty(type=MeshStatsProperties)
     fluid_particle_viscosity_mesh: PointerProperty(type=MeshStatsProperties)
@@ -354,6 +356,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             "surfacelifetime_mesh",
             "surfacewhitewaterproximity_mesh",
             "surfacecolor_mesh",
+            "surfaceuvw_mesh",
             "surfacesourceid_mesh",
             "surfaceviscosity_mesh",
             "surfacedensity_mesh",
@@ -383,6 +386,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             "fluid_particle_speed_mesh",
             "fluid_particle_vorticity_mesh",
             "fluid_particle_color_mesh",
+            "fluid_particle_uvw_mesh",
             "fluid_particle_age_mesh",
             "fluid_particle_lifetime_mesh",
             "fluid_particle_viscosity_mesh",
@@ -540,43 +544,36 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self._set_mesh_stats_data(self.surfaceblur_mesh,      data['surfaceblur'])
         
         if 'surfacevelocity' in data:
-            # If statement to support older caches that do not have a surfacevelocity entry
             self._set_mesh_stats_data(self.surfacevelocity_mesh, data['surfacevelocity'])
 
         if 'surfacespeed' in data:
-            # If statement to support older caches that do not have a surfacespeed entry
             self._set_mesh_stats_data(self.surfacespeed_mesh, data['surfacespeed'])
 
         if 'surfacevorticity' in data:
-            # If statement to support older caches that do not have a surfacevorticity entry
             self._set_mesh_stats_data(self.surfacevorticity_mesh, data['surfacevorticity'])
 
         if 'surfaceage' in data:
-            # If statement to support older caches that do not have a surfaceage entry
             self._set_mesh_stats_data(self.surfaceage_mesh, data['surfaceage'])
 
         if 'surfacelifetime' in data:
-            # If statement to support older caches that do not have a surfacelifetime entry
             self._set_mesh_stats_data(self.surfacelifetime_mesh, data['surfacelifetime'])
 
         if 'surfacewhitewaterproximity' in data:
-            # If statement to support older caches that do not have a surfacewhitewaterproximity entry
             self._set_mesh_stats_data(self.surfacewhitewaterproximity_mesh, data['surfacewhitewaterproximity'])
 
         if 'surfacecolor' in data:
-            # If statement to support older caches that do not have a surfacecolor entry
             self._set_mesh_stats_data(self.surfacecolor_mesh, data['surfacecolor'])
 
+        if 'surfaceuvw' in data:
+            self._set_mesh_stats_data(self.surfaceuvw_mesh, data['surfaceuvw'])
+
         if 'surfacesourceid' in data:
-            # If statement to support older caches that do not have a surfacesourceid entry
             self._set_mesh_stats_data(self.surfacesourceid_mesh, data['surfacesourceid'])
 
         if 'surfaceviscosity' in data:
-            # If statement to support older caches that do not have a surfaceviscosity entry
             self._set_mesh_stats_data(self.surfaceviscosity_mesh, data['surfaceviscosity'])
 
         if 'surfacedensity' in data:
-            # If statement to support older caches that do not have a surfacedensity entry
             self._set_mesh_stats_data(self.surfacedensity_mesh, data['surfacedensity'])
 
         self._set_mesh_stats_data(self.foam_mesh,             data['foam'])
@@ -623,59 +620,48 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             self._set_mesh_stats_data(self.dustlifetime_mesh,   data['dustlifetime'])
 
         if 'fluidparticles' in data:
-            # If statement to support older caches that do not have a fluidparticles entry
             self._set_mesh_stats_data(self.fluid_particle_mesh, data['fluidparticles'])
 
         if 'fluidparticlesid' in data:
-            # If statement to support older caches that do not have a fluidparticlesid entry
             self._set_mesh_stats_data(self.fluid_particle_id_mesh, data['fluidparticlesid'])
 
         if 'fluidparticlesvelocity' in data:
-            # If statement to support older caches that do not have a fluidparticlesvelocity entry
             self._set_mesh_stats_data(self.fluid_particle_velocity_mesh, data['fluidparticlesvelocity'])
 
         if 'fluidparticlesspeed' in data:
-            # If statement to support older caches that do not have a fluidparticlesspeed entry
             self._set_mesh_stats_data(self.fluid_particle_speed_mesh, data['fluidparticlesspeed'])
 
         if 'fluidparticlesvorticity' in data:
-            # If statement to support older caches that do not have a fluidparticlesvorticity entry
             self._set_mesh_stats_data(self.fluid_particle_vorticity_mesh, data['fluidparticlesvorticity'])
 
         if 'fluidparticlescolor' in data:
-            # If statement to support older caches that do not have a fluidparticlescolor entry
             self._set_mesh_stats_data(self.fluid_particle_color_mesh, data['fluidparticlescolor'])
 
+        if 'fluidparticlesuvw' in data:
+            self._set_mesh_stats_data(self.fluid_particle_uvw_mesh, data['fluidparticlesuvw'])
+
         if 'fluidparticlesage' in data:
-            # If statement to support older caches that do not have a fluidparticlesage entry
             self._set_mesh_stats_data(self.fluid_particle_age_mesh, data['fluidparticlesage'])
 
         if 'fluidparticleslifetime' in data:
-            # If statement to support older caches that do not have a fluidparticleslifetime entry
             self._set_mesh_stats_data(self.fluid_particle_lifetime_mesh, data['fluidparticleslifetime'])
 
         if 'fluidparticlesviscosity' in data:
-            # If statement to support older caches that do not have a fluidparticlesviscosity entry
             self._set_mesh_stats_data(self.fluid_particle_viscosity_mesh, data['fluidparticlesviscosity'])
 
         if 'fluidparticlesdensity' in data:
-            # If statement to support older caches that do not have a fluidparticlesdensity entry
             self._set_mesh_stats_data(self.fluid_particle_density_mesh, data['fluidparticlesdensity'])
 
         if 'fluidparticlesdensityaverage' in data:
-            # If statement to support older caches that do not have a fluidparticlesdensityaverage entry
             self._set_mesh_stats_data(self.fluid_particle_density_average_mesh, data['fluidparticlesdensityaverage'])
 
         if 'fluidparticleswhitewaterproximity' in data:
-            # If statement to support older caches that do not have a fluidparticleswhitewaterproximity entry
             self._set_mesh_stats_data(self.fluid_particle_whitewater_proximity_mesh, data['fluidparticleswhitewaterproximity'])
 
         if 'fluidparticlessourceid' in data:
-            # If statement to support older caches that do not have a fluidparticlessourceid entry
             self._set_mesh_stats_data(self.fluid_particle_source_id_mesh, data['fluidparticlessourceid'])
 
         if 'fluidparticlesuid' in data:
-            # If statement to support older caches that do not have a fluidparticlesuid entry
             self._set_mesh_stats_data(self.fluid_particle_uid_mesh, data['fluidparticlesuid'])
 
         self._set_mesh_stats_data(self.debug_particle_mesh, data['particles'])
@@ -752,25 +738,27 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
                 cache_size += fdata['preview']['bytes']
             if fdata['surfaceblur']['enabled']:
                 cache_size += fdata['surfaceblur']['bytes']
-            if 'surfacevelocity' in fdata and fdata['surfacevelocity']['enabled']: # If statement to support caches without a surfacevelocity entry
+            if 'surfacevelocity' in fdata and fdata['surfacevelocity']['enabled']:
                 cache_size += fdata['surfacevelocity']['bytes']
-            if 'surfacespeed' in fdata and fdata['surfacespeed']['enabled']: # If statement to support caches without a surfacespeed entry
+            if 'surfacespeed' in fdata and fdata['surfacespeed']['enabled']:
                 cache_size += fdata['surfacespeed']['bytes']
-            if 'surfacevorticity' in fdata and fdata['surfacevorticity']['enabled']: # If statement to support caches without a surfacevorticity entry
+            if 'surfacevorticity' in fdata and fdata['surfacevorticity']['enabled']:
                 cache_size += fdata['surfacevorticity']['bytes']
-            if 'surfaceage' in fdata and fdata['surfaceage']['enabled']: # If statement to support caches without a surfaceage entry
+            if 'surfaceage' in fdata and fdata['surfaceage']['enabled']:
                 cache_size += fdata['surfaceage']['bytes']
-            if 'surfacelifetime' in fdata and fdata['surfacelifetime']['enabled']: # If statement to support caches without a surfacelifetime entry
+            if 'surfacelifetime' in fdata and fdata['surfacelifetime']['enabled']:
                 cache_size += fdata['surfacelifetime']['bytes']
-            if 'surfacewhitewaterproximity' in fdata and fdata['surfacewhitewaterproximity']['enabled']: # If statement to support caches without a surfacewhitewaterproximity entry
+            if 'surfacewhitewaterproximity' in fdata and fdata['surfacewhitewaterproximity']['enabled']:
                 cache_size += fdata['surfacewhitewaterproximity']['bytes']
-            if 'surfacecolor' in fdata and fdata['surfacecolor']['enabled']: # If statement to support caches without a surfacecolor entry
+            if 'surfacecolor' in fdata and fdata['surfacecolor']['enabled']:
                 cache_size += fdata['surfacecolor']['bytes']
-            if 'surfacesourceid' in fdata and fdata['surfacesourceid']['enabled']: # If statement to support caches without a surfacesourceid entry
+            if 'surfaceuvw' in fdata and fdata['surfaceuvw']['enabled']:
+                cache_size += fdata['surfaceuvw']['bytes']
+            if 'surfacesourceid' in fdata and fdata['surfacesourceid']['enabled']:
                 cache_size += fdata['surfacesourceid']['bytes']
-            if 'surfaceviscosity' in fdata and fdata['surfaceviscosity']['enabled']: # If statement to support caches without a surfaceviscosity entry
+            if 'surfaceviscosity' in fdata and fdata['surfaceviscosity']['enabled']:
                 cache_size += fdata['surfaceviscosity']['bytes']
-            if 'surfacedensity' in fdata and fdata['surfacedensity']['enabled']: # If statement to support caches without a surfacedensity entry
+            if 'surfacedensity' in fdata and fdata['surfacedensity']['enabled']:
                 cache_size += fdata['surfacedensity']['bytes']
             if fdata['foam']['enabled']:
                 cache_size += fdata['foam']['bytes']
@@ -778,7 +766,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
                 cache_size += fdata['bubble']['bytes']
             if fdata['spray']['enabled']:
                 cache_size += fdata['spray']['bytes']
-            if 'dust' in fdata and fdata['dust']['enabled']: # If statement to support caches without a dust entry
+            if 'dust' in fdata and fdata['dust']['enabled']:
                 cache_size += fdata['dust']['bytes']
             if fdata['foamblur']['enabled']:
                 cache_size += fdata['foamblur']['bytes']
@@ -786,7 +774,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
                 cache_size += fdata['bubbleblur']['bytes']
             if fdata['sprayblur']['enabled']:
                 cache_size += fdata['sprayblur']['bytes']
-            if 'dustblur' in fdata and fdata['dustblur']['enabled']: # If statement to support caches without a dustblur entry
+            if 'dustblur' in fdata and fdata['dustblur']['enabled']:
                 cache_size += fdata['dustblur']['bytes']
             if 'foamvelocity' in fdata and fdata['foamvelocity']['enabled']:
                 cache_size += fdata['foamvelocity']['bytes']
@@ -824,6 +812,8 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
                 cache_size += fdata['fluidparticlesvorticity']['bytes']
             if 'fluidparticlescolor' in fdata and fdata['fluidparticlescolor']['enabled']:
                 cache_size += fdata['fluidparticlescolor']['bytes']
+            if 'fluidparticlesuvw' in fdata and fdata['fluidparticlesuvw']['enabled']:
+                cache_size += fdata['fluidparticlesuvw']['bytes']
             if 'fluidparticlesage' in fdata and fdata['fluidparticlesage']['enabled']:
                 cache_size += fdata['fluidparticlesage']['bytes']
             if 'fluidparticleslifetime' in fdata and fdata['fluidparticleslifetime']['enabled']:
@@ -879,6 +869,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         is_surfacelifetime_enabled = False
         is_surfacewhitewaterproximity_enabled = False
         is_surfacecolor_enabled = False
+        is_surfaceuvw_enabled = False
         is_surfacesourceid_enabled = False
         is_surfaceviscosity_enabled = False
         is_surfacedensity_enabled = False
@@ -907,6 +898,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         is_fluid_particles_velocity_enabled = False
         is_fluid_particles_vorticity_enabled = False
         is_fluid_particles_color_enabled = False
+        is_fluid_particles_uvw_enabled = False
         is_fluid_particles_speed_enabled = False
         is_fluid_particles_age_enabled = False
         is_fluid_particles_lifetime_enabled = False
@@ -928,6 +920,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         surfacelifetime_bytes = 0
         surfacewhitewaterproximity_bytes = 0
         surfacecolor_bytes = 0
+        surfaceuvw_bytes = 0
         surfacesourceid_bytes = 0
         surfaceviscosity_bytes = 0
         surfacedensity_bytes = 0
@@ -957,6 +950,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         fluid_particles_speed_bytes = 0
         fluid_particles_vorticity_bytes = 0
         fluid_particles_color_bytes = 0
+        fluid_particles_uvw_bytes = 0
         fluid_particles_age_bytes = 0
         fluid_particles_lifetime_bytes = 0
         fluid_particles_viscosity_bytes = 0
@@ -1005,34 +999,37 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             if fdata['surfaceblur']['enabled']:
                 is_surfaceblur_enabled = True
                 surfaceblur_bytes += fdata['surfaceblur']['bytes']
-            if 'surfacevelocity' in fdata and fdata['surfacevelocity']['enabled']: # If statement to support caches without a surfacevelocity entry
+            if 'surfacevelocity' in fdata and fdata['surfacevelocity']['enabled']:
                 is_surfacevelocity_enabled = True
                 surfacevelocity_bytes += fdata['surfacevelocity']['bytes']
-            if 'surfacespeed' in fdata and fdata['surfacespeed']['enabled']: # If statement to support caches without a surfacespeed entry
+            if 'surfacespeed' in fdata and fdata['surfacespeed']['enabled']:
                 is_surfacespeed_enabled = True
                 surfacespeed_bytes += fdata['surfacespeed']['bytes']
-            if 'surfacevorticity' in fdata and fdata['surfacevorticity']['enabled']: # If statement to support caches without a surfacevorticity entry
+            if 'surfacevorticity' in fdata and fdata['surfacevorticity']['enabled']:
                 is_surfacevorticity_enabled = True
                 surfacevorticity_bytes += fdata['surfacevorticity']['bytes']
-            if 'surfaceage' in fdata and fdata['surfaceage']['enabled']: # If statement to support caches without a surfaceage entry
+            if 'surfaceage' in fdata and fdata['surfaceage']['enabled']:
                 is_surfaceage_enabled = True
                 surfaceage_bytes += fdata['surfaceage']['bytes']
-            if 'surfacelifetime' in fdata and fdata['surfacelifetime']['enabled']: # If statement to support caches without a surfacelifetime entry
+            if 'surfacelifetime' in fdata and fdata['surfacelifetime']['enabled']:
                 is_surfacelifetime_enabled = True
                 surfacelifetime_bytes += fdata['surfacelifetime']['bytes']
-            if 'surfacewhitewaterproximity' in fdata and fdata['surfacewhitewaterproximity']['enabled']: # If statement to support caches without a surfacewhitewaterproximity entry
+            if 'surfacewhitewaterproximity' in fdata and fdata['surfacewhitewaterproximity']['enabled']:
                 is_surfacewhitewaterproximity_enabled = True
                 surfacewhitewaterproximity_bytes += fdata['surfacewhitewaterproximity']['bytes']
-            if 'surfacecolor' in fdata and fdata['surfacecolor']['enabled']: # If statement to support caches without a surfacecolor entry
+            if 'surfacecolor' in fdata and fdata['surfacecolor']['enabled']:
                 is_surfacecolor_enabled = True
                 surfacecolor_bytes += fdata['surfacecolor']['bytes']
-            if 'surfacesourceid' in fdata and fdata['surfacesourceid']['enabled']: # If statement to support caches without a surfacesourceid entry
+            if 'surfaceuvw' in fdata and fdata['surfaceuvw']['enabled']:
+                is_surfaceuvw_enabled = True
+                surfaceuvw_bytes += fdata['surfaceuvw']['bytes']
+            if 'surfacesourceid' in fdata and fdata['surfacesourceid']['enabled']:
                 is_surfacesourceid_enabled = True
                 surfacesourceid_bytes += fdata['surfacesourceid']['bytes']
-            if 'surfaceviscosity' in fdata and fdata['surfaceviscosity']['enabled']: # If statement to support caches without a surfaceviscosity entry
+            if 'surfaceviscosity' in fdata and fdata['surfaceviscosity']['enabled']:
                 is_surfaceviscosity_enabled = True
                 surfaceviscosity_bytes += fdata['surfaceviscosity']['bytes']
-            if 'surfacedensity' in fdata and fdata['surfacedensity']['enabled']: # If statement to support caches without a surfacedensity entry
+            if 'surfacedensity' in fdata and fdata['surfacedensity']['enabled']:
                 is_surfacedensity_enabled = True
                 surfacedensity_bytes += fdata['surfacedensity']['bytes']
             if fdata['foam']['enabled']:
@@ -1044,7 +1041,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             if fdata['spray']['enabled']:
                 is_spray_enabled = True
                 spray_bytes += fdata['spray']['bytes']
-            if 'dust' in fdata and fdata['dust']['enabled']: # If statement to support caches without a dust entry
+            if 'dust' in fdata and fdata['dust']['enabled']:
                 is_dust_enabled = True
                 dust_bytes += fdata['dust']['bytes']
             if fdata['foamblur']['enabled']:
@@ -1056,7 +1053,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             if fdata['sprayblur']['enabled']:
                 is_sprayblur_enabled = True
                 sprayblur_bytes += fdata['sprayblur']['bytes']
-            if 'dustblur' in fdata and fdata['sprayblur']['enabled']: # If statement to support caches without a dustblur entry
+            if 'dustblur' in fdata and fdata['sprayblur']['enabled']:
                 is_dustblur_enabled = True
                 dustblur_bytes += fdata['dustblur']['bytes']
             if 'foamvelocity' in fdata and fdata['foamvelocity']['enabled']:
@@ -1113,6 +1110,9 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
             if 'fluidparticlescolor' in fdata and fdata['fluidparticlescolor']['enabled']:
                 is_fluid_particles_color_enabled = True
                 fluid_particles_color_bytes += fdata['fluidparticlescolor']['bytes']
+            if 'fluidparticlesuvw' in fdata and fdata['fluidparticlesuvw']['enabled']:
+                is_fluid_particles_uvw_enabled = True
+                fluid_particles_uvw_bytes += fdata['fluidparticlesuvw']['bytes']
             if 'fluidparticlesage' in fdata and fdata['fluidparticlesage']['enabled']:
                 is_fluid_particles_age_enabled = True
                 fluid_particles_age_bytes += fdata['fluidparticlesage']['bytes']
@@ -1178,6 +1178,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.surfacelifetime_mesh.enabled = is_surfacelifetime_enabled
         self.surfacewhitewaterproximity_mesh.enabled = is_surfacewhitewaterproximity_enabled
         self.surfacecolor_mesh.enabled = is_surfacecolor_enabled
+        self.surfaceuvw_mesh.enabled = is_surfaceuvw_enabled
         self.surfacesourceid_mesh.enabled = is_surfacesourceid_enabled
         self.surfaceviscosity_mesh.enabled = is_surfaceviscosity_enabled
         self.surfacedensity_mesh.enabled = is_surfacedensity_enabled
@@ -1206,7 +1207,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.fluid_particle_velocity_mesh.enabled = is_fluid_particles_velocity_enabled
         self.fluid_particle_speed_mesh.enabled = is_fluid_particles_speed_enabled
         self.fluid_particle_vorticity_mesh.enabled = is_fluid_particles_vorticity_enabled
-        self.fluid_particle_color_mesh.enabled = is_fluid_particles_color_enabled
+        self.fluid_particle_uvw_mesh.enabled = is_fluid_particles_uvw_enabled
         self.fluid_particle_age_mesh.enabled = is_fluid_particles_age_enabled
         self.fluid_particle_lifetime_mesh.enabled = is_fluid_particles_lifetime_enabled
         self.fluid_particle_viscosity_mesh.enabled = is_fluid_particles_viscosity_enabled
@@ -1228,6 +1229,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.surfacelifetime_mesh.bytes.set(surfacelifetime_bytes)
         self.surfacewhitewaterproximity_mesh.bytes.set(surfacewhitewaterproximity_bytes)
         self.surfacecolor_mesh.bytes.set(surfacecolor_bytes)
+        self.surfaceuvw_mesh.bytes.set(surfaceuvw_bytes)
         self.surfacesourceid_mesh.bytes.set(surfacesourceid_bytes)
         self.surfaceviscosity_mesh.bytes.set(surfaceviscosity_bytes)
         self.surfacedensity_mesh.bytes.set(surfacedensity_bytes)
@@ -1257,6 +1259,7 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.fluid_particle_speed_mesh.bytes.set(fluid_particles_speed_bytes)
         self.fluid_particle_vorticity_mesh.bytes.set(fluid_particles_vorticity_bytes)
         self.fluid_particle_color_mesh.bytes.set(fluid_particles_color_bytes)
+        self.fluid_particle_uvw_mesh.bytes.set(fluid_particles_uvw_bytes)
         self.fluid_particle_age_mesh.bytes.set(fluid_particles_age_bytes)
         self.fluid_particle_lifetime_mesh.bytes.set(fluid_particles_lifetime_bytes)
         self.fluid_particle_viscosity_mesh.bytes.set(fluid_particles_viscosity_bytes)

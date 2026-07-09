@@ -18,6 +18,7 @@
 import bpy, bpy_extras
 import os
 from . import helper_operators
+from ..utils import version_compatibility_utils as vcu
 
 
 class FLIPFluidsAlembicImporter(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
@@ -64,17 +65,11 @@ class FLIPFluidsAlembicImporter(bpy.types.Operator, bpy_extras.io_utils.ImportHe
         gn_name = gn_modifier.name
         if gn_name.startswith("FF_GeometryNodesAlembicSurface"):
             for (key, value) in key_value_pairs_surface:
-                try:
-                    gn_modifier[key] = value
-                except:
-                    pass
+                vcu.set_geometry_nodes_modifier_value(gn_modifier, key, value, ignore_errors=True)
 
         if gn_name.startswith("FF_GeometryNodesAlembicParticles"):
             for (key, value) in key_value_pairs_particles:
-                try:
-                    gn_modifier[key] = value
-                except:
-                    pass
+                vcu.set_geometry_nodes_modifier_value(gn_modifier, key, value, ignore_errors=True)
 
 
     def add_smooth_modifier(self, target_object):
@@ -109,10 +104,8 @@ class FLIPFluidsAlembicImporter(bpy.types.Operator, bpy_extras.io_utils.ImportHe
         bl_whitewater_bubble = self.find_flip_fluids_mesh(bpy.context.selected_objects, "whitewater_bubble")
         bl_whitewater_spray = self.find_flip_fluids_mesh(bpy.context.selected_objects, "whitewater_spray")
         bl_whitewater_dust = self.find_flip_fluids_mesh(bpy.context.selected_objects, "whitewater_dust")
-
-        blend_filename = "geometry_nodes_library.blend"
-        parent_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        resource_filepath = os.path.join(parent_path, "resources", "geometry_nodes", blend_filename)
+        
+        resource_filepath = vcu.get_geometry_nodes_blend_filepath()
 
         found_mesh_cache_list = []
 

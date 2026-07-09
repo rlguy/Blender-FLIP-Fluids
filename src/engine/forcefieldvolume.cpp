@@ -83,6 +83,7 @@ void ForceFieldVolume::addGravityScaleToGrid(ForceFieldGravityScaleGrid &scaleGr
     int isizeScaleGrid = scaleGrid.gravityScale.width;
     int jsizeScaleGrid = scaleGrid.gravityScale.height;
     int ksizeScaleGrid = scaleGrid.gravityScale.depth;
+    float eps = 1e-6;
     for (int k = 0; k < ksizeScaleGrid; k++) {
         for (int j = 0; j < jsizeScaleGrid; j++) {
             for (int i = 0; i < isizeScaleGrid; i++) {
@@ -91,9 +92,15 @@ void ForceFieldVolume::addGravityScaleToGrid(ForceFieldGravityScaleGrid &scaleGr
                 int jSDF = j - _joffsetSDF;
                 int kSDF = k - _koffsetSDF;
                 if (iSDF >= 0 && jSDF >= 0 && kSDF >= 0 && iSDF < _isizeSDF + 1 && jSDF < _jsizeSDF + 1 && kSDF < _ksizeSDF + 1) {
+                    bool isInsideVolume = _sdf(iSDF, jSDF, kSDF) < 0.0f;
+                    if (isInsideVolume) {
+                        scaleGrid.addScale(i, j, k, _gravityScale, 1.0f);
+                        continue;
+                    }
+
                     vmath::vec3 vectToSurface = _vectorField(iSDF, jSDF, kSDF);
                     float distanceToSurface = vectToSurface.length();
-                    if (distanceToSurface > scaleWidth) {
+                    if (distanceToSurface > scaleWidth || distanceToSurface < eps) {
                         scaleGrid.addScale(i, j, k, 1.0f, 1.0f);
                         continue;
                     }

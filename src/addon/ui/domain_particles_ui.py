@@ -138,6 +138,7 @@ def _draw_geometry_attributes_menu(self, context):
             row.prop(pprops, "enable_fluid_particle_lifetime_attribute", text="Lifetime Attributes")
             row.prop(sprops, "lifetime_attribute_death_time")
             column.prop(pprops, "enable_fluid_particle_whitewater_proximity_attribute", text="Whitewater Proximity Attributes")
+            column.prop(pprops, "enable_fluid_particle_uvw_attribute", text="UVW Attributes")
             column.prop(pprops, "enable_fluid_particle_source_id_attribute", text="Source ID Attributes")
             row = column.row(align=True)
             row.prop(pprops, "enable_fluid_particle_uid_attribute", text="UID Attributes")
@@ -148,6 +149,7 @@ def _draw_geometry_attributes_menu(self, context):
             row.prop(pprops, "enable_fluid_particle_age_attribute", text="Age")
             row.prop(pprops, "enable_fluid_particle_lifetime_attribute", text="Life")
             row.prop(pprops, "enable_fluid_particle_whitewater_proximity_attribute", text="WW Prox.")
+            row.prop(pprops, "enable_fluid_particle_uvw_attribute", text="UVW")
             row.prop(pprops, "enable_fluid_particle_source_id_attribute", text="Source ID")
             row.prop(pprops, "enable_fluid_particle_uid_attribute", text="UID")
 

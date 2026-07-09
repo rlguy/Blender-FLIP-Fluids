@@ -25,7 +25,7 @@ bl_info = {
     "description": "The file you have installed is not an addon. Enable for more info.",
     "author" : "The FLIP Fluids Development Team",
     "version" : (0, 0, 0),
-    "blender" : (3, 1, 0),
+    "blender" : (4, 5, 0),
     "location" : "",
     "warning" : "",
     "wiki_url" : "https://github.com/rlguy/Blender-FLIP-Fluids",
@@ -59,10 +59,6 @@ class FLIPFluidInfoAddonPreferences(bpy.types.AddonPreferences):
                 "wm.url_open", 
                 text="Purchase the FLIP Fluids addon on Superhive", 
             ).url = "https://superhivemarket.com/products/flipfluids?ref=2685"
-        column.operator(
-                "wm.url_open", 
-                text="Purchase the FLIP Fluids addon on Gumroad", 
-            ).url = "https://flipfluids.gumroad.com/l/flipfluids"
 
 
 def register():

@@ -92,6 +92,8 @@ def __get_domain_data_dict(context, dobj):
     _, _, _, simulation_dx = dprops.simulation.get_simulation_grid_dimensions()
     simulation_preview_dx = dprops.simulation.get_simulation_preview_dx()
 
+    initialize_properties['blend_filepath'] = bpy.data.filepath
+
     initialize_properties['isize'] = isize
     initialize_properties['jsize'] = jsize
     initialize_properties['ksize'] = ksize

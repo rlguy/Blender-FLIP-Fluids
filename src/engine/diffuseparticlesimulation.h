@@ -86,10 +86,10 @@ public:
 
     void update(DiffuseParticleSimulationParameters params);
 
-    void getDiffuseParticleTypeCounts(int *numfoam, 
-                                    int *numbubble, 
-                                    int *numspray,
-                                    int *numdust);
+    void getDiffuseParticleTypeCounts(size_t *numfoam, 
+                                      size_t *numbubble, 
+                                      size_t *numspray,
+                                      size_t *numdust);
     int getNumSprayParticles();
     int getNumBubbleParticles();
     int getNumFoamParticles();
@@ -120,7 +120,7 @@ public:
     bool isBoundaryDustEmissionEnabled();
 
     ParticleSystem* getDiffuseParticles();
-    int getNumDiffuseParticles();
+    size_t getNumDiffuseParticles();
 
     double getForceFieldWeightWhitewaterFoam();
     void setForceFieldWeightWhitewaterFoam(double v);
@@ -150,7 +150,7 @@ public:
     void setMaxTurbulence(double t);
 
     int getMaxNumDiffuseParticles();
-    void setMaxNumDiffuseParticles(int n);
+    void setMaxNumDiffuseParticles(size_t n);
     AABB getEmitterGenerationBounds();
     void setEmitterGenerationBounds(AABB bbox);
 
@@ -386,14 +386,14 @@ private:
 
     vmath::vec3 _getGravityVector(vmath::vec3 pos, DiffuseParticleType dtype);
 
-    void _getDiffuseParticleTypeCounts(int *numfoam, 
-                                      int *numbubble, 
-                                      int *numspray,
-                                      int *numdust);
-    int _getNumSprayParticles();
-    int _getNumBubbleParticles();
-    int _getNumFoamParticles();
-    int _getNumDustParticles();
+    void _getDiffuseParticleTypeCounts(size_t *numfoam, 
+                                       size_t *numbubble, 
+                                       size_t *numspray,
+                                       size_t *numdust);
+    size_t _getNumSprayParticles();
+    size_t _getNumBubbleParticles();
+    size_t _getNumFoamParticles();
+    size_t _getNumDustParticles();
 
     void _removeDiffuseParticles();
 
@@ -463,8 +463,8 @@ private:
     double _minDustTurbulenceFactor = 0.75;
     double _maxDustTurbulenceFactor = 1.0;
     double _emitterGenerationRate = 1.0;
-    unsigned int _maxNumDiffuseParticles = 10e6;
-    unsigned int _maxNumDiffuseParticlesLimit = 357e6;
+    size_t _maxNumDiffuseParticles = 10e6;
+    size_t _maxNumDiffuseParticlesLimit = std::numeric_limits<size_t>::max();
     double _minDiffuseParticleLifetime = 0.0;
     double _maxDiffuseParticleLifetime = 7.0;
     double _lifetimeVariance = 3.0;

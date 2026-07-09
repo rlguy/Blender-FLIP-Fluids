@@ -47,7 +47,7 @@ struct GridIndex {
                k != other.k;
     }
 
-    int& operator[](unsigned int idx) {
+    int& operator[](int idx) {
 
         #if defined(BUILD_DEBUG)
             if (idx > 2) {
@@ -85,7 +85,7 @@ public:
 
         _initializeGrid();
 
-        for (int i = 0; i < _numElements; i++) {
+        for (size_t i = 0; i < _numElements; i++) {
             _grid[i] = obj._grid[i];
         }
 
@@ -105,7 +105,7 @@ public:
 
         _initializeGrid();
 
-        for (int i = 0; i < _numElements; i++) {
+        for (size_t i = 0; i < _numElements; i++) {
             _grid[i] = rhs._grid[i];
         }
 
@@ -122,13 +122,13 @@ public:
     }
 
     void fill(T value) {
-        for (int idx = 0; idx < _numElements; idx++) {
+        for (size_t idx = 0; idx < _numElements; idx++) {
             _grid[idx] = value;
         }
     }
 
     bool isZero() {
-        for (int idx = 0; idx < _numElements; idx++) {
+        for (size_t idx = 0; idx < _numElements; idx++) {
             if (_grid[idx] != 0) {
                 return false;
             }
@@ -137,7 +137,7 @@ public:
     }
 
     bool isNonZero() {
-        for (int idx = 0; idx < _numElements; idx++) {
+        for (size_t idx = 0; idx < _numElements; idx++) {
             if (_grid[idx] != 0) {
                 return true;
             }
@@ -179,7 +179,7 @@ public:
         return _grid[_getFlatIndex(g)];;
     }
 
-    T operator()(int flatidx) {
+    T operator()(size_t flatidx) {
         bool isInRange = flatidx >= 0 && flatidx < _numElements;
         if (!isInRange && _isOutOfRangeValueSet) {
             return _outOfRangeValue;
@@ -230,7 +230,7 @@ public:
         return _grid[_getFlatIndex(g)];;
     }
 
-    T get(int flatidx) {
+    T get(size_t flatidx) {
         bool isInRange = flatidx >= 0 && flatidx < _numElements;
         if (!isInRange && _isOutOfRangeValueSet) {
             return _outOfRangeValue;
@@ -272,12 +272,12 @@ public:
     }
 
     void set(std::vector<GridIndex> &cells, T value) {
-        for (unsigned int i = 0; i < cells.size(); i++) {
+        for (size_t i = 0; i < cells.size(); i++) {
             set(cells[i], value);
         }
     }
 
-    void set(int flatidx, T value) {
+    void set(size_t flatidx, T value) {
         #if defined(BUILD_DEBUG)
             if (!(flatidx >= 0 && flatidx < _numElements)) {
                 std::string msg = "Error: index out of range.\n";
@@ -313,7 +313,7 @@ public:
         _grid[_getFlatIndex(g)] += value;
     }
 
-    void add(int flatidx, T value) {
+    void add(size_t flatidx, T value) {
         #if defined(BUILD_DEBUG)
             if (!(flatidx >= 0 && flatidx < _numElements)) {
                 std::string msg = "Error: index out of range.\n";
@@ -326,8 +326,14 @@ public:
     }
 
     void negate() {
-        for (int i = 0; i < _numElements; i++) {
+        for (size_t i = 0; i < _numElements; i++) {
             _grid[i] = -_grid[i];
+        }
+    }
+
+    void booleanNot() {
+        for (size_t i = 0; i < _numElements; i++) {
+            _grid[i] = !_grid[i];
         }
     }
 
@@ -365,7 +371,7 @@ public:
         return &_grid[_getFlatIndex(g)];
     }
 
-    T *getPointer(int flatidx) {
+    T *getPointer(size_t flatidx) {
         bool isInRange = flatidx >= 0 && flatidx < _numElements;
         if (!isInRange && _isOutOfRangeValueSet) {
             return &_outOfRangeValue;
@@ -386,7 +392,7 @@ public:
         return _grid;
     }
 
-    int getNumElements() {
+    size_t getNumElements() {
         return _numElements;
     }
 
@@ -771,14 +777,14 @@ private:
         return g.i >= 0 && g.j >= 0 && g.k >= 0 && g.i < width && g.j < height && g.k < depth;
     }
 
-    inline unsigned int _getFlatIndex(int i, int j, int k) {
-        return (unsigned int)i + (unsigned int)width *
-               ((unsigned int)j + (unsigned int)height * (unsigned int)k);
+    inline size_t _getFlatIndex(int i, int j, int k) {
+        return (size_t)i + (size_t)width *
+               ((size_t)j + (size_t)height * (size_t)k);
     }
 
-    inline unsigned int _getFlatIndex(GridIndex g) {
-        return (unsigned int)g.i + (unsigned int)width *
-               ((unsigned int)g.j + (unsigned int)height * (unsigned int)g.k);
+    inline size_t _getFlatIndex(GridIndex g) {
+        return (size_t)g.i + (size_t)width *
+               ((size_t)g.j + (size_t)height * (size_t)g.k);
     }
 
     template<class S>
@@ -793,5 +799,5 @@ private:
 
     bool _isOutOfRangeValueSet = false;
     T _outOfRangeValue;
-    int _numElements = 0;
+    size_t _numElements = 0;
 };

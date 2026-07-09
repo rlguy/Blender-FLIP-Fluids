@@ -112,6 +112,14 @@ class DomainParticlesProperties(bpy.types.PropertyGroup):
             default=False,
             options={'HIDDEN'},
             )
+    enable_fluid_particle_uvw_attribute: BoolProperty(
+            name="Generate UVW Attributes",
+            description="Generate fluid UVW texture coordinate attributes for the fluid particles. This attribute stores initial particle"
+                " UVW coordinate. After baking, the UVW vectors can be accessed in a Cycles Attribute Node or in Geometry Nodes"
+                " with the name 'flip_uvw' from the Vector output. This can be used for basic texture projection effects",
+            default=False,
+            options={'HIDDEN'},
+            )
     enable_fluid_particle_age_attribute: BoolProperty(
             name="Generate Age Attributes",
             description="Generate fluid age attributes for the fluid particles."
@@ -189,12 +197,13 @@ class DomainParticlesProperties(bpy.types.PropertyGroup):
         add(path + ".enable_fluid_particle_speed_attribute",                "Speed Attribute",              group_id=0)
         add(path + ".enable_fluid_particle_vorticity_vector_attribute",     "Vorticity Attribute",          group_id=0)
         add(path + ".enable_fluid_particle_color_attribute",                "Color Attribute",              group_id=0)
+        add(path + ".enable_fluid_particle_uvw_attribute",                  "UVW Attribute",                group_id=0)
         add(path + ".enable_fluid_particle_age_attribute",                  "Age Attribute",                group_id=0)
         add(path + ".enable_fluid_particle_lifetime_attribute",             "Lifetime Attribute",           group_id=0)
         add(path + ".enable_fluid_particle_whitewater_proximity_attribute", "Lifetime Attribute",           group_id=0)
         add(path + ".enable_fluid_particle_source_id_attribute",            "Source ID Attribute",          group_id=0)
         add(path + ".enable_fluid_particle_uid_attribute",                  "UID Attribute",                group_id=0)
-        add(path + ".enable_fluid_particle_uid_attribute_reuse",            "Reuse UIDs",                group_id=0)
+        add(path + ".enable_fluid_particle_uid_attribute_reuse",            "Reuse UIDs",                   group_id=0)
 
 
     def _update_enable_fluid_particle_output(self, context):

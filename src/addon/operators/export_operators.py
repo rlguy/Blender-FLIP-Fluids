@@ -30,11 +30,15 @@ def handler_export_pre(context):
     ignore_substring = "ff_sim_disable"
     for bl_object in bpy.data.objects:
         for modifier in bl_object.modifiers:
+            if modifier is None:
+                # Deleted data, continue
+                continue
+
             if not modifier.show_viewport:
                 continue
 
             mod_name = modifier.name
-            node_group_name = modifier.node_group.name if modifier.type == 'NODES' else ""
+            node_group_name = modifier.node_group.name if modifier.type == 'NODES' and modifier.node_group is not None else ""
             if (ignore_substring in mod_name.lower()) or (ignore_substring in node_group_name.lower()):
                 modifier.show_viewport = False
                 OBJECT_MODIFIERS_IGNORE_LIST.append((bl_object.name, mod_name, node_group_name))

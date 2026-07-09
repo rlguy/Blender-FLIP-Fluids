@@ -78,7 +78,9 @@ def frame_change_post_apply_T71908_workaround(context, depsgraph=None):
         "Input_4",    # Motion Blur Scale
         "Socket_8",   # Apply Simulation Time Scale
         "Socket_9",   # Apply Simulation World Scale
+
         "Socket_5",   # Shade Smooth Surface
+
         "Socket_11",  # Remove Mesh Near Domain Boundary
         "Socket_12",  # X-
         "Socket_13",  # Y-
@@ -87,6 +89,7 @@ def frame_change_post_apply_T71908_workaround(context, depsgraph=None):
         "Socket_16",  # Y+
         "Socket_17",  # Z+ 
         "Socket_18",  # Distance
+
         "Socket_20",  # Flatten Mesh Near Domain Boundary
         "Socket_21",  # Water Level Mode
         "Socket_22",  # Water Level
@@ -94,16 +97,19 @@ def frame_change_post_apply_T71908_workaround(context, depsgraph=None):
         "Socket_25",  # Transition Width
         "Socket_27",  # Store Displacement Attribute
         "Socket_26",  # Store Transition Mask Attribute
+
         "Socket_0",   # Blur Velocity For Fading
         "Socket_6",   # Blur Iterations
     ]
 
     input_name_list_fluid_particles = [
         "Socket_16",  # Apply Material
+
         "Input_8",    # Enable Motion Blur
         "Input_4",    # Motion Blur Scale
         "Socket_47",  # Apply Simulation Time Scale
         "Socket_48",  # Apply Simulation World Scale
+
         "Socket_12",  # Particle Display Mode
         "Input_6",    # Particle Scale
         "Socket_11",  # Particle Scale Multiplier
@@ -116,23 +122,56 @@ def frame_change_post_apply_T71908_workaround(context, depsgraph=None):
         "Socket_54",  # Align Instance to Velocity  (FF 1.8.6)
         "Socket_10",  # Shade Smooth Instances
         "Socket_17",  # Realize Instances
+
         "Socket_59",  # Duplicate and Randomize Particles
         "Socket_60",  # Num Duplicates
         "Socket_61",  # Distribution Radius
         "Socket_62",  # Distribution Radius Multiplier
-        "Socket_51",  # Match Flattened Surface Displacement
-        "Socket_55",  # Store Transition Mask Attribute
-        "Socket_56",  # Scale Particle With Transition Mask
+        
         "Socket_30",  # Age Based Particle Scaling
         "Socket_31",  # Starting Scale Factor
         "Socket_32",  # Scaling Duration (Age)
         "Socket_33",  # Age Offset
         "Socket_34",  # Store Age Scaling Transition Attribute
+
         "Socket_24",  # Lifetime Based Particle Scaling
         "Socket_23",  # Final Scale Factor
         "Socket_25",  # Scaling Duration (Lifetime)
         "Socket_26",  # Lifetime Offset
         "Socket_28",  # Store Lifetime Scaling Transition Attribute
+
+        "Socket_65",  # Filter Velocity
+        "Socket_66",  # Min Velocity
+        "Socket_67",  # Max Velocity
+        "Socket_68",  # Min Velocity Scaling Factor
+        "Socket_69",  # Max Velocity Scaling Factor
+        "Socket_70",  # Velocity Scaling Range
+        "Socket_71",  # Store Velocity Range Attribute
+        
+        "Socket_73",  # Filter Speed
+        "Socket_74",  # Min Speed
+        "Socket_75",  # Max Speed
+        "Socket_76",  # Min Speed Scaling Factor
+        "Socket_77",  # Max Speed Scaling Factor
+        "Socket_78",  # Speed Scaling Range
+        "Socket_79",  # Store Speed Range Attribute
+
+        "Socket_81",  # Filter Vorticity
+        "Socket_82",  # Min Vorticity
+        "Socket_83",  # Max Vorticity
+        "Socket_84",  # Min Vorticity Scaling Factor
+        "Socket_85",  # Max Vorticity Scaling Factor
+        "Socket_86",  # Vorticity Scaling Range
+        "Socket_87",  # Store Vorticity Range Attribute
+
+        "Socket_89",  # Filter Color
+        "Socket_95",  # Color Mode
+        "Socket_90",  # Color
+        "Socket_91",  # Color Tolerance
+        "Socket_92",  # Tolerance Scaling Factor
+        "Socket_93",  # Tolerance Scaling Range
+        "Socket_84",  # Store Color Range Attribute
+
         "Socket_36",  # Filter Particle by Source ID
         "Socket_37",  # Source ID 0
         "Socket_38",  # Source ID 1
@@ -143,6 +182,11 @@ def frame_change_post_apply_T71908_workaround(context, depsgraph=None):
         "Socket_43",  # Source ID 6
         "Socket_44",  # Source ID 7
         "Socket_45",  # Source ID 8
+
+        "Socket_51",  # Match Flattened Surface Displacement
+        "Socket_55",  # Store Transition Mask Attribute
+        "Socket_56",  # Scale Particle With Transition Mask
+
         "Socket_1",   # Fading Width
         "Socket_0",   # Fading Strength
         "Socket_4",   # Fading Density
@@ -150,10 +194,12 @@ def frame_change_post_apply_T71908_workaround(context, depsgraph=None):
 
     input_name_list_whitewater = [
         "Socket_16",  # Apply Material
+
         "Input_8",    # Enable Motion Blur
         "Input_4",    # Motion Blur Scale
         "Socket_30",  # Apply Simulation Time Scale
         "Socket_31",  # Apply Simulation World Scale
+
         "Socket_12",  # Particle Display Mode
         "Input_6",    # Particle Scale
         "Socket_11",  # Particle Scale Multiplier
@@ -166,18 +212,30 @@ def frame_change_post_apply_T71908_workaround(context, depsgraph=None):
         "Socket_37",  # Align Instance to Velocity  (FF 1.8.6)
         "Socket_10",  # Shade Smooth Instances
         "Socket_17",  # Realize Instances
+
         "Socket_41",  # Duplicate and Randomize Particles
         "Socket_42",  # Num Duplicates
         "Socket_43",  # Distribution Radius
         "Socket_44",  # Distribution Radius Multiplier
-        "Socket_34",  # Matched Flattened Surface Displacement
-        "Socket_38",  # Store Transition Mask Attribute
-        "Socket_39",  # Scale Particle With Transition Mask
+
         "Socket_24",  # Lifetime Based Particle Scaling
         "Socket_23",  # Final Scale Factor
         "Socket_25",  # Scaling Duration (Lifetime)
         "Socket_26",  # Lifetime Offset
         "Socket_28",  # Store Lifetime Scaling Transition Attribute
+
+        "Socket_47",  # Filter Velocity
+        "Socket_48",  # Min Velocity
+        "Socket_49",  # Max Velocity
+        "Socket_50",  # Min Velocity Scaling Factor
+        "Socket_51",  # Max Velocity Scaling Factor
+        "Socket_52",  # Velocity Scaling Range
+        "Socket_53",  # Store Velocity Range Attribute
+
+        "Socket_34",  # Matched Flattened Surface Displacement
+        "Socket_38",  # Store Transition Mask Attribute
+        "Socket_39",  # Scale Particle With Transition Mask
+        
         "Socket_1",   # Fading Width
         "Socket_0",   # Fading Strength
         "Socket_4",   # Fading Density
@@ -197,9 +255,11 @@ def frame_change_post_apply_T71908_workaround(context, depsgraph=None):
                 else:
                     continue
 
+                modifier_keys = vcu.get_geometry_nodes_modifier_input_keys(obj.modifiers[i])
                 for input_name in input_name_list:
-                    if input_name in obj.modifiers[i]:
-                        obj.modifiers[i][input_name] = obj_eval.modifiers[i][input_name]
+                    if input_name in modifier_keys:
+                        value = vcu.get_geometry_nodes_modifier_value(obj_eval.modifiers[i], input_name, ignore_errors=True)
+                        vcu.set_geometry_nodes_modifier_value(obj.modifiers[i], input_name, value, ignore_errors=True)
 
 
 # Workaround for https://projects.blender.org/blender/blender/issues/71908

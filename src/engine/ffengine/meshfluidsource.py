@@ -151,6 +151,34 @@ class MeshFluidSource():
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self()])
 
+    @property
+    def enable_gradual_outflow(self):
+        libfunc = lib.MeshFluidSource_is_gradual_outflow_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_gradual_outflow.setter
+    def enable_gradual_outflow(self, boolval):
+        if boolval:
+            libfunc = lib.MeshFluidSource_enable_gradual_outflow
+        else:
+            libfunc = lib.MeshFluidSource_disable_gradual_outflow
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def outflow_rate(self):
+        libfunc = lib.MeshFluidSource_get_outflow_rate
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_float)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @outflow_rate.setter
+    @decorators.check_ge(0.0)
+    def outflow_rate(self, value):
+        libfunc = lib.MeshFluidSource_set_outflow_rate
+        pb.init_lib_func(libfunc, [c_void_p, c_float, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), value])
+
     def get_velocity(self):
         libfunc = lib.MeshFluidSource_get_velocity
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], Vector3_t)

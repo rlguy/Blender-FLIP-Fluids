@@ -265,6 +265,7 @@ def __update_surface_display_mode():
         surface_cache.enable_lifetime_attribute = dprops.surface.enable_lifetime_attribute
         surface_cache.enable_whitewater_proximity_attribute = dprops.surface.enable_whitewater_proximity_attribute
         surface_cache.enable_color_attribute = dprops.surface.enable_color_attribute
+        surface_cache.enable_uvw_attribute = dprops.surface.enable_uvw_attribute
         surface_cache.enable_source_id_attribute = dprops.surface.enable_source_id_attribute
         surface_cache.enable_viscosity_attribute = dprops.surface.enable_viscosity_attribute
         surface_cache.enable_density_attribute = dprops.world.enable_density_attribute
@@ -280,6 +281,7 @@ def __update_surface_display_mode():
         surface_cache.enable_lifetime_attribute = False
         surface_cache.enable_whitewater_proximity_attribute = False
         surface_cache.enable_color_attribute = False
+        surface_cache.enable_uvw_attribute = False
         surface_cache.enable_source_id_attribute = False
         surface_cache.enable_viscosity_attribute = False
         surface_cache.enable_density_attribute = False
@@ -295,6 +297,7 @@ def __update_surface_display_mode():
         surface_cache.enable_lifetime_attribute = False
         surface_cache.enable_whitewater_proximity_attribute = False
         surface_cache.enable_color_attribute = False
+        surface_cache.enable_uvw_attribute = False
         surface_cache.enable_source_id_attribute = False
         surface_cache.enable_viscosity_attribute = False
         surface_cache.enable_density_attribute = False
@@ -367,6 +370,7 @@ def __update_fluid_particle_display_mode():
         particle_cache.enable_lifetime_attribute = particle_props.enable_fluid_particle_lifetime_attribute
         particle_cache.enable_whitewater_proximity_attribute = particle_props.enable_fluid_particle_whitewater_proximity_attribute
         particle_cache.enable_color_attribute = particle_props.enable_fluid_particle_color_attribute
+        particle_cache.enable_uvw_attribute = particle_props.enable_fluid_particle_uvw_attribute
         particle_cache.enable_source_id_attribute = particle_props.enable_fluid_particle_source_id_attribute
         particle_cache.enable_viscosity_attribute =  dprops.surface.enable_viscosity_attribute
         particle_cache.enable_density_attribute =  dprops.world.enable_density_attribute
@@ -382,6 +386,7 @@ def __update_fluid_particle_display_mode():
         particle_cache.enable_lifetime_attribute = particle_props.enable_fluid_particle_lifetime_attribute
         particle_cache.enable_whitewater_proximity_attribute = particle_props.enable_fluid_particle_whitewater_proximity_attribute
         particle_cache.enable_color_attribute = particle_props.enable_fluid_particle_color_attribute
+        particle_cache.enable_uvw_attribute = particle_props.enable_fluid_particle_uvw_attribute
         particle_cache.enable_source_id_attribute = particle_props.enable_fluid_particle_source_id_attribute
         particle_cache.enable_viscosity_attribute = dprops.surface.enable_viscosity_attribute
         particle_cache.enable_density_attribute = dprops.world.enable_density_attribute
@@ -397,6 +402,7 @@ def __update_fluid_particle_display_mode():
         particle_cache.enable_lifetime_attribute = False
         particle_cache.enable_whitewater_proximity_attribute = False
         particle_cache.enable_color_attribute = False
+        particle_cache.enable_uvw_attribute = False
         particle_cache.enable_source_id_attribute = False
         particle_cache.enable_viscosity_attribute = False
         particle_cache.enable_density_attribute = False
@@ -516,6 +522,10 @@ def __update_whitewater_display_mode():
         cache.bubble.enable_color_attribute = False
         cache.spray.enable_color_attribute = False
         cache.dust.enable_color_attribute = False
+        cache.foam.enable_uvw_attribute = False
+        cache.bubble.enable_uvw_attribute = False
+        cache.spray.enable_uvw_attribute = False
+        cache.dust.enable_uvw_attribute = False
         cache.foam.enable_source_id_attribute = False
         cache.bubble.enable_source_id_attribute = False
         cache.spray.enable_source_id_attribute = False
@@ -573,6 +583,10 @@ def __update_whitewater_display_mode():
         cache.bubble.enable_color_attribute = False
         cache.spray.enable_color_attribute = False
         cache.dust.enable_color_attribute = False
+        cache.foam.enable_uvw_attribute = False
+        cache.bubble.enable_uvw_attribute = False
+        cache.spray.enable_uvw_attribute = False
+        cache.dust.enable_uvw_attribute = False
         cache.foam.enable_source_id_attribute = False
         cache.bubble.enable_source_id_attribute = False
         cache.spray.enable_source_id_attribute = False
@@ -630,6 +644,10 @@ def __update_whitewater_display_mode():
         cache.bubble.enable_color_attribute = False
         cache.spray.enable_color_attribute = False
         cache.dust.enable_color_attribute = False
+        cache.foam.enable_uvw_attribute = False
+        cache.bubble.enable_uvw_attribute = False
+        cache.spray.enable_uvw_attribute = False
+        cache.dust.enable_uvw_attribute = False
         cache.foam.enable_source_id_attribute = False
         cache.bubble.enable_source_id_attribute = False
         cache.spray.enable_source_id_attribute = False
@@ -807,12 +825,10 @@ def render_pre(scene):
     RENDER_PRE_FRAME_NUMBER = __get_render_pre_current_frame()
 
     is_running_cmd = bpy.app.background
-    if not is_running_cmd:
-        features_dict = api_utils.get_enabled_features_affected_by_T88811()
-        if features_dict is not None:
-            warning_string = api_utils.get_T88811_cmd_warning_string(features_dict)
-            print(warning_string)
+    if is_running_cmd:
+        print("\n\tFLIP Fluids: Rendering frame " + str(scene.frame_current) + " <" + bpy.data.filepath + ">\n")
 
+    if not is_running_cmd:
         is_persistent_data_enabled = api_utils.is_persistent_data_issue_relevant()
         if is_persistent_data_enabled:
             warning_string = api_utils.get_persistent_data_warning_string()
@@ -830,6 +846,7 @@ def frame_change_post(scene, depsgraph=None):
     if is_rendering():
         if not scene.render.use_lock_interface:
                 print("FLIP FLUIDS WARNING: The Blender interface should be locked during render to prevent render crashes (Blender > Render > Lock Interface).")
+
 
     force_reload = False
     frameno = get_current_render_frame()

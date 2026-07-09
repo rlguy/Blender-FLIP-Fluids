@@ -26,45 +26,48 @@ from ..utils import version_compatibility_utils as vcu
 def get_surface_material_enums_ui(scene=None, context=None):
     bpy.context.scene.flip_fluid_material_library.check_icons_initialized()
     enums = []
+    enums += [__get_flip_fluids_material_library_header_enum()]
+    enums += [__get_none_material_enum()]
     enums += __get_material_library_enums_by_type('MATERIAL_TYPE_SURFACE')
     enums += __get_material_library_enums_by_type('MATERIAL_TYPE_ALL')
+    enums += [__get_scene_materials_header_enum()]
     enums += __get_non_material_library_enums_by_type()
-    enums += [__get_none_material_enum()]
-    enums.reverse()
     return enums
 
 
 def get_fluid_particles_material_enums_ui(scene=None, context=None):
     bpy.context.scene.flip_fluid_material_library.check_icons_initialized()
     enums = []
+    enums += [__get_flip_fluids_material_library_header_enum()]
+    enums += [__get_none_material_enum()]
     enums += __get_material_library_enums_by_type('MATERIAL_TYPE_SURFACE')
     enums += __get_material_library_enums_by_type('MATERIAL_TYPE_WHITEWATER')
     enums += __get_material_library_enums_by_type('MATERIAL_TYPE_ALL')
+    enums += [__get_scene_materials_header_enum()]
     enums += __get_non_material_library_enums_by_type()
-    enums += [__get_none_material_enum()]
-    enums.reverse()
     return enums
 
 
 def get_whitewater_material_enums_ui(scene=None, context=None):
     bpy.context.scene.flip_fluid_material_library.check_icons_initialized()
     enums = []
+    enums += [__get_flip_fluids_material_library_header_enum()]
+    enums += [__get_none_material_enum()]
     enums += __get_material_library_enums_by_type('MATERIAL_TYPE_WHITEWATER')
     enums += __get_material_library_enums_by_type('MATERIAL_TYPE_ALL')
+    enums += [__get_scene_materials_header_enum()]
     enums += __get_non_material_library_enums_by_type()
-    enums += [__get_none_material_enum()]
-    enums.reverse()
     return enums
 
 
 def get_material_import_enums_ui(scene = None, context = None):
     bpy.context.scene.flip_fluid_material_library.check_icons_initialized()
     enums = []
+    enums += [__get_flip_fluids_material_library_header_enum()]
+    enums += [__get_all_materials_enum()]
     enums += __get_material_library_enums_by_type('MATERIAL_TYPE_SURFACE')
     enums += __get_material_library_enums_by_type('MATERIAL_TYPE_WHITEWATER')
     enums += __get_material_library_enums_by_type('MATERIAL_TYPE_ALL')
-    enums += [__get_all_materials_enum()]
-    enums.reverse()
     return enums
 
 
@@ -111,11 +114,16 @@ def __get_non_material_library_material_hash(material):
 
 
 def __get_none_material_enum():
-        return ("MATERIAL_NONE", "None", "", 0, 0)
+    return ("MATERIAL_NONE", "None", "", 0, 0)
 
+def __get_flip_fluids_material_library_header_enum():
+    return ("", "FLIP Fluids Material Library", "FLIP Fluids Material Library", 'NONE', 1)
+
+def __get_scene_materials_header_enum():
+    return ("", "Scene Materials", "Scene Materials", 'NONE', 2)
 
 def __get_all_materials_enum():
-        return ("ALL_MATERIALS", "All Materials", "Import all materials", 0, 0)
+    return ("ALL_MATERIALS", "All Materials", "Import all materials", 0, 0)
 
 def load_post():
     library_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), "material_library")

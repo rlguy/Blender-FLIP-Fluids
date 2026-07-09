@@ -227,7 +227,7 @@ class DomainWhitewaterProperties(bpy.types.PropertyGroup):
                 " solver will not limit the number of whitewater particles,"
                 " however this may require large amounts of storage space depending"
                 " on the simulation and is not recommended", 
-            min=0, max=357,
+            min=0,
             default=12,
             precision=2,
             )

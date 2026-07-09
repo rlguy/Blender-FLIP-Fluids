@@ -57,7 +57,7 @@ def play_sound(json_audio_filepath, block=False):
 
 bpy.ops.flip_fluid_operators.bake_fluid_simulation_cmd()
 bpy.ops.wm.revert_mainfile()
-bpy.ops.flip_fluid_operators.helper_command_line_render()
+bpy.ops.flip_fluid_operators.helper_command_line_render(launch_in_new_terminal=False)
 
 resources_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 audio_json_filepath = os.path.join(resources_directory, "sounds", "alarm", "sound_data.json")

@@ -72,6 +72,12 @@ struct MarkerParticleColor {
     MarkerParticleColor(vmath::vec3 c) : color(c) {}
 };
 
+struct MarkerParticleUVW {
+    vmath::vec3 uvw;
+
+    MarkerParticleUVW(vmath::vec3 coord) : uvw(coord) {}
+};
+
 struct MarkerParticleSourceID {
     int sourceid;
 

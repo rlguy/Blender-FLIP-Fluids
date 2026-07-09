@@ -55,7 +55,6 @@ class FLIPFLUID_PT_DomainTypeDebugPanel(bpy.types.Panel):
             column.prop(gprops, "display_simulation_grid", text="Display Grid")
 
             column = split.column(align=True)
-            column.enabled = gprops.display_simulation_grid
             split = column.split(align=True)
             column = split.column(align=True)
             column.prop(gprops, "grid_display_mode", text="")
@@ -64,12 +63,10 @@ class FLIPFLUID_PT_DomainTypeDebugPanel(bpy.types.Panel):
 
             split = vcu.ui_split(body, align=True, factor=0.3)
             column = split.column(align=True)
-            column.enabled = gprops.display_simulation_grid
             column.label(text="Enabled Grids:")
             column.label(text="Grid Colors:")
             column.label(text="Grid Offsets:")
             column = split.column(align=True)
-            column.enabled = gprops.display_simulation_grid
             row = column.row(align=True)
             row.prop(gprops, "enabled_debug_grids", text="", toggle=True)
             row = column.row(align=True)
@@ -86,8 +83,20 @@ class FLIPFLUID_PT_DomainTypeDebugPanel(bpy.types.Panel):
             column.prop(gprops, "display_domain_bounds")
 
             column = split.column(align=True)
-            column.enabled = gprops.display_simulation_grid or gprops.display_domain_bounds
             column.prop(gprops, "domain_bounds_color", text="")
+
+            # Unfinished rotatable domain feature
+            """
+            column = body.column(align=True)
+            split = vcu.ui_split(column, align=True, factor=0.3)
+            column = split.column(align=True)
+            column.prop(gprops, "display_internal_simulation_grid")
+
+            column = split.column(align=True)
+            row = column.row(align=True)
+            row.prop(gprops, "internal_simulation_grid_opacity", slider=True)
+            row.prop(gprops, "internal_simulation_grid_interpolation", slider=True)
+            """
 
         #
         # Fluid Particle Debugging Panel

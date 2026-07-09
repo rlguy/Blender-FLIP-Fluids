@@ -99,7 +99,7 @@ void DiffuseParticleSimulation::update(DiffuseParticleSimulationParameters param
 }
 
 void DiffuseParticleSimulation::
-        getDiffuseParticleTypeCounts(int *numfoam, int *numbubble, int *numspray, int *numdust) {
+        getDiffuseParticleTypeCounts(size_t *numfoam, size_t *numbubble, size_t *numspray, size_t *numdust) {
     _getDiffuseParticleTypeCounts(numfoam, numbubble, numspray, numdust);
 }
 
@@ -227,7 +227,7 @@ void DiffuseParticleSimulation::setForceFieldWeightWhitewaterDust(double v) {
     _forceFieldWeightWhitewaterDust = v;
 }
 
-int DiffuseParticleSimulation::getNumDiffuseParticles() {
+size_t DiffuseParticleSimulation::getNumDiffuseParticles() {
     return _diffuseParticles.size();
 }
 
@@ -238,7 +238,7 @@ int DiffuseParticleSimulation::getMaxNumDiffuseParticles() {
     return _maxNumDiffuseParticles;
 }
 
-void DiffuseParticleSimulation::setMaxNumDiffuseParticles(int n) {
+void DiffuseParticleSimulation::setMaxNumDiffuseParticles(size_t n) {
     FLUIDSIM_ASSERT(n >= 0);
     _maxNumDiffuseParticles = n;
     if (n == 0) {
@@ -2670,15 +2670,15 @@ vmath::vec3 DiffuseParticleSimulation::_getGravityVector(vmath::vec3 pos, Diffus
 }
 
 void DiffuseParticleSimulation::
-        _getDiffuseParticleTypeCounts(int *numfoam, int *numbubble, int *numspray, int *numdust) {
+        _getDiffuseParticleTypeCounts(size_t *numfoam, size_t *numbubble, size_t *numspray, size_t *numdust) {
 
     std::vector<char> *particleTypes;
     _diffuseParticles.getAttributeValues("TYPE", particleTypes);
 
-    int foam = 0;
-    int bubble = 0;
-    int spray = 0;
-    int dust = 0;
+    size_t foam = 0;
+    size_t bubble = 0;
+    size_t spray = 0;
+    size_t dust = 0;
     for (size_t i = 0; i < particleTypes->size(); i++) {
         DiffuseParticleType type = (DiffuseParticleType)(particleTypes->at(i));
         if (type == DiffuseParticleType::foam) {
@@ -2698,12 +2698,12 @@ void DiffuseParticleSimulation::
     *numdust = dust;
 }
 
-int DiffuseParticleSimulation::_getNumSprayParticles() {
+size_t DiffuseParticleSimulation::_getNumSprayParticles() {
     std::vector<char> *particleTypes;
     _diffuseParticles.getAttributeValues("TYPE", particleTypes);
 
-    int spraycount = 0;
-    for (unsigned int i = 0; i < particleTypes->size(); i++) {
+    size_t spraycount = 0;
+    for (size_t i = 0; i < particleTypes->size(); i++) {
         if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::spray) {
             spraycount++;
         }
@@ -2712,12 +2712,12 @@ int DiffuseParticleSimulation::_getNumSprayParticles() {
     return spraycount;
 }
 
-int DiffuseParticleSimulation::_getNumBubbleParticles() {
+size_t DiffuseParticleSimulation::_getNumBubbleParticles() {
     std::vector<char> *particleTypes;
     _diffuseParticles.getAttributeValues("TYPE", particleTypes);
 
-    int bubblecount = 0;
-    for (unsigned int i = 0; i < particleTypes->size(); i++) {
+    size_t bubblecount = 0;
+    for (size_t i = 0; i < particleTypes->size(); i++) {
         if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::bubble) {
             bubblecount++;
         }
@@ -2726,12 +2726,12 @@ int DiffuseParticleSimulation::_getNumBubbleParticles() {
     return bubblecount;
 }
 
-int DiffuseParticleSimulation::_getNumFoamParticles() {
+size_t DiffuseParticleSimulation::_getNumFoamParticles() {
     std::vector<char> *particleTypes;
     _diffuseParticles.getAttributeValues("TYPE", particleTypes);
 
-    int foamcount = 0;
-    for (unsigned int i = 0; i < particleTypes->size(); i++) {
+    size_t foamcount = 0;
+    for (size_t i = 0; i < particleTypes->size(); i++) {
         if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::foam) {
             foamcount++;
         }
@@ -2740,12 +2740,12 @@ int DiffuseParticleSimulation::_getNumFoamParticles() {
     return foamcount;
 }
 
-int DiffuseParticleSimulation::_getNumDustParticles() {
+size_t DiffuseParticleSimulation::_getNumDustParticles() {
     std::vector<char> *particleTypes;
     _diffuseParticles.getAttributeValues("TYPE", particleTypes);
 
-    int dustcount = 0;
-    for (unsigned int i = 0; i < particleTypes->size(); i++) {
+    size_t dustcount = 0;
+    for (size_t i = 0; i < particleTypes->size(); i++) {
         if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::dust) {
             dustcount++;
         }
@@ -2918,16 +2918,16 @@ void DiffuseParticleSimulation::_getDiffuseParticleFileDataWWP(std::vector<vmath
         idBinIndices[ids[i]]++;
     }
 
-    unsigned int idDataSize = (unsigned int)idData.size() * sizeof(int);
-    unsigned int numVertices = (unsigned int)positions.size();
-    unsigned int vertexDataSize = 3 * numVertices * sizeof(float);
-    unsigned int dataSize = idDataSize + vertexDataSize;
+    size_t idDataSize = idData.size() * sizeof(int);
+    size_t numVertices = positions.size();
+    size_t vertexDataSize = 3 * numVertices * sizeof(float);
+    size_t dataSize = idDataSize + vertexDataSize;
 
     data.clear();
     data.resize(dataSize);
     data.shrink_to_fit();
 
-    unsigned int byteOffset = 0;
+    size_t byteOffset = 0;
     std::memcpy(data.data() + byteOffset, (char *)idData.data(), idDataSize);
     byteOffset += idDataSize;
 
@@ -2960,16 +2960,16 @@ void DiffuseParticleSimulation::_getDiffuseParticleFileDataWWI(std::vector<int> 
         idBinIndices[ids[i]]++;
     }
 
-    unsigned int idDataSize = (unsigned int)idData.size() * sizeof(int);
-    unsigned int numVertices = (unsigned int)intvalues.size();
-    unsigned int intDataSize = numVertices * sizeof(int);
-    unsigned int dataSize = idDataSize + intDataSize;
+    size_t idDataSize = idData.size() * sizeof(int);
+    size_t numVertices = intvalues.size();
+    size_t intDataSize = numVertices * sizeof(int);
+    size_t dataSize = idDataSize + intDataSize;
 
     data.clear();
     data.resize(dataSize);
     data.shrink_to_fit();
 
-    unsigned int byteOffset = 0;
+    size_t byteOffset = 0;
     std::memcpy(data.data() + byteOffset, (char *)idData.data(), idDataSize);
     byteOffset += idDataSize;
 
@@ -3002,16 +3002,16 @@ void DiffuseParticleSimulation::_getDiffuseParticleFileDataWWF(std::vector<float
         idBinIndices[ids[i]]++;
     }
 
-    unsigned int idDataSize = (int)idData.size() * sizeof(int);
-    unsigned int numVertices = (int)floatvalues.size();
-    unsigned int intDataSize = numVertices * sizeof(int);
-    unsigned int dataSize = idDataSize + intDataSize;
+    size_t idDataSize = (int)idData.size() * sizeof(int);
+    size_t numVertices = (int)floatvalues.size();
+    size_t intDataSize = numVertices * sizeof(int);
+    size_t dataSize = idDataSize + intDataSize;
 
     data.clear();
     data.resize(dataSize);
     data.shrink_to_fit();
 
-    unsigned int byteOffset = 0;
+    size_t byteOffset = 0;
     std::memcpy(data.data() + byteOffset, (char *)idData.data(), idDataSize);
     byteOffset += idDataSize;
 

@@ -393,6 +393,15 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             default_max=250,
             options_max={'HIDDEN'},
             )
+    usd_incremental_save: IntProperty(
+            name="Incremental Save",
+            description="Incrementally save USD file after the specified number of frame to reduce peak memory usage."
+                " Incremental saves can result in longer export times and potential issues with some file synchronization"
+                " services. Zero disables incremental save",
+            min=0,
+            default=10,
+            options={'HIDDEN'},
+            )
     usd_output_filepath: StringProperty(
             name="",
             description="USD export will be saved to this filepath",

@@ -1774,12 +1774,7 @@ def update_geometry_node_material(bl_object, resource_name):
             break
 
     if gn_modifier is not None:
-        try:
-            # Depending on FLIP Fluids version, the GN set up may not
-            # have an Input_5
-            gn_modifier["Input_5"] = bl_object.active_material
-        except:
-            pass
+        vcu.set_geometry_nodes_modifier_value(gn_modifier, "Input_5", bl_object.active_material, ignore_errors=True)
 
 
 def add_geometry_node_modifier(target_object, resource_filepath, resource_name, insert_after_modifier=None):
@@ -1817,6 +1812,9 @@ def add_geometry_node_modifier(target_object, resource_filepath, resource_name, 
         except:
             pass
 
+    # New modifiers are not completely initialized with inputs until updating view layer
+    bpy.context.view_layer.update()
+
     return gn_modifier
 
 
@@ -1845,28 +1843,15 @@ class FlipFluidHelperInitializeMotionBlur(bpy.types.Operator):
     def apply_modifier_settings(self, target_object, gn_modifier):
         gn_name = gn_modifier.name
         if gn_name.startswith("FF_GeometryNodesSurface"):
-            # Depending on FLIP Fluids version, the GN set up may not
-            # have these inputs. Available in FLIP Fluids 1.7.2 or later.
-            try:
-                # Enable Motion Blur
-                gn_modifier["Input_6"] = True
-            except:
-                pass
+            # Enable Motion Blur
+            vcu.set_geometry_nodes_modifier_value(gn_modifier, "Input_6", True, ignore_errors=True)
 
         if gn_name.startswith("FF_GeometryNodesWhitewater") or gn_name.startswith("FF_GeometryNodesFluidParticles"):
-            # Depending on FLIP Fluids version, the GN set up may not
-            # have these inputs. Available in FLIP Fluids 1.7.2 or later.
-            try:
-                # Material
-                gn_modifier["Input_5"] = target_object.active_material
-            except:
-                pass
+            # Material
+            vcu.set_geometry_nodes_modifier_value(gn_modifier, "Input_5", target_object.active_material, ignore_errors=True)
 
-            try:
-                # Enable Motion Blur
-                gn_modifier["Input_8"] = True
-            except:
-                pass
+            # Enable Motion Blur
+            vcu.set_geometry_nodes_modifier_value(gn_modifier, "Input_8", True, ignore_errors=True)
 
 
     def execute(self, context):
@@ -1877,7 +1862,7 @@ class FlipFluidHelperInitializeMotionBlur(bpy.types.Operator):
         
         unsupported_render_engines = ['BLENDER_EEVEE', 'BLENDER_EEVEE_NEXT', 'BLENDER_WORKBENCH']
         if context.scene.render.engine in unsupported_render_engines:
-            context.scene.render.engine = 'CYCLES'
+            vcu.set_cycles_render_engine(context)
             self.report({'INFO'}, "Setting render engine to Cycles")
         if not context.scene.render.use_motion_blur:
             context.scene.render.use_motion_blur = True
@@ -1895,8 +1880,7 @@ class FlipFluidHelperInitializeMotionBlur(bpy.types.Operator):
         if not dprops.whitewater.enable_velocity_vector_attribute:
             dprops.whitewater.enable_velocity_vector_attribute = True
             self.report({'INFO'}, "Enabled generation of whitewater velocity vector attributes in Domain Whitewater (baking required)")
-
-        blend_filename = "geometry_nodes_library.blend"
+            
         surface_resource = self.resource_prefix + "Surface"
         fluid_particle_resource = self.resource_prefix + "FluidParticles"
         whitewater_foam_resource = self.resource_prefix + "WhitewaterFoam"
@@ -1904,8 +1888,7 @@ class FlipFluidHelperInitializeMotionBlur(bpy.types.Operator):
         whitewater_spray_resource = self.resource_prefix + "WhitewaterSpray"
         whitewater_dust_resource = self.resource_prefix + "WhitewaterDust"
 
-        parent_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        resource_filepath = os.path.join(parent_path, "resources", "geometry_nodes", blend_filename)
+        resource_filepath = vcu.get_geometry_nodes_blend_filepath()
 
         surface_mesh_caches = [dprops.mesh_cache.surface]
         surface_cache_objects = []
@@ -1961,11 +1944,12 @@ class FlipFluidHelperInitializeMotionBlur(bpy.types.Operator):
             info_msg = "Initialized " + gn_modifier.name + " Geometry Node modifier on " + target_object.name + " object"
             self.report({'INFO'}, info_msg)
 
-        for target_object in surface_cache_objects + fluid_particle_cache_objects + whitewater_cache_objects:
-            if not target_object.cycles.use_motion_blur:
-                target_object.cycles.use_motion_blur = True
-                info_msg = "Enabled motion blur rendering on " + target_object.name + " object"
-                self.report({'INFO'}, info_msg)
+        if vcu.is_cycles_enabled():
+            for target_object in surface_cache_objects + fluid_particle_cache_objects + whitewater_cache_objects:
+                if not vcu.get_cycles_property(target_object, "use_motion_blur"):
+                    vcu.set_cycles_property(target_object, "use_motion_blur", True)
+                    info_msg = "Enabled motion blur rendering on " + target_object.name + " object"
+                    self.report({'INFO'}, info_msg)
 
         self.report({'INFO'}, "Finished initializing motion blur geometry node groups and settings")
 
@@ -2034,11 +2018,12 @@ class FlipFluidHelperRemoveMotionBlur(bpy.types.Operator):
                 bl_object.modifiers.remove(mod)
                 is_setup_modified = True
 
-        for bl_object in cache_objects:
-            if bl_object.cycles.use_motion_blur:
-                self.report({'INFO'}, "Disabled motion blur rendering on " + bl_object.name + " object")
-                bl_object.cycles.use_motion_blur = False
-                is_setup_modified = True
+        if vcu.is_cycles_enabled():
+            for bl_object in cache_objects:
+                if vcu.get_cycles_property(bl_object, "use_motion_blur"):
+                    self.report({'INFO'}, "Disabled motion blur rendering on " + bl_object.name + " object")
+                    vcu.set_cycles_property(bl_object, "use_motion_blur", False)
+                    is_setup_modified = True
 
         if not is_setup_modified:
             self.report({'INFO'}, "No motion blur setup detected")
@@ -2083,19 +2068,31 @@ class FlipFluidHelperToggleMotionBlurRendering(bpy.types.Operator):
         ]
         mesh_caches = [bl_object for bl_object in mesh_caches if bl_object is not None]
 
-        for bl_object in mesh_caches:
-            if bl_object.cycles.use_motion_blur != enable_status:
-                bl_object.cycles.use_motion_blur = enable_status
-                self.report({'INFO'}, "Toggled Cycles motion blur rendering on <" + bl_object.name + "> object to " + enable_string)
+        if vcu.is_cycles_enabled():
+            for bl_object in mesh_caches:
+                if vcu.get_cycles_property(bl_object, "use_motion_blur") != enable_status:
+                    vcu.set_cycles_property(bl_object, "use_motion_blur", enable_status)
+                    self.report({'INFO'}, "Toggled Cycles motion blur rendering on <" + bl_object.name + "> object to " + enable_string)
 
+        gn_value_get = vcu.get_geometry_nodes_modifier_value
+        gn_value_set = vcu.set_geometry_nodes_modifier_value
+        gn_keys = vcu.get_geometry_nodes_modifier_input_keys
         for bl_object in mesh_caches:
             gn_modifier = self.get_motion_blur_geometry_node_modifier(bl_object)
             if gn_modifier is None:
                 continue
-            if "Input_8" in gn_modifier:
-                if gn_modifier["Input_8"] != enable_status:
-                    gn_modifier["Input_8"] = enable_status
-                    self.report({'INFO'}, "Toggled motion blur on <" + gn_modifier.name + "> geometry node modifier to " + enable_string)
+
+            if gn_modifier.name.startswith("FF_GeometryNodesSurface"):
+                if "Input_6" in gn_keys(gn_modifier):
+                    if gn_value_get(gn_modifier, "Input_6") != enable_status:
+                        gn_value_set(gn_modifier, "Input_6", enable_status, ignore_errors=True)
+                        self.report({'INFO'}, "Toggled motion blur on <" + gn_modifier.name + "> geometry node modifier to " + enable_string)
+
+            if gn_modifier.name.startswith("FF_GeometryNodesWhitewater") or gn_modifier.name.startswith("FF_GeometryNodesFluidParticles"):
+                if "Input_8" in gn_keys(gn_modifier):
+                    if gn_value_get(gn_modifier, "Input_8") != enable_status:
+                        gn_value_set(gn_modifier, "Input_8", enable_status, ignore_errors=True)
+                        self.report({'INFO'}, "Toggled motion blur on <" + gn_modifier.name + "> geometry node modifier to " + enable_string)
 
         self.report({'INFO'}, "Finished toggling motion blur rendering on simulation meshes " + enable_string)
 
@@ -2118,18 +2115,15 @@ class FlipFluidHelperUpdateGeometryNodeModifiers(bpy.types.Operator):
 
 
     def transfer_gn_modifier_settings(self, old_gn_modifier, new_gn_modifier):
-        for key in old_gn_modifier.keys():
-            if not key[-1].isdigit():
-                # Skip 'Socket_N_use_attribute' and 'Socket_N_attribute_name' keys
+        old_gn_keys = vcu.get_geometry_nodes_modifier_input_keys(old_gn_modifier)
+        new_gn_keys = vcu.get_geometry_nodes_modifier_input_keys(new_gn_modifier)
+
+        for key in old_gn_keys:
+            if key not in new_gn_keys:
                 continue
-            
-            if key not in new_gn_modifier.keys():
-                continue
-            
-            try:
-                new_gn_modifier[key] = old_gn_modifier[key]
-            except:
-                pass
+
+            value = vcu.get_geometry_nodes_modifier_value(old_gn_modifier, key, ignore_errors=True)
+            vcu.set_geometry_nodes_modifier_value(new_gn_modifier, key, value, ignore_errors=True)
 
 
     def get_ff_geometry_node_modifiers(self, bl_object):
@@ -2215,9 +2209,7 @@ class FlipFluidHelperUpdateGeometryNodeModifiers(bpy.types.Operator):
                 mod.node_group.name = "BACKUP_" + mod.node_group.name
 
         # Initialize current FF_GeometryNode modifiers
-        geometry_nodes_library = "geometry_nodes_library.blend"
-        parent_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        resource_filepath = os.path.join(parent_path, "resources", "geometry_nodes", geometry_nodes_library)
+        resource_filepath = vcu.get_geometry_nodes_blend_filepath()
 
         surface_resource = self.resource_prefix + "Surface"
         fluid_particle_resource = self.resource_prefix + "FluidParticles"
@@ -2719,16 +2711,13 @@ class FlipFluidCopySettingsFromActive(bpy.types.Operator):
 
 
     def toggle_cycles_ray_visibility(self, obj, is_enabled):
-        # Cycles may not be enabled in the user's preferences
-        try:
+        if vcu.is_cycles_enabled():
             obj.visible_camera = is_enabled
             obj.visible_diffuse = is_enabled
             obj.visible_glossy = is_enabled
             obj.visible_transmission = is_enabled
             obj.visible_volume_scatter = is_enabled
             obj.visible_shadow = is_enabled
-        except:
-            pass
 
 
     def execute(self, context):

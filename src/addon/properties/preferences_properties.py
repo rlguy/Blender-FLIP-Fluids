@@ -302,6 +302,22 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
             ); 
     FAKE_PREFERENCES.dismiss_export_animated_mesh_parented_relation_hint = False
 
+    dismiss_flip_object_disabled_in_viewport_hint: BoolProperty(
+            name="Dismiss FLIP objects disabled in viewport hint", 
+            description="Dismiss hints about FLIP objects that are disabled in the viweport and will"
+                " not be included within the simulation",
+            default=False,
+            ); 
+    FAKE_PREFERENCES.dismiss_flip_object_disabled_in_viewport_hint = False
+
+    dismiss_flip_object_modifiers_disabled_in_viewport_hint: BoolProperty(
+            name="Dismiss FLIP object modifiers disabled in viewport hint", 
+            description="Dismiss hints about FLIP objects that contain modifiers which are disabled in"
+                " the viweport and will not be included within the simulation",
+            default=False,
+            ); 
+    FAKE_PREFERENCES.dismiss_flip_object_modifiers_disabled_in_viewport_hint = False
+
     enable_tabbed_domain_settings_view: BoolProperty(
                 name="Enable Tabbed Domain Settings",
                 description="Enable tabbed domain settings view. If enabled, domain panel categories will be displayed"
@@ -750,6 +766,12 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         row = column_left.row(align=True)
         row.alignment = 'LEFT'
         row.prop(self, "dismiss_export_animated_mesh_parented_relation_hint")
+        row = column_left.row(align=True)
+        row.alignment = 'LEFT'
+        row.prop(self, "dismiss_flip_object_disabled_in_viewport_hint")
+        row = column_left.row(align=True)
+        row.alignment = 'LEFT'
+        row.prop(self, "dismiss_flip_object_modifiers_disabled_in_viewport_hint")
 
         row = column_right.row(align=True)
         row.alignment = 'EXPAND'

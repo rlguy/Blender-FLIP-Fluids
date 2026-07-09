@@ -82,6 +82,13 @@ void LogFile::timestamp() {
     _print(time + "\n");
 }
 
+void LogFile::timestamp(std::string suffix_string) {
+    std::string time = getTime();
+    std::unique_lock<std::mutex> lock(_mutex);
+    _stream << time + " " + suffix_string << std::endl;
+    _print(time + " " + suffix_string + "\n");
+}
+
 void LogFile::logString(const std::string& str) {
     std::unique_lock<std::mutex> lock(_mutex);
     _stream << str << std::endl;

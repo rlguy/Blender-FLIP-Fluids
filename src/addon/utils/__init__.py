@@ -24,6 +24,7 @@ if "bpy" in locals():
         'installation_utils',
         'version_compatibility_utils',
         'cache_utils',
+        'geometry_utils',
         'api_workaround_utils',
     ]
     for module_name in reloadable_modules:
@@ -40,5 +41,6 @@ from . import (
     installation_utils,
     version_compatibility_utils,
     cache_utils,
+    geometry_utils,
     api_workaround_utils,
     )

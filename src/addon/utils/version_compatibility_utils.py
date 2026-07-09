@@ -14,16 +14,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, array, os, numpy
+import bpy, array, os
+import numpy as np
 
 from ..ffengine import TriangleMesh
 
 def is_blender_279():
     return bpy.app.version <= (2, 79, 999)
 
+
 def is_blender_28():
     return bpy.app.version >= (2, 80, 0)
-
 
 def is_blender_281():
     return bpy.app.version >= (2, 81, 0)
@@ -91,6 +92,14 @@ def is_blender_45():
 
 def is_blender_50():
     return bpy.app.version >= (5, 0, 0)
+
+
+def is_blender_51():
+    return bpy.app.version >= (5, 1, 0)
+
+
+def is_blender_52():
+    return bpy.app.version >= (5, 2, 0)
 
 
 def convert_attribute_to_28(prop_name):
@@ -214,15 +223,15 @@ def remove_from_flip_fluids_collection(obj, context):
         flip_collection.objects.unlink(obj)
 
 
-def delete_object(obj, remove_mesh_data=True):
-    if obj.type == 'MESH':
-        mesh_data = obj.data
-        bpy.data.objects.remove(obj, do_unlink=True)
+def delete_object(bl_object, remove_mesh_data=True):
+    if bl_object.type == 'MESH':
+        mesh_data = bl_object.data
+        bpy.data.objects.remove(bl_object, do_unlink=True)
         if remove_mesh_data:
             mesh_data.user_clear()
             bpy.data.meshes.remove(mesh_data)
     else:
-        bpy.data.objects.remove(obj, do_unlink=True)
+        bpy.data.objects.remove(bl_object, do_unlink=True)
 
 
 def delete_mesh_data(mesh_data):
@@ -343,6 +352,43 @@ def _transfer_mesh_materials(src_mesh_data, dst_mesh_data):
                     break
 
 
+def _fast_from_pydata(bl_object, vertices=[], triangles=[], smooth_mesh=False):
+    # Method adapted from discussion (esnosy and bradyajohnston) on bpy Discord server:
+    #     https://discord.com/channels/877239804276932728/877239804885102654/1496545884450721993
+    #
+    # esnosy/fast_from_pydata.py: 
+    #     https://gist.github.com/esnosy/3a719cd8b3e7f14616c9918bbc6da452
+
+    num_vertices = len(vertices) // 3
+    num_triangles = len(triangles) // 3
+    triangle_lengths = np.full(num_triangles, 3, dtype=np.uint32)
+
+    mesh = bl_object.data
+    mesh.clear_geometry()
+    mesh.vertices.add(num_vertices)
+    mesh.loops.add(3 * len(triangle_lengths))
+    mesh.polygons.add(num_triangles)
+
+    #mesh.vertices.foreach_set("co", vertices)
+    mesh.attributes["position"].data.foreach_set("vector", vertices)
+
+    vertex_indices = triangles
+    loop_starts = np.empty(num_triangles + 1, dtype=np.uint32)
+    loop_starts[0] = 0
+    loop_starts[1:] = triangle_lengths[:]
+    loop_starts = np.cumsum(loop_starts)[:num_triangles]
+
+    mesh.polygons.foreach_set("loop_start", loop_starts)
+    mesh.polygons.foreach_set("vertices", vertex_indices)
+
+    mesh.update(calc_edges=True)
+
+    if smooth_mesh:
+        mesh.shade_smooth()
+    else:
+        mesh.shade_flat()
+
+
 def swap_object_mesh_data_geometry(bl_object, vertices=[], triangles=[], 
                                    mesh_name="Untitled",
                                    smooth_mesh=False,
@@ -363,17 +409,8 @@ def swap_object_mesh_data_geometry(bl_object, vertices=[], triangles=[],
     active_color_layer_index = bl_object.data.color_attributes.active_color_index
     active_color_render_index = bl_object.data.color_attributes.render_color_index
 
-    vertices = numpy.array(vertices, dtype=numpy.float32)
-    num_vertices = vertices.shape[0] // 3
-    vertex_index = numpy.array(triangles, dtype=numpy.int32)
-    loop_start = numpy.array(list(range(0, len(triangles), 3)), dtype=numpy.int32)
-    num_loops = loop_start.shape[0]
-    loop_total = numpy.array([3] * (len(triangles) // 3), dtype=numpy.int32)
+    _fast_from_pydata(bl_object, vertices, triangles, smooth_mesh)
 
-    bl_object.data.clear_geometry()
-    bl_object.data.from_pydata(vertices, [], triangles)
-
-    _set_mesh_smoothness(bl_object.data, smooth_mesh)
     _set_octane_mesh_type(bl_object, octane_mesh_type)
 
     # Vertex Groups
@@ -429,6 +466,16 @@ def get_addon_preferences(context=None):
     return preferences_properties.get_addon_preferences(context)
 
 
+def get_geometry_nodes_blend_filepath():
+    if is_blender_52():
+        blend_resource_filename = "geometry_nodes_library.blend"
+    else:
+        blend_resource_filename = "geometry_nodes_library-legacy.blend"
+    addon_root = get_addon_directory()
+    library_filepath = os.path.join(addon_root, "resources", "geometry_nodes", blend_resource_filename)
+    return library_filepath
+
+
 #
 # UI Compatibility
 #
@@ -461,3 +508,86 @@ def str_removesuffix(input_string, suffix):
     if suffix and input_string.endswith(suffix):
         return input_string[:-len(suffix)]
     return input_string
+
+
+#
+# Geometry Nodes Compatibility
+#
+
+def set_geometry_nodes_modifier_value(bl_modifier, key, value, ignore_errors=False):
+    def set_modifier_value():
+        if is_blender_52():
+            prop = getattr(bl_modifier.properties.inputs, key)
+            if not hasattr(prop, "value"):
+                # Not all inputs have a value, such as Input_0
+                return
+            prop.value = value
+        else:
+            bl_modifier[key] = value
+
+    if ignore_errors:
+        try:
+            set_modifier_value()
+        except:
+            pass
+    else:
+        set_modifier_value()
+
+
+def get_geometry_nodes_modifier_value(bl_modifier, key, ignore_errors=False):
+    def get_modifier_value():
+        if is_blender_52():
+            prop = getattr(bl_modifier.properties.inputs, key)
+            if not hasattr(prop, "value"):
+                # Not all inputs have a value, such as Input_0
+                return None
+            return prop.value
+        else:
+            return bl_modifier[key]
+
+    if ignore_errors:
+        try:
+            return get_modifier_value()
+        except:
+            pass
+    else:
+        return get_modifier_value()
+
+
+def get_geometry_nodes_modifier_input_keys(bl_modifier):
+    if is_blender_52():
+        keys = bl_modifier.properties.inputs.keys()
+    else:
+        keys = bl_modifier.keys()
+
+    # Skip 'Socket_N_use_attribute' and 'Socket_N_attribute_name' keys
+    keys = [key for key in keys if key[-1].isdigit()]
+
+    return keys
+
+#
+# Optional Addons
+#
+
+def is_cycles_enabled():
+    return "cycles" in bpy.context.preferences.addons.keys()
+
+
+def get_cycles_property(prop_group, cycles_prop_name):
+    if not hasattr(prop_group, "cycles"):
+        return None
+    return getattr(prop_group.cycles, cycles_prop_name)
+
+
+def set_cycles_property(prop_group, cycles_prop_name, value):
+    if not hasattr(prop_group, "cycles"):
+        return
+    setattr(prop_group.cycles, cycles_prop_name, value)
+
+
+def set_cycles_render_engine(context=None):
+    if not is_cycles_enabled():
+        return
+    if context is None:
+        context = bpy.context
+    context.scene.render.engine = 'CYCLES'

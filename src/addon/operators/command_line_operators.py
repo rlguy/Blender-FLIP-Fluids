@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy, os, pathlib, stat, subprocess, platform, random, shlex, shutil, traceback, ctypes, json
+import bpy, os, pathlib, stat, subprocess, platform, random, shlex, shutil, traceback, ctypes, json, string, unicodedata
 from bpy.props import (
         BoolProperty,
         )
@@ -98,7 +98,12 @@ def get_flip_fluids_alembic_exporter_lib_filepath():
 def save_blend_file_before_launch(override_preferences=False):
     prefs = vcu.get_addon_preferences()
     if prefs.cmd_save_blend_file_before_launch or override_preferences:
-        bpy.ops.wm.save_mainfile()
+        try:
+            bpy.ops.wm.save_mainfile()
+        except Exception as e:
+            return e
+    return None
+
 
 
 def get_render_output_directory():
@@ -164,7 +169,7 @@ def write_scripts_directory_readme():
         f.write(readme_text)
 
 
-def launch_command_universal_os(command_text, script_prefix_string, keep_window_open=True, skip_launch=False, chcp=None):
+def launch_command_universal_os(command_text, script_prefix_string, keep_window_open=True, terminal_title=None, launch_in_new_terminal=True, skip_launch=False, chcp=None):
     system = platform.system()
     if system == "Windows":
         code_page = 65001
@@ -173,6 +178,9 @@ def launch_command_universal_os(command_text, script_prefix_string, keep_window_
 
         script_extension = ".bat"
         script_header = "echo off\nchcp " + str(code_page) + "\n\n"
+        if terminal_title is not None:
+            script_header += "title " + terminal_title + "\n\n"
+
         script_footer = ""
         if keep_window_open:
             script_footer = "\ncmd /k\n"
@@ -180,6 +188,9 @@ def launch_command_universal_os(command_text, script_prefix_string, keep_window_
         # Darwin or Linux
         script_extension = ".sh"
         script_header = "#!/bin/sh\n\n"
+        if terminal_title is not None:
+            script_header += "printf \"\\e]0;" + terminal_title + "\\a\"\n\n"
+
         script_footer = ""
 
     blend_basename = bpy.path.basename(bpy.context.blend_data.filepath)
@@ -200,14 +211,28 @@ def launch_command_universal_os(command_text, script_prefix_string, keep_window_
             os.chmod(script_filepath, st.st_mode | stat.S_IEXEC)
 
         if system == "Windows":
-            os.startfile(script_filepath)
+            if launch_in_new_terminal:
+                os.startfile(script_filepath)
+            else:
+                subprocess.run([script_filepath])
+
         elif system == "Darwin":
-            subprocess.call(["open", "-a", "Terminal", script_filepath])
+            if launch_in_new_terminal:
+                subprocess.run(["open", "-a", "Terminal", script_filepath])
+            else:
+                subprocess.run([script_filepath])
+
         elif system == "Linux":
             if shutil.which("gnome-terminal") is not None:
-                subprocess.call(["gnome-terminal", "--", "/bin/sh", "-c", shlex.quote(script_filepath) + '; exec "${SHELL:-/bin/sh}"'])
+                if launch_in_new_terminal:
+                    subprocess.run(["gnome-terminal", "--", "/bin/sh", "-c", shlex.quote(script_filepath) + '; exec "${SHELL:-/bin/sh}"'])
+                else:
+                    subprocess.run([shlex.quote(script_filepath)])
             elif shutil.which("xterm") is not None:
-                subprocess.call(["xterm", "-hold", "-e", script_filepath])
+                if launch_in_new_terminal:
+                    subprocess.run(["xterm", "-hold", "-e", script_filepath])
+                else:
+                    subprocess.run([script_filepath])
             else:
                 errmsg = "This feature requires the GNOME Terminal or XTERM terminal emulator to be"
                 errmsg += " installed and to be accessible on the system path and accessible within Blender. Either install these programs, restart Blender, and try again or use the"
@@ -245,6 +270,24 @@ def get_command_line_bake_command_text():
         run_as_flatpak = "1" if installation_utils.is_linux_blender_flatpak_installation() else "0"
         command_text += " -- " + num_instance_string + " " + use_overwrite_string + " " + run_as_flatpak
     return command_text
+
+
+def get_command_line_terminal_title(prefix_str):
+    blend_name = bpy.path.basename(bpy.data.filepath)
+
+    # Sanitize input
+    blend_name = unicodedata.normalize('NFD', blend_name).encode('ascii', 'ignore').decode("utf-8")
+    valid_chars = string.ascii_lowercase + string.ascii_uppercase + string.digits + ".-_"
+    invalid_char_replace = "_"
+    safe_blend_name = ""
+    for c in blend_name:
+        if c in valid_chars:
+            safe_blend_name += c
+        else:
+            safe_blend_name += invalid_char_replace
+
+    title = prefix_str + " " + safe_blend_name
+    return title
 
 
 class FlipFluidHelperCommandLineBake(bpy.types.Operator):
@@ -296,6 +339,11 @@ class FlipFluidHelperCommandLineBake(bpy.types.Operator):
             self.report({'ERROR'}, "System platform <" + platform.system() + "> not supported. This feature only supports Windows, MacOS, or Linux system platforms.")
             return {'CANCELLED'}
 
+        save_error = save_blend_file_before_launch(override_preferences=False)
+        if save_error:
+            self.report({'ERROR'}, "Unable to save Blend file: <" + str(save_error) + ">. Resolve error, save, and try again.")
+            return {'CANCELLED'}
+
 
     def generate_bake_batch_file_command_text(self):
         # Launch using .bat file that can re-launch after crash is detected
@@ -322,7 +370,6 @@ class FlipFluidHelperCommandLineBake(bpy.types.Operator):
         if error_return:
             return error_return
 
-        save_blend_file_before_launch(override_preferences=False)
         restore_blender_original_cwd()
 
         # Only for passes rendering during bake and render interleaved
@@ -335,7 +382,17 @@ class FlipFluidHelperCommandLineBake(bpy.types.Operator):
         if platform.system() == "Windows" and vcu.get_addon_preferences().cmd_bake_max_attempts > 0:
             command_text = self.generate_bake_batch_file_command_text()
 
-        script_filepath = launch_command_universal_os(command_text, "FF_BAKE_", keep_window_open=True, skip_launch=self.skip_launch)
+        if hprops.cmd_bake_and_render:
+            title = get_command_line_terminal_title("BAKE+RENDER")
+        else:
+            title = get_command_line_terminal_title("BAKE")
+
+        script_filepath = launch_command_universal_os(
+                command_text, "FF_BAKE_", 
+                keep_window_open=True, 
+                terminal_title=title, 
+                skip_launch=self.skip_launch
+                )
 
         if not self.skip_launch:
             info_msg = "Launched command line baking window. If the baking process did not begin,"
@@ -382,6 +439,7 @@ class FlipFluidHelperCommandLineRender(bpy.types.Operator):
     use_turbo_tools: BoolProperty(False)
 
     skip_launch: BoolProperty(False)
+    launch_in_new_terminal: BoolProperty(default=True)
 
 
     @classmethod
@@ -415,6 +473,11 @@ class FlipFluidHelperCommandLineRender(bpy.types.Operator):
 
         if platform.system() not in ["Windows", "Darwin", "Linux"]:
             self.report({'ERROR'}, "System platform <" + platform.system() + "> not supported. This feature only supports Windows, MacOS, or Linux system platforms.")
+            return {'CANCELLED'}
+
+        save_error = save_blend_file_before_launch(override_preferences=False)
+        if save_error:
+            self.report({'ERROR'}, "Unable to save Blend file: <" + str(save_error) + ">. Resolve error, save, and try again.")
             return {'CANCELLED'}
 
 
@@ -495,7 +558,6 @@ class FlipFluidHelperCommandLineRender(bpy.types.Operator):
         if error_return:
             return error_return
 
-        save_blend_file_before_launch(override_preferences=False)
         restore_blender_original_cwd()
 
         hprops = bpy.context.scene.flip_fluid_helper
@@ -518,7 +580,13 @@ class FlipFluidHelperCommandLineRender(bpy.types.Operator):
         elif hprops.cmd_launch_render_animation_mode == 'CMD_RENDER_MODE_MULTI_INSTANCE':
             command_text = self.get_multi_instance_render_command_text()
 
-        script_filepath = launch_command_universal_os(command_text, "FF_RENDER_ANIMATION_", keep_window_open=True, skip_launch=self.skip_launch)
+        script_filepath = launch_command_universal_os(
+                command_text, "FF_RENDER_ANIMATION_", 
+                keep_window_open=True, 
+                terminal_title=get_command_line_terminal_title("RENDER"),
+                launch_in_new_terminal=self.launch_in_new_terminal, 
+                skip_launch=self.skip_launch
+                )
 
         if not self.skip_launch:
             info_msg = "Launched command line render window. If the render process did not begin,"
@@ -589,6 +657,11 @@ class FlipFluidHelperCommandLineRenderFrame(bpy.types.Operator):
             self.report({'ERROR'}, "System platform <" + platform.system() + "> not supported. This feature only supports Windows, MacOS, or Linux system platforms.")
             return {'CANCELLED'}
 
+        save_error = save_blend_file_before_launch(override_preferences=False)
+        if save_error:
+            self.report({'ERROR'}, "Unable to save Blend file: <" + str(save_error) + ">. Resolve error, save, and try again.")
+            return {'CANCELLED'}
+
 
     def execute(self, context):
         hprops = context.scene.flip_fluid_helper
@@ -602,7 +675,6 @@ class FlipFluidHelperCommandLineRenderFrame(bpy.types.Operator):
         if error_return:
             return error_return
 
-        save_blend_file_before_launch(override_preferences=True)
         restore_blender_original_cwd()
 
         frame_string = str(bpy.context.scene.frame_current)
@@ -621,7 +693,12 @@ class FlipFluidHelperCommandLineRenderFrame(bpy.types.Operator):
 
         command_text = get_blender_launch_command(enable_render_logging=True) + " --background \"" +  bpy.data.filepath + "\" --python \"" + script_path + "\"" + " -- " + frame_string + " " + open_image_after
 
-        script_filepath = launch_command_universal_os(command_text, "FF_RENDER_FRAME_", keep_window_open=not hprops.cmd_close_window_after_render, skip_launch=self.skip_launch)
+        script_filepath = launch_command_universal_os(
+                command_text, "FF_RENDER_FRAME_", 
+                terminal_title=get_command_line_terminal_title("RENDER"),
+                keep_window_open=not hprops.cmd_close_window_after_render, 
+                skip_launch=self.skip_launch
+                )
 
         if not self.skip_launch:
             info_msg = "Launched command line render window. If the render process did not begin,"
@@ -677,13 +754,22 @@ class FlipFluidHelperCommandLineAlembicExport(bpy.types.Operator):
 
 
     def execute(self, context):
-        save_blend_file_before_launch(override_preferences=False)
+        save_error = save_blend_file_before_launch(override_preferences=False)
+        if save_error:
+            self.report({'ERROR'}, "Unable to save Blend file: <" + str(save_error) + ">. Resolve error, save, and try again.")
+            return {'CANCELLED'}
+
         restore_blender_original_cwd()
 
         script_path = get_command_line_script_filepath("alembic_export.py")
         command_text = get_blender_launch_command() + " --background \"" +  bpy.data.filepath + "\" --python \"" + script_path + "\""
 
-        script_filepath = launch_command_universal_os(command_text, "FF_ALEMBIC_EXPORT_", keep_window_open=True, skip_launch=self.skip_launch)
+        script_filepath = launch_command_universal_os(
+                command_text, "FF_ALEMBIC_EXPORT_", 
+                terminal_title=get_command_line_terminal_title("ALEMBIC"),
+                keep_window_open=True, 
+                skip_launch=self.skip_launch
+                )
 
         if not self.skip_launch:
             info_msg = "Launched command line Alembic export window. If the Alembic export process did not begin,"
@@ -746,13 +832,22 @@ class FlipFluidHelperCommandLineCustomAlembicExport(bpy.types.Operator):
 
 
     def execute(self, context):
-        save_blend_file_before_launch(override_preferences=False)
+        save_error = save_blend_file_before_launch(override_preferences=False)
+        if save_error:
+            self.report({'ERROR'}, "Unable to save Blend file: <" + str(save_error) + ">. Resolve error, save, and try again.")
+            return {'CANCELLED'}
+
         restore_blender_original_cwd()
 
         script_path = get_command_line_script_filepath("flip_fluids_alembic_export.py")
         command_text = get_blender_launch_command() + " --background \"" +  bpy.data.filepath + "\" --python \"" + script_path + "\""
 
-        script_filepath = launch_command_universal_os(command_text, "FF_ALEMBIC_EXPORT_", keep_window_open=True, skip_launch=self.skip_launch)
+        script_filepath = launch_command_universal_os(
+                command_text, "FF_ALEMBIC_EXPORT_", 
+                terminal_title=get_command_line_terminal_title("ALEMBIC"),
+                keep_window_open=True, 
+                skip_launch=self.skip_launch
+                )
 
         if not self.skip_launch:
             info_msg = "Launched command line Alembic export window. If the Alembic export process did not begin,"
@@ -805,13 +900,22 @@ class FlipFluidHelperCommandLineUSDExport(bpy.types.Operator):
 
 
     def execute(self, context):
-        save_blend_file_before_launch(override_preferences=False)
+        save_error = save_blend_file_before_launch(override_preferences=False)
+        if save_error:
+            self.report({'ERROR'}, "Unable to save Blend file: <" + str(save_error) + ">. Resolve error, save, and try again.")
+            return {'CANCELLED'}
+
         restore_blender_original_cwd()
 
         script_path = get_command_line_script_filepath("usd_export.py")
         command_text = get_blender_launch_command() + " --background \"" +  bpy.data.filepath + "\" --python \"" + script_path + "\""
         
-        script_filepath = launch_command_universal_os(command_text, "FF_USD_EXPORT_", keep_window_open=True, skip_launch=self.skip_launch)
+        script_filepath = launch_command_universal_os(
+                command_text, "FF_USD_EXPORT_", 
+                terminal_title=get_command_line_terminal_title("USD"),
+                keep_window_open=True, 
+                skip_launch=self.skip_launch
+                )
 
         if not self.skip_launch:
             info_msg = "Launched command line USD export window. If the USD export process did not begin,"
@@ -945,9 +1049,9 @@ def open_file_browser_directory(directory_path):
     if system == 'Windows':
         os.startfile(os.path.abspath(directory_path))
     elif system == 'Darwin':
-        subprocess.call(['open', '--', directory_path])
+        subprocess.run(['open', '--', directory_path])
     elif system == 'Linux':
-        subprocess.call(['xdg-open', '--', directory_path])
+        subprocess.run(['xdg-open', '--', directory_path])
     return True
 
     
@@ -964,7 +1068,10 @@ class FlipFluidHelperOpenRenderOutputFolder(bpy.types.Operator):
 
 
     def execute(self, context):
-        save_blend_file_before_launch(override_preferences=False)
+        save_error = save_blend_file_before_launch(override_preferences=False)
+        if save_error:
+            self.report({'ERROR'}, "Unable to save Blend file: <" + str(save_error) + ">. Resolve error, save, and try again.")
+            return {'CANCELLED'}
 
         directory_path, file_prefix, file_suffix = get_render_output_info()
         success = open_file_browser_directory(directory_path)
@@ -991,7 +1098,10 @@ class FlipFluidHelperOpenCacheOutputFolder(bpy.types.Operator):
 
 
     def execute(self, context):
-        save_blend_file_before_launch(override_preferences=False)
+        save_error = save_blend_file_before_launch(override_preferences=False)
+        if save_error:
+            self.report({'ERROR'}, "Unable to save Blend file: <" + str(save_error) + ">. Resolve error, save, and try again.")
+            return {'CANCELLED'}
         
         directory_path = context.scene.flip_fluid.get_domain_properties().cache.get_cache_abspath()
         success = open_file_browser_directory(directory_path)
@@ -1018,7 +1128,10 @@ class FlipFluidHelperOpenAlembicOutputFolder(bpy.types.Operator):
 
 
     def execute(self, context):
-        save_blend_file_before_launch(override_preferences=False)
+        save_error = save_blend_file_before_launch(override_preferences=False)
+        if save_error:
+            self.report({'ERROR'}, "Unable to save Blend file: <" + str(save_error) + ">. Resolve error, save, and try again.")
+            return {'CANCELLED'}
         
         alembic_filepath = context.scene.flip_fluid_helper.get_alembic_output_abspath()
         directory_path = os.path.dirname(alembic_filepath)
@@ -1046,7 +1159,10 @@ class FlipFluidHelperOpenUSDOutputFolder(bpy.types.Operator):
 
 
     def execute(self, context):
-        save_blend_file_before_launch(override_preferences=False)
+        save_error = save_blend_file_before_launch(override_preferences=False)
+        if save_error:
+            self.report({'ERROR'}, "Unable to save Blend file: <" + str(save_error) + ">. Resolve error, save, and try again.")
+            return {'CANCELLED'}
         
         usd_filepath = context.scene.flip_fluid_helper.get_usd_output_abspath()
         directory_path = os.path.dirname(usd_filepath)
@@ -1222,19 +1338,29 @@ class FlipFluidHelperCommandLineRenderPassAnimation(bpy.types.Operator):
             self.report({'ERROR'}, "System platform <" + platform.system() + "> not supported. This feature only supports Windows, MacOS, or Linux system platforms.")
             return {'CANCELLED'}
 
+        save_error = save_blend_file_before_launch(override_preferences=False)
+        if save_error:
+            self.report({'ERROR'}, "Unable to save Blend file: <" + str(save_error) + ">. Resolve error, save, and try again.")
+            return {'CANCELLED'}
+
+
     def execute(self, context):
         error_return = self.check_and_report_operator_context_errors(context)
         if error_return:
             return error_return
 
-        save_blend_file_before_launch(override_preferences=False)
         restore_blender_original_cwd()
 
         compositing_tools_operators.prepare_render_passes_for_operator(context)
 
         command_text = self.get_render_passes_multi_instance_command_text(context)
 
-        script_filepath = launch_command_universal_os(command_text, "FF_RENDER_PASS_ANIMATION_", keep_window_open=True, skip_launch=self.skip_launch)
+        script_filepath = launch_command_universal_os(
+                command_text, "FF_RENDER_PASS_ANIMATION_", 
+                terminal_title=get_command_line_terminal_title("RENDER"),
+                keep_window_open=True, 
+                skip_launch=self.skip_launch
+                )
 
         if not self.skip_launch:
             info_msg = "Launched command line render window. If the render process did not begin,"
@@ -1361,12 +1487,17 @@ class FlipFluidHelperCommandLineRenderPassFrame(bpy.types.Operator):
             self.report({'ERROR'}, "System platform <" + platform.system() + "> not supported. This feature only supports Windows, MacOS, or Linux system platforms.")
             return {'CANCELLED'}
 
+        save_error = save_blend_file_before_launch(override_preferences=False)
+        if save_error:
+            self.report({'ERROR'}, "Unable to save Blend file: <" + str(save_error) + ">. Resolve error, save, and try again.")
+            return {'CANCELLED'}
+            
+
     def execute(self, context):
         error_return = self.check_and_report_operator_context_errors(context)
         if error_return:
             return error_return
 
-        save_blend_file_before_launch(override_preferences=False)
         restore_blender_original_cwd()
 
         compositing_tools_operators.prepare_render_passes_for_operator(context)
@@ -1374,7 +1505,12 @@ class FlipFluidHelperCommandLineRenderPassFrame(bpy.types.Operator):
         command_text = self.get_render_passes_single_frame_command_text(context)
 
         hprops = context.scene.flip_fluid_helper
-        script_filepath = launch_command_universal_os(command_text, "FF_RENDER_PASS_FRAME_", keep_window_open=not hprops.cmd_close_window_after_render, skip_launch=self.skip_launch)
+        script_filepath = launch_command_universal_os(
+                command_text, "FF_RENDER_PASS_FRAME_", 
+                terminal_title=get_command_line_terminal_title("RENDER"),
+                keep_window_open=not hprops.cmd_close_window_after_render, 
+                skip_launch=self.skip_launch
+                )
 
         if not self.skip_launch:
             info_msg = "Launched command line render window. If the render process did not begin,"

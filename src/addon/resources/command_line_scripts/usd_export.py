@@ -17,6 +17,73 @@
 
 import bpy, mathutils, os, time, sys
 
+
+def is_blender_52():
+    return bpy.app.version >= (5, 2, 0)
+
+
+def get_geometry_nodes_blend_filepath():
+    if is_blender_52():
+        blend_resource_filename = "geometry_nodes_library.blend"
+    else:
+        blend_resource_filename = "geometry_nodes_library-legacy.blend"
+    addon_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    library_filepath = os.path.join(addon_root, "resources", "geometry_nodes", blend_resource_filename)
+    return library_filepath
+
+
+def bytes_to_filesize(num, suffix="B"):
+    for unit in ("", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"):
+        if abs(num) < 1024.0:
+            return f"{num:3.1f} {unit}{suffix}"
+        num /= 1024.0
+    return f"{num:.1f}Yi{suffix}"
+
+
+def set_geometry_nodes_modifier_value(bl_modifier, key, value, ignore_errors=False):
+    def set_modifier_value():
+        if bpy.app.version >= (5, 2, 0):
+            getattr(bl_modifier.properties.inputs, key).value = value
+        else:
+            bl_modifier[key] = value
+
+    if ignore_errors:
+        try:
+            set_modifier_value()
+        except:
+            pass
+    else:
+        set_modifier_value()
+
+
+def get_geometry_nodes_modifier_value(bl_modifier, key, ignore_errors=False):
+    def set_modifier_value():
+        if bpy.app.version >= (5, 2, 0):
+            return getattr(bl_modifier.properties.inputs, key).value
+        else:
+            return bl_modifier[key]
+
+    if ignore_errors:
+        try:
+            return set_modifier_value()
+        except:
+            pass
+    else:
+        return set_modifier_value()
+
+
+def get_geometry_nodes_modifier_input_keys(bl_modifier):
+    if bpy.app.version >= (5, 2, 0):
+        keys = bl_modifier.properties.inputs.keys()
+    else:
+        keys = bl_modifier.keys()
+
+    # Skip 'Socket_N_use_attribute' and 'Socket_N_attribute_name' keys
+    keys = [key for key in keys if key[-1].isdigit()]
+
+    return keys
+
+
 def check_cache_exists():
     cache_directory = dprops.cache.get_cache_abspath()
     bakefiles_directory = os.path.join(cache_directory, "bakefiles")
@@ -170,7 +237,19 @@ if not usd_collection:
 
 # Create proxy objects
 bl_domain = bpy.context.scene.flip_fluid.get_domain_object()
+if bl_domain:
+    # USD naming structure changed in Blender 5.2+. Set the domain name so that it can be
+    # searched for within the import operator.
+    bl_domain.name = "flip_domain"
+    bl_domain.data.name = "flip_domain_mesh"
+
 bl_fluid_surface = dprops.mesh_cache.surface.get_cache_object()
+if bl_fluid_surface:
+    # USD naming structure changed in Blender 5.2+. Set the fluid surface name so that it can be
+    # searched for within the import operator.
+    bl_fluid_surface.name = "fluid_surface"
+    bl_fluid_surface.data.name = "fluid_surface_mesh"
+
 bl_fluid_particles = dprops.mesh_cache.particles.get_cache_object()
 bl_whitewater_foam = dprops.mesh_cache.foam.get_cache_object()
 bl_whitewater_bubble = dprops.mesh_cache.bubble.get_cache_object()
@@ -218,12 +297,14 @@ for info in proxy_object_info:
 
     bl_cache_object = info["bl_cache_object"]
     ff_geometry_node_modifiers = get_active_flip_fluids_geometry_node_modifiers(bl_cache_object)
+
     for mod in ff_geometry_node_modifiers:
-        if particle_display_mode_socket in mod and isinstance(mod[particle_display_mode_socket], int):
+        mod_keys = get_geometry_nodes_modifier_input_keys(mod)
+        if particle_display_mode_socket in mod_keys and isinstance(get_geometry_nodes_modifier_value(mod, particle_display_mode_socket, ignore_errors=True), int):
             # Only Point Cloud display modes are supported for export.
-            if not mod[particle_display_mode_socket] == display_mode_pointcloud_enum:
-                mod[particle_display_mode_socket] = display_mode_pointcloud_enum
-            info["geometry_nodes_display_mode"] = mod[particle_display_mode_socket]
+            if not get_geometry_nodes_modifier_value(mod, particle_display_mode_socket, ignore_errors=True) == display_mode_pointcloud_enum:
+                set_geometry_nodes_modifier_value(mod, particle_display_mode_socket, display_mode_pointcloud_enum, ignore_errors=True)
+            info["geometry_nodes_display_mode"] = get_geometry_nodes_modifier_value(mod, particle_display_mode_socket, ignore_errors=True)
         else:
             # Invalid display mode socket - may be an older FF_GeometryNodes version. In this case, remove modifier.
             bl_cache_object.modifiers.remove(bl_cache_object.modifiers[mod.name])
@@ -231,8 +312,7 @@ for info in proxy_object_info:
 
 
 # Add FF_USDExport modifiers to proxy objects
-resources_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-geometry_nodes_library = os.path.join(resources_path, "geometry_nodes", "geometry_nodes_library.blend")
+geometry_nodes_library = get_geometry_nodes_blend_filepath()
 
 attribute_export_prop_names = [
     "usd_export_velocity",
@@ -277,14 +357,15 @@ for info in proxy_object_info:
 
     # Set modifier options
     convert_to_point_cloud = info["proxy_object_type"] in ["FLUID_PARTICLE", "WHITEWATER"] and info["geometry_nodes_display_mode"] != display_mode_pointcloud_enum
-    gn_modifier[option_to_socket_mapping["input_object"]] = info["bl_cache_object"]
-    gn_modifier[option_to_socket_mapping["convert_to_point_cloud"]] = convert_to_point_cloud
+    
+    set_geometry_nodes_modifier_value(gn_modifier, option_to_socket_mapping["input_object"], info["bl_cache_object"], ignore_errors=True)
+    set_geometry_nodes_modifier_value(gn_modifier, option_to_socket_mapping["convert_to_point_cloud"], convert_to_point_cloud, ignore_errors=True)
     for prop_name in attribute_export_prop_names:
-        gn_modifier[option_to_socket_mapping[prop_name]] = not getattr(hprops, prop_name)
+        set_geometry_nodes_modifier_value(gn_modifier, option_to_socket_mapping[prop_name], not getattr(hprops, prop_name), ignore_errors=True)
 
     # USD exporter/importer crashes on frames with empty point cloud geometry in Blender 5.0 and earlier.
     apply_workaround = bpy.app.version < (5, 1, 0) and info["proxy_object_type"] in ["FLUID_PARTICLE", "WHITEWATER"]
-    gn_modifier[option_to_socket_mapping["prevent_empty_point_cloud_geometry"]] = apply_workaround
+    set_geometry_nodes_modifier_value(gn_modifier, option_to_socket_mapping["prevent_empty_point_cloud_geometry"], apply_workaround, ignore_errors=True)
 
 # Set export proxy object origins to centroid of domain
 domain_centroid = get_object_centroid_world(bl_domain)
@@ -307,8 +388,10 @@ for info in proxy_object_info:
 # Begin USD export
 #
 
+hprops = bpy.context.scene.flip_fluid_helper
 frame_start, frame_end = get_export_frame_range()
 usd_filepath = get_usd_output_filepath()
+incremental_frames = hprops.usd_incremental_save
 
 EXPORT_FINISHED = False
 FRAME_END = frame_end
@@ -325,9 +408,16 @@ def frame_change_handler(scene):
         elapsed_time = current_time - TIMESTAMP
         TIMESTAMP = current_time
         TOTAL_TIME += elapsed_time
+
+        filesize_str = ""
+        try:
+            num_bytes = os.path.getsize(usd_filepath)
+            filesize_str = "(filesize: " + bytes_to_filesize(num_bytes) + ")"
+        except:
+            pass
         
         info_msg = "Exported frame " + str(scene.frame_current)
-        info_msg += " in " + '{0:.3f}'.format(elapsed_time) + " seconds  (total: " + '{0:.3f}'.format(TOTAL_TIME) + "s)"
+        info_msg += " in " + '{0:.3f}'.format(elapsed_time) + " seconds" + "\t(total: " + '{0:.3f}'.format(TOTAL_TIME) + "s)" + "\t" + filesize_str
         print(info_msg)
         
     if scene.frame_current == FRAME_END:
@@ -339,14 +429,25 @@ print("Exporting Universal Scene Description (USD) to: <" + usd_filepath + ">")
 print("Frame Range: " + str(frame_start) + " to " + str(frame_end))
 print("")
 
-bpy.ops.wm.usd_export(
-        filepath=usd_filepath, 
-        selected_objects_only=True,
-        export_animation=True,
-        evaluation_mode='VIEWPORT',
-        export_lights=False,
-        convert_world_material=False,
-        export_cameras=False,
-        export_materials=False,
-        generate_preview_surface=False,
-        )
+export_settings = {
+    "filepath": usd_filepath, 
+    "selected_objects_only": True,
+    "export_animation": True,
+    "evaluation_mode": 'VIEWPORT',
+    "export_lights": False,
+    "convert_world_material": False,
+    "export_cameras": False,
+    "export_materials": False,
+    "generate_preview_surface": False,
+}
+
+if is_blender_52():
+    export_settings["incremental_frames"] = incremental_frames
+
+bpy.ops.wm.usd_export(**export_settings)
+
+try:
+    num_bytes = os.path.getsize(usd_filepath)
+    print("Total Filesize: " + bytes_to_filesize(num_bytes))
+except OSError as e:
+    print("A system error occurred: <" + str(e) + ">")

@@ -74,6 +74,13 @@ public:
     void disableDiffuseOutflow();
     bool isDiffuseOutflowEnabled();
 
+    void enableGradualOutflow();
+    void disableGradualOutflow();
+    bool isGradualOutflowEnabled();
+
+    void setOutflowRate(float value);
+    float getOutflowRate();
+
     void setVelocity(vmath::vec3 v);
     vmath::vec3 getVelocity();
 
@@ -149,6 +156,8 @@ private:
     bool _isInflow = true;
     bool _isFluidOutflowEnabled = true;
     bool _isDiffuseOutflowEnabled = true;
+    bool _isGradualOutflowEnabled = true;
+    float _outflowRate = 0.0f;
     bool _isOutflowInversed = false;
     bool _isConstrainedFluidVelocity = true;
     vmath::vec3 _sourceVelocity;

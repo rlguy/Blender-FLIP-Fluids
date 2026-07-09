@@ -17,6 +17,64 @@
 import bpy, os, time, sys
 
 
+def is_blender_52():
+    return bpy.app.version >= (5, 2, 0)
+
+
+def get_geometry_nodes_blend_filepath():
+    if is_blender_52():
+        blend_resource_filename = "geometry_nodes_library.blend"
+    else:
+        blend_resource_filename = "geometry_nodes_library-legacy.blend"
+    addon_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    library_filepath = os.path.join(addon_root, "resources", "geometry_nodes", blend_resource_filename)
+    return library_filepath
+
+
+def set_geometry_nodes_modifier_value(bl_modifier, key, value, ignore_errors=False):
+    def set_modifier_value():
+        if bpy.app.version >= (5, 2, 0):
+            getattr(bl_modifier.properties.inputs, key).value = value
+        else:
+            bl_modifier[key] = value
+
+    if ignore_errors:
+        try:
+            set_modifier_value()
+        except:
+            pass
+    else:
+        set_modifier_value()
+
+
+def get_geometry_nodes_modifier_value(bl_modifier, key, ignore_errors=False):
+    def set_modifier_value():
+        if bpy.app.version >= (5, 2, 0):
+            return getattr(bl_modifier.properties.inputs, key).value
+        else:
+            return bl_modifier[key]
+
+    if ignore_errors:
+        try:
+            return set_modifier_value()
+        except:
+            pass
+    else:
+        return set_modifier_value()
+
+
+def get_geometry_nodes_modifier_input_keys(bl_modifier):
+    if bpy.app.version >= (5, 2, 0):
+        keys = bl_modifier.properties.inputs.keys()
+    else:
+        keys = bl_modifier.keys()
+
+    # Skip 'Socket_N_use_attribute' and 'Socket_N_attribute_name' keys
+    keys = [key for key in keys if key[-1].isdigit()]
+
+    return keys
+
+
 def check_cache_exists():
     cache_directory = dprops.cache.get_cache_abspath()
     bakefiles_directory = os.path.join(cache_directory, "bakefiles")
@@ -192,7 +250,7 @@ def get_geomety_nodes_motion_blur_scale(bl_object):
         try:
             # Depending on FLIP Fluids version, the GN set up may not
             # have an Input_4
-            return gn_modifier["Input_4"]
+            return get_geometry_nodes_modifier_value(gn_modifier, "Input_4")
         except:
             return 1.0
     return 1.0
@@ -209,7 +267,7 @@ def set_geometry_nodes_alembic_velocity_export_motion_blur_scale(bl_object, scal
         try:
             # Depending on FLIP Fluids version, the GN set up may not
             # have an Input_4
-            gn_modifier["Input_4"] = scale
+            set_geometry_nodes_modifier_value(gn_modifier, "Input_4", scale)
             return scale
         except:
             return 1.0
@@ -287,8 +345,7 @@ def initialize_velocity_export_and_attributes():
     if hprops.alembic_export_velocity:
         print("\nInitializing Alembic velocity export setup:")
 
-        resources_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        geometry_nodes_library = os.path.join(resources_path, "geometry_nodes", "geometry_nodes_library.blend")
+        geometry_nodes_library = get_geometry_nodes_blend_filepath()
 
         bl_surface = dprops.mesh_cache.surface.get_cache_object()
         if bl_surface is not None:
@@ -369,8 +426,7 @@ def initialize_velocity_export_and_attributes():
         bl_surface = dprops.mesh_cache.surface.get_cache_object()
         if bl_surface is not None:
             print("\nInitializing Alembic surface color export setup:")
-            resources_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            geometry_nodes_library = os.path.join(resources_path, "geometry_nodes", "geometry_nodes_library.blend")
+            geometry_nodes_library = get_geometry_nodes_blend_filepath()
             add_geometry_node_modifier(bl_surface, geometry_nodes_library, "FF_AlembicColorExportSurface")
             print("Finished initializing surface color export setup.")
     else:

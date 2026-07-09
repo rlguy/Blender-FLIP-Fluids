@@ -399,7 +399,8 @@ class DomainSimulationProperties(bpy.types.PropertyGroup):
         else:
             lock_cell_size = False
 
-        domain_bbox = AABB.from_blender_object(domain_object)
+        minp, maxp = dprops.AABB_min, dprops.AABB_max
+        domain_bbox = AABB.from_corners(minp, maxp)
         max_dim = max(domain_bbox.xdim, domain_bbox.ydim, domain_bbox.zdim)
         if lock_cell_size:
             unlocked_dx = max_dim / resolution

@@ -37,7 +37,7 @@ class FLIPFLUID_PT_OutflowTypePanel(bpy.types.Panel):
         obj_props = obj.flip_fluid
         outflow_props = obj_props.outflow
 
-        show_disabled_in_viewport_warning = True
+        show_disabled_in_viewport_warning = not vcu.get_addon_preferences().dismiss_flip_object_disabled_in_viewport_hint
         if show_disabled_in_viewport_warning and obj.hide_viewport:
             box = self.layout.box()
             box.alert = True
@@ -49,22 +49,57 @@ class FLIPFLUID_PT_OutflowTypePanel(bpy.types.Panel):
             row.label(text="", icon="RESTRICT_VIEW_ON")
             column.label(text="This object will not be included within the simulation")
 
+        def get_disabled_in_viewport_modifiers(bl_obj):
+            mod_list = []
+            if not hasattr(bl_obj, "modifiers"):
+                return mod_list
+            for mod in bl_obj.modifiers:
+                if not mod.show_viewport:
+                    mod_list.append(mod.name)
+            return mod_list
+
+        show_disabled_modifier_in_viewport_warning = not vcu.get_addon_preferences().dismiss_flip_object_modifiers_disabled_in_viewport_hint
+        disabled_modifier_names = get_disabled_in_viewport_modifiers(obj)
+        if show_disabled_modifier_in_viewport_warning and disabled_modifier_names:
+            box = self.layout.box()
+            box.alert = True
+            column = box.column(align=True)
+            row = column.row(align=True)
+            row.alignment = 'LEFT'
+            row.prop(outflow_props, "disabled_in_viewport_modifiers_tooltip", icon="QUESTION", emboss=False, text="")
+            row.label(text="Some object modifiers are currently disabled in the viewport")
+            row.label(text="", icon="RESTRICT_VIEW_ON")
+
+            row = column.row(align=True)
+            row.alignment = 'LEFT'
+            row.label(text="These modifiers will not be included within the simulation:")
+
+            pad = 5
+            for name in disabled_modifier_names:
+                row = column.row(align=True)
+                row.label(text=" " * pad + name)
+
         column = self.layout.column()
         column.prop(obj_props, "object_type")
 
         column = self.layout.column()
         column.prop(outflow_props, "is_enabled")
-
-        column = self.layout.column()
-        split = column.split()
-        column = split.column()
-        column.prop(outflow_props, "remove_fluid")
-        column = split.column()
-        column.prop(outflow_props, "remove_whitewater")
-
-        self.layout.separator()
-        column = self.layout.column()
         column.prop(outflow_props, "is_inversed")
+
+        box = self.layout.box()
+        box.label(text="Remove:")
+        row = box.row(align=True)
+        row.prop(outflow_props, "remove_fluid", text="Fluid")
+        row.prop(outflow_props, "remove_whitewater", text="Whitewater")
+
+        box = self.layout.box()
+        box.label(text="Outflow Rate:")
+        row = box.row(align=True)
+        column1 = row.column(align=True)
+        column2 = row.column(align=True)
+        column1.prop(outflow_props, "enable_gradual_outflow")
+        column2.enabled = outflow_props.enable_gradual_outflow
+        column2.prop(outflow_props, "outflow_rate")
         
         box = self.layout.box()
         box.label(text="Mesh Data Export:")

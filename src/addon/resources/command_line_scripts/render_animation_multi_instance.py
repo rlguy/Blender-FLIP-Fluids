@@ -47,7 +47,7 @@ def get_blender_logging_command_list():
 
 def _render_thread(settings, frameno):
     command = get_blender_launch_command_list() + ["-b", settings["blend_filepath"], "-f", str(frameno)] 
-    subprocess.call(command, shell=False)
+    subprocess.run(command, shell=False)
 
 
 def render_loop(settings):

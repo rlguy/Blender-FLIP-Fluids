@@ -118,6 +118,18 @@ extern "C" {
         );
     }
 
+    EXPORTDLL void FluidSimulation_set_blend_filepath_string(FluidSimulation* obj, const char* c_blend_filepath_string, int *err) {
+        std::string cpp_blend_filepath_string(c_blend_filepath_string);
+
+        *err = CBindings::SUCCESS;
+        try {
+            obj->setBlendFilepathString(cpp_blend_filepath_string);
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
     EXPORTDLL int FluidSimulation_get_current_frame(FluidSimulation* obj, int *err) {
         return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getCurrentFrame, err
@@ -914,6 +926,27 @@ extern "C" {
         );
     }
 
+    EXPORTDLL void FluidSimulation_enable_fluid_particle_uvw_attribute(FluidSimulation* obj,
+                                                                         int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableFluidParticleUVWAttribute, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_fluid_particle_uvw_attribute(FluidSimulation* obj,
+                                                                          int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableFluidParticleUVWAttribute, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_fluid_particle_uvw_attribute_enabled(FluidSimulation* obj,
+                                                                            int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isFluidParticleUVWAttributeEnabled, err
+        );
+    }
+
     EXPORTDLL void FluidSimulation_enable_fluid_particle_age_attribute(FluidSimulation* obj,
                                                                        int *err) {
         CBindings::safe_execute_method_void_0param(
@@ -1383,6 +1416,27 @@ extern "C" {
     EXPORTDLL int FluidSimulation_is_mixbox_enabled(FluidSimulation* obj, int *err) {
         return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::isMixboxEnabled, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_enable_surface_uvw_attribute(FluidSimulation* obj,
+                                                                int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::enableSurfaceUVWAttribute, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_surface_uvw_attribute(FluidSimulation* obj,
+                                                                 int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &FluidSimulation::disableSurfaceUVWAttribute, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_surface_uvw_attribute_enabled(FluidSimulation* obj,
+                                                                   int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::isSurfaceUVWAttributeEnabled, err
         );
     }
 
@@ -1888,7 +1942,7 @@ extern "C" {
     }
 
     EXPORTDLL void FluidSimulation_set_max_num_diffuse_particles(FluidSimulation* obj,
-                                                                 int n, int *err) {
+                                                                 size_t n, int *err) {
         CBindings::safe_execute_method_void_1param(
             obj, &FluidSimulation::setMaxNumDiffuseParticles, n, err
         );
@@ -3180,7 +3234,7 @@ extern "C" {
         }
     }
 
-    EXPORTDLL int FluidSimulation_get_num_marker_particles(FluidSimulation* obj, 
+    EXPORTDLL size_t FluidSimulation_get_num_marker_particles(FluidSimulation* obj, 
                                                            int *err) {
         return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getNumMarkerParticles, err
@@ -3303,11 +3357,11 @@ extern "C" {
         return CBindings::get_error_message();
     }
 
-    EXPORTDLL int FluidSimulation_get_surface_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_surface_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getSurfaceData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3316,11 +3370,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_surface_preview_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_surface_preview_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getSurfacePreviewData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3329,11 +3383,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_surface_blur_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_surface_blur_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getSurfaceBlurData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3342,11 +3396,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_surface_velocity_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_surface_velocity_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getSurfaceVelocityAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3355,11 +3409,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_whitewater_foam_velocity_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_whitewater_foam_velocity_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getWhitewaterFoamVelocityAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3368,11 +3422,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_whitewater_bubble_velocity_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_whitewater_bubble_velocity_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getWhitewaterBubbleVelocityAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3381,11 +3435,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_whitewater_spray_velocity_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_whitewater_spray_velocity_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getWhitewaterSprayVelocityAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3394,11 +3448,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_whitewater_dust_velocity_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_whitewater_dust_velocity_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getWhitewaterDustVelocityAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3407,11 +3461,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_surface_vorticity_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_surface_vorticity_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getSurfaceVorticityAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3420,11 +3474,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_surface_speed_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_surface_speed_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getSurfaceSpeedAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3433,11 +3487,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_surface_age_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_surface_age_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getSurfaceAgeAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3446,11 +3500,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_surface_lifetime_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_surface_lifetime_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getSurfaceLifetimeAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3459,11 +3513,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_surface_whitewater_proximity_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_surface_whitewater_proximity_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getSurfaceWhitewaterProximityAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3472,11 +3526,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_surface_color_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_surface_color_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getSurfaceColorAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3485,11 +3539,24 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_surface_source_id_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_surface_uvw_attribute_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getSurfaceUVWAttributeData();
+            return data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
+    EXPORTDLL size_t FluidSimulation_get_surface_source_id_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getSurfaceSourceIDAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3498,11 +3565,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_surface_viscosity_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_surface_viscosity_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getSurfaceViscosityAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3511,11 +3578,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_surface_density_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_surface_density_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getSurfaceDensityAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3524,11 +3591,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_diffuse_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_diffuse_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getDiffuseData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3537,11 +3604,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_diffuse_foam_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_diffuse_foam_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getDiffuseFoamData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3550,11 +3617,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_diffuse_bubble_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_diffuse_bubble_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getDiffuseBubbleData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3563,11 +3630,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_diffuse_spray_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_diffuse_spray_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getDiffuseSprayData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3576,11 +3643,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_diffuse_dust_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_diffuse_dust_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getDiffuseDustData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3589,11 +3656,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_diffuse_foam_blur_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_diffuse_foam_blur_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getDiffuseFoamBlurData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3602,11 +3669,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_diffuse_bubble_blur_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_diffuse_bubble_blur_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getDiffuseBubbleBlurData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3615,11 +3682,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_diffuse_spray_blur_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_diffuse_spray_blur_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getDiffuseSprayBlurData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3628,11 +3695,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_diffuse_dust_blur_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_diffuse_dust_blur_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getDiffuseDustBlurData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3641,11 +3708,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_whitewater_foam_id_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_whitewater_foam_id_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getWhitewaterFoamIDAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3654,11 +3721,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_whitewater_bubble_id_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_whitewater_bubble_id_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getWhitewaterBubbleIDAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3667,11 +3734,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_whitewater_spray_id_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_whitewater_spray_id_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getWhitewaterSprayIDAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3680,11 +3747,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_whitewater_dust_id_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_whitewater_dust_id_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getWhitewaterDustIDAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3693,11 +3760,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_whitewater_foam_lifetime_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_whitewater_foam_lifetime_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getWhitewaterFoamLifetimeAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3706,11 +3773,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_whitewater_bubble_lifetime_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_whitewater_bubble_lifetime_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getWhitewaterBubbleLifetimeAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3719,11 +3786,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_whitewater_spray_lifetime_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_whitewater_spray_lifetime_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getWhitewaterSprayLifetimeAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3732,11 +3799,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_whitewater_dust_lifetime_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_whitewater_dust_lifetime_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getWhitewaterDustLifetimeAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3745,11 +3812,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_fluid_particle_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_fluid_particle_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getFluidParticleData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3758,11 +3825,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_fluid_particle_id_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_fluid_particle_id_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getFluidParticleIDAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3771,11 +3838,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_fluid_particle_velocity_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_fluid_particle_velocity_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getFluidParticleVelocityAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3784,11 +3851,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_fluid_particle_speed_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_fluid_particle_speed_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getFluidParticleSpeedAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3797,11 +3864,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_fluid_particle_vorticity_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_fluid_particle_vorticity_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getFluidParticleVorticityAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3810,11 +3877,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_fluid_particle_color_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_fluid_particle_color_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getFluidParticleColorAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3823,11 +3890,24 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_fluid_particle_age_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_fluid_particle_uvw_attribute_data_size(FluidSimulation* obj, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getFluidParticleUVWAttributeData();
+            return data->size();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+
+        return 0;
+    }
+
+    EXPORTDLL size_t FluidSimulation_get_fluid_particle_age_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getFluidParticleAgeAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3836,11 +3916,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_fluid_particle_lifetime_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_fluid_particle_lifetime_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getFluidParticleLifetimeAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3849,11 +3929,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_fluid_particle_viscosity_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_fluid_particle_viscosity_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getFluidParticleViscosityAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3862,11 +3942,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_fluid_particle_density_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_fluid_particle_density_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getFluidParticleDensityAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3875,11 +3955,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_fluid_particle_density_average_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_fluid_particle_density_average_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getFluidParticleDensityAverageAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3888,11 +3968,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_fluid_particle_whitewater_proximity_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_fluid_particle_whitewater_proximity_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getFluidParticleWhitewaterProximityAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3901,11 +3981,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_fluid_particle_source_id_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_fluid_particle_source_id_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getFluidParticleSourceIDAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3914,11 +3994,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_fluid_particle_uid_attribute_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_fluid_particle_uid_attribute_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getFluidParticleUIDAttributeData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3927,11 +4007,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_fluid_particle_debug_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_fluid_particle_debug_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getFluidParticleDebugData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3940,12 +4020,12 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_internal_obstacle_mesh_data_size(FluidSimulation* obj, 
+    EXPORTDLL size_t FluidSimulation_get_internal_obstacle_mesh_data_size(FluidSimulation* obj, 
                                                                        int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getInternalObstacleMeshData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3954,12 +4034,12 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_force_field_debug_data_size(FluidSimulation* obj, 
+    EXPORTDLL size_t FluidSimulation_get_force_field_debug_data_size(FluidSimulation* obj, 
                                                                   int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getForceFieldDebugData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3968,11 +4048,11 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL int FluidSimulation_get_logfile_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_logfile_data_size(FluidSimulation* obj, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getLogFileData();
-            return (int)data->size();
+            return data->size();
         } catch (std::exception &ex) {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
@@ -3981,50 +4061,50 @@ extern "C" {
         return 0;
     }
 
-    EXPORTDLL unsigned int FluidSimulation_get_marker_particle_position_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_marker_particle_position_data_size(FluidSimulation* obj, int *err) {
         return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getMarkerParticlePositionDataSize, err
         );
     }
 
-    EXPORTDLL unsigned int FluidSimulation_get_marker_particle_velocity_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_marker_particle_velocity_data_size(FluidSimulation* obj, int *err) {
         return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getMarkerParticleVelocityDataSize, err
         );
     }
 
-    EXPORTDLL unsigned int FluidSimulation_get_diffuse_particle_position_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_diffuse_particle_position_data_size(FluidSimulation* obj, int *err) {
         return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getDiffuseParticlePositionDataSize, err
         );
     }
 
-    EXPORTDLL unsigned int FluidSimulation_get_diffuse_particle_velocity_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_diffuse_particle_velocity_data_size(FluidSimulation* obj, int *err) {
         return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getDiffuseParticleVelocityDataSize, err
         );
     }
 
-    EXPORTDLL unsigned int FluidSimulation_get_diffuse_particle_lifetime_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_diffuse_particle_lifetime_data_size(FluidSimulation* obj, int *err) {
         return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getDiffuseParticleLifetimeDataSize, err
         );
     }
 
-    EXPORTDLL unsigned int FluidSimulation_get_diffuse_particle_type_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_diffuse_particle_type_data_size(FluidSimulation* obj, int *err) {
         return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getDiffuseParticleTypeDataSize, err
         );
     }
 
-    EXPORTDLL unsigned int FluidSimulation_get_diffuse_particle_id_data_size(FluidSimulation* obj, int *err) {
+    EXPORTDLL size_t FluidSimulation_get_diffuse_particle_id_data_size(FluidSimulation* obj, int *err) {
         return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getDiffuseParticleIdDataSize, err
         );
     }
 
     EXPORTDLL void FluidSimulation_get_surface_data(FluidSimulation* obj, 
-                                                             char *c_data, int *err) {
+                                                    char *c_data, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getSurfaceData();
@@ -4036,7 +4116,7 @@ extern "C" {
     }
 
     EXPORTDLL void FluidSimulation_get_surface_preview_data(FluidSimulation* obj, 
-                                                                     char *c_data, int *err) {
+                                                            char *c_data, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getSurfacePreviewData();
@@ -4084,7 +4164,7 @@ extern "C" {
     }
 
     EXPORTDLL void FluidSimulation_get_whitewater_bubble_velocity_attribute_data(FluidSimulation* obj, 
-                                                                              char *c_data, int *err) {
+                                                                                 char *c_data, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getWhitewaterBubbleVelocityAttributeData();
@@ -4096,7 +4176,7 @@ extern "C" {
     }
 
     EXPORTDLL void FluidSimulation_get_whitewater_spray_velocity_attribute_data(FluidSimulation* obj, 
-                                                                              char *c_data, int *err) {
+                                                                                char *c_data, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getWhitewaterSprayVelocityAttributeData();
@@ -4108,7 +4188,7 @@ extern "C" {
     }
 
     EXPORTDLL void FluidSimulation_get_whitewater_dust_velocity_attribute_data(FluidSimulation* obj, 
-                                                                              char *c_data, int *err) {
+                                                                               char *c_data, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getWhitewaterDustVelocityAttributeData();
@@ -4132,7 +4212,7 @@ extern "C" {
     }
 
     EXPORTDLL void FluidSimulation_get_surface_speed_attribute_data(FluidSimulation* obj, 
-                                                                       char *c_data, int *err) {
+                                                                    char *c_data, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getSurfaceSpeedAttributeData();
@@ -4144,7 +4224,7 @@ extern "C" {
     }
 
     EXPORTDLL void FluidSimulation_get_surface_age_attribute_data(FluidSimulation* obj, 
-                                                                       char *c_data, int *err) {
+                                                                  char *c_data, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getSurfaceAgeAttributeData();
@@ -4180,7 +4260,7 @@ extern "C" {
     }
 
     EXPORTDLL void FluidSimulation_get_surface_color_attribute_data(FluidSimulation* obj, 
-                                                                       char *c_data, int *err) {
+                                                                    char *c_data, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getSurfaceColorAttributeData();
@@ -4191,8 +4271,20 @@ extern "C" {
         }
     }
 
+    EXPORTDLL void FluidSimulation_get_surface_uvw_attribute_data(FluidSimulation* obj, 
+                                                                  char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getSurfaceUVWAttributeData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
     EXPORTDLL void FluidSimulation_get_surface_source_id_attribute_data(FluidSimulation* obj, 
-                                                                       char *c_data, int *err) {
+                                                                        char *c_data, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getSurfaceSourceIDAttributeData();
@@ -4216,7 +4308,7 @@ extern "C" {
     }
 
     EXPORTDLL void FluidSimulation_get_surface_density_attribute_data(FluidSimulation* obj, 
-                                                                        char *c_data, int *err) {
+                                                                      char *c_data, int *err) {
         *err = CBindings::SUCCESS;
         try {
             std::vector<char> *data = obj->getSurfaceDensityAttributeData();
@@ -4503,6 +4595,18 @@ extern "C" {
         }
     }
 
+    EXPORTDLL void FluidSimulation_get_fluid_particle_uvw_attribute_data(FluidSimulation* obj, 
+                                                                           char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            std::vector<char> *data = obj->getFluidParticleUVWAttributeData();
+            std::memcpy(c_data, data->data(), data->size());
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
     EXPORTDLL void FluidSimulation_get_fluid_particle_age_attribute_data(FluidSimulation* obj, 
                                                                            char *c_data, int *err) {
         *err = CBindings::SUCCESS;
@@ -4655,7 +4759,7 @@ extern "C" {
     }
 
     EXPORTDLL void FluidSimulation_get_marker_particle_position_data_range(FluidSimulation* obj, 
-                                                                           int start_idx, int end_idx, char *c_data, int *err) {
+                                                                           size_t start_idx, size_t end_idx, char *c_data, int *err) {
         *err = CBindings::SUCCESS;
         try {
             obj->getMarkerParticlePositionDataRange(start_idx, end_idx, c_data);
@@ -4666,7 +4770,7 @@ extern "C" {
     }
 
     EXPORTDLL void FluidSimulation_get_marker_particle_velocity_data_range(FluidSimulation* obj, 
-                                                                           int start_idx, int end_idx, char *c_data, int *err) {
+                                                                           size_t start_idx, size_t end_idx, char *c_data, int *err) {
         *err = CBindings::SUCCESS;
         try {
             obj->getMarkerParticleVelocityDataRange(start_idx, end_idx, c_data);
@@ -4677,7 +4781,7 @@ extern "C" {
     }
 
     EXPORTDLL void FluidSimulation_get_marker_particle_affinex_data_range(FluidSimulation* obj, 
-                                                                          int start_idx, int end_idx, char *c_data, int *err) {
+                                                                          size_t start_idx, size_t end_idx, char *c_data, int *err) {
         *err = CBindings::SUCCESS;
         try {
             obj->getMarkerParticleAffineXDataRange(start_idx, end_idx, c_data);
@@ -4688,7 +4792,7 @@ extern "C" {
     }
 
     EXPORTDLL void FluidSimulation_get_marker_particle_affiney_data_range(FluidSimulation* obj, 
-                                                                          int start_idx, int end_idx, char *c_data, int *err) {
+                                                                          size_t start_idx, size_t end_idx, char *c_data, int *err) {
         *err = CBindings::SUCCESS;
         try {
             obj->getMarkerParticleAffineYDataRange(start_idx, end_idx, c_data);
@@ -4699,7 +4803,7 @@ extern "C" {
     }
 
     EXPORTDLL void FluidSimulation_get_marker_particle_affinez_data_range(FluidSimulation* obj, 
-                                                                          int start_idx, int end_idx, char *c_data, int *err) {
+                                                                          size_t start_idx, size_t end_idx, char *c_data, int *err) {
         *err = CBindings::SUCCESS;
         try {
             obj->getMarkerParticleAffineZDataRange(start_idx, end_idx, c_data);
@@ -4710,7 +4814,7 @@ extern "C" {
     }
 
     EXPORTDLL void FluidSimulation_get_marker_particle_age_data_range(FluidSimulation* obj, 
-                                                                      int start_idx, int end_idx, char *c_data, int *err) {
+                                                                      size_t start_idx, size_t end_idx, char *c_data, int *err) {
         *err = CBindings::SUCCESS;
         try {
             obj->getMarkerParticleAgeDataRange(start_idx, end_idx, c_data);
@@ -4721,7 +4825,7 @@ extern "C" {
     }
 
     EXPORTDLL void FluidSimulation_get_marker_particle_lifetime_data_range(FluidSimulation* obj, 
-                                                                      int start_idx, int end_idx, char *c_data, int *err) {
+                                                                      size_t start_idx, size_t end_idx, char *c_data, int *err) {
         *err = CBindings::SUCCESS;
         try {
             obj->getMarkerParticleLifetimeDataRange(start_idx, end_idx, c_data);
@@ -4732,7 +4836,7 @@ extern "C" {
     }
 
     EXPORTDLL void FluidSimulation_get_marker_particle_color_data_range(FluidSimulation* obj, 
-                                                                      int start_idx, int end_idx, char *c_data, int *err) {
+                                                                      size_t start_idx, size_t end_idx, char *c_data, int *err) {
         *err = CBindings::SUCCESS;
         try {
             obj->getMarkerParticleColorDataRange(start_idx, end_idx, c_data);
@@ -4742,8 +4846,19 @@ extern "C" {
         }
     }
 
+    EXPORTDLL void FluidSimulation_get_marker_particle_uvw_data_range(FluidSimulation* obj, 
+                                                                      size_t start_idx, size_t end_idx, char *c_data, int *err) {
+        *err = CBindings::SUCCESS;
+        try {
+            obj->getMarkerParticleUVWDataRange(start_idx, end_idx, c_data);
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
     EXPORTDLL void FluidSimulation_get_marker_particle_source_id_data_range(FluidSimulation* obj, 
-                                                                            int start_idx, int end_idx, char *c_data, int *err) {
+                                                                            size_t start_idx, size_t end_idx, char *c_data, int *err) {
         *err = CBindings::SUCCESS;
         try {
             obj->getMarkerParticleSourceIDDataRange(start_idx, end_idx, c_data);
@@ -4754,7 +4869,7 @@ extern "C" {
     }
 
     EXPORTDLL void FluidSimulation_get_marker_particle_uid_data_range(FluidSimulation* obj, 
-                                                                      int start_idx, int end_idx, char *c_data, int *err) {
+                                                                      size_t start_idx, size_t end_idx, char *c_data, int *err) {
         *err = CBindings::SUCCESS;
         try {
             obj->getMarkerParticleUIDDataRange(start_idx, end_idx, c_data);
@@ -4765,7 +4880,7 @@ extern "C" {
     }
 
     EXPORTDLL void FluidSimulation_get_marker_particle_viscosity_data_range(FluidSimulation* obj, 
-                                                                            int start_idx, int end_idx, char *c_data, int *err) {
+                                                                            size_t start_idx, size_t end_idx, char *c_data, int *err) {
         *err = CBindings::SUCCESS;
         try {
             obj->getMarkerParticleViscosityDataRange(start_idx, end_idx, c_data);
@@ -4776,7 +4891,7 @@ extern "C" {
     }
 
     EXPORTDLL void FluidSimulation_get_marker_particle_density_data_range(FluidSimulation* obj, 
-                                                                            int start_idx, int end_idx, char *c_data, int *err) {
+                                                                          size_t start_idx, size_t end_idx, char *c_data, int *err) {
         *err = CBindings::SUCCESS;
         try {
             obj->getMarkerParticleDensityDataRange(start_idx, end_idx, c_data);
@@ -4787,7 +4902,7 @@ extern "C" {
     }
 
     EXPORTDLL void FluidSimulation_get_marker_particle_id_data_range(FluidSimulation* obj, 
-                                                                     int start_idx, int end_idx, char *c_data, int *err) {
+                                                                     size_t start_idx, size_t end_idx, char *c_data, int *err) {
         *err = CBindings::SUCCESS;
         try {
             obj->getMarkerParticleIDDataRange(start_idx, end_idx, c_data);
@@ -4798,7 +4913,7 @@ extern "C" {
     }
 
     EXPORTDLL void FluidSimulation_get_diffuse_particle_position_data_range(FluidSimulation* obj, 
-                                                                            int start_idx, int end_idx, char *c_data, int *err) {
+                                                                            size_t start_idx, size_t end_idx, char *c_data, int *err) {
         *err = CBindings::SUCCESS;
         try {
             obj->getDiffuseParticlePositionDataRange(start_idx, end_idx, c_data);
@@ -4809,7 +4924,7 @@ extern "C" {
     }
 
     EXPORTDLL void FluidSimulation_get_diffuse_particle_velocity_data_range(FluidSimulation* obj, 
-                                                                            int start_idx, int end_idx, char *c_data, int *err) {
+                                                                            size_t start_idx, size_t end_idx, char *c_data, int *err) {
         *err = CBindings::SUCCESS;
         try {
             obj->getDiffuseParticleVelocityDataRange(start_idx, end_idx, c_data);
@@ -4820,7 +4935,7 @@ extern "C" {
     }
 
     EXPORTDLL void FluidSimulation_get_diffuse_particle_lifetime_data_range(FluidSimulation* obj, 
-                                                                            int start_idx, int end_idx, char *c_data, int *err) {
+                                                                            size_t start_idx, size_t end_idx, char *c_data, int *err) {
         *err = CBindings::SUCCESS;
         try {
             obj->getDiffuseParticleLifetimeDataRange(start_idx, end_idx, c_data);
@@ -4831,7 +4946,7 @@ extern "C" {
     }
 
     EXPORTDLL void FluidSimulation_get_diffuse_particle_type_data_range(FluidSimulation* obj, 
-                                                                        int start_idx, int end_idx, char *c_data, int *err) {
+                                                                        size_t start_idx, size_t end_idx, char *c_data, int *err) {
         *err = CBindings::SUCCESS;
         try {
             obj->getDiffuseParticleTypeDataRange(start_idx, end_idx, c_data);
@@ -4842,7 +4957,7 @@ extern "C" {
     }
 
     EXPORTDLL void FluidSimulation_get_diffuse_particle_id_data_range(FluidSimulation* obj, 
-                                                                      int start_idx, int end_idx, char *c_data, int *err) {
+                                                                      size_t start_idx, size_t end_idx, char *c_data, int *err) {
         *err = CBindings::SUCCESS;
         try {
             obj->getDiffuseParticleIdDataRange(start_idx, end_idx, c_data);
@@ -4938,6 +5053,14 @@ extern "C" {
                                                                    int *err) {
         CBindings::safe_execute_method_void_1param(
             obj, &FluidSimulation::loadMarkerParticleColorData, data, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_load_marker_particle_uvw_data(FluidSimulation* obj, 
+                                                                 FluidSimulationMarkerParticleUVWData data, 
+                                                                 int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::loadMarkerParticleUVWData, data, err
         );
     }
 

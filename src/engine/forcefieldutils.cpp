@@ -60,7 +60,7 @@ void generateSurfaceVectorField(MeshLevelSet &sdf, TriangleMesh &mesh, Array3d<v
     float *phirawsrc = phiptr->getRawArray();
     float *phirawdst = data.phi.getRawArray();
     float maxdist = _bandwidth * dx;
-    for (int i = 0; i < phiptr->getNumElements(); i++) {
+    for (size_t i = 0; i < phiptr->getNumElements(); i++) {
         if (phirawsrc[i] <= maxdist) {
             phirawdst[i] = std::abs(phirawsrc[i]);
         }

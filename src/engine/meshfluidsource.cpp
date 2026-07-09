@@ -114,6 +114,26 @@ bool MeshFluidSource::isDiffuseOutflowEnabled() {
     return _isDiffuseOutflowEnabled;
 }
 
+void MeshFluidSource::enableGradualOutflow() {
+    _isGradualOutflowEnabled = true;
+}
+
+void MeshFluidSource::disableGradualOutflow() {
+    _isGradualOutflowEnabled = false;
+}
+
+bool MeshFluidSource::isGradualOutflowEnabled() {
+    return _isGradualOutflowEnabled;
+}
+
+void MeshFluidSource::setOutflowRate(float value) {
+    _outflowRate = value;
+}
+
+float MeshFluidSource::getOutflowRate() {
+    return _outflowRate;
+}
+
 void MeshFluidSource::setVelocity(vmath::vec3 v) {
     _sourceVelocity = v;
 }

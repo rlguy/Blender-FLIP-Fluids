@@ -148,6 +148,32 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
            description="Color of the domain bounds visualization",
            update=lambda self, context: self._update_debug_grid_geometry(context),
            )
+    display_internal_simulation_grid: BoolProperty(
+            name="Display Internal Grid",
+            description="Visualize the domain grid inside of the simulation."
+                " The internal simulation grid is permanently aligned with the standard XYZ axes."
+                " If a rotated domain is used, the simulation setup is automatically aligned to"
+                " the internal grid via the shortest angular path",
+            default=False,
+            update=lambda self, context: self._update_display_internal_simulation_grid(context),
+            )
+    internal_simulation_grid_opacity: FloatProperty(  
+           name="Opacity",
+           subtype='FACTOR',
+           default=0.5,
+           min=0.0, max=1.0,
+           description="Opacity of the internal simulation grid"
+           )
+    internal_simulation_grid_interpolation: FloatProperty(  
+           name="Interpolation",
+           subtype='FACTOR',
+           default=1.0,
+           min=0.0, max=1.0,
+           description="Rotation interpolation factor. Determines the blend between the viewport"
+               " display grid and the internal simulation grid. Use to visualize the rotation between"
+               " the two orientations",
+            update=lambda self, context: self._update_debug_grid_geometry(context),
+           )
 
     enable_fluid_particle_debug_output: BoolProperty(
             name="Enable Fluid Particle Debugging",
@@ -481,7 +507,7 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
 
 
     def is_simulation_grid_debugging_enabled(self):
-        return self.display_simulation_grid or self.display_domain_bounds
+        return self.display_simulation_grid or self.display_domain_bounds or self.display_internal_simulation_grid
 
 
     def _update_enable_fluid_particle_debug_output(self, context):
@@ -538,6 +564,10 @@ class DomainDebugProperties(bpy.types.PropertyGroup):
 
 
     def _update_display_domain_bounds(self, context):
+        self._update_display_simulation_grid(context)
+
+
+    def _update_display_internal_simulation_grid(self, context):
         self._update_display_simulation_grid(context)
 
 

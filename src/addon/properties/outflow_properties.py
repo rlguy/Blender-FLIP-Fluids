@@ -17,6 +17,7 @@
 import bpy
 from bpy.props import (
         BoolProperty,
+        FloatProperty,
         PointerProperty
         )
 
@@ -48,6 +49,23 @@ class FlipFluidOutflowProperties(bpy.types.PropertyGroup):
                 " instead of removing fluid that is inside of the mesh",
             default=False,
             options={'HIDDEN'},
+            )
+    enable_gradual_outflow: BoolProperty(
+            name="Gradual Outflow",
+            description="Enable to remove fluid and whitewater at a gradual rate."
+                " If disabled, fluid and whitewater will be removed immediately upon entering the object",
+            default=False,
+            )
+    outflow_rate: FloatProperty(
+            name="Outflow Rate",
+            description="Gradual rate that fluid inside of the outflow will be removed. This value is the"
+                " maximum number of object volumes of fluid that will be removed per simulation second. For"
+                " example, a value of 1.0 for a completely submerged outflow will remove fluid at at a rate"
+                " of 1 object volume per second. If half-submerged, fluid will be removed at a rate of 0.5"
+                " object volumes per second",
+            min=0.0,
+            default=8.0,
+            precision=2,
             )
     export_animated_mesh: bpy.props.BoolProperty(
             name="Export Animated Mesh",
@@ -92,6 +110,12 @@ class FlipFluidOutflowProperties(bpy.types.PropertyGroup):
                 " simulation, use the outliner Hide in Viewport option instead (Eye Icon)", 
             default=True,
             )
+    disabled_in_viewport_modifiers_tooltip: BoolProperty(
+            name="Object Modifiers Disabled in Viewport", 
+            description="This obstacle object modifier stack contains modifiers that are currently disabled"
+                " in the viewport (Monitor Icon) and will not be included within the simulation.", 
+            default=True,
+            )
 
 
 
@@ -111,6 +135,8 @@ class FlipFluidOutflowProperties(bpy.types.PropertyGroup):
             add("outflow.remove_fluid", "")
             add("outflow.remove_whitewater", "")
             add("outflow.is_inversed", "")
+            add("outflow.enable_gradual_outflow", "")
+            add("outflow.outflow_rate", "")
             add("outflow.export_animated_mesh", "")
             add("outflow.skip_reexport", "")
             add("outflow.force_reexport_on_next_bake", "")

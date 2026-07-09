@@ -40,6 +40,7 @@ from bpy.props import (
         BoolProperty,
         EnumProperty,
         FloatProperty,
+        FloatVectorProperty,
         IntProperty,
         PointerProperty,
         StringProperty
@@ -63,8 +64,12 @@ from . import (
 from .. import types
 from ..objects import flip_fluid_cache
 from ..operators import helper_operators
+from ..utils import geometry_utils
 from ..utils import version_compatibility_utils as vcu
 from ..utils import api_workaround_utils
+
+
+DOMAIN_WORLD_VERTICES = []
 
 
 class FlipFluidDomainProperties(bpy.types.PropertyGroup):
@@ -148,6 +153,33 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
             options={'HIDDEN'},
             )
 
+    # Domain orientation
+    rotation_matrix: bpy.props.FloatVectorProperty(
+        name="OBB Rotation Matrix",
+        default=[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+        size=16,
+        subtype='MATRIX'
+    )
+    AABB_min: bpy.props.FloatVectorProperty(
+        name="AABB Min Vertex",
+        default=[0, 0, 0],
+        size=3,
+        subtype='XYZ'
+    )
+    AABB_max: bpy.props.FloatVectorProperty(
+        name="AABB Max Vertex",
+        default=[1, 1, 1],
+        size=3,
+        subtype='XYZ'
+    )
+    AABB_dimensions: bpy.props.FloatVectorProperty(
+        name="AABB X/Y/Z Dimensions",
+        default=[1, 1, 1],
+        size=3,
+        subtype='XYZ'
+    )
+
+    # Version update properties
     is_updated_to_flip_fluids_version_180: BoolProperty(default=False)
     is_updated_to_flip_fluids_version_184: BoolProperty(default=False)
     is_updated_to_flip_fluids_version_185: BoolProperty(default=False)
@@ -155,6 +187,8 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
 
 
     def initialize(self):
+        self._update_domain_data(bpy.context.scene)
+
         self.simulation.initialize()
         self.cache.initialize()
         self.advanced.initialize()
@@ -309,9 +343,7 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
             print("\tSetting render whitewater dust   display percent to " + str(render_whitewater_pct) + "%")
             rprops.render_dust_pct = render_whitewater_pct
 
-        parent_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        blend_resource_filename = "geometry_nodes_library.blend"
-        resource_filepath = os.path.join(parent_path, "resources", "geometry_nodes", blend_resource_filename)
+        resource_filepath = vcu.get_geometry_nodes_blend_filepath()
 
         if rprops.whitewater_particle_object_settings_mode == 'WHITEWATER_OBJECT_SETTINGS_WHITEWATER':
             foam_scale = bubble_scale = spray_scale = dust_scale = rprops.whitewater_particle_scale
@@ -344,45 +376,12 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
             print("\tInitializing geometry node modifier on <" + mesh_cache.name + ">")
             gn_modifier = helper_operators.add_geometry_node_modifier(mesh_cache, resource_filepath, resource_names[idx])
             if gn_modifier:
-                try:
-                    # Material
-                    if mesh_cache.active_material is not None:
-                        print("\t\tSetting point cloud material to <" + mesh_cache.active_material.name + ">")
-                        gn_modifier["Input_5"] = mesh_cache.active_material
-                except:
-                    pass
+                if mesh_cache.active_material is not None:
+                    print("\t\tSetting point cloud material to <" + mesh_cache.active_material.name + ">")
+                    vcu.set_geometry_nodes_modifier_value(gn_modifier, "Input_5", mesh_cache.active_material, ignore_errors=True)
 
-                try:
-                    # Input flip_velocity
-                    gn_modifier["Input_2_use_attribute"] = True
-                    gn_modifier["Input_2_attribute_name"] = 'flip_velocity'
-                except:
-                    pass
-
-                try:
-                    # Output velocity
-                    gn_modifier["Output_3_attribute_name"] = 'velocity'
-                except:
-                    pass
-
-                try:
-                    # Particle Scale
-                    print("\t\tSetting point cloud particle scale to " + str(particle_scales[idx]))
-                    gn_modifier["Input_6"] = particle_scales[idx]
-                except:
-                    pass
-
-                try:
-                    # Enable Point Cloud
-                    gn_modifier["Input_9"] = True
-                except:
-                    pass
-
-                try:
-                    # Enable Instancing
-                    gn_modifier["Input_10"] = False
-                except:
-                    pass
+                print("\t\tSetting point cloud particle scale to " + str(particle_scales[idx]))
+                vcu.set_geometry_nodes_modifier_value(gn_modifier, "Input_6", particle_scales[idx], ignore_errors=True)
 
         print("*** Finished updating FLIP Domain to FLIP Fluids version 1.8.0+ ***\n")
         self.is_updated_to_flip_fluids_version_180 = True
@@ -443,10 +442,8 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
             return
 
         print("\n*** Begin updating FLIP Domain to FLIP Fluids version 1.8.5+ ***")
-
-        parent_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        blend_resource_filename = "geometry_nodes_library.blend"
-        resource_filepath = os.path.join(parent_path, "resources", "geometry_nodes", blend_resource_filename)
+        
+        resource_filepath = vcu.get_geometry_nodes_blend_filepath()
 
         # Fluid surface should now always have a FF_GeometryNodesSurface modifier
         mesh_cache_surface = dprops.mesh_cache.surface.get_cache_object()
@@ -475,7 +472,41 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
         self.is_updated_to_flip_fluids_version_186 = True
 
 
+    def _update_orientation_data(self, scene):
+        global DOMAIN_WORLD_VERTICES
+
+        bl_domain = scene.flip_fluid.get_domain_object()
+        if bl_domain is None:
+            return
+
+        depsgraph = bpy.context.evaluated_depsgraph_get()
+        bl_domain_eval = bl_domain.evaluated_get(depsgraph)
+
+        current_vertices = geometry_utils.get_world_vertices(bl_domain_eval)
+        if current_vertices == DOMAIN_WORLD_VERTICES:
+            # Skip update to avoid uneccesary computations
+            return
+
+        DOMAIN_WORLD_VERTICES = current_vertices
+
+        bl_rotation = geometry_utils.get_OBB_rotation_matrix(bl_domain_eval)
+        self.rotation_matrix = geometry_utils.flatten_matrix_column_order(bl_rotation)
+
+        min_vertex, max_vertex = geometry_utils.OBB_to_AABB_min_max_vertex(bl_domain_eval, rotation_matrix=bl_rotation)
+        dimensions = max_vertex - min_vertex
+
+        self.AABB_min = min_vertex
+        self.AABB_max = max_vertex
+        self.AABB_dimensions = dimensions
+
+
+    def _update_domain_data(self, scene):
+        self._update_orientation_data(scene)
+
+
     def scene_update_post(self, scene):
+        self._update_domain_data(scene)
+
         self.render.scene_update_post(scene)
         self.simulation.scene_update_post(scene)
         self.surface.scene_update_post(scene)
@@ -486,6 +517,8 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
 
 
     def frame_change_post(self, scene, depsgraph=None):
+        self._update_domain_data(scene)
+        
         api_workaround_utils.frame_change_post_apply_T71908_workaround(bpy.context, depsgraph)
         self.world.frame_change_post(scene)
         self.stats.frame_change_post(scene, depsgraph)
@@ -496,6 +529,8 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
 
 
     def load_post(self):
+        self._update_domain_data(bpy.context.scene)
+
         self.simulation.load_post()
         self.bake.load_post()
         self.cache.load_post()

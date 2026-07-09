@@ -37,13 +37,13 @@ public:
 		_initializeElementsPerChunk();
 	}
 
-	FragmentedVector(int numElements) {
+	FragmentedVector(size_t numElements) {
 		_initializeElementsPerChunk();
 		reserve(numElements);
-		for (int i = 0; i < numElements; i++) {
+		for (size_t i = 0; i < numElements; i++) {
 			push_back(T());
 		}
-		_currentNodeIndex = (int)_nodes.size() - 1;
+		_currentNodeIndex = _nodes.size() - 1;
 	}
 
 	inline void setFragmentSize(size_t numElements) {
@@ -54,7 +54,7 @@ public:
 		_initializeElementsPerChunk();
 	}
 
-	inline void setFragmentByteSize(unsigned int numBytes) {
+	inline void setFragmentByteSize(size_t numBytes) {
 		if (_nodes.size() != 0) {
 			return;
 		}
@@ -62,7 +62,7 @@ public:
 		_initializeElementsPerChunk();
 	}
 
-	inline unsigned int size() {
+	inline size_t size() {
 		return _size;
 	}
 
@@ -70,10 +70,10 @@ public:
 		return _size == 0;
 	}
 
-	inline void reserve(unsigned int n) {
-		int numFragments = n / _elementsPerFragment;
-		int numNewFragments = numFragments - (int)_nodes.size();
-		for (int i = 0; i < numNewFragments; i++) {
+	inline void reserve(size_t n) {
+		size_t numFragments = n / _elementsPerFragment;
+		size_t numNewFragments = numFragments - _nodes.size();
+		for (size_t i = 0; i < numNewFragments; i++) {
 			_addNewVectorNode();
 		}
 	}
@@ -130,32 +130,32 @@ public:
 	}
 
 	inline void clear() {
-		for (unsigned int i = 0; i < _nodes.size(); i++) {
+		for (size_t i = 0; i < _nodes.size(); i++) {
 			_nodes[i].clear();
 		}
 		_currentNodeIndex = 0;
 		_size = 0;
 	}
 
-	const T operator [](int i) const {
-		FLUIDSIM_ASSERT(i >= 0 && i < (int)_size);
-		int nodeIdx = i * _invElementsPerFragment;
-		int itemIdx = i % _elementsPerFragment;
+	const T operator [](size_t i) const {
+		FLUIDSIM_ASSERT(i >= 0 && i < _size);
+		size_t nodeIdx = i * _invElementsPerFragment;
+		size_t itemIdx = i % _elementsPerFragment;
 		return _nodes[nodeIdx][itemIdx];
 	}
 
-	T& operator[](int i) {
-		FLUIDSIM_ASSERT(i >= 0 && i < (int)_size);
-		int nodeIdx = i * _invElementsPerFragment;
-		int itemIdx = i % _elementsPerFragment;
+	T& operator[](size_t i) {
+		FLUIDSIM_ASSERT(i >= 0 && i < _size);
+		size_t nodeIdx = i * _invElementsPerFragment;
+		size_t itemIdx = i % _elementsPerFragment;
 		return _nodes[nodeIdx][itemIdx];
 	}
 
-	const T at(int i) const {
+	const T at(size_t i) const {
 		return (*this)[i];
 	}
 
-	T& at(int i) {
+	T& at(size_t i) {
 		return (*this)[i];
 	}
 
@@ -171,14 +171,14 @@ public:
 
 		#define  MAX_LEVELS  300
 
-		int elements = size();
+		size_t elements = size();
 		T piv;
-		int beg[MAX_LEVELS];
-		int end[MAX_LEVELS];
-		int i = 0;
-		int L;
-		int R;
-		int swap;
+		size_t beg[MAX_LEVELS];
+		size_t end[MAX_LEVELS];
+		size_t i = 0;
+		size_t L;
+		size_t R;
+		size_t swap;
 
 		beg[0] = 0; 
 		end[0] = elements;
@@ -232,7 +232,7 @@ private:
 			VectorNode() {
 			}
 
-			VectorNode(unsigned int maxsize) : _capacity(maxsize) {
+			VectorNode(size_t maxsize) : _capacity(maxsize) {
 				_vector.reserve(_capacity);
 			}
 
@@ -274,25 +274,25 @@ private:
 				_vector.clear();
 			}
 
-			const T operator [](int i) const {
-				FLUIDSIM_ASSERT(i >= 0 && i < (int)_vector.size());
+			const T operator [](size_t i) const {
+				FLUIDSIM_ASSERT(i >= 0 && i < _vector.size());
 				return _vector[i];
 			}
 
-    		T& operator[](int i) {
-    			FLUIDSIM_ASSERT(i >= 0 && i < (int)_vector.size());
+    		T& operator[](size_t i) {
+    			FLUIDSIM_ASSERT(i >= 0 && i < _vector.size());
 				return _vector[i];
     		}
 
 		private:
 
-			unsigned int _capacity = 0;
+			size_t _capacity = 0;
 			std::vector<T> _vector;
 
 	};
 
 	void _initializeElementsPerChunk() {
-		_elementsPerFragment = (int)(_bytesPerFragment / sizeof(T));
+		_elementsPerFragment = _bytesPerFragment / sizeof(T);
 		if (_elementsPerFragment == 0) {
 			_elementsPerFragment = 1;
 		}
@@ -304,8 +304,8 @@ private:
 		_nodes.push_back(VectorNode(_elementsPerFragment));
 	}
 
-	inline bool _isLastNode(int i) {
-		return i == (int)_nodes.size() - 1;
+	inline bool _isLastNode(size_t i) {
+		return i == _nodes.size() - 1;
 	}
 
 	inline bool _isCurrentNodeFull() {
@@ -317,10 +317,10 @@ private:
 	}
 
 	std::vector<VectorNode> _nodes;
-	unsigned int _bytesPerFragment = 5e6;
-	unsigned int _elementsPerFragment = 0;
+	size_t _bytesPerFragment = 5e6;
+	size_t _elementsPerFragment = 0;
 	double _invElementsPerFragment = 0;
 	int _currentNodeIndex = -1;
-	unsigned int _size = 0;
+	size_t _size = 0;
 
 };

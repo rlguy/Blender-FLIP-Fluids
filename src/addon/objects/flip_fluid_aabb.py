@@ -55,6 +55,21 @@ class AABB(object):
         return cls(xmin, ymin, zmin, xdim, ydim, zdim)
 
 
+    @classmethod
+    def from_corners(cls, pmin, pmax):
+        minx = min(pmin.x, pmax.x)
+        miny = min(pmin.y, pmax.y)
+        minz = min(pmin.z, pmax.z)
+        maxx = max(pmin.x, pmax.x)
+        maxy = max(pmin.y, pmax.y)
+        maxz = max(pmin.z, pmax.z)
+        width = maxx - minx
+        height = maxy - miny
+        depth = maxz - minz
+
+        return cls(minx, miny, minz, width, height, depth)
+
+
     def is_empty(self, tol = 1e-6):
         return self.xdim * self.ydim * self.zdim < tol
 

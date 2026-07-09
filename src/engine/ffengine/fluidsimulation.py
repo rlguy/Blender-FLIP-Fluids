@@ -21,7 +21,7 @@
 # SOFTWARE.
 
 import ctypes
-from ctypes import c_void_p, c_char_p, c_char, c_int, c_ulonglong, c_uint, c_float, c_double, byref
+from ctypes import c_void_p, c_char_p, c_char, c_int, c_ulonglong, c_size_t, c_uint, c_float, c_double, byref
 import numbers
 
 from .ffengine import ffengine as lib
@@ -141,6 +141,13 @@ class FluidSimulation(object):
         libfunc = lib.FluidSimulation_update
         pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), dt])
+
+    def set_blend_filepath_string(self, filepath_string):
+        c_string = filepath_string.encode('utf-8') 
+
+        libfunc = lib.FluidSimulation_set_blend_filepath_string
+        pb.init_lib_func(libfunc, [c_void_p, c_char_p, c_void_p], None)
+        return pb.execute_lib_func(libfunc, [self(), c_string])
 
     def get_current_frame(self):
         libfunc = lib.FluidSimulation_get_current_frame
@@ -775,6 +782,21 @@ class FluidSimulation(object):
         pb.execute_lib_func(libfunc, [self()])
 
     @property
+    def enable_fluid_particle_uvw_attribute(self):
+        libfunc = lib.FluidSimulation_is_fluid_particle_uvw_attribute_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_fluid_particle_uvw_attribute.setter
+    def enable_fluid_particle_uvw_attribute(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_fluid_particle_uvw_attribute
+        else:
+            libfunc = lib.FluidSimulation_disable_fluid_particle_uvw_attribute
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
     def enable_fluid_particle_age_attribute(self):
         libfunc = lib.FluidSimulation_is_fluid_particle_age_attribute_enabled
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
@@ -1141,6 +1163,21 @@ class FluidSimulation(object):
             libfunc = lib.FluidSimulation_enable_mixbox
         else:
             libfunc = lib.FluidSimulation_disable_mixbox
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_surface_uvw_attribute(self):
+        libfunc = lib.FluidSimulation_is_surface_uvw_attribute_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_surface_uvw_attribute.setter
+    def enable_surface_uvw_attribute(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_surface_uvw_attribute
+        else:
+            libfunc = lib.FluidSimulation_disable_surface_uvw_attribute
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self()])
 
@@ -1544,14 +1581,14 @@ class FluidSimulation(object):
     @property
     def max_num_diffuse_particles(self):
         libfunc = lib.FluidSimulation_get_max_num_diffuse_particles
-        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_size_t)
         return pb.execute_lib_func(libfunc, [self()])
 
     @max_num_diffuse_particles.setter
     def max_num_diffuse_particles(self, num):
         libfunc = lib.FluidSimulation_set_max_num_diffuse_particles
-        pb.init_lib_func(libfunc, [c_void_p, c_int, c_void_p], None)
-        pb.execute_lib_func(libfunc, [self(), int(num)])
+        pb.init_lib_func(libfunc, [c_void_p, c_size_t, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), num])
 
     @property
     def diffuse_emitter_generation_bounds(self):
@@ -2634,7 +2671,7 @@ class FluidSimulation(object):
 
     def get_num_marker_particles(self):
         libfunc = lib.FluidSimulation_get_num_marker_particles
-        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_size_t)
         return pb.execute_lib_func(libfunc, [self()])
 
     def get_marker_particles(self, startidx = None, endidx = None):
@@ -2797,6 +2834,10 @@ class FluidSimulation(object):
         return self._get_output_data(lib.FluidSimulation_get_surface_color_attribute_data_size,
                                      lib.FluidSimulation_get_surface_color_attribute_data)
 
+    def get_surface_uvw_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_surface_uvw_attribute_data_size,
+                                     lib.FluidSimulation_get_surface_uvw_attribute_data)
+
     def get_surface_source_id_attribute_data(self):
         return self._get_output_data(lib.FluidSimulation_get_surface_source_id_attribute_data_size,
                                      lib.FluidSimulation_get_surface_source_id_attribute_data)
@@ -2901,6 +2942,10 @@ class FluidSimulation(object):
         return self._get_output_data(lib.FluidSimulation_get_fluid_particle_color_attribute_data_size,
                                      lib.FluidSimulation_get_fluid_particle_color_attribute_data)
 
+    def get_fluid_particle_uvw_attribute_data(self):
+        return self._get_output_data(lib.FluidSimulation_get_fluid_particle_uvw_attribute_data_size,
+                                     lib.FluidSimulation_get_fluid_particle_uvw_attribute_data)
+
     def get_fluid_particle_age_attribute_data(self):
         return self._get_output_data(lib.FluidSimulation_get_fluid_particle_age_attribute_data_size,
                                      lib.FluidSimulation_get_fluid_particle_age_attribute_data)
@@ -2986,7 +3031,7 @@ class FluidSimulation(object):
 
     def _get_output_data(self, size_libfunc, data_libfunc):
         libfunc = size_libfunc
-        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_uint)
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_size_t)
         data_size = pb.execute_lib_func(libfunc, [self()])
 
         c_data = (c_char * data_size)()
@@ -3036,6 +3081,12 @@ class FluidSimulation(object):
         size_of_vector = 12
         return self._get_output_data_range(lib.FluidSimulation_get_marker_particle_color_data_range,
                                            start_idx, end_idx, size_of_vector)
+
+    def get_marker_particle_uvw_data_range(self, start_idx, end_idx):
+        size_of_vector = 12
+        return self._get_output_data_range(lib.FluidSimulation_get_marker_particle_uvw_data_range,
+                                           start_idx, end_idx, size_of_vector)
+
 
     def get_marker_particle_source_id_data_range(self, start_idx, end_idx):
         size_of_int = 4
@@ -3092,7 +3143,7 @@ class FluidSimulation(object):
         c_data = (c_char * data_size)()
 
         libfunc = data_libfunc
-        pb.init_lib_func(libfunc, [c_void_p, c_int, c_int, c_void_p, c_void_p], None)
+        pb.init_lib_func(libfunc, [c_void_p, c_size_t, c_size_t, c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), start_idx, end_idx, c_data])
 
         return bytes(c_data)
@@ -3119,7 +3170,7 @@ class FluidSimulation(object):
         c_velocity_data = (c_char * len(velocity_data)).from_buffer_copy(velocity_data)
 
         pdata = FluidSimulationMarkerParticleData_t()
-        pdata.size = c_int(num_particles)
+        pdata.size = c_size_t(num_particles)
         pdata.positions = ctypes.cast(c_position_data, c_char_p)
         pdata.velocities = ctypes.cast(c_velocity_data, c_char_p)
 
@@ -3133,7 +3184,7 @@ class FluidSimulation(object):
         c_affinez_data = (c_char * len(affinez_data)).from_buffer_copy(affinez_data)
 
         pdata = FluidSimulationMarkerParticleAffineData_t()
-        pdata.size = c_int(num_particles)
+        pdata.size = c_size_t(num_particles)
         pdata.affinex = ctypes.cast(c_affinex_data, c_char_p)
         pdata.affiney = ctypes.cast(c_affiney_data, c_char_p)
         pdata.affinez = ctypes.cast(c_affinez_data, c_char_p)
@@ -3146,7 +3197,7 @@ class FluidSimulation(object):
         c_age_data = (c_char * len(age_data)).from_buffer_copy(age_data)
 
         pdata = FluidSimulationMarkerParticleAgeData_t()
-        pdata.size = c_int(num_particles)
+        pdata.size = c_size_t(num_particles)
         pdata.age = ctypes.cast(c_age_data, c_char_p)
 
         libfunc = lib.FluidSimulation_load_marker_particle_age_data
@@ -3157,7 +3208,7 @@ class FluidSimulation(object):
         c_lifetime_data = (c_char * len(lifetime_data)).from_buffer_copy(lifetime_data)
 
         pdata = FluidSimulationMarkerParticleLifetimeData_t()
-        pdata.size = c_int(num_particles)
+        pdata.size = c_size_t(num_particles)
         pdata.lifetime = ctypes.cast(c_lifetime_data, c_char_p)
 
         libfunc = lib.FluidSimulation_load_marker_particle_lifetime_data
@@ -3168,18 +3219,29 @@ class FluidSimulation(object):
         c_color_data = (c_char * len(color_data)).from_buffer_copy(color_data)
 
         pdata = FluidSimulationMarkerParticleColorData_t()
-        pdata.size = c_int(num_particles)
+        pdata.size = c_size_t(num_particles)
         pdata.color = ctypes.cast(c_color_data, c_char_p)
 
         libfunc = lib.FluidSimulation_load_marker_particle_color_data
         pb.init_lib_func(libfunc, [c_void_p, FluidSimulationMarkerParticleColorData_t, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), pdata])
 
+    def load_marker_particle_uvw_data(self, num_particles, uvw_data):
+        c_uvw_data = (c_char * len(uvw_data)).from_buffer_copy(uvw_data)
+
+        pdata = FluidSimulationMarkerParticleUVWData_t()
+        pdata.size = c_size_t(num_particles)
+        pdata.uvw = ctypes.cast(c_uvw_data, c_char_p)
+
+        libfunc = lib.FluidSimulation_load_marker_particle_uvw_data
+        pb.init_lib_func(libfunc, [c_void_p, FluidSimulationMarkerParticleUVWData_t, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), pdata])
+
     def load_marker_particle_source_id_data(self, num_particles, id_data):
         c_id_data = (c_char * len(id_data)).from_buffer_copy(id_data)
 
         pdata = FluidSimulationMarkerParticleSourceIDData_t()
-        pdata.size = c_int(num_particles)
+        pdata.size = c_size_t(num_particles)
         pdata.sourceid = ctypes.cast(c_id_data, c_char_p)
 
         libfunc = lib.FluidSimulation_load_marker_particle_source_id_data
@@ -3190,7 +3252,7 @@ class FluidSimulation(object):
         c_id_data = (c_char * len(id_data)).from_buffer_copy(id_data)
 
         pdata = FluidSimulationMarkerParticleUIDData_t()
-        pdata.size = c_int(num_particles)
+        pdata.size = c_size_t(num_particles)
         pdata.uid = ctypes.cast(c_id_data, c_char_p)
 
         libfunc = lib.FluidSimulation_load_marker_particle_uid_data
@@ -3201,7 +3263,7 @@ class FluidSimulation(object):
         c_viscosity_data = (c_char * len(viscosity_data)).from_buffer_copy(viscosity_data)
 
         pdata = FluidSimulationMarkerParticleViscosityData_t()
-        pdata.size = c_int(num_particles)
+        pdata.size = c_size_t(num_particles)
         pdata.viscosity = ctypes.cast(c_viscosity_data, c_char_p)
 
         libfunc = lib.FluidSimulation_load_marker_particle_viscosity_data
@@ -3212,7 +3274,7 @@ class FluidSimulation(object):
         c_density_data = (c_char * len(density_data)).from_buffer_copy(density_data)
 
         pdata = FluidSimulationMarkerParticleDensityData_t()
-        pdata.size = c_int(num_particles)
+        pdata.size = c_size_t(num_particles)
         pdata.density = ctypes.cast(c_density_data, c_char_p)
 
         libfunc = lib.FluidSimulation_load_marker_particle_density_data
@@ -3223,7 +3285,7 @@ class FluidSimulation(object):
         c_id_data = (c_char * len(id_data)).from_buffer_copy(id_data)
 
         pdata = FluidSimulationMarkerParticleIDData_t()
-        pdata.size = c_int(num_particles)
+        pdata.size = c_size_t(num_particles)
         pdata.id = ctypes.cast(c_id_data, c_char_p)
 
         libfunc = lib.FluidSimulation_load_marker_particle_id_data
@@ -3239,7 +3301,7 @@ class FluidSimulation(object):
         c_id_data = (c_char * len(id_data)).from_buffer_copy(id_data)
 
         pdata = FluidSimulationDiffuseParticleData_t()
-        pdata.size = c_int(num_particles)
+        pdata.size = c_size_t(num_particles)
         pdata.positions = ctypes.cast(c_position_data, c_char_p)
         pdata.velocities = ctypes.cast(c_velocity_data, c_char_p)
         pdata.lifetimes = ctypes.cast(c_lifetime_data, c_char_p)
@@ -3264,9 +3326,9 @@ class DiffuseParticle_t(ctypes.Structure):
 
 class FluidSimulationMeshStats_t(ctypes.Structure):
     _fields_ = [("enabled", c_int),
-                ("vertices", c_int),
-                ("triangles", c_int),
-                ("bytes", c_uint)]
+                ("vertices", c_size_t),
+                ("triangles", c_size_t),
+                ("bytes", c_size_t)]
 
 class FluidSimulationTimingStats_t(ctypes.Structure):
     _fields_ = [("total", c_double),
@@ -3305,6 +3367,7 @@ class FluidSimulationFrameStats_t(ctypes.Structure):
                 ("surfacelifetime", FluidSimulationMeshStats_t),
                 ("surfacewhitewaterproximity", FluidSimulationMeshStats_t),
                 ("surfacecolor", FluidSimulationMeshStats_t),
+                ("surfaceuvw", FluidSimulationMeshStats_t),
                 ("surfacesourceid", FluidSimulationMeshStats_t),
                 ("surfaceviscosity", FluidSimulationMeshStats_t),
                 ("surfacedensity", FluidSimulationMeshStats_t),
@@ -3335,6 +3398,7 @@ class FluidSimulationFrameStats_t(ctypes.Structure):
                 ("fluidparticlesspeed", FluidSimulationMeshStats_t),
                 ("fluidparticlesvorticity", FluidSimulationMeshStats_t),
                 ("fluidparticlescolor", FluidSimulationMeshStats_t),
+                ("fluidparticlesuvw", FluidSimulationMeshStats_t),
                 ("fluidparticlesage", FluidSimulationMeshStats_t),
                 ("fluidparticleslifetime", FluidSimulationMeshStats_t),
                 ("fluidparticlesviscosity", FluidSimulationMeshStats_t),
@@ -3348,50 +3412,54 @@ class FluidSimulationFrameStats_t(ctypes.Structure):
                 ("timing", FluidSimulationTimingStats_t)]
 
 class FluidSimulationMarkerParticleData_t(ctypes.Structure):
-    _fields_ = [("size", c_int),
+    _fields_ = [("size", c_size_t),
                 ("positions", c_char_p),
                 ("velocities", c_char_p)]
 
 class FluidSimulationMarkerParticleAffineData_t(ctypes.Structure):
-    _fields_ = [("size", c_int),
+    _fields_ = [("size", c_size_t),
                 ("affinex", c_char_p),
                 ("affiney", c_char_p),
                 ("affinez", c_char_p)]
 
 class FluidSimulationMarkerParticleAgeData_t(ctypes.Structure):
-    _fields_ = [("size", c_int),
+    _fields_ = [("size", c_size_t),
                 ("age", c_char_p)]
 
 class FluidSimulationMarkerParticleLifetimeData_t(ctypes.Structure):
-    _fields_ = [("size", c_int),
+    _fields_ = [("size", c_size_t),
                 ("lifetime", c_char_p)]
 
 class FluidSimulationMarkerParticleColorData_t(ctypes.Structure):
-    _fields_ = [("size", c_int),
+    _fields_ = [("size", c_size_t),
                 ("color", c_char_p)]
 
+class FluidSimulationMarkerParticleUVWData_t(ctypes.Structure):
+    _fields_ = [("size", c_size_t),
+                ("uvw", c_char_p)]
+
 class FluidSimulationMarkerParticleSourceIDData_t(ctypes.Structure):
-    _fields_ = [("size", c_int),
+    _fields_ = [("size", c_size_t),
                 ("sourceid", c_char_p)]
 
 class FluidSimulationMarkerParticleUIDData_t(ctypes.Structure):
-    _fields_ = [("size", c_int),
+    _fields_ = [("size", c_size_t),
                 ("uid", c_char_p)]
 
 class FluidSimulationMarkerParticleViscosityData_t(ctypes.Structure):
-    _fields_ = [("size", c_int),
+    _fields_ = [("size", c_size_t),
                 ("viscosity", c_char_p)]
 
 class FluidSimulationMarkerParticleDensityData_t(ctypes.Structure):
-    _fields_ = [("size", c_int),
+    _fields_ = [("size", c_size_t),
                 ("density", c_char_p)]
 
 class FluidSimulationMarkerParticleIDData_t(ctypes.Structure):
-    _fields_ = [("size", c_int),
+    _fields_ = [("size", c_size_t),
                 ("id", c_char_p)]
 
 class FluidSimulationDiffuseParticleData_t(ctypes.Structure):
-    _fields_ = [("size", c_int),
+    _fields_ = [("size", c_size_t),
                 ("positions", c_char_p),
                 ("velocities", c_char_p),
                 ("lifetimes", c_char_p),

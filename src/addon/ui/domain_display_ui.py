@@ -216,6 +216,28 @@ def get_motion_blur_geometry_node_modifier(bl_object):
             return mod
 
 
+def _draw_particle_modifier_properties(ui_row, bl_mod):
+    mod_keys = vcu.get_geometry_nodes_modifier_input_keys(bl_mod)
+
+    prop_list = [
+        ("Input_6", "Scale"),
+        ("Input_4", "Blur Scale"),
+        ("Input_8", "Motion Blur"),
+        ]
+
+    ui_row.alignment = 'LEFT'
+    for prop_info in prop_list:
+        socket_name = prop_info[0]
+        socket_display_text = prop_info[1]
+
+        if socket_name in mod_keys:
+            if vcu.is_blender_52():
+                p = getattr(bl_mod.properties.inputs, socket_name)
+                ui_row.prop(p, "value",  text=socket_display_text)
+            else:
+                ui_row.prop(bl_mod, '["' + socket_name + '"]',  text=socket_display_text)
+
+
 def draw_whitewater_particles_motion_blur_geometry_node_properties(ui_row, bl_mod):
     if bl_mod is None:
         ui_row.alert = True
@@ -226,13 +248,7 @@ def draw_whitewater_particles_motion_blur_geometry_node_properties(ui_row, bl_mo
             ).cache_object_type = 'CACHE_OBJECT_TYPE_WHITEWATER_PARTICLES'
         return
 
-    ui_row.alignment = 'LEFT'
-    if "Input_6" in bl_mod:
-        ui_row.prop(bl_mod, '["Input_6"]',  text="Scale")
-    if "Input_4" in bl_mod:
-        ui_row.prop(bl_mod, '["Input_4"]',  text="Blur Scale")
-    if "Input_8" in bl_mod:
-        ui_row.prop(bl_mod, '["Input_8"]',  text="Motion Blur")
+    _draw_particle_modifier_properties(ui_row, bl_mod)
 
 
 def draw_fluid_particles_motion_blur_geometry_node_properties(ui_row, bl_mod):
@@ -245,13 +261,7 @@ def draw_fluid_particles_motion_blur_geometry_node_properties(ui_row, bl_mod):
             ).cache_object_type = 'CACHE_OBJECT_TYPE_FLUID_PARTICLES'
         return
 
-    ui_row.alignment = 'LEFT'
-    if "Input_6" in bl_mod:
-        ui_row.prop(bl_mod, '["Input_6"]',  text="Scale")
-    if "Input_4" in bl_mod:
-        ui_row.prop(bl_mod, '["Input_4"]',  text="Blur Scale")
-    if "Input_8" in bl_mod:
-        ui_row.prop(bl_mod, '["Input_8"]',  text="Motion Blur")
+    _draw_particle_modifier_properties(ui_row, bl_mod)
 
 
 def draw_whitewater_display_settings(self, context, menu_expand_prop_group=None):

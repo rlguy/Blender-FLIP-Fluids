@@ -503,7 +503,10 @@ class FLIPFluidInstallPresetLibrary(bpy.types.Operator, ImportHelper):
                 break
 
         if not is_library_path_in_asset_browser:
-            bpy.ops.preferences.asset_library_add(directory=preset_library_directory)
+            if vcu.is_blender_52():
+                bpy.ops.preferences.asset_library_add(directory=preset_library_directory, type='LOCAL')
+            else:
+                bpy.ops.preferences.asset_library_add(directory=preset_library_directory)
 
         for lib_entry in bl_filepaths.asset_libraries:
             if self.is_path_equal(lib_entry.path, preset_library_directory):
@@ -523,7 +526,7 @@ class FLIPFluidSelectPresetLibraryFolder(bpy.types.Operator):
     bl_label = "Install Preset Folder"
     bl_description = ("Select an existing Preset Library installation folder and add it to the Blender Asset Browser")
 
-    directory: bpy.props.StringProperty(name="Directory", options={"HIDDEN"})
+    directory: bpy.props.StringProperty(name="Directory", subtype="DIR_PATH", options={"HIDDEN"})
 
     filter_folder: bpy.props.BoolProperty(default=True, options={"HIDDEN"})
 
@@ -627,7 +630,10 @@ class FLIPFluidSelectPresetLibraryFolder(bpy.types.Operator):
                     break
 
             if not is_library_path_in_asset_browser:
-                bpy.ops.preferences.asset_library_add(directory=preset_library_directory)
+                if vcu.is_blender_52():
+                    bpy.ops.preferences.asset_library_add(directory=preset_library_directory, type='LOCAL')
+                else:
+                    bpy.ops.preferences.asset_library_add(directory=preset_library_directory)
 
             for lib_entry in bl_filepaths.asset_libraries:
                 if self.is_path_equal(lib_entry.path, preset_library_directory):
@@ -1127,7 +1133,7 @@ def get_system_info_dict():
     try:
         renderer_string = bpy.context.scene.render.engine
         if renderer_string == 'CYCLES':
-            cycles_device_string = bpy.context.scene.cycles.device
+            cycles_device_string = vcu.get_cycles_property(bpy.context.scene, "device")
     except Exception as e:
         print(traceback.format_exc())
         print(e)

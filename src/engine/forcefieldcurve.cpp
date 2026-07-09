@@ -91,10 +91,11 @@ void ForceFieldCurve::addGravityScaleToGrid(ForceFieldGravityScaleGrid &scaleGri
                 int iSDF = i - _ioffsetSDF;
                 int jSDF = j - _joffsetSDF;
                 int kSDF = k - _koffsetSDF;
+                float eps = 1e-6;
                 if (iSDF >= 0 && jSDF >= 0 && kSDF >= 0 && iSDF < _isizeSDF + 1 && jSDF < _jsizeSDF + 1 && kSDF < _ksizeSDF + 1) {
                     vmath::vec3 vectToCurve = _vectorField(iSDF, jSDF, kSDF);
                     float distanceToCurve = vectToCurve.length();
-                    if (distanceToCurve > scaleWidth) {
+                    if (distanceToCurve > scaleWidth || distanceToCurve < eps) {
                         scaleGrid.addScale(i, j, k, 1.0f, 1.0f);
                         continue;
                     }

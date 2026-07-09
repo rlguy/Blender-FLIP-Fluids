@@ -200,12 +200,12 @@ def get_render_command_list_render_passes():
 
 def _render_thread(command):
     subprocess_command = get_blender_launch_command_list() + ["-b", command.blendfile, "-f", str(command.frame)] 
-    subprocess.call(subprocess_command, shell=False)  
+    subprocess.run(subprocess_command, shell=False)  
 
 
 def _render_sequence_thread(command, frame_start, frame_end):
     subprocess_command = get_blender_launch_command_list() + ["-b", command.blendfile, "-s", str(frame_start), "-e", str(frame_end), "-a"] 
-    subprocess.call(subprocess_command, shell=False)  
+    subprocess.run(subprocess_command, shell=False)  
 
 
 def render_loop(render_command_list):

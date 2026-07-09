@@ -346,6 +346,13 @@ def draw_frame_info_mesh_stats(self, context, box):
             column4.label(text=format_bytes(sprops.surfacecolor_mesh.bytes.get()))
             total_bytes += sprops.surfacecolor_mesh.bytes.get()
 
+        if sprops.surfaceuvw_mesh.enabled:
+            column1.label(text="UVW")
+            column2.label(text=format_number(sprops.surfaceuvw_mesh.verts))
+            column3.label(text="")
+            column4.label(text=format_bytes(sprops.surfaceuvw_mesh.bytes.get()))
+            total_bytes += sprops.surfaceuvw_mesh.bytes.get()
+
         if sprops.surfacesourceid_mesh.enabled:
             column1.label(text="Source ID")
             column2.label(text=format_number(sprops.surfacesourceid_mesh.verts))
@@ -555,6 +562,13 @@ def draw_frame_info_mesh_stats(self, context, box):
             column3.label(text="")
             column4.label(text=format_bytes(sprops.fluid_particle_color_mesh.bytes.get()))
             total_bytes += sprops.fluid_particle_color_mesh.bytes.get()
+
+        if sprops.fluid_particle_uvw_mesh.enabled:
+            column1.label(text="Fluid Particles UVW")
+            column2.label(text=format_number(sprops.fluid_particle_uvw_mesh.verts))
+            column3.label(text="")
+            column4.label(text=format_bytes(sprops.fluid_particle_uvw_mesh.bytes.get()))
+            total_bytes += sprops.fluid_particle_uvw_mesh.bytes.get()
 
         if sprops.fluid_particle_age_mesh.enabled:
             column1.label(text="Fluid Particles Age")
@@ -875,6 +889,7 @@ def draw_cache_info_mesh_stats(self, context, box):
                        sprops.surfacelifetime_mesh.enabled or 
                        sprops.surfacewhitewaterproximity_mesh.enabled or 
                        sprops.surfacecolor_mesh.enabled or 
+                       sprops.surfaceuvw_mesh.enabled or 
                        sprops.surfacesourceid_mesh.enabled or 
                        sprops.surfaceviscosity_mesh.enabled or 
                        sprops.surfacedensity_mesh.enabled or 
@@ -904,6 +919,7 @@ def draw_cache_info_mesh_stats(self, context, box):
                        sprops.fluid_particle_speed_mesh.enabled or
                        sprops.fluid_particle_vorticity_mesh.enabled or
                        sprops.fluid_particle_color_mesh.enabled or
+                       sprops.fluid_particle_uvw_mesh.enabled or
                        sprops.fluid_particle_age_mesh.enabled or
                        sprops.fluid_particle_lifetime_mesh.enabled or
                        sprops.fluid_particle_viscosity_mesh.enabled or
@@ -980,6 +996,12 @@ def draw_cache_info_mesh_stats(self, context, box):
             column2.label(text=format_bytes(sprops.surfacecolor_mesh.bytes.get()))
             row_count += 1
             total_size += sprops.surfacecolor_mesh.bytes.get()
+
+        if sprops.surfaceuvw_mesh.enabled:
+            column1.label(text="UVW")
+            column2.label(text=format_bytes(sprops.surfaceuvw_mesh.bytes.get()))
+            row_count += 1
+            total_size += sprops.surfaceuvw_mesh.bytes.get()
 
         if sprops.surfacesourceid_mesh.enabled:
             column1.label(text="Source ID")
@@ -1160,6 +1182,12 @@ def draw_cache_info_mesh_stats(self, context, box):
             column2.label(text=format_bytes(sprops.fluid_particle_color_mesh.bytes.get()))
             row_count += 1
             total_size += sprops.fluid_particle_color_mesh.bytes.get()
+
+        if sprops.fluid_particle_uvw_mesh.enabled:
+            column1.label(text="Fluid Particles UVW")
+            column2.label(text=format_bytes(sprops.fluid_particle_uvw_mesh.bytes.get()))
+            row_count += 1
+            total_size += sprops.fluid_particle_uvw_mesh.bytes.get()
 
         if sprops.fluid_particle_age_mesh.enabled:
             column1.label(text="Fluid Particles Age")

@@ -58,6 +58,7 @@ public:
     void newline();
     void separator();
     void timestamp();
+    void timestamp(std::string suffix_string);
     void logString(const std::string& str);
     void log(std::ostream &out);
     void log(std::string str, int indentLevel = 0);

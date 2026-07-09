@@ -356,6 +356,18 @@ class DomainWorldProperties(bpy.types.PropertyGroup):
             return self.gravity
 
 
+    def get_force_field_grid_reduction(self):
+        if self.force_field_resolution == 'FORCE_FIELD_RESOLUTION_ULTRA':
+            reduction = 1
+        elif self.force_field_resolution == 'FORCE_FIELD_RESOLUTION_HIGH':
+            reduction = 2
+        elif self.force_field_resolution == 'FORCE_FIELD_RESOLUTION_NORMAL':
+            reduction = 3
+        elif self.force_field_resolution == 'FORCE_FIELD_RESOLUTION_LOW':
+            reduction = 4
+        return reduction
+
+
     def get_world_scale(self):
         return self.world_scale_relative
 

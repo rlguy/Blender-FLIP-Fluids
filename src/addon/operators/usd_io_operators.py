@@ -18,6 +18,7 @@
 import bpy, bpy_extras
 import os
 from . import helper_operators
+from ..utils import version_compatibility_utils as vcu
 
 
 class FLIPFluidsUSDImporter(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
@@ -140,6 +141,10 @@ class FLIPFluidsUSDImporter(bpy.types.Operator, bpy_extras.io_utils.ImportHelper
 
         # Initialize Domain
         bl_domain = self.find_mesh_object(bl_objects, "ff_usd_domain")
+        if bl_domain is None:
+            # Accounts for USD naming structure change in Blender 5.2+
+            bl_domain = self.find_mesh_object(bl_objects, "flip_domain")
+
         if bl_domain:
             bl_domain.name = "FLIP Domain"
             bl_domain.data.name = "flip_domain_data"
@@ -149,6 +154,10 @@ class FLIPFluidsUSDImporter(bpy.types.Operator, bpy_extras.io_utils.ImportHelper
             
         # Initialize Fluid Surface
         bl_fluid_surface = self.find_mesh_object(bl_objects, "ff_usd_fluid_surface")
+        if bl_fluid_surface is None:
+            # Accounts for USD naming structure change in Blender 5.2+
+            bl_fluid_surface = self.find_mesh_object(bl_objects, "fluid_surface")
+
         if bl_fluid_surface:
             bl_fluid_surface.name = "fluid_surface"
             bl_fluid_surface.data.name = "fluid_surface_data"
@@ -197,117 +206,29 @@ class FLIPFluidsUSDImporter(bpy.types.Operator, bpy_extras.io_utils.ImportHelper
             self.toggle_cycles_ray_visibility(bl_domain, False)
                 
         # Add FF_GeometryNodes modifiers
-        blend_filename = "geometry_nodes_library.blend"
-        parent_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        resource_filepath = os.path.join(parent_path, "resources", "geometry_nodes", blend_filename)
+        resource_filepath = vcu.get_geometry_nodes_blend_filepath()
 
         for bl_object in bpy.context.selected_objects:
             if bl_object == bl_domain:
                 continue
             
             if "fluid_surface" in bl_object.name:
-                self.add_smooth_modifier(bl_fluid_surface)
-                gn_modifier = helper_operators.add_geometry_node_modifier(bl_fluid_surface, resource_filepath, "FF_GeometryNodesUSDSurface")
-                try:
-                    gn_modifier["Socket_7"] = bl_domain
-                except:
-                    pass
+                self.add_smooth_modifier(bl_object)
+                gn_modifier = helper_operators.add_geometry_node_modifier(bl_object, resource_filepath, "FF_GeometryNodesUSDSurface")
+                vcu.set_geometry_nodes_modifier_value(gn_modifier, "Socket_7", bl_domain, ignore_errors=True) # Domain object
+                vcu.set_geometry_nodes_modifier_value(gn_modifier, "Input_6", True, ignore_errors=True)       # Enable Motion Blur
 
             if "fluid_particles" in bl_object.name:
-                gn_modifier = helper_operators.add_geometry_node_modifier(bl_object, resource_filepath, "FF_USDImportParticles")
-                gn_modifier.show_expanded = False
-
                 gn_modifier = helper_operators.add_geometry_node_modifier(bl_object, resource_filepath, "FF_GeometryNodesUSDFluidParticles")
-                try:
-                    gn_modifier["Socket_46"] = bl_domain
-                    gn_modifier["Socket_49"] = bl_fluid_surface
-                except:
-                    pass
+                vcu.set_geometry_nodes_modifier_value(gn_modifier, "Socket_46", bl_domain, ignore_errors=True)        # Domain object
+                vcu.set_geometry_nodes_modifier_value(gn_modifier, "Socket_49", bl_fluid_surface, ignore_errors=True) # Fluid Surface object
+                vcu.set_geometry_nodes_modifier_value(gn_modifier, "Input_8", True, ignore_errors=True)               # Enable Motion Blur
 
             if "whitewater" in bl_object.name:
-                gn_modifier = helper_operators.add_geometry_node_modifier(bl_object, resource_filepath, "FF_USDImportParticles")
-                gn_modifier.show_expanded = False
-
                 gn_modifier = helper_operators.add_geometry_node_modifier(bl_object, resource_filepath, "FF_GeometryNodesUSDWhitewater")
-                try:
-                    gn_modifier["Socket_46"] = bl_domain
-                    gn_modifier["Socket_49"] = bl_fluid_surface
-                except:
-                    pass
-
-        """
-        print("FLIP Fluids Alembic Import: <" + self.filepath + ">")
-
-        bpy.ops.wm.alembic_import(filepath=self.filepath, always_add_cache_reader=True)
-
-        bl_domain = self.find_flip_fluids_mesh(bpy.context.selected_objects, "FLIP_Domain")
-        bl_fluid_surface = self.find_flip_fluids_mesh(bpy.context.selected_objects, "fluid_surface")
-        bl_fluid_particles = self.find_flip_fluids_mesh(bpy.context.selected_objects, "fluid_particles")
-        bl_whitewater_foam = self.find_flip_fluids_mesh(bpy.context.selected_objects, "whitewater_foam")
-        bl_whitewater_bubble = self.find_flip_fluids_mesh(bpy.context.selected_objects, "whitewater_bubble")
-        bl_whitewater_spray = self.find_flip_fluids_mesh(bpy.context.selected_objects, "whitewater_spray")
-        bl_whitewater_dust = self.find_flip_fluids_mesh(bpy.context.selected_objects, "whitewater_dust")
-
-        blend_filename = "geometry_nodes_library.blend"
-        parent_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        resource_filepath = os.path.join(parent_path, "resources", "geometry_nodes", blend_filename)
-
-        found_mesh_cache_list = []
-
-        if bl_domain is not None:
-            bl_domain.hide_render = True
-            bl_domain.display_type = 'BOUNDS'
-            self.toggle_cycles_ray_visibility(bl_domain, False)
-
-        if bl_fluid_surface is not None:
-            self.add_smooth_modifier(bl_fluid_surface)
-            helper_operators.add_geometry_node_modifier(bl_fluid_surface, resource_filepath, "FF_AlembicImportSurface")
-            gn_modifier = helper_operators.add_geometry_node_modifier(bl_fluid_surface, resource_filepath, "FF_GeometryNodesAlembicSurface")
-            self.apply_default_modifier_settings(bl_fluid_surface, bl_domain, bl_fluid_surface, gn_modifier)
-            self.report({'INFO'}, "Found fluid surface cache... Initialized geometry nodes")
-            found_mesh_cache_list.append("Surface")
-        
-        if bl_fluid_particles is not None:
-            helper_operators.add_geometry_node_modifier(bl_fluid_particles, resource_filepath, "FF_AlembicImportFluidParticles")
-            gn_modifier = helper_operators.add_geometry_node_modifier(bl_fluid_particles, resource_filepath, "FF_GeometryNodesAlembicParticles")
-            self.apply_default_modifier_settings(bl_fluid_particles, bl_domain, bl_fluid_surface, gn_modifier)
-            self.report({'INFO'}, "Found fluid particle cache... Initialized geometry nodes")
-            found_mesh_cache_list.append("FluidParticles")
-        
-        if bl_whitewater_foam is not None:
-            helper_operators.add_geometry_node_modifier(bl_whitewater_foam, resource_filepath, "FF_AlembicImportWhitewaterFoam")
-            gn_modifier = helper_operators.add_geometry_node_modifier(bl_whitewater_foam, resource_filepath, "FF_GeometryNodesAlembicParticles")
-            self.apply_default_modifier_settings(bl_whitewater_foam, bl_domain, bl_fluid_surface, gn_modifier)
-            self.report({'INFO'}, "Found whitewater foam cache... Initialized geometry nodes")
-            found_mesh_cache_list.append("Foam")
-        
-        if bl_whitewater_bubble is not None:
-            helper_operators.add_geometry_node_modifier(bl_whitewater_bubble, resource_filepath, "FF_AlembicImportWhitewaterBubble")
-            gn_modifier = helper_operators.add_geometry_node_modifier(bl_whitewater_bubble, resource_filepath, "FF_GeometryNodesAlembicParticles")
-            self.apply_default_modifier_settings(bl_whitewater_bubble, bl_domain, bl_fluid_surface, gn_modifier)
-            self.report({'INFO'}, "Found whitewater bubble cache... Initialized geometry nodes")
-            found_mesh_cache_list.append("Bubble")
-        
-        if bl_whitewater_spray is not None:
-            helper_operators.add_geometry_node_modifier(bl_whitewater_spray, resource_filepath, "FF_AlembicImportWhitewaterSpray")
-            gn_modifier = helper_operators.add_geometry_node_modifier(bl_whitewater_spray, resource_filepath, "FF_GeometryNodesAlembicParticles")
-            self.apply_default_modifier_settings(bl_whitewater_spray, bl_domain, bl_fluid_surface, gn_modifier)
-            self.report({'INFO'}, "Found whitewater spray cache... Initialized geometry nodes")
-            found_mesh_cache_list.append("Spray")
-        
-        if bl_whitewater_dust is not None:
-            helper_operators.add_geometry_node_modifier(bl_whitewater_dust, resource_filepath, "FF_AlembicImportWhitewaterDust")
-            gn_modifier = helper_operators.add_geometry_node_modifier(bl_whitewater_dust, resource_filepath, "FF_GeometryNodesAlembicParticles")
-            self.apply_default_modifier_settings(bl_whitewater_dust, bl_domain, bl_fluid_surface, gn_modifier)
-            self.report({'INFO'}, "Found whitewater dust cache... Initialized geometry nodes")
-            found_mesh_cache_list.append("Dust")
-
-        if found_mesh_cache_list:
-            found_mesh_cache_string = "/".join(found_mesh_cache_list)
-            self.report({'INFO'}, "Found and initialized " + found_mesh_cache_string + " objects and geometry nodes.")
-        else:
-            self.report({'WARNING'}, "No valid FLIP Fluids addon meshes found. Is this Alembic file a FLIP Fluids addon export?")
-        """
+                vcu.set_geometry_nodes_modifier_value(gn_modifier, "Socket_29", bl_domain, ignore_errors=True)        # Domain object
+                vcu.set_geometry_nodes_modifier_value(gn_modifier, "Socket_32", bl_fluid_surface, ignore_errors=True) # Fluid Surface object
+                vcu.set_geometry_nodes_modifier_value(gn_modifier, "Input_8", True, ignore_errors=True)               # Enable Motion Blur
 
         return {'FINISHED'}
 
@@ -366,6 +287,10 @@ class FLIPFluidsUSDExporter(bpy.types.Operator, bpy_extras.io_utils.ExportHelper
             else:
                 column.prop(hprops.usd_frame_range_custom, "value_min")
                 column.prop(hprops.usd_frame_range_custom, "value_max")
+
+            if vcu.is_blender_52():
+                column = body.column(align=True)
+                column.prop(hprops, "usd_incremental_save")
 
 
         header, body = self.layout.panel("usd_include", default_closed=False)

@@ -15,6 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import bpy, blf, math, colorsys
+import mathutils
+from mathutils import Vector, Matrix
 
 from bpy.props import (
         IntProperty
@@ -22,6 +24,7 @@ from bpy.props import (
 
 from ..objects.flip_fluid_aabb import AABB
 from ..utils import ui_utils
+from ..utils import geometry_utils
 from ..utils import version_compatibility_utils as vcu
 from .. import render
 
@@ -29,25 +32,56 @@ import gpu
 from gpu_extras.batch import batch_for_shader
 
 
-x_coords = []
-y_coords = []
-z_coords = []
-bounds_coords = []
+def _rotate_vertices_to_domain_OBB(bl_vertices, bl_domain, slerp=1.0):
+    dprops = bl_domain.flip_fluid.domain
+    rotation_matrix = dprops.rotation_matrix
+    if slerp < 1.0:
+        mat_a = Matrix.Identity(4)
+        mat_b = rotation_matrix
+        quat_a = mat_a.to_quaternion()
+        quat_b = mat_b.to_quaternion()
+        slerp_quat = quat_a.slerp(quat_b, slerp)
+        rotation_matrix = slerp_quat.to_matrix().to_4x4()
+
+    return geometry_utils.apply_rotation_around_point_to_vertices(bl_vertices, rotation_matrix, dprops.AABB_min)
+
+
+DRAW_VERTICES_X = []
+DRAW_VERTICES_Y = []
+DRAW_VERTICES_Z = []
+DRAW_VERTICES_INTERNAL_X = []
+DRAW_VERTICES_INTERNAL_Y = []
+DRAW_VERTICES_INTERNAL_Z = []
+BOUNDS_DRAW_VERTICES = []
+BOUNDS_DRAW_VERTICES_INTERNAL = []
+DOMAIN_DRAW_VERTICES_INTERNAL = []
+def _clear_global_draw_data():
+    global DRAW_VERTICES_X, DRAW_VERTICES_Y, DRAW_VERTICES_Z
+    global DRAW_VERTICES_INTERNAL_X, DRAW_VERTICES_INTERNAL_Y, DRAW_VERTICES_INTERNAL_Z
+    global BOUNDS_DRAW_VERTICES
+    global BOUNDS_DRAW_VERTICES_INTERNAL
+    global DOMAIN_DRAW_VERTICES_INTERNAL
+
+    DRAW_VERTICES_X, DRAW_VERTICES_Y, DRAW_VERTICES_Z = [], [], []
+    DRAW_VERTICES_INTERNAL_X, DRAW_VERTICES_INTERNAL_Y, DRAW_VERTICES_INTERNAL_Z = [], [], []
+    BOUNDS_DRAW_VERTICES = []
+    BOUNDS_DRAW_VERTICES_INTERNAL = []
+    DOMAIN_DRAW_VERTICES_INTERNAL = []
+
+
 def update_debug_grid_geometry(context):
     if render.is_rendering():
         # This method does not need to be run while rendering. Can cause
         # crashes on certain systems.
         return
 
-    global x_coords
-    global y_coords
-    global z_coords
-    global bounds_coords
+    global DRAW_VERTICES_X, DRAW_VERTICES_Y, DRAW_VERTICES_Z
+    global DRAW_VERTICES_INTERNAL_X, DRAW_VERTICES_INTERNAL_Y, DRAW_VERTICES_INTERNAL_Z
+    global BOUNDS_DRAW_VERTICES
+    global BOUNDS_DRAW_VERTICES_INTERNAL
+    global DOMAIN_DRAW_VERTICES_INTERNAL
 
-    x_coords = []
-    y_coords = []
-    z_coords = []
-    bounds_coords = []
+    _clear_global_draw_data()
 
     domain = context.scene.flip_fluid.get_domain_object()
     if domain is None:
@@ -57,8 +91,11 @@ def update_debug_grid_geometry(context):
     if not dprops.debug.is_simulation_grid_debugging_enabled():
         return
 
-    bbox = AABB.from_blender_object(domain)
+    minp, maxp = dprops.AABB_min, dprops.AABB_max
+    bbox = AABB.from_corners(minp, maxp)
     max_dim = max(bbox.xdim, bbox.ydim, bbox.zdim)
+    internal_grid_slerp = 1.0 - dprops.debug.internal_simulation_grid_interpolation
+
     if dprops.debug.grid_display_mode == 'GRID_DISPLAY_SIMULATION':
         isize, jsize, ksize, dx = dprops.simulation.get_viewport_grid_dimensions()
     elif dprops.debug.grid_display_mode == 'GRID_DISPLAY_PREVIEW':
@@ -68,20 +105,14 @@ def update_debug_grid_geometry(context):
         isize, jsize, ksize, dx = dprops.simulation.get_viewport_grid_dimensions()
 
     if dprops.debug.grid_display_mode == 'GRID_DISPLAY_MESH':
-
         isize *= (dprops.surface.subdivisions + 1)
         jsize *= (dprops.surface.subdivisions + 1)
         ksize *= (dprops.surface.subdivisions + 1)
         dx /= (dprops.surface.subdivisions + 1)
+
     elif dprops.debug.grid_display_mode == 'GRID_DISPLAY_FORCE_FIELD':
         isize, jsize, ksize, dx = dprops.simulation.get_viewport_grid_dimensions()
-        reduction = 1
-        if dprops.world.force_field_resolution == 'FORCE_FIELD_RESOLUTION_LOW':
-            reduction = 4
-        elif dprops.world.force_field_resolution == 'FORCE_FIELD_RESOLUTION_NORMAL':
-            reduction = 3
-        elif dprops.world.force_field_resolution == 'FORCE_FIELD_RESOLUTION_HIGH':
-            reduction = 2
+        reduction = dprops.world.get_force_field_grid_reduction()
         isize = int(math.ceil(isize / reduction))
         jsize = int(math.ceil(jsize / reduction))
         ksize = int(math.ceil(ksize / reduction))
@@ -94,69 +125,89 @@ def update_debug_grid_geometry(context):
     dxgrid = dx * disp_scale
 
     if dprops.debug.snap_offsets_to_grid:
-        xoffset = math.ceil(dprops.debug.debug_grid_offsets[0] * igrid) * dxgrid
+        xoffset = math.ceil(dprops.debug.debug_grid_offsets[2] * igrid) * dxgrid
         yoffset = math.ceil(dprops.debug.debug_grid_offsets[1] * jgrid) * dxgrid
-        zoffset = math.ceil(dprops.debug.debug_grid_offsets[2] * kgrid) * dxgrid
+        zoffset = math.ceil(dprops.debug.debug_grid_offsets[0] * kgrid) * dxgrid
     else:
-        xoffset = dprops.debug.debug_grid_offsets[0] * igrid * dxgrid
+        xoffset = dprops.debug.debug_grid_offsets[2] * igrid * dxgrid
         yoffset = dprops.debug.debug_grid_offsets[1] * jgrid * dxgrid
-        zoffset = dprops.debug.debug_grid_offsets[2] * kgrid * dxgrid
+        zoffset = dprops.debug.debug_grid_offsets[0] * kgrid * dxgrid
 
-    # Geometry Data
-    z_coords = []
+    # Grid Draw Data
+    vertices_z = []
     for i in range(igrid + 1):
-        z_coords.append((bbox.x + i * dxgrid, bbox.y, bbox.z + zoffset))
-        z_coords.append((bbox.x + i * dxgrid, bbox.y + jgrid * dxgrid, bbox.z + zoffset))
+        vertices_z.append([bbox.x + i * dxgrid, bbox.y, bbox.z + zoffset])
+        vertices_z.append([bbox.x + i * dxgrid, bbox.y + jgrid * dxgrid, bbox.z + zoffset])
     for j in range(jgrid + 1):
-        z_coords.append((bbox.x, bbox.y + j * dxgrid, bbox.z + zoffset))
-        z_coords.append((bbox.x + igrid * dxgrid, bbox.y + j * dxgrid, bbox.z + zoffset))
+        vertices_z.append([bbox.x, bbox.y + j * dxgrid, bbox.z + zoffset])
+        vertices_z.append([bbox.x + igrid * dxgrid, bbox.y + j * dxgrid, bbox.z + zoffset])
+    vertices_z = [Vector(v) for v in vertices_z]
+    DRAW_VERTICES_Z = _rotate_vertices_to_domain_OBB(vertices_z, domain)
+    DRAW_VERTICES_INTERNAL_Z = _rotate_vertices_to_domain_OBB(vertices_z, domain, slerp=internal_grid_slerp)
 
-    y_coords = []
+    vertices_y = []
     for i in range(igrid + 1):
-        y_coords.append((bbox.x + i * dxgrid, bbox.y + yoffset, bbox.z))
-        y_coords.append((bbox.x + i * dxgrid, bbox.y + yoffset, bbox.z + kgrid * dxgrid))
+        vertices_y.append([bbox.x + i * dxgrid, bbox.y + yoffset, bbox.z])
+        vertices_y.append([bbox.x + i * dxgrid, bbox.y + yoffset, bbox.z + kgrid * dxgrid])
     for k in range(kgrid + 1):
-        y_coords.append((bbox.x, bbox.y + yoffset, bbox.z + k * dxgrid))
-        y_coords.append((bbox.x + igrid * dxgrid, bbox.y + yoffset, bbox.z + k * dxgrid))
+        vertices_y.append([bbox.x, bbox.y + yoffset, bbox.z + k * dxgrid])
+        vertices_y.append([bbox.x + igrid * dxgrid, bbox.y + yoffset, bbox.z + k * dxgrid])
+    vertices_y = [Vector(v) for v in vertices_y]
+    DRAW_VERTICES_Y = _rotate_vertices_to_domain_OBB(vertices_y, domain)
+    DRAW_VERTICES_INTERNAL_Y = _rotate_vertices_to_domain_OBB(vertices_y, domain, slerp=internal_grid_slerp)
 
-    x_coords = []
+    vertices_z = []
     for j in range(jgrid + 1):
-        x_coords.append((bbox.x + xoffset, bbox.y + j * dxgrid, bbox.z))
-        x_coords.append((bbox.x + xoffset, bbox.y + j * dxgrid, bbox.z + kgrid * dxgrid))
+        vertices_z.append([bbox.x + xoffset, bbox.y + j * dxgrid, bbox.z])
+        vertices_z.append([bbox.x + xoffset, bbox.y + j * dxgrid, bbox.z + kgrid * dxgrid])
     for k in range(kgrid + 1):
-        x_coords.append((bbox.x + xoffset, bbox.y, bbox.z + k * dxgrid))
-        x_coords.append((bbox.x + xoffset, bbox.y + jgrid * dxgrid, bbox.z + k * dxgrid))
+        vertices_z.append([bbox.x + xoffset, bbox.y, bbox.z + k * dxgrid])
+        vertices_z.append([bbox.x + xoffset, bbox.y + jgrid * dxgrid, bbox.z + k * dxgrid])
+    vertices_z = [Vector(v) for v in vertices_z]
+    DRAW_VERTICES_X = _rotate_vertices_to_domain_OBB(vertices_z, domain)
+    DRAW_VERTICES_INTERNAL_X = _rotate_vertices_to_domain_OBB(vertices_z, domain, slerp=internal_grid_slerp)
+
+
+    # Bounds Draw Data
+    def get_bounds_vertices(minp, maxp):
+        vertices_bounds = [
+            (minp.x, minp.y, minp.z), (maxp.x, minp.y, minp.z), (minp.x, maxp.y, minp.z), (maxp.x, maxp.y, minp.z), 
+            (minp.x, minp.y, maxp.z), (maxp.x, minp.y, maxp.z), (minp.x, maxp.y, maxp.z), (maxp.x, maxp.y, maxp.z),
+            (minp.x, minp.y, minp.z), (minp.x, maxp.y, minp.z), (maxp.x, minp.y, minp.z), (maxp.x, maxp.y, minp.z),
+            (minp.x, minp.y, maxp.z), (minp.x, maxp.y, maxp.z), (maxp.x, minp.y, maxp.z), (maxp.x, maxp.y, maxp.z),
+            (minp.x, minp.y, minp.z), (minp.x, minp.y, maxp.z), (maxp.x, minp.y, minp.z), (maxp.x, minp.y, maxp.z),
+            (minp.x, maxp.y, minp.z), (minp.x, maxp.y, maxp.z), (maxp.x, maxp.y, minp.z), (maxp.x, maxp.y, maxp.z)
+            ]
+        vertices_bounds = [Vector(v) for v in vertices_bounds]
+        return vertices_bounds
 
     native_dx = max_dim / dprops.simulation.resolution
-    solid_width = 1.5 * native_dx
-    width = math.ceil(bbox.xdim / native_dx) * native_dx
-    height = math.ceil(bbox.ydim / native_dx) * native_dx
-    depth = math.ceil(bbox.zdim / native_dx) * native_dx
-    minx = bbox.x + solid_width
-    miny = bbox.y + solid_width
-    minz = bbox.z + solid_width
-    maxx = bbox.x + isize * dx - solid_width
-    maxy = bbox.y + jsize * dx - solid_width
-    maxz = bbox.z + ksize * dx - solid_width
+    solid_width = Vector([1.5 * native_dx] * 3)
+    dimensions = Vector([math.ceil(bbox.xdim / native_dx) * native_dx,
+                         math.ceil(bbox.ydim / native_dx) * native_dx,
+                         math.ceil(bbox.zdim / native_dx) * native_dx])
+    minp = Vector([bbox.x, bbox.y, bbox.z])
+    maxp = Vector([bbox.x, bbox.y, bbox.z]) + dimensions
 
-    if minx > maxx:
-        minx = bbox.x + 0.5 * isize * dx
-        maxx = minx
-    if miny > maxy:
-        miny = bbox.y + 0.5 * jsize * dx
-        maxy = miny
-    if minz > maxz:
-        minz = bbox.z + 0.5 * ksize * dx
-        maxz = minz
+    minp = minp + solid_width
+    maxp = maxp - solid_width
+    if minp.x > maxp.x:
+        minp.x = bbox.x + 0.5 * isize * dx
+        maxp.x = minp.x
+    if minp.y > maxp.y:
+        minp.y = bbox.y + 0.5 * jsize * dx
+        maxp.y = minp.y
+    if minp.z > maxp.z:
+        minp.z = bbox.z + 0.5 * ksize * dx
+        maxp.z = minp.z
 
-    bounds_coords = [
-        (minx, miny, minz), (maxx, miny, minz), (minx, maxy, minz), (maxx, maxy, minz), 
-        (minx, miny, maxz), (maxx, miny, maxz), (minx, maxy, maxz), (maxx, maxy, maxz),
-        (minx, miny, minz), (minx, maxy, minz), (maxx, miny, minz), (maxx, maxy, minz),
-        (minx, miny, maxz), (minx, maxy, maxz), (maxx, miny, maxz), (maxx, maxy, maxz),
-        (minx, miny, minz), (minx, miny, maxz), (maxx, miny, minz), (maxx, miny, maxz),
-        (minx, maxy, minz), (minx, maxy, maxz), (maxx, maxy, minz), (maxx, maxy, maxz)
-        ]
+    vertices_bounds = get_bounds_vertices(minp, maxp)
+    BOUNDS_DRAW_VERTICES = _rotate_vertices_to_domain_OBB(vertices_bounds, domain)
+    BOUNDS_DRAW_VERTICES_INTERNAL = _rotate_vertices_to_domain_OBB(vertices_bounds, domain, slerp=internal_grid_slerp)
+
+    minp_domain, maxp_domain = dprops.AABB_min, dprops.AABB_max
+    vertices_domain = get_bounds_vertices(minp_domain, maxp_domain)
+    DOMAIN_DRAW_VERTICES_INTERNAL = _rotate_vertices_to_domain_OBB(vertices_domain, domain, slerp=internal_grid_slerp)
 
 
 class FlipFluidDrawDebugGrid(bpy.types.Operator):
@@ -174,156 +225,17 @@ class FlipFluidDrawDebugGrid(bpy.types.Operator):
         return True
 
 
-    def draw_callback_2d(self, context):
-        draw_text = False
-        if not draw_text:
-            return
-
-        if render.is_rendering():
-            # This method does not need to be run while rendering. Can cause
-            # crashes on certain systems.
-            return
-
-        domain = context.scene.flip_fluid.get_domain_object()
-        if domain is None:
-            return
-        dprops = context.scene.flip_fluid.get_domain_properties()
-
-        if vcu.get_object_hide_viewport(domain):
-            return
-        if not dprops.debug.display_simulation_grid:
-            return
-
-        if dprops.debug.grid_display_mode == 'GRID_DISPLAY_SIMULATION':
-            isize, jsize, ksize, viewport_dx = dprops.simulation.get_viewport_grid_dimensions()
-            _, _, _, simulation_dx = dprops.simulation.get_simulation_grid_dimensions()
-        elif dprops.debug.grid_display_mode == 'GRID_DISPLAY_PREVIEW':
-            presolution = dprops.simulation.preview_resolution
-            isize, jsize, ksize, viewport_dx = dprops.simulation.get_viewport_grid_dimensions(resolution=presolution)
-            _, _, _, simulation_dx = dprops.simulation.get_simulation_grid_dimensions(resolution=presolution)
-        elif dprops.debug.grid_display_mode == 'GRID_DISPLAY_MESH':
-            isize, jsize, ksize, simulation_dx = dprops.simulation.get_viewport_grid_dimensions()
-            isize *= (dprops.surface.subdivisions + 1)
-            jsize *= (dprops.surface.subdivisions + 1)
-            ksize *= (dprops.surface.subdivisions + 1)
-            simulation_dx /= (dprops.surface.subdivisions + 1)
-        elif dprops.debug.grid_display_mode == 'GRID_DISPLAY_FORCE_FIELD':
-            isize, jsize, ksize, simulation_dx = dprops.simulation.get_viewport_grid_dimensions()
-            reduction = 1
-            force_field_quality_str = 'Ultra'
-            if dprops.world.force_field_resolution == 'FORCE_FIELD_RESOLUTION_LOW':
-                reduction = 4
-                force_field_quality_str = 'Low'
-            elif dprops.world.force_field_resolution == 'FORCE_FIELD_RESOLUTION_NORMAL':
-                reduction = 3
-                force_field_quality_str = 'Normal'
-            elif dprops.world.force_field_resolution == 'FORCE_FIELD_RESOLUTION_HIGH':
-                reduction = 2
-                force_field_quality_str = 'High'
-            isize = int(math.ceil(isize / reduction))
-            jsize = int(math.ceil(jsize / reduction))
-            ksize = int(math.ceil(ksize / reduction))
-            simulation_dx *= reduction
-
-        width = context.region.width
-        height = 200
-        xstart = context.region.width - 400
-
-        font_id = 0
-        try:
-            # Not all Blender versions have functionality to set font color with this method
-            blf.color(font_id, 1.0, 1.0, 1.0, 1.0)
-        except:
-            pass
-        if dprops.debug.grid_display_mode == 'GRID_DISPLAY_SIMULATION':
-            blf.size(font_id, 20, 72)
-            blf.position(font_id, xstart, height - 50, 0)
-            blf.draw(font_id, "Simulation Grid")
-
-            blf.size(font_id, 15, 72)
-            blf.position(font_id, xstart + 10, height - 80, 0)
-            blf.draw(font_id, "Grid Resolution: " + str(isize) + " x " + str(jsize) + " x " + str(ksize))
-
-            dimx = round(simulation_dx * isize, 4)
-            dimy = round(simulation_dx * jsize, 4)
-            dimz = round(simulation_dx * ksize, 4)
-            blf.position(font_id, xstart + 10, height - 105, 0)
-            blf.draw(font_id, "Grid Dimensions: " + str(dimx) + "m x " + str(dimy) + "m x " + str(dimz) + "m")
-
-            blf.position(font_id, xstart + 10, height - 130, 0)
-            blf.draw(font_id, "Voxel Count: " + format(isize*jsize*ksize, ",").replace(",", " "))
-
-            blf.position(font_id, xstart + 10, height - 155, 0)
-            blf.draw(font_id, "Voxel Width: " + str(round(simulation_dx, 4)) + "m")
-        elif dprops.debug.grid_display_mode == 'GRID_DISPLAY_MESH':
-            if dprops.surface.compute_chunk_mode == 'COMPUTE_CHUNK_MODE_AUTO':
-                compute_chunks = dprops.surface.compute_chunks_auto
-            else:
-                compute_chunks = dprops.surface.compute_chunks_fixed
-
-            blf.size(font_id, 20, 72)
-            blf.position(font_id, xstart, height - 50, 0)
-            blf.draw(font_id, "Final Surface Mesh Grid")
-
-            blf.size(font_id, 15, 72)
-            blf.position(font_id, xstart + 10, height - 80, 0)
-            blf.draw(font_id, "Subdivisions: " + str(dprops.surface.subdivisions))
-
-            blf.position(font_id, xstart + 10, height - 105, 0)
-            blf.draw(font_id, "Compute Chunks: " + str(compute_chunks))
-
-            blf.position(font_id, xstart + 10, height - 130, 0)
-            blf.draw(font_id, "Grid Resolution: " + str(isize) + " x " + str(jsize) + " x " + str(ksize))
-
-            num_cells = isize*jsize*ksize
-            num_cells_str = format(num_cells, ",").replace(",", " ")
-            chunk_cells_str = format(math.ceil(num_cells / compute_chunks), ",").replace(",", " ")
-            blf.position(font_id, xstart + 10, height - 155, 0)
-            blf.draw(font_id, "Voxel Count: " + num_cells_str + " (" + chunk_cells_str + " / chunk)")
-
-            blf.position(font_id, xstart + 10, height - 180, 0)
-            blf.draw(font_id, "Voxel Width: " + str(round(simulation_dx, 4)))
-        elif dprops.debug.grid_display_mode == 'GRID_DISPLAY_PREVIEW':
-            blf.size(font_id, 20, 72)
-            blf.position(font_id, xstart, height - 50, 0)
-            blf.draw(font_id, "Preview Surface Mesh Grid")
-
-            blf.size(font_id, 15, 72)
-            blf.position(font_id, xstart + 10, height - 80, 0)
-            blf.draw(font_id, "Grid Resolution: " + str(isize) + " x " + str(jsize) + " x " + str(ksize))
-
-            num_cells = isize*jsize*ksize
-            num_cells_str = format(num_cells, ",").replace(",", " ")
-            blf.position(font_id, xstart + 10, height - 105, 0)
-            blf.draw(font_id, "Voxel Width: " + str(round(simulation_dx, 4)))
-        elif dprops.debug.grid_display_mode == 'GRID_DISPLAY_FORCE_FIELD':
-            blf.size(font_id, 20, 72)
-            blf.position(font_id, xstart, height - 50, 0)
-            blf.draw(font_id, "Force Field Grid")
-
-            blf.size(font_id, 15, 72)
-            blf.position(font_id, xstart + 10, height - 80, 0)
-            blf.draw(font_id, "Force Field Quality: " + force_field_quality_str)
-
-            blf.position(font_id, xstart + 10, height - 105, 0)
-            blf.draw(font_id, "Force Field Resolution: " + str(isize) + " x " + str(jsize) + " x " + str(ksize))
-
-            num_cells = isize*jsize*ksize
-            num_cells_str = format(num_cells, ",").replace(",", " ")
-            blf.position(font_id, xstart + 10, height - 130, 0)
-            blf.draw(font_id, "Voxel Width: " + str(round(simulation_dx, 4)))
-
-
     def draw_callback_3d(self, context):
         if render.is_rendering():
             # This method does not need to be run while rendering. Can cause
             # crashes on certain systems.
             return
             
-        global x_coords
-        global y_coords
-        global z_coords
-        global bounds_coords
+        global DRAW_VERTICES_X, DRAW_VERTICES_Y, DRAW_VERTICES_Z
+        global DRAW_VERTICES_INTERNAL_X, DRAW_VERTICES_INTERNAL_Y, DRAW_VERTICES_INTERNAL_Z
+        global BOUNDS_DRAW_VERTICES
+        global BOUNDS_DRAW_VERTICES_INTERNAL
+        global DOMAIN_DRAW_VERTICES_INTERNAL
 
         domain = context.scene.flip_fluid.get_domain_object()
         if domain is None:
@@ -333,55 +245,55 @@ class FlipFluidDrawDebugGrid(bpy.types.Operator):
         if vcu.get_object_hide_viewport(domain):
             return
 
-        x_color = dprops.debug.x_grid_color
-        y_color = dprops.debug.y_grid_color
-        z_color = dprops.debug.z_grid_color
-        bounds_color = dprops.debug.domain_bounds_color
-
-        # Draw
         display_grid = dprops.debug.display_simulation_grid
-        line_draw_mode = 'UNIFORM_COLOR'
+        display_bounds = dprops.debug.display_domain_bounds
+        display_internal_grid = dprops.debug.display_internal_simulation_grid
+        x_draw_color = dprops.debug.x_grid_color
+        y_draw_color = dprops.debug.y_grid_color
+        z_draw_color = dprops.debug.z_grid_color
+        bounds_draw_color = dprops.debug.domain_bounds_color
+        internal_opacity = dprops.debug.internal_simulation_grid_opacity
 
-        if display_grid and dprops.debug.enabled_debug_grids[2]:
-            shader = gpu.shader.from_builtin(line_draw_mode)
-            batch = batch_for_shader(shader, 'LINES', {"pos": z_coords})
+        # (Vertex list, RGBA tuple, Draw True/False)
+        draw_info = [
+            (DRAW_VERTICES_X, (*z_draw_color, 1.0), display_grid and dprops.debug.enabled_debug_grids[2]),
+            (DRAW_VERTICES_Y, (*y_draw_color, 1.0), display_grid and dprops.debug.enabled_debug_grids[1]),
+            (DRAW_VERTICES_Z, (*x_draw_color, 1.0), display_grid and dprops.debug.enabled_debug_grids[0]),
+            (BOUNDS_DRAW_VERTICES, (*bounds_draw_color, 1.0), display_bounds),
+
+            (DRAW_VERTICES_INTERNAL_X, (*z_draw_color, internal_opacity), display_internal_grid and dprops.debug.enabled_debug_grids[2]),
+            (DRAW_VERTICES_INTERNAL_Y, (*y_draw_color, internal_opacity), display_internal_grid and dprops.debug.enabled_debug_grids[1]),
+            (DRAW_VERTICES_INTERNAL_Z, (*x_draw_color, internal_opacity), display_internal_grid and dprops.debug.enabled_debug_grids[0]),
+            (BOUNDS_DRAW_VERTICES_INTERNAL, (*bounds_draw_color, internal_opacity), display_internal_grid),
+            (DOMAIN_DRAW_VERTICES_INTERNAL, (1.0, 1.0, 1.0, internal_opacity), display_internal_grid)
+            ]
+
+        for info in draw_info:
+            draw_enabled = info[2]
+            if not draw_enabled:
+                continue
+
+            vertices = info[0]
+            color = info[1]
+
+            shader = gpu.shader.from_builtin('POLYLINE_UNIFORM_COLOR')
+            batch = batch_for_shader(shader, 'LINES', {"pos": vertices})
             shader.bind()
-            shader.uniform_float("color", (z_color[0], z_color[1], z_color[2], 1.0))
 
+            shader.uniform_float("color", color)
+            shader.uniform_bool("lineSmooth", True)
+            shader.uniform_float("lineWidth", 1.0)
+            _, _, w, h = gpu.state.viewport_get()
+            shader.uniform_float("viewportSize", (w, h))
+
+            gpu.state.blend_set('ALPHA')
             gpu.state.depth_test_set('LESS_EQUAL')
             gpu.state.depth_mask_set(True)
-            batch.draw(shader)
-            gpu.state.depth_mask_set(False)
 
-        if display_grid and dprops.debug.enabled_debug_grids[1]:
-            shader = gpu.shader.from_builtin(line_draw_mode)
-            batch = batch_for_shader(shader, 'LINES', {"pos": y_coords})
-            shader.bind()
-            shader.uniform_float("color", (y_color[0], y_color[1], y_color[2], 1.0))
-
-            gpu.state.depth_test_set('LESS_EQUAL')
-            gpu.state.depth_mask_set(True)
             batch.draw(shader)
-            gpu.state.depth_mask_set(False)
 
-        if display_grid and dprops.debug.enabled_debug_grids[0]:
-            shader = gpu.shader.from_builtin(line_draw_mode)
-            batch = batch_for_shader(shader, 'LINES', {"pos": x_coords})
-            shader.bind()
-            shader.uniform_float("color", (x_color[0], x_color[1], x_color[2], 1.0))
-            gpu.state.depth_test_set('LESS_EQUAL')
-            gpu.state.depth_mask_set(True)
-            batch.draw(shader)
-            gpu.state.depth_mask_set(False)
-
-        if dprops.debug.display_domain_bounds:
-            shader = gpu.shader.from_builtin(line_draw_mode)
-            batch = batch_for_shader(shader, 'LINES', {"pos": bounds_coords})
-            shader.bind()
-            shader.uniform_float("color", (bounds_color[0], bounds_color[1], bounds_color[2], 1.0))
-            gpu.state.depth_test_set('LESS_EQUAL')
-            gpu.state.depth_mask_set(True)
-            batch.draw(shader)
+            gpu.state.blend_set('NONE')
+            gpu.state.depth_test_set('NONE')
             gpu.state.depth_mask_set(False)
 
 
@@ -400,7 +312,6 @@ class FlipFluidDrawDebugGrid(bpy.types.Operator):
         if dprops is None:
             return
         args = (context,)
-        self._handle_2d = bpy.types.SpaceView3D.draw_handler_add(self.draw_callback_2d, args, 'WINDOW', 'POST_PIXEL')
         self._handle_3d = bpy.types.SpaceView3D.draw_handler_add(self.draw_callback_3d, args, 'WINDOW', 'POST_VIEW')
 
         context.window_manager.modal_handler_add(self)
@@ -411,7 +322,6 @@ class FlipFluidDrawDebugGrid(bpy.types.Operator):
 
     def cancel(self, context):
         bpy.types.SpaceView3D.draw_handler_remove(self._handle_3d, 'WINDOW')
-        bpy.types.SpaceView3D.draw_handler_remove(self._handle_2d, 'WINDOW')
         context.window_manager.event_timer_remove(self._timer)
         ui_utils.force_ui_redraw()
         dprops = bpy.context.scene.flip_fluid.get_domain_properties()

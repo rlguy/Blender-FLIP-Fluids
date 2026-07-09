@@ -177,6 +177,36 @@ extern "C" {
         );
     }
 
+    EXPORTDLL void MeshFluidSource_enable_gradual_outflow(MeshFluidSource* obj, int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &MeshFluidSource::enableGradualOutflow, err
+        );
+    }
+
+    EXPORTDLL void MeshFluidSource_disable_gradual_outflow(MeshFluidSource* obj, int *err) {
+        CBindings::safe_execute_method_void_0param(
+            obj, &MeshFluidSource::disableGradualOutflow, err
+        );
+    }
+
+    EXPORTDLL int MeshFluidSource_is_gradual_outflow_enabled(MeshFluidSource* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &MeshFluidSource::isGradualOutflowEnabled, err
+        );
+    }
+
+    EXPORTDLL float MeshFluidSource_get_outflow_rate(MeshFluidSource* obj, int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &MeshFluidSource::getOutflowRate, err
+        );
+    }
+
+    EXPORTDLL void MeshFluidSource_set_outflow_rate(MeshFluidSource* obj, float value, int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &MeshFluidSource::setOutflowRate, value, err
+        );
+    }
+
     EXPORTDLL Vector3_t MeshFluidSource_get_velocity(MeshFluidSource* obj, int *err) {
         vmath::vec3 velocity = CBindings::safe_execute_method_ret_0param(
             obj, &MeshFluidSource::getVelocity, err

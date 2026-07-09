@@ -37,12 +37,12 @@ TriangleMesh::TriangleMesh() {
 TriangleMesh::~TriangleMesh() {
 }
 
-int TriangleMesh::numVertices() {
-    return (int)vertices.size();
+size_t TriangleMesh::numVertices() {
+    return vertices.size();
 }
 
-int TriangleMesh::numTriangles() {
-    return (int)triangles.size();
+size_t TriangleMesh::numTriangles() {
+    return triangles.size();
 }
 
 void TriangleMesh::clear() {
@@ -177,14 +177,14 @@ void TriangleMesh::getMeshFileDataPLY(std::vector<char> &data) {
 
     std::string vertstring = _toString(vertices.size());
     std::string facestring = _toString(triangles.size());
-    int vertdigits = (int)vertstring.length();
-    int facedigits = (int)facestring.length();
+    size_t vertdigits = vertstring.length();
+    size_t facedigits = facestring.length();
 
-    int offset = 0;
-    int headersize = 51 + vertdigits + 65 + facedigits + 49;
+    size_t offset = 0;
+    size_t headersize = 51 + vertdigits + 65 + facedigits + 49;
 
-    int dataSize = headersize + 3*sizeof(float)*(int)vertices.size()
-                   + (sizeof(unsigned char) + 3*sizeof(int))*(int)triangles.size();
+    size_t dataSize = headersize + 3 * sizeof(float) * vertices.size()
+                   + (sizeof(unsigned char) + 3 * sizeof(int)) * triangles.size();
 
     data.clear();
     data.resize(dataSize);
@@ -192,32 +192,32 @@ void TriangleMesh::getMeshFileDataPLY(std::vector<char> &data) {
 
     std::memcpy(data.data() + offset, &header1, 51);
     offset += 51;
-    std::memcpy(data.data() + offset, vertstring.c_str(), vertdigits*sizeof(char));
-    offset += vertdigits*sizeof(char);
+    std::memcpy(data.data() + offset, vertstring.c_str(), vertdigits * sizeof(char));
+    offset += vertdigits * sizeof(char);
 
     std::memcpy(data.data() + offset, header2, 65);
     offset += 65;
 
-    std::memcpy(data.data() + offset, facestring.c_str(), facedigits*sizeof(char));
-    offset += facedigits*sizeof(char);
+    std::memcpy(data.data() + offset, facestring.c_str(), facedigits * sizeof(char));
+    offset += facedigits * sizeof(char);
     std::memcpy(data.data() + offset, header3, 49);
     offset += 49;
 
     float *vertdata = new float[3*vertices.size()];
     vmath::vec3 v;
-    for (unsigned int i = 0; i < vertices.size(); i++) {
+    for (size_t i = 0; i < vertices.size(); i++) {
         v = vertices[i];
         vertdata[3*i] = v.x;
         vertdata[3*i + 1] = v.y;
         vertdata[3*i + 2] = v.z;
     }
-    std::memcpy(data.data() + offset, vertdata, 3*sizeof(float)*vertices.size());
-    offset += 3*sizeof(float)*(int)vertices.size();
+    std::memcpy(data.data() + offset, vertdata, 3 * sizeof(float) * vertices.size());
+    offset += 3 * sizeof(float) * vertices.size();
     delete[] vertdata;
 
     Triangle t;
     int verts[3];
-    for (unsigned int i = 0; i < triangles.size(); i++) {
+    for (size_t i = 0; i < triangles.size(); i++) {
         t = triangles[i];
         verts[0] = t.tri[0];
         verts[1] = t.tri[1];
@@ -226,8 +226,8 @@ void TriangleMesh::getMeshFileDataPLY(std::vector<char> &data) {
         data[offset] = 0x03;
         offset += sizeof(unsigned char);
 
-        std::memcpy(data.data() + offset, verts, 3*sizeof(int));
-        offset += 3*sizeof(int);
+        std::memcpy(data.data() + offset, verts, 3 * sizeof(int));
+        offset += 3 * sizeof(int);
     }
 }
 

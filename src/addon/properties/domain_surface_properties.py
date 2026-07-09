@@ -335,6 +335,14 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
             description="Enable grayscale mixing mode. Enable to avoid color biases when mixing white, black, or shades of gray",
             default=False,
             )
+    enable_uvw_attribute: BoolProperty(
+            name="Generate UVW Attributes",
+            description="Generate fluid UVW texture coordinate attributes for the fluid surface. This attribute stores initial particle"
+                " UVW coordinate. After baking, the UVW vectors can be accessed in a Cycles Attribute Node or in Geometry Nodes"
+                " with the name 'flip_uvw' from the Vector output. This can be used for basic texture projection effects",
+            default=False,
+            options={'HIDDEN'},
+            )
     enable_source_id_attribute: BoolProperty(
             name="Generate Source ID Attributes",
             description="Generate fluid source identifiers for the fluid surface. Each"
@@ -409,6 +417,7 @@ class DomainSurfaceProperties(bpy.types.PropertyGroup):
         add(path + ".color_attribute_mixing_rate",                        "Color Attribute Mixing Rate",                    group_id=0)
         add(path + ".color_attribute_mixing_radius",                      "Color Attribute Mixing Radius",                  group_id=0)
         add(path + ".color_attribute_mixing_mode",                        "Color Attribute Mixing Mode",                    group_id=0)
+        add(path + ".enable_uvw_attribute",                               "Generate UVW Attributes",                        group_id=0)
         add(path + ".enable_mixbox_grayscale_mode",                       "Enable Mixbox Grayscale Mode",                   group_id=0)
         add(path + ".enable_source_id_attribute",                         "Generate Source ID Attributes",                  group_id=0)
         add(path + ".enable_viscosity_attribute",                         "Generate Viscosity Attributes",                  group_id=0)

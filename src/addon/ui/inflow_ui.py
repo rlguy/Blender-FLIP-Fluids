@@ -39,7 +39,7 @@ class FLIPFLUID_PT_InflowTypePanel(bpy.types.Panel):
         inflow_props = obj_props.inflow
         dprops = context.scene.flip_fluid.get_domain_properties()
 
-        show_disabled_in_viewport_warning = True
+        show_disabled_in_viewport_warning = not vcu.get_addon_preferences().dismiss_flip_object_disabled_in_viewport_hint
         if show_disabled_in_viewport_warning and obj.hide_viewport:
             box = self.layout.box()
             box.alert = True
@@ -50,6 +50,36 @@ class FLIPFLUID_PT_InflowTypePanel(bpy.types.Panel):
             row.label(text="Object is currently disabled in the viewport")
             row.label(text="", icon="RESTRICT_VIEW_ON")
             column.label(text="This object will not be included within the simulation")
+
+        def get_disabled_in_viewport_modifiers(bl_obj):
+            mod_list = []
+            if not hasattr(bl_obj, "modifiers"):
+                return mod_list
+            for mod in bl_obj.modifiers:
+                if not mod.show_viewport:
+                    mod_list.append(mod.name)
+            return mod_list
+
+        show_disabled_modifier_in_viewport_warning = not vcu.get_addon_preferences().dismiss_flip_object_modifiers_disabled_in_viewport_hint
+        disabled_modifier_names = get_disabled_in_viewport_modifiers(obj)
+        if show_disabled_modifier_in_viewport_warning and disabled_modifier_names:
+            box = self.layout.box()
+            box.alert = True
+            column = box.column(align=True)
+            row = column.row(align=True)
+            row.alignment = 'LEFT'
+            row.prop(inflow_props, "disabled_in_viewport_modifiers_tooltip", icon="QUESTION", emboss=False, text="")
+            row.label(text="Some object modifiers are currently disabled in the viewport")
+            row.label(text="", icon="RESTRICT_VIEW_ON")
+
+            row = column.row(align=True)
+            row.alignment = 'LEFT'
+            row.label(text="These modifiers will not be included within the simulation:")
+
+            pad = 5
+            for name in disabled_modifier_names:
+                row = column.row(align=True)
+                row.label(text=" " * pad + name)
 
         column = self.layout.column()
         column.prop(obj_props, "object_type")

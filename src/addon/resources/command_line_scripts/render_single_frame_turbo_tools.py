@@ -37,7 +37,7 @@ if open_image_after:
     if system == "Windows":
         os.startfile(image_path)
     elif system == "Darwin":
-        subprocess.call(["open", image_path])
+        subprocess.run(["open", image_path])
     elif system == "Linux":
-        subprocess.call(["xdg-open", image_path])
+        subprocess.run(["xdg-open", image_path])
         pass

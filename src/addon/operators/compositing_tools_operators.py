@@ -22,6 +22,7 @@ from bpy.props import (
         )
 
 from ..filesystem import filesystem_protection_layer as fpl
+from ..utils import version_compatibility_utils as vcu
 from ..presets import render_passes 
 
 
@@ -233,11 +234,11 @@ def apply_film_transparency(film_transparent):
     print_render_pass_debug(f"Film transparency set to: {film_transparent}")
 
 def apply_transparent_glass_settings(transparent_glass):
-    bpy.context.scene.cycles.film_transparent_glass = transparent_glass
+    vcu.set_cycles_property(bpy.context.scene, "film_transparent_glass", transparent_glass)
     print_render_pass_debug(f"Transparent glass set to: {transparent_glass}")
 
 def apply_denoiser(denoiser):
-    bpy.context.scene.cycles.use_denoising = denoiser
+    vcu.set_cycles_property(bpy.context.scene, "use_denoising", denoiser)
     print_render_pass_debug(f"Denoiser set to: {denoiser}")
 
 def apply_visibility_settings_for_world(world, world_settings):
@@ -247,10 +248,11 @@ def apply_visibility_settings_for_world(world, world_settings):
 
     # Visibility settings for the world
     visibility_attributes = ['camera', 'diffuse', 'glossy', 'transmission', 'scatter', 'shadow']
-    for attr in visibility_attributes:
-        if attr in world_settings:
-            setattr(world.cycles_visibility, attr, world_settings[attr])
-            print_render_pass_debug(f"Set world ray visibility for {attr} to {world_settings[attr]}")
+    if vcu.is_cycles_enabled():
+        for attr in visibility_attributes:
+            if attr in world_settings:
+                setattr(world.cycles_visibility, attr, world_settings[attr])
+                print_render_pass_debug(f"Set world ray visibility for {attr} to {world_settings[attr]}")
 
 
 def apply_visibility_settings_for_object(obj, obj_visibility, pass_name=""):
@@ -581,37 +583,40 @@ class FlipFluidOperatorsInitializeCompositing(bpy.types.Operator):
             active_view_layer.use_pass_transmission_indirect = True
 
         # Set Light Paths for Full Global Illumination
-        cycles = context.scene.cycles
-        cycles.max_bounces = 32
-        cycles.diffuse_bounces = 32
-        cycles.glossy_bounces = 32
-        cycles.transmission_bounces = 32
-        cycles.volume_bounces = 32
-        cycles.transparent_max_bounces = 32
+        cycles = getattr(context.scene, "cycles")
+        vcu.set_cycles_property(context.scene, "max_bounces", 32)
+        vcu.set_cycles_property(context.scene, "diffuse_bounces", 32)
+        vcu.set_cycles_property(context.scene, "glossy_bounces", 32)
+        vcu.set_cycles_property(context.scene, "transmission_bounces", 32)
+        vcu.set_cycles_property(context.scene, "volume_bounces", 32)
+        vcu.set_cycles_property(context.scene, "transparent_max_bounces", 32)
 
         # Enable Caustics
-        cycles.caustics_reflective = True
-        cycles.caustics_refractive = True
+        vcu.set_cycles_property(context.scene, "caustics_reflective", True)
+        vcu.set_cycles_property(context.scene, "caustics_refractive", True)
 
         # Set render resolution to quick 1st rendering
-        context.scene.cycles.samples = 200
+        vcu.set_cycles_property(context.scene, "samples", 200)
 
 
         # Check if GPU denoising is available
-        gpu_denoiser_supported = (
-            bpy.context.preferences.addons['cycles'].preferences.get_devices_for_type('CUDA') or
-            bpy.context.preferences.addons['cycles'].preferences.get_devices_for_type('OPTIX') or
-            bpy.context.preferences.addons['cycles'].preferences.get_devices_for_type('HIP') or
-            bpy.context.preferences.addons['cycles'].preferences.get_devices_for_type('METAL')
-        )
+        try:
+            gpu_denoiser_supported = (
+                bpy.context.preferences.addons['cycles'].preferences.get_devices_for_type('CUDA') or
+                bpy.context.preferences.addons['cycles'].preferences.get_devices_for_type('OPTIX') or
+                bpy.context.preferences.addons['cycles'].preferences.get_devices_for_type('HIP') or
+                bpy.context.preferences.addons['cycles'].preferences.get_devices_for_type('METAL')
+            )
+        except:
+            gpu_denoiser_supported = (False)
 
         if gpu_denoiser_supported:
-            context.scene.cycles.denoising_use_gpu = True
+            vcu.set_cycles_property(context.scene, "denoising_use_gpu", True)
             self.report({'INFO'}, "GPU Denoising enabled.")
         else:
             # Fallback to CPU denoising or disable it
-            if hasattr(context.scene.cycles, "use_denoising"):
-                context.scene.cycles.use_denoising = True  # Enable CPU denoising if available
+            if cycles and hasattr(context.scene.cycles, "use_denoising"):
+                vcu.set_cycles_property(context.scene, "use_denoising", True) # Enable CPU denoising if available
                 self.report({'WARNING'}, "GPU Denoising not supported. Falling back to CPU Denoising.")
             else:
                 self.report({'WARNING'}, "Denoising not available. Rendering without denoising.")
@@ -2991,9 +2996,7 @@ def add_fadenear_modifiers(obj, modifier_name):
         return existing_modifier
 
     # Define resource paths
-    blend_filename = "geometry_nodes_library.blend"
-    parent_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    resource_filepath = os.path.join(parent_path, "resources", "geometry_nodes", blend_filename)
+    resource_filepath = vcu.get_geometry_nodes_blend_filepath()
 
     # Ensure the .blend file exists
     if not os.path.exists(resource_filepath):
