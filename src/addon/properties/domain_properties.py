@@ -473,6 +473,10 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
 
 
     def _update_orientation_data(self, scene):
+        if bpy.context.mode != 'OBJECT':
+            # Geometry operations and manipulation can result in crash outside of object mode
+            return
+
         global DOMAIN_WORLD_VERTICES
 
         bl_domain = scene.flip_fluid.get_domain_object()
@@ -483,6 +487,7 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
         bl_domain_eval = bl_domain.evaluated_get(depsgraph)
 
         current_vertices = geometry_utils.get_world_vertices(bl_domain_eval)
+
         if current_vertices == DOMAIN_WORLD_VERTICES:
             # Skip update to avoid uneccesary computations
             return
@@ -490,6 +495,7 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
         DOMAIN_WORLD_VERTICES = current_vertices
 
         bl_rotation = geometry_utils.get_OBB_rotation_matrix(bl_domain_eval)
+
         self.rotation_matrix = geometry_utils.flatten_matrix_column_order(bl_rotation)
 
         min_vertex, max_vertex = geometry_utils.OBB_to_AABB_min_max_vertex(bl_domain_eval, rotation_matrix=bl_rotation)
