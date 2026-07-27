@@ -105,6 +105,10 @@ class FlipFluidProperties(bpy.types.PropertyGroup):
 
         orphaned_domain_objects = []
         for obj in domain_objects:
+            if obj.users_collection:
+                # contained in a collection
+                continue
+
             is_orphaned = True
             for scene in bpy.data.scenes:
                 for view_layer in scene.view_layers:
