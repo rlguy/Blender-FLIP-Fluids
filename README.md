@@ -126,4 +126,4 @@ Once successfully built, the FLIP Fluids addon will be located in the ```build/b
 - [Bug/Issue Tracker](https://github.com/rlguy/Blender-FLIP-Fluids/issues)
 - [FLIP Fluids Homepage](http://flipfluids.com)
 - [Instagram](https://www.instagram.com/flip.fluids/) | [X (Twitter)](https://x.com/flipfluids) | [Facebook](https://www.facebook.com/FLIPFluids/) | [FLIP Fluids YouTube](https://www.youtube.com/flipfluids) | [BlenderPhysics YouTube](https://www.youtube.com/blenderphysicsvideos)
-- Discord Server: https://discord.gg/FLIPFluids
+- Discord Server: https://discord.gg/bNQPjmgt6k
