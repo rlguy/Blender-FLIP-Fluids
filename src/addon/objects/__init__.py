@@ -18,6 +18,7 @@ if "bpy" in locals():
     import importlib
     reloadable_modules = [
         'flip_fluid_aabb',
+        'flip_fluid_attribute',
         'flip_fluid_cache',
         'flip_fluid_material_library'
         'flip_fluid_map',
@@ -34,6 +35,7 @@ import bpy
 
 from . import (
     flip_fluid_aabb,
+    flip_fluid_attribute,
     flip_fluid_cache,
     flip_fluid_material_library,
     flip_fluid_map,
@@ -45,12 +47,14 @@ from . import (
 
 
 def register():
+    flip_fluid_attribute.register()
     flip_fluid_cache.register()
     flip_fluid_material_library.register()
     flip_fluid_preset_stack.register()
 
 
 def unregister():
+    flip_fluid_attribute.unregister()
     flip_fluid_cache.unregister()
     flip_fluid_material_library.unregister()
     flip_fluid_preset_stack.unregister()

@@ -33,6 +33,7 @@ if "bpy" in locals():
         'draw_force_field_operators',
         'helper_operators',
         'command_line_operators',
+        'post_processing_tools_operators',
         'compositing_tools_operators',
         'support_operators',
         'usd_io_operators',
@@ -62,6 +63,7 @@ from . import (
         draw_force_field_operators,
         helper_operators,
         command_line_operators,
+        post_processing_tools_operators,
         compositing_tools_operators,
         support_operators,
         usd_io_operators,
@@ -87,6 +89,7 @@ def register():
     draw_force_field_operators.register()
     helper_operators.register()
     command_line_operators.register()
+    post_processing_tools_operators.register()
     compositing_tools_operators.register()
     support_operators.register()
     usd_io_operators.register()
@@ -111,6 +114,7 @@ def unregister():
     draw_force_field_operators.unregister()
     helper_operators.unregister()
     command_line_operators.unregister()
+    post_processing_tools_operators.unregister()
     compositing_tools_operators.unregister()
     support_operators.unregister()
     usd_io_operators.unregister()

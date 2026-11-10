@@ -188,7 +188,7 @@ bool ParticleSystem::isSchemaEqual(ParticleSystem &other, bool strict) {
         ParticleSystemAttribute thisAtt = _attributes[i];
         ParticleSystemAttribute otherAtt = other.getAttribute(thisAtt.name);
 
-        float eps = 1e-6;
+        float eps = 1e-6f;
         switch (thisAtt.type) {
             case AttributeDataType::CHAR:
                 {
@@ -395,7 +395,7 @@ void ParticleSystem::merge(ParticleSystem &other) {
 
 ParticleSystemAttribute ParticleSystem::addAttributeChar(std::string name, char defaultValue) {
     ParticleSystemAttribute att;
-    att.id = _charAttributes.size();
+    att.id = (int)_charAttributes.size();
     att.name = name;
     att.type = AttributeDataType::CHAR;
 
@@ -408,7 +408,7 @@ ParticleSystemAttribute ParticleSystem::addAttributeChar(std::string name, char 
 
 ParticleSystemAttribute ParticleSystem::addAttributeUChar(std::string name, unsigned char defaultValue) {
     ParticleSystemAttribute att;
-    att.id = _ucharAttributes.size();
+    att.id = (int)_ucharAttributes.size();
     att.name = name;
     att.type = AttributeDataType::UCHAR;
 
@@ -421,7 +421,7 @@ ParticleSystemAttribute ParticleSystem::addAttributeUChar(std::string name, unsi
 
 ParticleSystemAttribute ParticleSystem::addAttributeBool(std::string name, bool defaultValue) {
     ParticleSystemAttribute att;
-    att.id = _boolAttributes.size();
+    att.id = (int)_boolAttributes.size();
     att.name = name;
     att.type = AttributeDataType::BOOL;
 
@@ -434,7 +434,7 @@ ParticleSystemAttribute ParticleSystem::addAttributeBool(std::string name, bool 
 
 ParticleSystemAttribute ParticleSystem::addAttributeInt(std::string name, int defaultValue) {
     ParticleSystemAttribute att;
-    att.id = _intAttributes.size();
+    att.id = (int)_intAttributes.size();
     att.name = name;
     att.type = AttributeDataType::INT;
 
@@ -447,7 +447,7 @@ ParticleSystemAttribute ParticleSystem::addAttributeInt(std::string name, int de
 
 ParticleSystemAttribute ParticleSystem::addAttributeID(std::string name, size_t defaultValue) {
     ParticleSystemAttribute att;
-    att.id = _idAttributes.size();
+    att.id = (int)_idAttributes.size();
     att.name = name;
     att.type = AttributeDataType::ID;
 
@@ -460,7 +460,7 @@ ParticleSystemAttribute ParticleSystem::addAttributeID(std::string name, size_t 
 
 ParticleSystemAttribute ParticleSystem::addAttributeUInt16(std::string name, uint16_t defaultValue) {
     ParticleSystemAttribute att;
-    att.id = _uint16Attributes.size();
+    att.id = (int)_uint16Attributes.size();
     att.name = name;
     att.type = AttributeDataType::UINT16;
 
@@ -473,7 +473,7 @@ ParticleSystemAttribute ParticleSystem::addAttributeUInt16(std::string name, uin
 
 ParticleSystemAttribute ParticleSystem::addAttributeULongLong(std::string name, unsigned long long int defaultValue) {
     ParticleSystemAttribute att;
-    att.id = _uLongLongAttributes.size();
+    att.id = (int)_uLongLongAttributes.size();
     att.name = name;
     att.type = AttributeDataType::ULONGLONG;
 
@@ -486,7 +486,7 @@ ParticleSystemAttribute ParticleSystem::addAttributeULongLong(std::string name, 
 
 ParticleSystemAttribute ParticleSystem::addAttributeFloat(std::string name, float defaultValue) {
     ParticleSystemAttribute att;
-    att.id = _floatAttributes.size();
+    att.id = (int)_floatAttributes.size();
     att.name = name;
     att.type = AttributeDataType::FLOAT;
 
@@ -499,7 +499,7 @@ ParticleSystemAttribute ParticleSystem::addAttributeFloat(std::string name, floa
 
 ParticleSystemAttribute ParticleSystem::addAttributeVector3(std::string name, vmath::vec3 defaultValue) {
     ParticleSystemAttribute att;
-    att.id = _vector3Attributes.size();
+    att.id = (int)_vector3Attributes.size();
     att.name = name;
     att.type = AttributeDataType::VECTOR3;
 

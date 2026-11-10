@@ -111,9 +111,8 @@ def update_stats(context=None):
     with open(statsfilepath, 'w', encoding='utf-8') as f:
             f.write(json.dumps(stats_dict, sort_keys=True, indent=4))
 
-    dprops.stats.is_stats_current = False
-    context.scene.flip_fluid_helper.frame_complete_callback()
-    dprops.bake.frame_complete_callback()
+    # TODO: Find a more elegant solution for triggering the frame_complete_callback()
+    dprops.frame_complete_callback()
 
     return num_updated_frames
 
@@ -625,6 +624,7 @@ class FlipFluidResetBake(bpy.types.Operator):
     def _reset_property_data(self):
         dprops = bpy.context.scene.flip_fluid.get_domain_properties()
         dprops.mesh_cache.reset_cache_objects()
+        dprops.cache.cache_update_callback()
         dprops.stats.refresh_stats()
         dprops.stats.reset_time_remaining()
         dprops.stats.reset_stats_values()

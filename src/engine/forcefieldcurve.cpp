@@ -42,13 +42,15 @@ ForceFieldCurve::~ForceFieldCurve() {
 }
 
 void ForceFieldCurve::update(double dt, double frameInterpolation) {
+    (void)dt;
+
     MeshObjectStatus s = _meshObject.getStatus();
     bool isMeshStateChanged = s.isStateChanged || (s.isEnabled && s.isAnimated && s.isMeshChanged);
     if (isMeshStateChanged) {
         _isLevelsetUpToDate = false;
     }
 
-    float eps = 1e-6;
+    float eps = 1e-6f;
     if (_isMaxDistanceEnabled && std::abs(_maxDistance - _lastMaxDistance) > eps) {
         _isLevelsetUpToDate = false;
     }
@@ -91,7 +93,7 @@ void ForceFieldCurve::addGravityScaleToGrid(ForceFieldGravityScaleGrid &scaleGri
                 int iSDF = i - _ioffsetSDF;
                 int jSDF = j - _joffsetSDF;
                 int kSDF = k - _koffsetSDF;
-                float eps = 1e-6;
+                float eps = 1e-6f;
                 if (iSDF >= 0 && jSDF >= 0 && kSDF >= 0 && iSDF < _isizeSDF + 1 && jSDF < _jsizeSDF + 1 && kSDF < _ksizeSDF + 1) {
                     vmath::vec3 vectToCurve = _vectorField(iSDF, jSDF, kSDF);
                     float distanceToCurve = vectToCurve.length();
@@ -149,7 +151,7 @@ float ForceFieldCurve::getFlowStrength() {
 }
 
 void ForceFieldCurve::setFlowStrength(float s) {
-    float eps = 1e-6;
+    float eps = 1e-6f;
     if (std::abs(s - _flowStrength) > eps) {
         _isSubclassStateChangedValue = true;
     }
@@ -161,7 +163,7 @@ float ForceFieldCurve::getSpinStrength() {
 }
 
 void ForceFieldCurve::setSpinStrength(float s) {
-    float eps = 1e-6;
+    float eps = 1e-6f;
     if (std::abs(s - _spinStrength) > eps) {
         _isSubclassStateChangedValue = true;
     }
@@ -212,7 +214,7 @@ void ForceFieldCurve::_addForceFieldToGridMT(MACVelocityField &fieldGrid, int di
     size_t numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&ForceFieldCurve::_addForceFieldToGridThread, this,
                                  intervals[i], intervals[i + 1], &fieldGrid, dir);
@@ -224,7 +226,7 @@ void ForceFieldCurve::_addForceFieldToGridMT(MACVelocityField &fieldGrid, int di
 }
 
 void ForceFieldCurve::_updateGridDimensions(TriangleMesh &mesh) {
-    float eps = 1e-6;
+    float eps = 1e-6f;
     if (_isMaxDistanceEnabled) {
         AABB bbox(mesh.vertices);
         bbox.expand(eps + 2.0f * _maxDistance);
@@ -284,7 +286,7 @@ void ForceFieldCurve::_addForceFieldToGridThread(int startidx, int endidx,
         maxDistance = _maxDistance;
     }
 
-    float eps = 1e-6;
+    float eps = 1e-6f;
 
     if (dir == U) {
 
@@ -421,9 +423,9 @@ TriangleMesh ForceFieldCurve::_curveVerticesToTriangleMesh(std::vector<vmath::ve
     tmesh.vertices = vertices;
     for (size_t i = 0; i < vertices.size() - 1; i++) {
         Triangle t;
-        t.tri[0] = i;
-        t.tri[1] = i;
-        t.tri[2] = i + 1;
+        t.tri[0] = (int)i;
+        t.tri[1] = (int)i;
+        t.tri[2] = (int)i + 1;
         tmesh.triangles.push_back(t);
     }
 
@@ -450,7 +452,7 @@ vmath::vec3 ForceFieldCurve::_getFlowDirection(vmath::vec3 p) {
     }
 
     vmath::vec3 v1 = _curveTriangleMesh.vertices[vidx1];
-    float eps = 1e-6;
+    float eps = 1e-6f;
     for (size_t vidx2 = vidx1 + 1; vidx2 < _curveTriangleMesh.vertices.size(); vidx2++) {
         vmath::vec3 v2 = _curveTriangleMesh.vertices[vidx2];
         vmath::vec3 dir = v2 - v1;

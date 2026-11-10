@@ -524,8 +524,8 @@ void ScalarField::addCellFieldValues(int i, int j, int k, double value) {
     FLUIDSIM_ASSERT(Grid3d::isGridIndexInRange(i, j, k, _field.width-1, _field.height-1, _field.depth-1));
     GridIndex vertices[8];
     Grid3d::getGridIndexVertices(i, j, k, vertices);
-    for (int i = 0; i < 8; i++) {
-        _field.set(vertices[i], value);
+    for (int idx = 0; idx < 8; idx++) {
+        _field.set(vertices[idx], value);
         _isVertexSet.set(i, j, k, true);
     }
 }

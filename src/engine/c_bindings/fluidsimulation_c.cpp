@@ -3243,7 +3243,7 @@ extern "C" {
 
     EXPORTDLL void FluidSimulation_get_marker_particles(
             FluidSimulation* obj, 
-            int startidx, int endidx,
+            size_t startidx, size_t endidx,
             MarkerParticle_t *out, int *err) {
 
         std::vector<MarkerParticle> mps = CBindings::safe_execute_method_ret_2param(
@@ -3251,14 +3251,14 @@ extern "C" {
             startidx, endidx, err
         );
 
-        for (unsigned int i = 0; i < mps.size(); i++) {
+        for (size_t i = 0; i < mps.size(); i++) {
             out[i] = CBindings::to_struct(mps[i]);
         }
     }
 
     EXPORTDLL void FluidSimulation_get_marker_particle_positions(
             FluidSimulation* obj, 
-            int startidx, int endidx,
+            size_t startidx, size_t endidx,
             Vector3_t *out, int *err) {
 
         std::vector<vmath::vec3> mps = CBindings::safe_execute_method_ret_2param(
@@ -3266,14 +3266,14 @@ extern "C" {
             startidx, endidx, err
         );
 
-        for (unsigned int i = 0; i < mps.size(); i++) {
+        for (size_t i = 0; i < mps.size(); i++) {
             out[i] = CBindings::to_struct(mps[i]);
         }
     }
 
     EXPORTDLL void FluidSimulation_get_marker_particle_velocities(
             FluidSimulation* obj, 
-            int startidx, int endidx,
+            size_t startidx, size_t endidx,
             Vector3_t *out, int *err) {
 
         std::vector<vmath::vec3> mvs = CBindings::safe_execute_method_ret_2param(
@@ -3281,12 +3281,12 @@ extern "C" {
             startidx, endidx, err
         );
 
-        for (unsigned int i = 0; i < mvs.size(); i++) {
+        for (size_t i = 0; i < mvs.size(); i++) {
             out[i] = CBindings::to_struct(mvs[i]);
         }
     }
 
-    EXPORTDLL int FluidSimulation_get_num_diffuse_particles(FluidSimulation* obj, 
+    EXPORTDLL size_t FluidSimulation_get_num_diffuse_particles(FluidSimulation* obj, 
                                                             int *err) {
         return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getNumDiffuseParticles, err
@@ -3295,7 +3295,7 @@ extern "C" {
 
     EXPORTDLL void FluidSimulation_get_diffuse_particle_positions(
             FluidSimulation* obj, 
-            int startidx, int endidx,
+            size_t startidx, size_t endidx,
             Vector3_t *out, int *err) {
 
         std::vector<vmath::vec3> dps = CBindings::safe_execute_method_ret_2param(
@@ -3303,14 +3303,14 @@ extern "C" {
             startidx, endidx, err
         );
 
-        for (unsigned int i = 0; i < dps.size(); i++) {
+        for (size_t i = 0; i < dps.size(); i++) {
             out[i] = CBindings::to_struct(dps[i]);
         }
     }
 
     EXPORTDLL void FluidSimulation_get_diffuse_particle_velocities(
             FluidSimulation* obj, 
-            int startidx, int endidx,
+            size_t startidx, size_t endidx,
             Vector3_t *out, int *err) {
 
         std::vector<vmath::vec3> dvs = CBindings::safe_execute_method_ret_2param(
@@ -3318,14 +3318,14 @@ extern "C" {
             startidx, endidx, err
         );
 
-        for (unsigned int i = 0; i < dvs.size(); i++) {
+        for (size_t i = 0; i < dvs.size(); i++) {
             out[i] = CBindings::to_struct(dvs[i]);
         }
     }
 
     EXPORTDLL void FluidSimulation_get_diffuse_particle_lifetimes(
             FluidSimulation* obj, 
-            int startidx, int endidx,
+            size_t startidx, size_t endidx,
             float *out, int *err) {
 
         std::vector<float> lfs = CBindings::safe_execute_method_ret_2param(
@@ -3333,14 +3333,14 @@ extern "C" {
             startidx, endidx, err
         );
 
-        for (unsigned int i = 0; i < lfs.size(); i++) {
+        for (size_t i = 0; i < lfs.size(); i++) {
             out[i] = lfs[i];
         }
     }
 
     EXPORTDLL void FluidSimulation_get_diffuse_particle_types(
             FluidSimulation* obj, 
-            int startidx, int endidx,
+            size_t startidx, size_t endidx,
             char *out, int *err) {
 
         std::vector<char> types = CBindings::safe_execute_method_ret_2param(
@@ -3348,7 +3348,7 @@ extern "C" {
             startidx, endidx, err
         );
 
-        for (unsigned int i = 0; i < types.size(); i++) {
+        for (size_t i = 0; i < types.size(); i++) {
             out[i] = types[i];
         }
     }

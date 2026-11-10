@@ -148,7 +148,7 @@ void VelocityAdvector::_advectGrid(Direction dir) {
                                  block.gridBlock.index.j * _chunkWidth,
                                  block.gridBlock.index.k * _chunkWidth);
 
-            float eps = 1e-6;
+            float eps = 1e-6f;
             int datasize = _chunkWidth * _chunkWidth * _chunkWidth;
             for (int vidx = 0; vidx < datasize; vidx++) {
                 GridIndex localidx = Grid3d::getUnflattenedIndex(vidx, _chunkWidth, _chunkWidth);
@@ -164,7 +164,7 @@ void VelocityAdvector::_advectGrid(Direction dir) {
             }
         }
 
-        numComputeBlocksProcessed += finishedBlocks.size();
+        numComputeBlocksProcessed += (int)finishedBlocks.size();
     }
 
     computeBlockQueue.notifyFinished();
@@ -210,7 +210,7 @@ void VelocityAdvector::_initializeBlockGrid(BlockArray3d<ScalarData> &blockphi, 
     int numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, _points.size());
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, _points.size(), numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)_points.size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&VelocityAdvector::_initializeActiveBlocksThread, this,
                                  intervals[i], intervals[i + 1], &activeBlocks, dir);
@@ -258,7 +258,7 @@ void VelocityAdvector::_computeGridCountData(BlockArray3d<ScalarData> &blockphi,
 
     int numthreads = countdata.numthreads;
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, _points.size(), numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)_points.size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&VelocityAdvector::_computeGridCountDataThread, this,
                                  intervals[i], intervals[i + 1],
@@ -303,7 +303,7 @@ void VelocityAdvector::_computeGridCountDataThread(int startidx, int endidx,
     countdata->startidx = startidx;
     countdata->endidx = endidx;
 
-    float eps = 1e-6;
+    float eps = 1e-6f;
     float sr = _particleRadius + eps;
     float blockdx = _chunkdx;
     vmath::vec3 offset = _getDirectionOffset(dir);
@@ -467,7 +467,7 @@ void VelocityAdvector::_sortParticlesIntoBlocks(ParticleGridCountData &countdata
 void VelocityAdvector::_advectionFLIPProducerThread(BoundedBuffer<ComputeBlock> *blockQueue, 
                                                     BoundedBuffer<ComputeBlock> *finishedBlockQueue) {
 
-    float eps = 1e-6;
+    float eps = 1e-6f;
     float r = _particleRadius;
     float sr = _particleRadius + eps;
     float rsq = r * r;
@@ -543,7 +543,7 @@ void VelocityAdvector::_advectionFLIPProducerThread(BoundedBuffer<ComputeBlock> 
 void VelocityAdvector::_advectionAPICProducerThread(BoundedBuffer<ComputeBlock> *blockQueue, 
                                                     BoundedBuffer<ComputeBlock> *finishedBlockQueue) {
 
-    float eps = 1e-6;
+    float eps = 1e-6f;
     GridIndex indices[8];
     float weights[8];
 

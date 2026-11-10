@@ -96,7 +96,7 @@ float ForceField::getStrength() {
 }
 
 void ForceField::setStrength(float s) {
-    float eps = 1e-6;
+    float eps = 1e-6f;
     if (std::abs(s - _strength) > eps) {
         _isStateChanged = true;
     }
@@ -108,7 +108,7 @@ float ForceField::getFalloffPower() {
 }
 
 void ForceField::setFalloffPower(float p) {
-    float eps = 1e-6;
+    float eps = 1e-6f;
     if (std::abs(p - _falloffPower) > eps) {
         _isStateChanged = true;
     }
@@ -120,7 +120,7 @@ float ForceField::getMaxForceLimitFactor() {
 }
 
 void ForceField::setMaxForceLimitFactor(float factor) {
-    float eps = 1e-6;
+    float eps = 1e-6f;
     if (std::abs(factor - _maxForceLimitFactor) > eps) {
         _isStateChanged = true;
     }
@@ -204,7 +204,7 @@ float ForceField::getMinDistance() {
 }
 
 void ForceField::setMinDistance(float d) {
-    float eps = 1e-6;
+    float eps = 1e-6f;
     if (std::abs(d - _minDistance) > eps) {
         _isStateChanged = true;
     }
@@ -234,7 +234,7 @@ float ForceField::getMaxDistance() {
 }
 
 void ForceField::setMaxDistance(float d) {
-    float eps = 1e-6;
+    float eps = 1e-6f;
     if (std::abs(d - _maxDistance) > eps) {
         _isStateChanged = true;
     }
@@ -246,7 +246,7 @@ float ForceField::getGravityScale() {
 }
 
 void ForceField::setGravityScale(float s) {
-    float eps = 1e-6;
+    float eps = 1e-6f;
     if (std::abs(s - _gravityScale) > eps) {
         _isStateChanged = true;
     }
@@ -258,7 +258,7 @@ float ForceField::getGravityScaleWidth() {
 }
 
 void ForceField::setGravityScaleWidth(float w) {
-    float eps = 1e-6;
+    float eps = 1e-6f;
     if (std::abs(w - _gravityScaleWidth) > eps) {
         _isStateChanged = true;
     }
@@ -266,7 +266,7 @@ void ForceField::setGravityScaleWidth(float w) {
 }
 
 vmath::vec3 ForceField::_limitForceVector(vmath::vec3 v, float strength) {
-    float eps = 1e-6;
+    float eps = 1e-6f;
     float maxForce = std::abs(strength) * _maxForceLimitFactor;
     float len = vmath::length(v);
     if (len <= maxForce || len < eps) {

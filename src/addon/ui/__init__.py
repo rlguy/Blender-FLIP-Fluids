@@ -26,6 +26,7 @@ if "bpy" in locals():
         'domain_ui',
         'cache_object_ui',
         'helper_ui',
+        'post_processing_tools_ui',
         'compositing_tools_ui',
         'flip_fluids_addon_disabled_ui',
     ]
@@ -45,6 +46,8 @@ from . import(
         domain_ui,
         cache_object_ui,
         helper_ui,
+        post_processing_tools_ui,
+        compositing_tools_ui,
         flip_fluids_addon_disabled_ui,
         )
 
@@ -160,6 +163,7 @@ def register():
     domain_ui.register()
     cache_object_ui.register()
     helper_ui.register()
+    post_processing_tools_ui.register()
     flip_fluids_addon_disabled_ui.register()
 
     bpy.types.PHYSICS_PT_add.append(append_to_PHYSICS_PT_add_panel)
@@ -175,6 +179,7 @@ def unregister():
     domain_ui.unregister()
     cache_object_ui.unregister()
     helper_ui.unregister()
+    post_processing_tools_ui.unregister()
     flip_fluids_addon_disabled_ui.unregister()
         
     bpy.types.PHYSICS_PT_add.remove(append_to_PHYSICS_PT_add_panel)

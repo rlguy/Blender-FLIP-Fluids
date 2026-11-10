@@ -41,6 +41,7 @@ ForceFieldPoint::~ForceFieldPoint() {
 }
 
 void ForceFieldPoint::update(double dt, double frameInterpolation) {
+    (void)dt;
     _frameInterpolation = frameInterpolation;
 }
 
@@ -143,7 +144,7 @@ void ForceFieldPoint::_addForceFieldToGridMT(MACVelocityField &fieldGrid, int di
     size_t numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&ForceFieldPoint::_addForceFieldToGridThread, this,
                                  intervals[i], intervals[i + 1], &fieldGrid, dir);
@@ -170,7 +171,7 @@ void ForceFieldPoint::_addForceFieldToGridThread(int startidx, int endidx,
         maxDistance = _maxDistance;
     }
 
-    float eps = 1e-6;
+    float eps = 1e-6f;
 
     if (dir == U) {
 

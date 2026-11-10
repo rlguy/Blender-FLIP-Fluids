@@ -164,8 +164,8 @@ private:
                 indexTable(matrixIndexTable), faceIndexer(i, j, k) {
 
             int matsize = 0;
-            for (size_t i = 0; i < indexTable.size(); i++) {
-                if (indexTable[i] != -1) {
+            for (size_t idx = 0; idx < indexTable.size(); idx++) {
+                if (indexTable[idx] != -1) {
                     matsize++;
                 }
             }

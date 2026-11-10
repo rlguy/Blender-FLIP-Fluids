@@ -74,7 +74,7 @@ void generateSurfaceVectorField(MeshLevelSet &sdf, TriangleMesh &mesh, Array3d<v
         manifoldVertices = mesh.getManifoldVertexList();
     }
 
-    float eps = 1e-9;
+    float eps = 1e-9f;
     vmath::vec3 zerovect;
     for (int k = 0; k < ksize; k++) {
         for (int j = 0; j < jsize; j++) {
@@ -131,11 +131,11 @@ void generateSurfaceVectorField(MeshLevelSet &sdf, TriangleMesh &mesh, Array3d<v
                     vmath::vec3 v3 = mesh.vertices[t.tri[2]];
 
                     bool isEdgeFacing = false;
-                    float eps = 1e-6;
+                    float feps = 1e-6f;
                     if (!manifoldVertices[vidx1] && !manifoldVertices[vidx2]) {
                         vmath::vec3 pline = v1 + (vmath::dot(cp - v1, v2 - v1) / vmath::lengthsq(v2 - v1)) * (v2 - v1);
                         float dist = vmath::length(pline - cp);
-                        if (dist < eps) {
+                        if (dist < feps) {
                             isEdgeFacing = true;
                         }
                     }
@@ -143,7 +143,7 @@ void generateSurfaceVectorField(MeshLevelSet &sdf, TriangleMesh &mesh, Array3d<v
                     if (!manifoldVertices[vidx2] && !manifoldVertices[vidx3] && !isEdgeFacing) {
                         vmath::vec3 pline = v2 + (vmath::dot(cp - v2, v3 - v2) / vmath::lengthsq(v3 - v2)) * (v3 - v2);
                         float dist = vmath::length(pline - cp);
-                        if (dist < eps) {
+                        if (dist < feps) {
                             isEdgeFacing = true;
                         }
                     }
@@ -151,7 +151,7 @@ void generateSurfaceVectorField(MeshLevelSet &sdf, TriangleMesh &mesh, Array3d<v
                     if (!manifoldVertices[vidx3] && !manifoldVertices[vidx1] && !isEdgeFacing) {
                         vmath::vec3 pline = v3 + (vmath::dot(cp - v3, v1 - v3) / vmath::lengthsq(v1 - v3)) * (v1 - v3);
                         float dist = vmath::length(pline - cp);
-                        if (dist < eps) {
+                        if (dist < feps) {
                             isEdgeFacing = true;
                         }
                     }
@@ -177,7 +177,7 @@ void _initializeNarrowBandClosestPoint(MeshLevelSet &sdf, TriangleMesh &mesh,
     size_t numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&_initializeNarrowBandClosestPointThread,
                                  intervals[i], intervals[i + 1], &sdf, &mesh, &data);

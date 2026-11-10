@@ -21,11 +21,17 @@ def is_blender_52():
     return bpy.app.version >= (5, 2, 0)
 
 
+def is_blender_53():
+    return bpy.app.version >= (5, 3, 0)
+
+
 def get_geometry_nodes_blend_filepath():
-    if is_blender_52():
-        blend_resource_filename = "geometry_nodes_library.blend"
+    if is_blender_53():
+        blend_resource_filename = "geometry_nodes_library-5.3.blend"
+    elif is_blender_52():
+        blend_resource_filename = "geometry_nodes_library-5.2.blend"
     else:
-        blend_resource_filename = "geometry_nodes_library-legacy.blend"
+        blend_resource_filename = "geometry_nodes_library-4.5.blend"
     addon_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     library_filepath = os.path.join(addon_root, "resources", "geometry_nodes", blend_resource_filename)
     return library_filepath

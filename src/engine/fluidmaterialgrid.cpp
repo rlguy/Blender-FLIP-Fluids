@@ -228,8 +228,8 @@ bool FluidMaterialGrid::isFaceBorderingSolidW(GridIndex g) {
 bool FluidMaterialGrid::isCellNeighbouringMaterial(int i, int j, int k, Material m) {
     GridIndex nbs[26];
     Grid3d::getNeighbourGridIndices26(i, j, k, nbs);
-    for (int i = 0; i < 26; i++) {
-        if (_grid(nbs[i]) == m) {
+    for (int nidx = 0; nidx < 26; nidx++) {
+        if (_grid(nbs[nidx]) == m) {
             return true;
         }
     }

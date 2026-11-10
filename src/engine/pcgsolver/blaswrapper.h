@@ -47,7 +47,7 @@ inline T dot(std::vector<T> &x, std::vector<T> &y) {
 
     std::vector<std::thread> threads(numthreads);
     std::vector<T> results(numthreads, 0);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, x.size(), numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)x.size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&dotThread<T>,
                                  intervals[i], intervals[i + 1], &x, &y, &(results[i]));
@@ -95,7 +95,7 @@ inline int indexAbsMax(std::vector<T> &x) {
     std::vector<std::thread> threads(numthreads);
     std::vector<T> maxvals(numthreads, 0);
     std::vector<int> maxinds(numthreads, -1);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, x.size(), numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)x.size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&indexAbsMaxThread<T>,
                                  intervals[i], intervals[i + 1], &x, &(maxvals[i]), &(maxinds[i]));
@@ -145,7 +145,7 @@ inline void addScaled(float alpha, std::vector<T> &x, std::vector<T> &y) {
     }
 
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, x.size(), numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)x.size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&addScaledThread<T>,
                                  intervals[i], intervals[i + 1], alpha, &x, &y);

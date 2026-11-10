@@ -510,6 +510,13 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
         self._update_orientation_data(scene)
 
 
+    def frame_complete_callback(self):
+        bpy.context.scene.flip_fluid_helper.frame_complete_callback()
+        self.bake.frame_complete_callback()
+        self.cache.frame_complete_callback()
+        self.stats.frame_complete_callback()
+
+
     def scene_update_post(self, scene):
         self._update_domain_data(scene)
 
@@ -526,6 +533,7 @@ class FlipFluidDomainProperties(bpy.types.PropertyGroup):
         self._update_domain_data(scene)
         
         api_workaround_utils.frame_change_post_apply_T71908_workaround(bpy.context, depsgraph)
+        self.cache.frame_change_post(scene)
         self.world.frame_change_post(scene)
         self.stats.frame_change_post(scene, depsgraph)
 

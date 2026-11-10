@@ -51,6 +51,11 @@ def frame_change_post_apply_T71908_workaround(context, depsgraph=None):
     # Apply to FLIP Fluids sidebar
     dprops.render.override_frame = dprops_eval.render.override_frame
 
+    virtual_uvw_attributes = dprops.particles.remap_uvw_attributes
+    virtual_uvw_attributes_eval = dprops_eval.particles.remap_uvw_attributes
+    for i in range(len(virtual_uvw_attributes)):
+        virtual_uvw_attributes[i].frame = virtual_uvw_attributes_eval[i].frame
+
     # Apply to any Ocean Modifer's 'Time' value on the mesh objects, a common issue for this bug
 
     cache_objects = [
@@ -122,6 +127,8 @@ def frame_change_post_apply_T71908_workaround(context, depsgraph=None):
         "Socket_54",  # Align Instance to Velocity  (FF 1.8.6)
         "Socket_10",  # Shade Smooth Instances
         "Socket_17",  # Realize Instances
+        "Socket_105", # Volume Detail
+        "Socket_106", # Volume Density
 
         "Socket_59",  # Duplicate and Randomize Particles
         "Socket_60",  # Num Duplicates
@@ -212,6 +219,8 @@ def frame_change_post_apply_T71908_workaround(context, depsgraph=None):
         "Socket_37",  # Align Instance to Velocity  (FF 1.8.6)
         "Socket_10",  # Shade Smooth Instances
         "Socket_17",  # Realize Instances
+        "Socket_55",  # Volume Detail
+        "Socket_56",  # Volume Density
 
         "Socket_41",  # Duplicate and Randomize Particles
         "Socket_42",  # Num Duplicates

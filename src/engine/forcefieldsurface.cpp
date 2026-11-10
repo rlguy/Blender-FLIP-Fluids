@@ -42,13 +42,15 @@ ForceFieldSurface::~ForceFieldSurface() {
 }
 
 void ForceFieldSurface::update(double dt, double frameInterpolation) {
+    (void)dt;
+
     MeshObjectStatus s = _meshObject.getStatus();
     bool isMeshStateChanged = s.isStateChanged || (s.isEnabled && s.isAnimated && s.isMeshChanged);
     if (isMeshStateChanged) {
         _isLevelsetUpToDate = false;
     }
 
-    float eps = 1e-6;
+    float eps = 1e-6f;
     if (_isMaxDistanceEnabled && std::abs(_maxDistance - _lastMaxDistance) > eps) {
         _isLevelsetUpToDate = false;
     }
@@ -84,7 +86,7 @@ void ForceFieldSurface::addGravityScaleToGrid(ForceFieldGravityScaleGrid &scaleG
     int isizeScaleGrid = scaleGrid.gravityScale.width;
     int jsizeScaleGrid = scaleGrid.gravityScale.height;
     int ksizeScaleGrid = scaleGrid.gravityScale.depth;
-    float eps = 1e-6;
+    float eps = 1e-6f;
     for (int k = 0; k < ksizeScaleGrid; k++) {
         for (int j = 0; j < jsizeScaleGrid; j++) {
             for (int i = 0; i < isizeScaleGrid; i++) {
@@ -170,7 +172,7 @@ void ForceFieldSurface::_addForceFieldToGridMT(MACVelocityField &fieldGrid, int 
     size_t numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&ForceFieldSurface::_addForceFieldToGridThread, this,
                                  intervals[i], intervals[i + 1], &fieldGrid, dir);
@@ -182,7 +184,7 @@ void ForceFieldSurface::_addForceFieldToGridMT(MACVelocityField &fieldGrid, int 
 }
 
 void ForceFieldSurface::_updateGridDimensions(TriangleMesh &mesh) {
-    float eps = 1e-6;
+    float eps = 1e-6f;
     if (_isMaxDistanceEnabled) {
         AABB bbox(mesh.vertices);
         bbox.expand(eps + 2.0f * _maxDistance);
@@ -239,7 +241,7 @@ void ForceFieldSurface::_addForceFieldToGridThread(int startidx, int endidx,
         maxDistance = _maxDistance;
     }
 
-    float eps = 1e-6;
+    float eps = 1e-6f;
 
     if (dir == U) {
 
@@ -259,8 +261,8 @@ void ForceFieldSurface::_addForceFieldToGridThread(int startidx, int endidx,
                 continue;
             }
 
-            vmath::vec3 dir = -vmath::normalize(vect);
-            vmath::vec3 force = _calculateForceVector(r, dir);
+            vmath::vec3 vdir = -vmath::normalize(vect);
+            vmath::vec3 force = _calculateForceVector(r, vdir);
             fieldGrid->addU(g, force.x);
         }
 
@@ -282,8 +284,8 @@ void ForceFieldSurface::_addForceFieldToGridThread(int startidx, int endidx,
                 continue;
             }
 
-            vmath::vec3 dir = -vmath::normalize(vect);
-            vmath::vec3 force = _calculateForceVector(r, dir);
+            vmath::vec3 vdir = -vmath::normalize(vect);
+            vmath::vec3 force = _calculateForceVector(r, vdir);
             fieldGrid->addV(g, force.y);
         }
 
@@ -305,8 +307,8 @@ void ForceFieldSurface::_addForceFieldToGridThread(int startidx, int endidx,
                 continue;
             }
 
-            vmath::vec3 dir = -vmath::normalize(vect);
-            vmath::vec3 force = _calculateForceVector(r, dir);
+            vmath::vec3 vdir = -vmath::normalize(vect);
+            vmath::vec3 force = _calculateForceVector(r, vdir);
             fieldGrid->addW(g, force.z);
         }
 

@@ -187,7 +187,7 @@ bool MeshFluidSource::isOutflowInversed() {
 }
 
 void MeshFluidSource::setFrame(int f, float frameInterpolation) {
-    float eps = 1e-6;
+    float eps = 1e-6f;
     bool isFrameChanged = f != _currentFrame;
     bool isInterpolationChanged = fabs(frameInterpolation - _currentFrameInterpolation) > eps;
     _currentFrame = f;

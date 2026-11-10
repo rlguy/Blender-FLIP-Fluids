@@ -289,7 +289,7 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             default=True,
             )
     usd_export_velocity: BoolProperty(
-            name="Export Velocity",
+            name="Velocity",
             description="Include velocity data in the USD export if available. This data will be available"
                 " under the 'flip_velocity' point attribute of the USD export and can be used for motion"
                 " blur rendering. Velocity attributes are required to"
@@ -297,77 +297,84 @@ class FlipFluidHelperProperties(bpy.types.PropertyGroup):
             default=True,
             )
     usd_export_speed: BoolProperty(
-            name="Export Speed",
+            name="Speed",
             description="Include speed data in the USD export if available. This data will be available"
                 " under the 'flip_speed' point attribute of the USD export. Speed attributes are required to"
                 " be baked before export",
             default=True,
             )
     usd_export_vorticity: BoolProperty(
-            name="Export Vorticity",
+            name="Vorticity",
             description="Include vorticity data in the USD export if available. This data will be available"
                 " under the 'flip_vorticity' point attribute of the USD export. Vorticity attributes are required to"
                 " be baked before export",
             default=True,
             )
     usd_export_color: BoolProperty(
-            name="Export Color",
+            name="Color",
             description="Include color attribute data in the USD export if available. This data will be available"
                 " under the 'flip_color' point attribute of the USD export and can be used for material shading."
                 " Color attributes attributes are required to be baked before export",
             default=True,
             )
     usd_export_age: BoolProperty(
-            name="Export Age",
+            name="Age",
             description="Include age data in the USD export if available. This data will be available"
                 " under the 'flip_age' point attribute of the USD export. Age attributes are required to"
                 " be baked before export",
             default=True,
             )
     usd_export_lifetime: BoolProperty(
-            name="Export Lifetime",
+            name="Lifetime",
             description="Include lifetime data in the USD export if available. This data will be available"
                 " under the 'flip_lifetime' point attribute of the USD export. Lifetime attributes are required to"
                 " be baked before export",
             default=True,
             )
     usd_export_whitewater_proximity: BoolProperty(
-            name="Export Whitewater Proximity",
+            name="Whitewater Proximity",
             description="Include whitewater proximity data in the USD export if available. This data will be available"
                 " under the 'flip_foam_proximity', 'flip_bubble_proximity', and 'flip_spray_proximity' point attributes"
                 " of the USD export. Whitewater Proximity attributes are required to be baked before export",
             default=True,
             )
     usd_export_viscosity: BoolProperty(
-            name="Export Viscosity",
+            name="Viscosity",
             description="Include viscosity data in the USD export if available. This data will be available"
                 " under the 'flip_viscosity' point attribute of the USD export. Viscosity attributes are available if"
                 " the Variable Viscosity feature is enabled and baked",
             default=True,
             )
     usd_export_density: BoolProperty(
-            name="Export Density",
+            name="Density",
             description="Include density data in the USD export if available. This data will be available"
                 " under the 'flip_density' point attribute of the USD export. Density attributes are available if"
                 " the Variable Density feature is enabled and baked",
             default=True,
             )
+    usd_export_uvw: BoolProperty(
+            name="UVW",
+            description="Include UVW data in the USD export if available. This data will be available"
+                " under the 'flip_uvw' point attribute of the USD export. UVW attributes are required to"
+                " be baked before export",
+            default=True,
+            )
     usd_export_id: BoolProperty(
-            name="Export ID",
+            name="ID",
             description="Include particle ID data in the USD export if available. This data will be available"
                 " under the 'flip_id' point attribute of the USD export. ID attributes are required to"
                 " be baked before export",
             default=True,
             )
     usd_export_uid: BoolProperty(
-            name="Export UID",
+            name="UID",
             description="Include particle Unique ID data in the USD export if available. This data will be available"
                 " under the 'flip_uid' point attribute of the USD export. UID attributes are required to"
                 " be baked before export",
             default=True,
             )
     usd_export_source_id: BoolProperty(
-            name="Export Source ID",
+            name="Source ID",
             description="Include source ID data in the USD export if available. This data will be available"
                 " under the 'flip_source_id' point attribute of the USD export. Source ID attributes are required to"
                 " be baked before export",

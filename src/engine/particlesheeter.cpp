@@ -104,7 +104,7 @@ void ParticleSheeter::_identifySheetParticlesPhase1(Array3d<unsigned char> &coun
     int numthreads = (int)fmin(numCPU, _particles->size());
     std::vector<std::vector<vmath::vec3> > threadResults(numthreads);
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, _particles->size(), numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)_particles->size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&ParticleSheeter::_identifySheetParticlesPhase1Thread, this,
                                  intervals[i], intervals[i + 1], &countGrid, &(threadResults[i]));
@@ -122,7 +122,7 @@ void ParticleSheeter::_identifySheetParticlesPhase1Thread(int startidx, int endi
     float maxdepth = _maxSheetDepth * _dx;
     float depthTestDistance = _depthTestDistance * _dx;
     float depthTestStepDistance = _depthTestStepDistance * _dx;
-    float eps = 1e-5;
+    float eps = 1e-5f;
     vmath::vec3 hdx(0.5*_dx, 0.5*_dx, 0.5*_dx);
 
     std::vector<vmath::vec3> *positions;
@@ -180,7 +180,7 @@ void ParticleSheeter::_getSheetCells(std::vector<vmath::vec3> &sheetParticles,
     int numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, sheetParticles.size());
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, sheetParticles.size(), numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)sheetParticles.size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&ParticleSheeter::_getSheetCellsThread, this,
                                  intervals[i], intervals[i + 1], &sheetParticles, &sheetCells);
@@ -224,7 +224,7 @@ void ParticleSheeter::_identifySheetParticlesPhase2(Array3d<bool> &sheetCells,
     int numthreads = (int)fmin(numCPU, _particles->size());
     std::vector<std::vector<vmath::vec3> > threadResults(numthreads);
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, _particles->size(), numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)_particles->size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&ParticleSheeter::_identifySheetParticlesPhase2Thread, this,
                                  intervals[i], intervals[i + 1], &sheetCells, &countGrid, &(threadResults[i]));
@@ -310,7 +310,7 @@ void ParticleSheeter::_getSheetSeedCandidates(Array3d<bool> &sheetCells,
     int numthreads = (int)fmin(numCPU, sheetCellVector.size());
     std::vector<std::vector<vmath::vec3> > threadResults(numthreads);
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, sheetCellVector.size(), numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)sheetCellVector.size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&ParticleSheeter::_getSheetSeedCandidatesThread, this,
                                  intervals[i], intervals[i + 1], &sheetCellVector, &(threadResults[i]));
@@ -430,7 +430,7 @@ void ParticleSheeter::_initializeSortDataValidCells(std::vector<vmath::vec3> &pa
     int numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, particles.size());
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, particles.size(), numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)particles.size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&ParticleSheeter::_initializeSortDataValidCellsThread, this,
                                  intervals[i], intervals[i + 1], &particles, &sortData);
@@ -483,7 +483,7 @@ void ParticleSheeter::_selectSeedParticles(SortedParticleData &sheetCandidatePar
     int numthreads = (int)fmin(numCPU, candidateCells.size());
     std::vector<std::vector<vmath::vec3> > threadResults(numthreads);
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, candidateCells.size(), numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)candidateCells.size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&ParticleSheeter::_selectSeedParticlesThread, this,
                                  intervals[i], intervals[i + 1], 
@@ -505,7 +505,7 @@ void ParticleSheeter::_selectSeedParticlesThread(int startidx, int endidx,
                                                  SortedParticleData *sheetParticleData,
                                                  std::vector<vmath::vec3> *result) {
 
-    float eps = 1e-5;
+    float eps = 1e-5f;
     float maxradius = _sheetSearchRadius * _dx;
     std::vector<vmath::vec3> candidateParticles;
     std::vector<vmath::vec3> neighbours;

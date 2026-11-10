@@ -173,7 +173,7 @@ vmath::vec3 Collision::findClosestPointOnTriangle(vmath::vec3 p0, vmath::vec3 v0
     double deps = 1e-9;
     if (std::abs(det) < deps) {
         // degenerate triangle: closest point is located on a line segment
-        float feps = 1e-6;
+        float feps = 1e-6f;
         float len1 = vmath::length(v0 - v1);
         float len2 = vmath::length(v1 - v2);
         float len3 = vmath::length(v2 - v0);

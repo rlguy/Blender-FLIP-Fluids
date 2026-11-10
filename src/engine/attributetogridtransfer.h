@@ -130,7 +130,7 @@ public:
                                      block.gridBlock.index.j * _chunkWidth,
                                      block.gridBlock.index.k * _chunkWidth);
 
-                float eps = 1e-6;
+                float eps = 1e-6f;
                 int datasize = _chunkWidth * _chunkWidth * _chunkWidth;
                 for (int vidx = 0; vidx < datasize; vidx++) {
                     GridIndex localidx = Grid3d::getUnflattenedIndex(vidx, _chunkWidth, _chunkWidth);
@@ -146,7 +146,7 @@ public:
                 }
             }
 
-            numComputeBlocksProcessed += finishedBlocks.size();
+            numComputeBlocksProcessed += (int)finishedBlocks.size();
         }
 
         computeBlockQueue.notifyFinished();
@@ -232,7 +232,7 @@ private:
         int numCPU = ThreadUtils::getMaxThreadCount();
         int numthreads = (int)fmin(numCPU, _positions.size());
         std::vector<std::thread> threads(numthreads);
-        std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, _attributes.size(), numthreads);
+        std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)_attributes.size(), numthreads);
 
         for (int i = 0; i < numthreads; i++) {
             threads[i] = std::thread(&AttributeToGridTransfer::_initializeActiveBlocksThread, this,
@@ -281,7 +281,7 @@ private:
 
         int numthreads = countdata.numthreads;
         std::vector<std::thread> threads(numthreads);
-        std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, _positions.size(), numthreads);
+        std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)_positions.size(), numthreads);
         for (int i = 0; i < numthreads; i++) {
             threads[i] = std::thread(&AttributeToGridTransfer::_computeGridCountDataThread, this,
                                      intervals[i], intervals[i + 1],
@@ -325,7 +325,7 @@ private:
         countdata->startidx = startidx;
         countdata->endidx = endidx;
 
-        float eps = 1e-6;
+        float eps = 1e-6f;
         float sr = _particleRadius + eps;
         float blockdx = _chunkdx;
         vmath::vec3 offset = _getGridOffset();
@@ -431,7 +431,7 @@ private:
     void _transferProducerThread(BoundedBuffer<ComputeBlock> *blockQueue, 
                                  BoundedBuffer<ComputeBlock> *finishedBlockQueue) {
 
-        float eps = 1e-6;
+        float eps = 1e-6f;
         float r = _particleRadius;
         float sr = _particleRadius + eps;
         float rsq = r * r;

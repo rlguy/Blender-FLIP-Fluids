@@ -91,9 +91,9 @@ bool TriangleMesh::loadBOBJ(std::string BOBJFilename) {
     }
     
     int binsize = 3 * numverts * sizeof(float);
-    std::vector<vmath::vec3> vertices(numverts);
+    std::vector<vmath::vec3> verts(numverts);
     if (numverts > 0) {
-        file.read((char *)vertices.data(), binsize);
+        file.read((char *)verts.data(), binsize);
         if (!file.good()) {
             return false;
         }
@@ -106,16 +106,16 @@ bool TriangleMesh::loadBOBJ(std::string BOBJFilename) {
     }
 
     binsize = 3 * numfaces * sizeof(int);
-    std::vector<Triangle> triangles(numfaces);
+    std::vector<Triangle> tris(numfaces);
     if (numfaces > 0) {
-        file.read((char *)triangles.data(), binsize);
+        file.read((char *)tris.data(), binsize);
         if (!file.good()) {
             return false;
         }
     }
 
-    this->vertices = vertices;
-    this->triangles = triangles;
+    this->vertices = verts;
+    this->triangles = tris;
 
     return true;
 }
@@ -550,10 +550,10 @@ void TriangleMesh::_updateVertexTriangles() {
     _vertexTriangles.reserve(vertices.size());
 
     for (unsigned int i = 0; i < vertices.size(); i++) {
-        std::vector<int> triangles;
-        triangles.reserve(14);  // 14 is the maximum number of adjacent triangles
+        std::vector<int> tris;
+        tris.reserve(14);  // 14 is the maximum number of adjacent triangles
                                 // to a vertex
-        _vertexTriangles.push_back(triangles);
+        _vertexTriangles.push_back(tris);
     }
 
     Triangle t;
@@ -598,7 +598,7 @@ vmath::vec3 TriangleMesh::getTriangleNormal(unsigned int index) {
     vmath::vec3 c1 = vertices[t.tri[1]] - vertices[t.tri[0]];
     vmath::vec3 c2 = vertices[t.tri[2]] - vertices[t.tri[0]];
     vmath::vec3 cross = vmath::cross(c1, c2);
-    float eps = 1e-9;
+    float eps = 1e-9f;
     if (cross.length() > eps) {
         tn = cross.normalize();
     }
@@ -994,14 +994,14 @@ void TriangleMesh::_findDuplicateVertexPairs(int i, int j, int k, double dx,
 
     double eps = 10e-6;
     std::vector<GridPointReference> query;
-    for (unsigned int i = 0; i < vertices.size(); i++) {
+    for (size_t vidx = 0; vidx < vertices.size(); vidx++) {
 
-        if (isPaired[i]) {
+        if (isPaired[vidx]) {
             continue;
         }
 
         query.clear();
-        grid.queryPointReferencesInsideSphere(refs[i], eps, query);
+        grid.queryPointReferencesInsideSphere(refs[vidx], eps, query);
 
         if (query.size() == 0) {
             continue;
@@ -1014,7 +1014,7 @@ void TriangleMesh::_findDuplicateVertexPairs(int i, int j, int k, double dx,
             double mindist = std::numeric_limits<double>::infinity();
 
             for (unsigned int idx = 0; idx < query.size(); idx++) {
-                vmath::vec3 v = vertices[i] - vertices[query[idx].id];
+                vmath::vec3 v = vertices[vidx] - vertices[query[idx].id];
                 double distsq = vmath::lengthsq(v);
                 if (distsq < mindist) {
                     mindist = distsq;
@@ -1023,11 +1023,11 @@ void TriangleMesh::_findDuplicateVertexPairs(int i, int j, int k, double dx,
             }
         }
 
-        int pair1 = i;
+        int pair1 = (int)vidx;
         int pair2 = closestRef.id;
         if (pair2 < pair1) {
             pair1 = closestRef.id;
-            pair2 = i;
+            pair2 = (int)vidx;
         }
 
         vertexPairs.push_back(std::pair<int, int>(pair1, pair2));
@@ -1102,17 +1102,17 @@ void TriangleMesh::removeDuplicateVertices(int i, int j, int k, double dx) {
 
     std::vector<int> indexTable;
     indexTable.reserve(vertices.size());
-    for (unsigned int i = 0; i < vertices.size(); i++) {
-        indexTable.push_back(i);
+    for (size_t vidx = 0; vidx < vertices.size(); vidx++) {
+        indexTable.push_back((int)vidx);
     }
 
-    for (unsigned int i = 1; i < vertexPairs.size(); i++) {
-        indexTable[vertexPairs[i].second] = vertexPairs[i].first;
+    for (size_t vpidx = 1; vpidx < vertexPairs.size(); vpidx++) {
+        indexTable[vertexPairs[vpidx].second] = vertexPairs[vpidx].first;
     }
 
     Triangle t;
-    for (unsigned int i = 0; i < triangles.size(); i++) {
-        t = triangles[i];
+    for (size_t tidx = 0; tidx < triangles.size(); tidx++) {
+        t = triangles[tidx];
         t.tri[0] = indexTable[t.tri[0]];
         t.tri[1] = indexTable[t.tri[1]];
         t.tri[2] = indexTable[t.tri[2]];
@@ -1122,7 +1122,7 @@ void TriangleMesh::removeDuplicateVertices(int i, int j, int k, double dx) {
             continue;
         }
 
-        triangles[i] = t;
+        triangles[tidx] = t;
     }
 
     removeExtraneousVertices();

@@ -25,7 +25,25 @@ from bpy.props import (
         )
 
 from .. import exit_handler
+from ..utils import cache_utils
 from ..utils import version_compatibility_utils as vcu
+
+
+class DomainCacheStatus(bpy.types.PropertyGroup):
+    bakefiles_exist: BoolProperty(default=False)
+    particle_bakefiles_exist: BoolProperty(default=False)
+    particle_uvw_attribute_bakefiles_exist: BoolProperty(default=False)
+    particle_uid_attribute_bakefiles_exist: BoolProperty(default=False)
+
+    def reset(self):
+        for prop_name in self.__annotations__.keys():
+            self.property_unset(prop_name)
+
+
+    def print(self):
+        for prop_name in self.__annotations__.keys():
+            print(prop_name, getattr(self, prop_name))
+
 
 class DomainCacheProperties(bpy.types.PropertyGroup):
     temp_directory = vcu.get_blender_preferences_temporary_directory()
@@ -92,6 +110,8 @@ class DomainCacheProperties(bpy.types.PropertyGroup):
             subtype='DIR_PATH',
             options=option_path_supports_blend_relative,
             )
+
+    cache_status: PointerProperty(type=DomainCacheStatus)
 
     is_cache_directory_set: BoolProperty(default=False)
 
@@ -185,6 +205,66 @@ class DomainCacheProperties(bpy.types.PropertyGroup):
 
     def save_post(self):
         self._check_cache_directory()
+
+
+    def frame_change_post(self, scene):
+        self.update_cache_status()
+
+
+    def cache_update_callback(self):
+        dprops = bpy.context.scene.flip_fluid.get_domain_properties()
+        if dprops is None:
+            return
+        dprops.mesh_cache.cache_update_callback()
+        self.update_cache_status()
+
+
+    def frame_complete_callback(self):
+        self.update_cache_status()
+
+
+    def update_cache_status(self):
+        # Currently used for Post Processing Tools > UVW Remapping Attribute feature
+        # TODO: Implement generic method for updating cache status and contents,
+        #       preferably an implementation that does not require iterating through
+        #       bakefiles
+
+        self.cache_status.reset()
+
+        bakefiles_directory = cache_utils.get_bakefiles_directory()
+        try:
+            with os.scandir(bakefiles_directory) as entries:
+                for entry in entries:
+                    if entry.is_file():
+                        self.cache_status.bakefiles_exist = True
+                        break
+        except FileNotFoundError:
+            self.cache_status.bakefiles_exist = False
+
+        if not self.cache_status.bakefiles_exist:
+            return
+
+        uvw_bakefiles_prefix = "fluidparticlesuvw"
+        with os.scandir(bakefiles_directory) as entries:
+            for entry in entries:
+                if entry.is_file() and entry.name.startswith(uvw_bakefiles_prefix):
+                    self.cache_status.particle_uvw_attribute_bakefiles_exist = True
+                    break
+        
+        uid_bakefiles_prefix = "fluidparticlesuid"
+        with os.scandir(bakefiles_directory) as entries:
+            for entry in entries:
+                if entry.is_file() and entry.name.startswith(uid_bakefiles_prefix):
+                    self.cache_status.particle_uid_attribute_bakefiles_exist = True
+                    break
+
+        particle_bakefiles_prefix = "fluidparticles"
+        particle_bakefiles_suffix = ".ffp3"
+        with os.scandir(bakefiles_directory) as entries:
+            for entry in entries:
+                if entry.is_file() and entry.name.startswith(particle_bakefiles_prefix) and entry.name.endswith(particle_bakefiles_suffix):
+                    self.cache_status.particle_bakefiles_exist = True
+                    break
         
 
     def _update_cache_directory(self, context):
@@ -213,6 +293,7 @@ class DomainCacheProperties(bpy.types.PropertyGroup):
 
         dprops.stats.refresh_stats()
         dprops.bake.check_autosave()
+        self.cache_update_callback()
         exit_handler.set_cache_directory(self.get_cache_abspath())
 
 
@@ -245,8 +326,10 @@ class DomainCacheProperties(bpy.types.PropertyGroup):
 
 
 def register():
+    bpy.utils.register_class(DomainCacheStatus)
     bpy.utils.register_class(DomainCacheProperties)
 
 
 def unregister():
+    bpy.utils.unregister_class(DomainCacheStatus)
     bpy.utils.unregister_class(DomainCacheProperties)

@@ -400,7 +400,7 @@ void ParticleLevelSet::_computeSignedDistanceFromParticles(std::vector<vmath::ve
             }
         }
 
-        numComputeBlocksProcessed += finishedBlocks.size();
+        numComputeBlocksProcessed += (int)finishedBlocks.size();
     }
 
     computeBlockQueue.notifyFinished();
@@ -424,7 +424,7 @@ void ParticleLevelSet::_initializeBlockGrid(std::vector<vmath::vec3> &particles,
     int numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, particles.size());
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, particles.size(), numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)particles.size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&ParticleLevelSet::_initializeActiveBlocksThread, this,
                                  intervals[i], intervals[i + 1], 
@@ -473,7 +473,7 @@ void ParticleLevelSet::_computeGridCountData(std::vector<vmath::vec3> &particles
 
     int numthreads = countdata.numthreads;
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, particles.size(), numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)particles.size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&ParticleLevelSet::_computeGridCountDataThread, this,
                                  intervals[i], intervals[i + 1], 
@@ -670,7 +670,7 @@ void ParticleLevelSet::_initializeCurvatureGridScalarField(ScalarField &field) {
     size_t numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)std::min(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&ParticleLevelSet::_initializeCurvatureGridScalarFieldThread, this,
                                  intervals[i], intervals[i + 1], &field);
@@ -696,7 +696,7 @@ void ParticleLevelSet::_getValidCurvatureNodes(Array3d<float> &surfacePhi,
     Array3d<bool> tempValid(_isize, _jsize, _ksize, false);
 
     float *rawphi = surfacePhi.getRawArray();
-    int size = surfacePhi.getNumElements();
+    int size = (int)surfacePhi.getNumElements();
     for (int i = 0; i < size; i++) {
         if (std::abs(rawphi[i]) < distUpperBound) {
             tempValid.set(i, true);
