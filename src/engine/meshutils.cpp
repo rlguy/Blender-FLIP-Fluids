@@ -120,7 +120,7 @@ void _getCollisionGridZ(TriangleMesh &m, double dx, Array3d<std::vector<float> >
     }
     int numthreads = (int)std::min(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&_getCollisionGridZThread,
                                  intervals[i], intervals[i + 1], 
@@ -171,9 +171,9 @@ void getCellsInsideTriangleMesh(
     if (computeSingleThreaded) {
         numCPU = 1;
     }
-    int numthreads = std::min(numCPU, gridsize);
+    int numthreads = (int)std::min(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)gridsize, numthreads);
     std::vector<std::vector<GridIndex> > threadResults(numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&_getCellsInsideTriangleMeshThread,
@@ -186,7 +186,7 @@ void getCellsInsideTriangleMesh(
     int numcells = 0;
     for (int i = 0; i < numthreads; i++) {
         threads[i].join();
-        numcells += threadResults[i].size();
+        numcells += (int)threadResults[i].size();
     }
 
     cells.reserve(numcells);
@@ -200,6 +200,8 @@ void _getCellsInsideTriangleMeshThread(
         int isize, int jsize, int ksize, double dx,
         Array3d<std::vector<float> > *zcollisions,
         std::vector<GridIndex> *cells) {
+
+    (void)ksize;
 
     std::vector<float> *zvals;
     for (int idx = startidx; idx < endidx; idx++) {
@@ -427,10 +429,9 @@ void getGridNodesInsideTriangleMesh(TriangleMesh mesh, double dx,
         nodeVector.clear();
         getGridNodesInsideTriangleMesh(outsideMeshes[i], dx, nodeVector, computeSingleThreaded);
 
-        GridIndex g;
-        for (size_t i = 0; i < nodeVector.size(); i++) {
-            if (nodes.isIndexInRange(nodeVector[i])) {
-                nodes.set(nodeVector[i], true);
+        for (size_t j = 0; j < nodeVector.size(); j++) {
+            if (nodes.isIndexInRange(nodeVector[j])) {
+                nodes.set(nodeVector[j], true);
             }
         }
     }
@@ -547,14 +548,14 @@ void _splitIntoMeshIslands(TriangleMesh &mesh,
     vertexTranslationTable = std::vector<int>(mesh.vertices.size(), -1);
     for (size_t i = 0; i < mesh.triangles.size(); i++) {
         Triangle t = mesh.triangles[i];
-        int groupID = vertexToGroupID[t.tri[0]];
-        islands[groupID].triangles.push_back(t);
+        int gid = vertexToGroupID[t.tri[0]];
+        islands[gid].triangles.push_back(t);
 
         for (int tvidx = 0; tvidx < 3; tvidx++) {
             int vidx = t.tri[tvidx];
             if (vertexTranslationTable[vidx] == -1) {
-                vertexTranslationTable[vidx] = (int)islands[groupID].vertices.size();
-                islands[groupID].vertices.push_back(mesh.vertices[vidx]);
+                vertexTranslationTable[vidx] = (int)islands[gid].vertices.size();
+                islands[gid].vertices.push_back(mesh.vertices[vidx]);
             }
         }
     }

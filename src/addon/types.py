@@ -14,8 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .utils import version_compatibility_utils as vcu
+import enum
 
+#
+# bpy EnumProperty types
+#
 
 def object_types(self, context):
     return object_types_mesh
@@ -285,3 +288,47 @@ alembic_export_engines = (
 alembic_export_engines = (
     ('ALEMBIC_EXPORT_ENGINE_BLENDER',     "Blender",     "Export using Blender's built-in Alembic Exporter"),
     )
+
+#
+# FLIP Fluids enum types
+#
+
+class DataType(enum.StrEnum):
+    MESH          = "MESH"
+    FLOAT_VECTOR  = "FLOAT_VECTOR"
+    INT           = "INT"
+    FLOAT         = "FLOAT"
+    UINT16        = "UINT16"
+    ULONGLONG     = "ULONGLONG"
+
+
+class MeshType(enum.StrEnum):
+    SURFACE         = "SURFACE"
+    OBSTACLE        = "OBSTACLE"
+    FLUID_PARTICLES = "FLUID_PARTICLES"
+    WHITEWATER      = "WHITEWATER"
+
+
+class CacheObjectType(enum.StrEnum):
+    NONE              = "NONE"
+    SURFACE           = "SURFACE"
+    FLUID_PARTICLES   = "FLUID_PARTICLES"
+    WHITEWATER_FOAM   = "WHITEWATER_FOAM"
+    WHITEWATER_BUBBLE = "WHITEWATER_BUBBLE"
+    WHITEWATER_SPRAY  = "WHITEWATER_SPRAY"
+    WHITEWATER_DUST   = "WHITEWATER_DUST"
+    OBSTACLE_DEBUG    = "OBSTACLE_DEBUG"
+    PARTICLE_DEBUG    = "PARTICLE_DEBUG"
+    FORCE_FIELD_DEBUG = "FORCE_FIELD_DEBUG"
+    WHITEWATER_ALL    = "WHITEWATER_ALL"
+    ALL               = "ALL"
+
+
+WHITEWATER_CACHE_OBJECT_TYPES = [
+    CacheObjectType.WHITEWATER_FOAM,
+    CacheObjectType.WHITEWATER_BUBBLE,
+    CacheObjectType.WHITEWATER_SPRAY,
+    CacheObjectType.WHITEWATER_DUST,
+    CacheObjectType.WHITEWATER_ALL,
+]
+    

@@ -235,7 +235,7 @@ int DiffuseParticleSimulation::getMaxNumDiffuseParticles() {
     if (_maxNumDiffuseParticles == std::numeric_limits<unsigned int>::max()) {
         return 0;
     }
-    return _maxNumDiffuseParticles;
+    return (int)_maxNumDiffuseParticles;
 }
 
 void DiffuseParticleSimulation::setMaxNumDiffuseParticles(size_t n) {
@@ -1530,7 +1530,7 @@ void DiffuseParticleSimulation::_trilinearInterpolate(std::vector<vmath::vec3> &
     int numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, input.size());
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, input.size(), numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)input.size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&DiffuseParticleSimulation::_trilinearInterpolateThread, this,
                                  intervals[i], intervals[i + 1], &input, vfield, &output);
@@ -1614,7 +1614,7 @@ void DiffuseParticleSimulation::_initializeMaterialGrid() {
     size_t numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&DiffuseParticleSimulation::_initializeMaterialGridThread, this,
                                  intervals[i], intervals[i + 1]);
@@ -1911,7 +1911,7 @@ void DiffuseParticleSimulation::_emitDiffuseParticles(DiffuseParticleEmitter &em
 
     int n = _getNumberOfEmissionParticles(emitter, dt);
     if (_diffuseParticles.size() + n >= _maxNumDiffuseParticles) {
-        n = _maxNumDiffuseParticles - _diffuseParticles.size();
+        n = (int)(_maxNumDiffuseParticles - _diffuseParticles.size());
     }
 
     if (n <= 0) {
@@ -2169,7 +2169,7 @@ void DiffuseParticleSimulation::_advanceSprayParticles(double dt) {
     int numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, _diffuseParticles.size());
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, _diffuseParticles.size(), numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)_diffuseParticles.size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&DiffuseParticleSimulation::_advanceSprayParticlesThread, this,
                                  intervals[i], intervals[i + 1], dt);
@@ -2190,7 +2190,7 @@ void DiffuseParticleSimulation::_advanceBubbleParticles(double dt) {
     int numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, _diffuseParticles.size());
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, _diffuseParticles.size(), numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)_diffuseParticles.size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&DiffuseParticleSimulation::_advanceBubbleParticlesThread, this,
                                  intervals[i], intervals[i + 1], dt);
@@ -2211,7 +2211,7 @@ void DiffuseParticleSimulation::_advanceFoamParticles(double dt) {
     int numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, _diffuseParticles.size());
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, _diffuseParticles.size(), numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)_diffuseParticles.size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&DiffuseParticleSimulation::_advanceFoamParticlesThread, this,
                                  intervals[i], intervals[i + 1], dt);
@@ -2232,7 +2232,7 @@ void DiffuseParticleSimulation::_advanceDustParticles(double dt) {
     int numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, _diffuseParticles.size());
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, _diffuseParticles.size(), numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)_diffuseParticles.size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&DiffuseParticleSimulation::_advanceDustParticlesThread, this,
                                  intervals[i], intervals[i + 1], dt);
@@ -2420,7 +2420,7 @@ vmath::vec3 DiffuseParticleSimulation::_resolveCollision(vmath::vec3 oldp,
         return newp;
     }
 
-    float eps = 1e-6;
+    float eps = 1e-6f;
     float stepDistance = _diffuseParticleStepDistanceFactor * (float)_dx;
     float travelDistance = (newp - oldp).length();
     if (travelDistance < eps) {
@@ -2517,7 +2517,7 @@ bool DiffuseParticleSimulation::_resolveSprayCollision(vmath::vec3 oldp,
         return false;
     }
 
-    float eps = 1e-6;
+    float eps = 1e-6f;
     float stepDistance = _diffuseParticleStepDistanceFactor * (float)_dx;
     float travelDistance = (newp - oldp).length();
     if (travelDistance < eps) {
@@ -2698,11 +2698,11 @@ void DiffuseParticleSimulation::
     *numdust = dust;
 }
 
-size_t DiffuseParticleSimulation::_getNumSprayParticles() {
+int DiffuseParticleSimulation::_getNumSprayParticles() {
     std::vector<char> *particleTypes;
     _diffuseParticles.getAttributeValues("TYPE", particleTypes);
 
-    size_t spraycount = 0;
+    int spraycount = 0;
     for (size_t i = 0; i < particleTypes->size(); i++) {
         if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::spray) {
             spraycount++;
@@ -2712,11 +2712,11 @@ size_t DiffuseParticleSimulation::_getNumSprayParticles() {
     return spraycount;
 }
 
-size_t DiffuseParticleSimulation::_getNumBubbleParticles() {
+int DiffuseParticleSimulation::_getNumBubbleParticles() {
     std::vector<char> *particleTypes;
     _diffuseParticles.getAttributeValues("TYPE", particleTypes);
 
-    size_t bubblecount = 0;
+    int bubblecount = 0;
     for (size_t i = 0; i < particleTypes->size(); i++) {
         if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::bubble) {
             bubblecount++;
@@ -2726,11 +2726,11 @@ size_t DiffuseParticleSimulation::_getNumBubbleParticles() {
     return bubblecount;
 }
 
-size_t DiffuseParticleSimulation::_getNumFoamParticles() {
+int DiffuseParticleSimulation::_getNumFoamParticles() {
     std::vector<char> *particleTypes;
     _diffuseParticles.getAttributeValues("TYPE", particleTypes);
 
-    size_t foamcount = 0;
+    int foamcount = 0;
     for (size_t i = 0; i < particleTypes->size(); i++) {
         if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::foam) {
             foamcount++;
@@ -2740,11 +2740,11 @@ size_t DiffuseParticleSimulation::_getNumFoamParticles() {
     return foamcount;
 }
 
-size_t DiffuseParticleSimulation::_getNumDustParticles() {
+int DiffuseParticleSimulation::_getNumDustParticles() {
     std::vector<char> *particleTypes;
     _diffuseParticles.getAttributeValues("TYPE", particleTypes);
 
-    size_t dustcount = 0;
+    int dustcount = 0;
     for (size_t i = 0; i < particleTypes->size(); i++) {
         if ((DiffuseParticleType)particleTypes->at(i) == DiffuseParticleType::dust) {
             dustcount++;

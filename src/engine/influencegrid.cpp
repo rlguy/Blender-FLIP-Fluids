@@ -98,7 +98,7 @@ void InfluenceGrid::_updateDecay(double dt) {
 void InfluenceGrid::_updateSpread(double dt) {
     bool isInfluenceUniform = true;
     float constvalue = _influence(0, 0, 0);
-    float eps = 1e-5;
+    float eps = 1e-5f;
     for (int k = 0; k < _influence.depth; k++) {
         for (int j = 0; j < _influence.height; j++) {
             for (int i = 0; i < _influence.width; i++) {
@@ -125,7 +125,7 @@ void InfluenceGrid::_updateSpread(double dt) {
     size_t numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&InfluenceGrid::_updateSpreadThread, this,
                                  intervals[i], intervals[i + 1], dt);

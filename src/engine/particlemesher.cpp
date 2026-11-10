@@ -240,7 +240,7 @@ void ParticleMesher::_initializeComputeChunkDataComputeChunks(MesherComputeChunk
         GridIndex gmax = chunkBounds[cidx].second;
 
         MesherComputeChunk c;
-        c.id = cidx;
+        c.id = (int)cidx;
         c.minBlockIndex = gmin;
         c.maxBlockIndex = gmax;
         c.minGridIndex = GridIndex(_blockwidth * gmin.i, 
@@ -301,7 +301,7 @@ TriangleMesh ParticleMesher::_polygonizeComputeChunk(MesherComputeChunk chunk,
 void ParticleMesher::_initializeScalarFieldData(MesherComputeChunk chunk,  
                                                 MesherComputeChunkData &data,
                                                 ScalarFieldData &fieldData) {
-    float eps = 1e-6;
+    float eps = 1e-6f;
     vmath::vec3 pmin = chunk.positionOffset;
     vmath::vec3 pmax = Grid3d::GridIndexToPosition(chunk.maxGridIndex, _subdx);
     AABB bbox(pmin, pmax);
@@ -417,7 +417,7 @@ void ParticleMesher::_computeScalarField(ScalarFieldData &fieldData) {
             }
         }
 
-        numComputeBlocksProcessed += finishedBlocks.size();
+        numComputeBlocksProcessed += (int)finishedBlocks.size();
     }
 
     for (int k = 0; k < fieldValues->depth; k++) {
@@ -446,7 +446,7 @@ void ParticleMesher::_computeGridCountData(ScalarFieldData &fieldData,
 
     int numthreads = gridCountData.numthreads;
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, fieldData.particles.size(), numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)fieldData.particles.size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&ParticleMesher::_computeGridCountDataThread, this,
                                  intervals[i], intervals[i + 1], &fieldData, 

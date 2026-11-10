@@ -78,7 +78,7 @@ void factorModifiedIncompleteColesky0(const SparseMatrix<T> &matrix,
     factor.rowindex.resize(0);
     std::fill(factor.adiag.begin(), factor.adiag.end(), 0);
 
-    T eps = 1e-9;
+    T eps = static_cast<T>(1e-9);
     for (unsigned int i = 0; i < matrix.n; i++) {
         factor.colstart[i] = (unsigned int)factor.rowindex.size();
         for (size_t j = 0; j < matrix.index[i].size(); j++) {
@@ -248,7 +248,10 @@ template <class T>
 struct PCGSolver {
 
     PCGSolver() {
-        setSolverParameters(1e-12, 100, 0.97, 0.25);
+        setSolverParameters(static_cast<T>(1e-12), 
+                            100, 
+                            static_cast<T>(0.97), 
+                            static_cast<T>(0.25));
     }
 
     void setSolverParameters(T tolerance, 
@@ -258,7 +261,7 @@ struct PCGSolver {
 
         toleranceFactor = tolerance;
         if (toleranceFactor < 1e-30) {
-            toleranceFactor=1e-30;
+            toleranceFactor = static_cast<T>(1e-30);
         }
         maxIterations = maxiter;
         modifiedIncompleteCholeskyParameter = MICParameter;

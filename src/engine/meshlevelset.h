@@ -206,7 +206,7 @@ public:
         int numCPU = ThreadUtils::getMaxThreadCount();
         int numthreads = (int)fmin(numCPU, points.size());
         std::vector<std::thread> threads(numthreads);
-        std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, points.size(), numthreads);
+        std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)points.size(), numthreads);
         for (int i = 0; i < numthreads; i++) {
             threads[i] = std::thread(&MeshLevelSet::_trilinearInterpolateSolidPointsVectorThread<T>, this,
                                      intervals[i], intervals[i + 1], &points, &isSolid);

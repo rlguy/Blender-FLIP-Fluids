@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import bpy
+import bpy, re
 from bpy.props import (
         FloatProperty,
         IntProperty,
@@ -24,6 +24,7 @@ from bpy.props import (
         )
 
 from ..objects import flip_fluid_cache
+from ..objects import flip_fluid_attribute
 from ..utils import version_compatibility_utils as vcu
 
 
@@ -180,8 +181,60 @@ class DomainParticlesProperties(bpy.types.PropertyGroup):
                 " Enabling is recommended for use in simulation nodes to reduce resource usage. If disabled, UID values"
                 " will be unique to the entire simulation. Disabling is recommended for tracking individual particles"
                 " in geometry nodes",
-            default=True,
+            default=False,
             options={'HIDDEN'},
+            )
+
+    # Remap UVW Properties
+    remap_uvw_attributes: bpy.props.CollectionProperty(type=flip_fluid_attribute.FLIPFluidRemapUVWItem)
+    remap_uvw_attributes_list_index: bpy.props.IntProperty(name="Active Index", default=0)
+
+    bind_fluid_particle_uvw_attribute_feature_tooltip: BoolProperty(
+            name="Bind Fluid Particle UVW Attributes",
+            description="Binds UVW texture coordinates to fluid particles at a specific frame. This forces the"
+                " coordinates to align perfectly at that target frame, reconstructing a continuous, undistorted"
+                " 3D texture",
+            )
+    attribute_name_header_tooltip: BoolProperty(
+            name="UVW Attribute Name",
+            description="Attribute name for the generated fluid particle UVW attribute. The associated UVW attribute can be accessed in a shader, geometry nodes, or spreadsheet editor under this attribute name",
+            )
+    bind_frame_header_tooltip: BoolProperty(
+            name="Bind Frame",
+            description="Target bind frame in the timeline where UVW coordinates are aligned",
+            )
+    status_frame_header_tooltip: BoolProperty(
+            name="Status",
+            description="Current status of the generated fluid particle UVW attribute. Reload frame to update status",
+            )
+
+    status_ready_tooltip: BoolProperty(
+            name="Ready",
+            description="Bind Frame is ready and will be loaded on the next frame load",
+            )
+    status_loaded_tooltip: BoolProperty(
+            name="Loaded",
+            description="Bind Frame has successfully loaded. The associated UVW attribute can be accessed in a shader, geometry nodes, or spreadsheet editor under the attribute name",
+            )
+    status_error_remap_frame_not_cached_tooltip: BoolProperty(
+            name="Frame Not Cached",
+            description="Warning: Bind Frame could not be loaded. Frame has not been cached within the simulation. Bind Frame will be loaded when the frame is available in the cache",
+            )
+    status_error_uid_not_cached_tooltip: BoolProperty(
+            name="UID Not Cached",
+            description="Error: Missing UID attribute for frame. Enable the 'Domain > Particles > UID' attribute and rebake the simulation",
+            )
+    status_error_zero_length_frame_tooltip: BoolProperty(
+            name="Zero Particles",
+            description="Warning: Bind Frame contains zero fluid particles. No valid UVW attribute data will be available",
+            )
+    status_error_corrupt_frame_tooltip: BoolProperty(
+            name="Corrupt Frame",
+            description="Error: Bind Frame could not be loaded. Cached frame contains corrupt data",
+            )
+    status_error_unknown_tooltip: BoolProperty(
+            name="Unknown Error",
+            description="Error: An unknown error was encountered. Report this issue to the developers",
             )
 
 

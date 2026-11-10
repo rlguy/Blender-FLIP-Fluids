@@ -19,6 +19,8 @@ import bpy
 from . import domain_display_ui
 from ..operators import helper_operators
 from ..utils import version_compatibility_utils as vcu
+from .. import types
+from ..types import CacheObjectType
 
 
 class FLIPFLUID_PT_CacheObjectTypePanel(bpy.types.Panel):
@@ -153,13 +155,13 @@ class FLIPFLUID_PT_CacheObjectTypePanel(bpy.types.Panel):
 
         cache_props = dprops.mesh_cache.get_mesh_cache_from_blender_object(bl_object)
         if cache_props is not None:
-            if cache_props.cache_object_type == 'CACHE_OBJECT_TYPE_FOAM':
+            if cache_props.cache_object_type == CacheObjectType.WHITEWATER_FOAM:
                 whitewater_label = "Foam:"
-            elif cache_props.cache_object_type == 'CACHE_OBJECT_TYPE_BUBBLE':
+            elif cache_props.cache_object_type == CacheObjectType.WHITEWATER_BUBBLE:
                 whitewater_label = "Bubble:"
-            elif cache_props.cache_object_type == 'CACHE_OBJECT_TYPE_SPRAY':
+            elif cache_props.cache_object_type == CacheObjectType.WHITEWATER_SPRAY:
                 whitewater_label = "Spray:"
-            elif cache_props.cache_object_type == 'CACHE_OBJECT_TYPE_DUST':
+            elif cache_props.cache_object_type == CacheObjectType.WHITEWATER_DUST:
                 whitewater_label = "Dust:"
 
             bl_mod = domain_display_ui.get_motion_blur_geometry_node_modifier(bl_object)
@@ -320,17 +322,17 @@ class FLIPFLUID_PT_CacheObjectTypePanel(bpy.types.Panel):
         if cache_props is None:
             return
 
-        if cache_props.cache_object_type == 'CACHE_OBJECT_TYPE_SURFACE':
+        if cache_props.cache_object_type == CacheObjectType.SURFACE:
             self.draw_surface(cache_props, dprops)
-        if cache_props.cache_object_type == 'CACHE_OBJECT_TYPE_FLUID_PARTICLES':
+        if cache_props.cache_object_type == CacheObjectType.FLUID_PARTICLES:
             self.draw_fluid_particles(cache_props, dprops)
-        elif cache_props.cache_object_type == 'CACHE_OBJECT_TYPE_FOAM':
+        elif cache_props.cache_object_type == CacheObjectType.WHITEWATER_FOAM:
             self.draw_foam(cache_props, dprops)
-        elif cache_props.cache_object_type == 'CACHE_OBJECT_TYPE_BUBBLE':
+        elif cache_props.cache_object_type == CacheObjectType.WHITEWATER_BUBBLE:
             self.draw_bubble(cache_props, dprops)
-        elif cache_props.cache_object_type == 'CACHE_OBJECT_TYPE_SPRAY':
+        elif cache_props.cache_object_type == CacheObjectType.WHITEWATER_SPRAY:
             self.draw_spray(cache_props, dprops)
-        elif cache_props.cache_object_type == 'CACHE_OBJECT_TYPE_DUST':
+        elif cache_props.cache_object_type == CacheObjectType.WHITEWATER_DUST:
             self.draw_dust(cache_props, dprops)
     
 

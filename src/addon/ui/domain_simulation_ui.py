@@ -92,11 +92,12 @@ def draw_bake_operator_UI_element(context, ui_box):
                 column_right.label(text=simprops.selected_savestate_int_label)
             
     else:
-        column.operator("flip_fluid_operators.bake_fluid_simulation", 
-                        text=operator_text)
         if bakeprops.is_simulation_running:
-            column.operator("flip_fluid_operators.cancel_bake_fluid_simulation", 
-                            text="Stop / Pause")
+            progress_factor = bakeprops.num_baked_frames / (simprops.frame_end - simprops.frame_start + 1)
+            column.progress(factor=progress_factor, type='BAR', text=operator_text)
+            column.operator("flip_fluid_operators.cancel_bake_fluid_simulation", text="Stop / Pause")
+        else:
+            column.operator("flip_fluid_operators.bake_fluid_simulation", text=operator_text)
 
     if dprops.bake.is_simulation_running:
         row = column.row()

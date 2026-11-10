@@ -3,6 +3,11 @@
 
 #include <cstdlib>
 
+#if defined(_MSC_VER)
+    #pragma warning(push)
+    #pragma warning(disable : 4100) // unreferenced formal parameter
+#endif
+
 void mixbox_initialize(char *lut_data, size_t length) {}
 bool mixbox_is_initialized() { return false; }
 
@@ -30,3 +35,7 @@ void mixbox_lerp_srgb8_dither(unsigned char r1,unsigned char g1,unsigned char b1
                               unsigned char* out_r,unsigned char* out_g,unsigned char* out_b) { *out_r=0; *out_g=0; *out_b=0; }
 
 void mixbox_latent_to_srgb8_dither(float* latent,float dither_r,float dither_g,float dither_b,unsigned char* out_r,unsigned char* out_g,unsigned char* out_b) { *out_r=0; *out_g=0; *out_b=0; }
+
+#if defined(_MSC_VER)
+    #pragma warning(pop)
+#endif

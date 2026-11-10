@@ -2682,7 +2682,7 @@ class FluidSimulation(object):
 
         libfunc = lib.FluidSimulation_get_marker_particles
         pb.init_lib_func(libfunc, 
-                         [c_void_p, c_int, c_int, c_void_p, c_void_p], None)
+                         [c_void_p, c_size_t, c_size_t, c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), startidx, endidx, out])
 
         return out
@@ -2695,7 +2695,7 @@ class FluidSimulation(object):
 
         libfunc = lib.FluidSimulation_get_marker_particle_positions
         pb.init_lib_func(libfunc, 
-                         [c_void_p, c_int, c_int, c_void_p, c_void_p], None)
+                         [c_void_p, c_size_t, c_size_t, c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), startidx, endidx, out])
 
         return out
@@ -2708,14 +2708,14 @@ class FluidSimulation(object):
 
         libfunc = lib.FluidSimulation_get_marker_particle_velocities
         pb.init_lib_func(libfunc, 
-                         [c_void_p, c_int, c_int, c_void_p, c_void_p], None)
+                         [c_void_p, c_size_t, c_size_t, c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), startidx, endidx, out])
 
         return out
 
     def get_num_diffuse_particles(self):
         libfunc = lib.FluidSimulation_get_num_diffuse_particles
-        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_size_t)
         return pb.execute_lib_func(libfunc, [self()])
 
     def get_diffuse_particle_positions(self, startidx = None, endidx = None):
@@ -2726,7 +2726,7 @@ class FluidSimulation(object):
 
         libfunc = lib.FluidSimulation_get_diffuse_particle_positions
         pb.init_lib_func(libfunc, 
-                         [c_void_p, c_int, c_int, c_void_p, c_void_p], None)
+                         [c_void_p, c_size_t, c_size_t, c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), startidx, endidx, out])
 
         return out
@@ -2739,7 +2739,7 @@ class FluidSimulation(object):
 
         libfunc = lib.FluidSimulation_get_diffuse_particle_velocities
         pb.init_lib_func(libfunc, 
-                         [c_void_p, c_int, c_int, c_void_p, c_void_p], None)
+                         [c_void_p, c_size_t, c_size_t, c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), startidx, endidx, out])
 
         return out
@@ -2752,7 +2752,7 @@ class FluidSimulation(object):
 
         libfunc = lib.FluidSimulation_get_diffuse_particle_lifetimes
         pb.init_lib_func(libfunc, 
-                         [c_void_p, c_int, c_int, c_void_p, c_void_p], None)
+                         [c_void_p, c_size_t, c_size_t, c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), startidx, endidx, out])
 
         floats = []
@@ -2769,7 +2769,7 @@ class FluidSimulation(object):
 
         libfunc = lib.FluidSimulation_get_diffuse_particle_types
         pb.init_lib_func(libfunc, 
-                         [c_void_p, c_int, c_int, c_void_p, c_void_p], None)
+                         [c_void_p, c_size_t, c_size_t, c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), startidx, endidx, out])
 
         types = []

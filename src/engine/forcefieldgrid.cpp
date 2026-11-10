@@ -96,7 +96,7 @@ vmath::vec3 ForceFieldGrid::getGravityVector() {
 }
 
 void ForceFieldGrid::setGravityVector(vmath::vec3 g) {
-    float eps = 1e-6;
+    float eps = 1e-6f;
     if ((g - _gravityVector).length() > eps) {
         _isStateChanged = true;
     }
@@ -132,7 +132,7 @@ float ForceFieldGrid::evaluateForceAtPositionW(vmath::vec3 p, float forceScale) 
 }
 
 void ForceFieldGrid::generateDebugNodes(std::vector<ForceFieldDebugNode> &nodes) {
-    float eps = 1e-6;
+    float eps = 1e-6f;
     float forceScale = 1.0f;
 
     int gridpad = 1;
@@ -200,13 +200,13 @@ void ForceFieldGrid::generateDebugNodes(std::vector<ForceFieldDebugNode> &nodes)
             ForceFieldDebugNode n2 = forceline[sidx];
             ForceFieldDebugNode n3 = forceline[sidx + 1];
 
-            vmath::vec3 p1(n1.x, n1.y, n1.z);
-            vmath::vec3 p2(n2.x, n2.y, n2.z);
-            vmath::vec3 p3(n3.x, n3.y, n3.z);
-            vmath::vec3 forcedir = evaluateForceAtPosition(p2, forceScale).normalize();
+            vmath::vec3 np1(n1.x, n1.y, n1.z);
+            vmath::vec3 np2(n2.x, n2.y, n2.z);
+            vmath::vec3 np3(n3.x, n3.y, n3.z);
+            vmath::vec3 forcedir = evaluateForceAtPosition(np2, forceScale).normalize();
 
-            vmath::vec3 v1 = p1 - p2;
-            vmath::vec3 v2 = p3 - p2;
+            vmath::vec3 v1 = np1 - np2;
+            vmath::vec3 v2 = np3 - np2;
             vmath::vec3 cross = vmath::cross(v1, v2);
 
             vmath::vec3 crossdir(1.0f, 0.0f, 0.0f);
@@ -218,31 +218,31 @@ void ForceFieldGrid::generateDebugNodes(std::vector<ForceFieldDebugNode> &nodes)
             vmath::vec3 arrowdir2 = vmath::normalize(-forcedir - crossdir);
 
             for (int aidx = 0; aidx < _numArrowSegments; aidx++) {
-                vmath::vec3 a1 = p2 + aidx * stepDistance * arrowdir1;
-                vmath::vec3 a2 = p2 + aidx * stepDistance * arrowdir2;
+                vmath::vec3 a1 = np2 + aidx * stepDistance * arrowdir1;
+                vmath::vec3 a2 = np2 + aidx * stepDistance * arrowdir2;
 
                 if (!Grid3d::isPositionInGrid(a1, _dx, _isize, _jsize, _ksize) || 
                         !Grid3d::isPositionInGrid(a2, _dx, _isize, _jsize, _ksize)) {
                     break;
                 }
 
-                float s1 = evaluateForceAtPosition(a1, forceScale).length();
-                float s2 = evaluateForceAtPosition(a2, forceScale).length();
+                float f1 = evaluateForceAtPosition(a1, forceScale).length();
+                float f2 = evaluateForceAtPosition(a2, forceScale).length();
 
-                ForceFieldDebugNode n1;
-                n1.x = a1.x;
-                n1.y = a1.y;
-                n1.z = a1.z;
-                n1.strength = s1;
+                ForceFieldDebugNode fn1;
+                fn1.x = a1.x;
+                fn1.y = a1.y;
+                fn1.z = a1.z;
+                fn1.strength = f1;
 
-                ForceFieldDebugNode n2;
-                n2.x = a2.x;
-                n2.y = a2.y;
-                n2.z = a2.z;
-                n2.strength = s2;
+                ForceFieldDebugNode fn2;
+                fn2.x = a2.x;
+                fn2.y = a2.y;
+                fn2.z = a2.z;
+                fn2.strength = f2;
 
-                arrowNodes.push_back(n1);
-                arrowNodes.push_back(n2);
+                arrowNodes.push_back(fn1);
+                arrowNodes.push_back(fn2);
             }
         }
 

@@ -190,7 +190,7 @@ public:
     }
 
     int getNumActiveGridBlocks() {
-        return _arraydata.size() / _blocksize;
+        return (int)_arraydata.size() / _blocksize;
     }
 
     int width = 0;

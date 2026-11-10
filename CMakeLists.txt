@@ -40,6 +40,7 @@ set(BUILD_DEBUG OFF CACHE BOOL "Turn on to build a debug release")
 option(DISTRIBUTE_SOURCE "Include source code in addon" ON)
 option(DISTRIBUTE_MEDIA "Include media files in addon" OFF) # For future feature
 option(WITH_MIXBOX "Compile with Mixbox pigment mixing feature" OFF)
+option(WITH_ALEMBIC "Compile with experimental Alembic export features" ON)
 
 # Configure Project
 project(bl_flip_fluids)
@@ -53,11 +54,10 @@ endif()
 set(FFENGINE_VERSION_TYPE_IS_STABLE_BUILD TRUE)
 set(FFENGINE_VERSION_MAJOR 1)
 set(FFENGINE_VERSION_MINOR 8)
-set(FFENGINE_VERSION_REVISION 8)
+set(FFENGINE_VERSION_REVISION 9)
 set(FFENGINE_VERSION_DATE_YYYY "2026")
-set(FFENGINE_VERSION_DATE_MM "07")
-set(FFENGINE_VERSION_DATE_DD "14")
-set(FFENGINE_VERSION_DATE_DD "27")
+set(FFENGINE_VERSION_DATE_MM "11")
+set(FFENGINE_VERSION_DATE_DD "10")
 set(FFENGINE_VERSION_SUPPORT_LICENSE_TYPE "GitHub")
 set(FFENGINE_VERSION_RELEASE_TYPE "Release")
 
@@ -108,13 +108,12 @@ endif()
 
 # Configure Compiler/OS Specific Flags
 if(MSVC)
-    message(FATAL_ERROR "Error: Compilation using MSVC (Microsoft Visual Studio) is not supported. Building with MSVC will result in errors, performance issues, and broken simulation features. Change this FATAL_ERROR to WARNING in the CMake script to continue at your own risk.")
     add_definitions(-DNOMINMAX -D_CRT_SECURE_NO_WARNINGS)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /O2 /W4 /EHsc /wd4244")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /O2 /GL /Oi /Ot /arch:AVX2 /W4 /EHsc /wd4244")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LARGEADDRESSAWARE")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /LARGEADDRESSAWARE")
 elseif(MINGW)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static -static-libgcc -static-libstdc++ -fopenmp -O3 -std=c++17 -Wall")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static -static-libgcc -static-libstdc++ -fopenmp -O3 -ffast-math -mavx2 -mfma -std=c++17 -Wall")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--enable-stdcall-fixup")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--enable-stdcall-fixup")
 elseif(APPLE)
@@ -244,36 +243,43 @@ set(SOURCES_ALEMBIC_IO_LIBRARY
 set(BLENDER_ADDON_DIR "${CMAKE_BINARY_DIR}/bl_flip_fluids/flip_fluids_addon")
 set_output_directories("${BLENDER_ADDON_DIR}/ffengine/lib")
 
-# Add Alembic Dependency
-if(ALEMBIC_PACKAGE_ROOT)
-    message(STATUS "Using ALEMBIC_PACKAGE_ROOT=" ${ALEMBIC_PACKAGE_ROOT})
-    find_package(Alembic REQUIRED PATHS ${ALEMBIC_PACKAGE_ROOT} NO_DEFAULT_PATH)
-else()
-    find_package(Alembic REQUIRED)
+# FLIP Fluids Alembic Engine
+if (WITH_ALEMBIC)
+    # Add Alembic Dependency
+    if(ALEMBIC_PACKAGE_ROOT)
+        message(STATUS "Using ALEMBIC_PACKAGE_ROOT=" ${ALEMBIC_PACKAGE_ROOT})
+        find_package(Alembic REQUIRED PATHS ${ALEMBIC_PACKAGE_ROOT} NO_DEFAULT_PATH)
+    else()
+        find_package(Alembic REQUIRED)
+    endif()
+
+    # Alembic IO Engine Objects
+    file(GLOB ALEMBIC_IO_LIBRARY_SOURCES 
+            "src/engine/*.cpp" 
+            "src/engine/c_bindings/*.cpp"
+            "src/alembic_io/src/alembic_io.cpp"
+            "src/alembic_io/src/c_bindings/*.cpp" 
+            ${MIXBOX_SOURCE_CPP}
+            )
+
+    add_library(alembic_objects OBJECT ${ALEMBIC_IO_LIBRARY_SOURCES})
+    target_link_libraries(alembic_objects PRIVATE Alembic::Alembic)
+    target_compile_features(alembic_objects PRIVATE cxx_std_17)
+
+    # Alembic IO Engine Library
+    add_library(ffalembicengine SHARED $<TARGET_OBJECTS:alembic_objects>)
+    target_link_libraries(ffalembicengine PRIVATE Alembic::Alembic)
 endif()
-
-# Alembic IO Engine Objects
-file(GLOB ALEMBIC_IO_LIBRARY_SOURCES 
-        "src/engine/*.cpp" 
-        "src/engine/c_bindings/*.cpp"
-        "src/alembic_io/src/alembic_io.cpp"
-        "src/alembic_io/src/c_bindings/*.cpp" 
-        ${MIXBOX_SOURCE_CPP}
-        )
-
-add_library(alembic_objects OBJECT ${ALEMBIC_IO_LIBRARY_SOURCES})
-target_link_libraries(alembic_objects PRIVATE Alembic::Alembic)
-target_compile_features(alembic_objects PRIVATE cxx_std_17)
-
-# Alembic IO Engine Library
-add_library(ffalembicengine SHARED $<TARGET_OBJECTS:alembic_objects>)
-target_link_libraries(ffalembicengine PRIVATE Alembic::Alembic)
 
 # FLIP Fluids Engine Objects
 add_library(fluid_engine_objects OBJECT ${SOURCES_FLUID_ENGINE_LIBRARY})
 
 # FLIP Fluids Engine Library
 add_library(ffengine SHARED $<TARGET_OBJECTS:fluid_engine_objects>)
+
+if(MSVC)
+    set_target_properties(ffengine PROPERTIES PREFIX "lib")
+endif()
 
 # Copy Libraries To Addon
 file(COPY "${CMAKE_SOURCE_DIR}/src/addon/" DESTINATION "${BLENDER_ADDON_DIR}")

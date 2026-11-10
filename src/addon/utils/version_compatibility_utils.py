@@ -26,6 +26,7 @@ def is_blender_279():
 def is_blender_28():
     return bpy.app.version >= (2, 80, 0)
 
+
 def is_blender_281():
     return bpy.app.version >= (2, 81, 0)
 
@@ -100,6 +101,10 @@ def is_blender_51():
 
 def is_blender_52():
     return bpy.app.version >= (5, 2, 0)
+
+
+def is_blender_53():
+    return bpy.app.version >= (5, 3, 0)
 
 
 def convert_attribute_to_28(prop_name):
@@ -262,6 +267,26 @@ def depsgraph_update(context=None):
     depsgraph.update()
 
 
+def _refracture_merge_export_guard(obj):
+    """Refracture handshake, called around every mesh read.
+
+    While Merge inner faces is on, the shared features modifier evaluates a
+    welded hull. Export needs the separate shards. Refracture registers the
+    two callables below when it is installed and puts the switch back itself.
+    No Refracture, or an object that is not one of its masters: nothing happens.
+    The token is opaque and only meaningful to the restore callable.
+    """
+    try:
+        ns = bpy.app.driver_namespace
+        suspend = ns.get("refracture_suspend_merge_inner_faces")
+        restore = ns.get("refracture_restore_merge_inner_faces")
+        if not callable(suspend) or not callable(restore):
+            return None, None
+        return suspend(obj), restore
+    except Exception:
+        return None, None
+
+
 def object_to_triangle_mesh(obj, matrix_world=None):
     # To ensure the modifier stack is processed in 2.8, the object's 'hide in viewport'
     # must be False. This is a limitation of how meshes or exported in Blender.
@@ -288,44 +313,55 @@ def object_to_triangle_mesh(obj, matrix_world=None):
     triangulation_mod = obj.modifiers.new("flip_triangulate", "TRIANGULATE")
     triangulation_mod.quad_method = 'FIXED'
 
-    depsgraph = bpy.context.evaluated_depsgraph_get()
-    obj_eval = obj.evaluated_get(depsgraph)
-    new_mesh = obj_eval.to_mesh(preserve_all_data_layers=True, depsgraph=depsgraph)
+    # Merge inner faces shares this modifier with the shard export. Suspend it
+    # for this read only; the finally puts the user's switch back even when the
+    # mesh read fails.
+    merge_token, merge_restore = _refracture_merge_export_guard(obj)
+    try:
+        depsgraph = bpy.context.evaluated_depsgraph_get()
+        obj_eval = obj.evaluated_get(depsgraph)
+        new_mesh = obj_eval.to_mesh(preserve_all_data_layers=True, depsgraph=depsgraph)
 
-    vertex_components = []
-    if matrix_world is None:
-        for mv in new_mesh.vertices:
-            v = mv.co
-            vertex_components.append(v.x)
-            vertex_components.append(v.y)
-            vertex_components.append(v.z)
-    else:
-        for mv in new_mesh.vertices:
-            v = matrix_world @ mv.co
-            vertex_components.append(v.x)
-            vertex_components.append(v.y)
-            vertex_components.append(v.z)
+        vertex_components = []
+        if matrix_world is None:
+            for mv in new_mesh.vertices:
+                v = mv.co
+                vertex_components.append(v.x)
+                vertex_components.append(v.y)
+                vertex_components.append(v.z)
+        else:
+            for mv in new_mesh.vertices:
+                v = matrix_world @ mv.co
+                vertex_components.append(v.x)
+                vertex_components.append(v.y)
+                vertex_components.append(v.z)
 
-    triangle_indices = []
-    for t in new_mesh.polygons:
-        for idx in t.vertices:
-            triangle_indices.append(idx)
-    
-    tmesh = TriangleMesh()
-    tmesh.vertices = array.array('f', vertex_components)
-    tmesh.triangles = array.array('i', triangle_indices)
+        triangle_indices = []
+        for t in new_mesh.polygons:
+            for idx in t.vertices:
+                triangle_indices.append(idx)
 
-    obj_eval.to_mesh_clear()
+        tmesh = TriangleMesh()
+        tmesh.vertices = array.array('f', vertex_components)
+        tmesh.triangles = array.array('i', triangle_indices)
 
-    obj.modifiers.remove(triangulation_mod)
-
-    for m in obj.modifiers:
-        if m.type == 'EDGE_SPLIT':
-            m.show_render = edge_split_show_render_values.pop(0)
-            m.show_viewport = edge_split_show_viewport_values.pop(0)
-
-    if hide_viewport_status != obj.hide_viewport:
-        obj.hide_viewport = hide_viewport_status
+        obj_eval.to_mesh_clear()
+    finally:
+        if merge_restore is not None:
+            try:
+                merge_restore(merge_token)
+            except Exception:
+                pass
+        try:
+            obj.modifiers.remove(triangulation_mod)
+        except Exception:
+            pass
+        for m in obj.modifiers:
+            if m.type == 'EDGE_SPLIT':
+                m.show_render = edge_split_show_render_values.pop(0)
+                m.show_viewport = edge_split_show_viewport_values.pop(0)
+        if hide_viewport_status != obj.hide_viewport:
+            obj.hide_viewport = hide_viewport_status
 
     return tmesh
 
@@ -467,10 +503,12 @@ def get_addon_preferences(context=None):
 
 
 def get_geometry_nodes_blend_filepath():
-    if is_blender_52():
-        blend_resource_filename = "geometry_nodes_library.blend"
+    if is_blender_53():
+        blend_resource_filename = "geometry_nodes_library-5.3.blend"
+    elif is_blender_52():
+        blend_resource_filename = "geometry_nodes_library-5.2.blend"
     else:
-        blend_resource_filename = "geometry_nodes_library-legacy.blend"
+        blend_resource_filename = "geometry_nodes_library-4.5.blend"
     addon_root = get_addon_directory()
     library_filepath = os.path.join(addon_root, "resources", "geometry_nodes", blend_resource_filename)
     return library_filepath

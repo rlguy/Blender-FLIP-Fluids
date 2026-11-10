@@ -1381,7 +1381,7 @@ public:
         particles store position and velocity vectors.
     */
     std::vector<MarkerParticle> getMarkerParticles();
-    std::vector<MarkerParticle> getMarkerParticles(int startidx, int endidx);
+    std::vector<MarkerParticle> getMarkerParticles(size_t startidx, size_t endidx);
 
     /*
         Returns a vector of marker particle positions. If range indices
@@ -1389,7 +1389,7 @@ public:
         [startidx, endidx).
     */
     std::vector<vmath::vec3> getMarkerParticlePositions();
-    std::vector<vmath::vec3> getMarkerParticlePositions(int startidx, int endidx);
+    std::vector<vmath::vec3> getMarkerParticlePositions(size_t startidx, size_t endidx);
 
     /*
         Returns a vector of marker particle velocities. If range indices
@@ -1397,7 +1397,7 @@ public:
         [startidx, endidx).
     */
     std::vector<vmath::vec3> getMarkerParticleVelocities();
-    std::vector<vmath::vec3> getMarkerParticleVelocities(int startidx, int endidx);
+    std::vector<vmath::vec3> getMarkerParticleVelocities(size_t startidx, size_t endidx);
 
     /*
         Returns the number of diffuse particles in the simulation.
@@ -1410,7 +1410,7 @@ public:
         [startidx, endidx).
     */
     std::vector<vmath::vec3> getDiffuseParticlePositions();
-    std::vector<vmath::vec3> getDiffuseParticlePositions(int startidx, int endidx);
+    std::vector<vmath::vec3> getDiffuseParticlePositions(size_t startidx, size_t endidx);
 
     /*
         Returns a vector of diffuse particle velocities. If range indices
@@ -1418,7 +1418,7 @@ public:
         [startidx, endidx).
     */
     std::vector<vmath::vec3> getDiffuseParticleVelocities();
-    std::vector<vmath::vec3> getDiffuseParticleVelocities(int startidx, int endidx);
+    std::vector<vmath::vec3> getDiffuseParticleVelocities(size_t startidx, size_t endidx);
 
     /*
         Returns a vector of diffuse particle lifetimes. If range indices
@@ -1426,7 +1426,7 @@ public:
         ranging from [startidx, endidx).
     */
     std::vector<float> getDiffuseParticleLifetimes();
-    std::vector<float> getDiffuseParticleLifetimes(int startidx, int endidx);
+    std::vector<float> getDiffuseParticleLifetimes(size_t startidx, size_t endidx);
 
     /*
         Returns a vector of diffuse particle types. If range indices
@@ -1440,7 +1440,7 @@ public:
             0x02    Spray
     */
     std::vector<char> getDiffuseParticleTypes();
-    std::vector<char> getDiffuseParticleTypes(int startidx, int endidx);
+    std::vector<char> getDiffuseParticleTypes(size_t startidx, size_t endidx);
 
     /*
         Returns a pointer to the MACVelocityField data structure.
@@ -2104,10 +2104,10 @@ private:
         filedata = std::vector<char>(fileBytes, 0);
         unsigned int *uintData = (unsigned int*)filedata.data();
 
-        uintData[0] = dataFFP3.numFluidParticlesSurface;
-        uintData[1] = dataFFP3.numFluidParticlesBoundary;
-        uintData[2] = dataFFP3.numFluidParticlesInterior;
-        uintData[3] = dataFFP3.idLimit;
+        uintData[0] = (unsigned int)dataFFP3.numFluidParticlesSurface;
+        uintData[1] = (unsigned int)dataFFP3.numFluidParticlesBoundary;
+        uintData[2] = (unsigned int)dataFFP3.numFluidParticlesInterior;
+        uintData[3] = (unsigned int)dataFFP3.idLimit;
         size_t idHeaderDataOffset = 4;
 
         for (size_t i = 0; i < dataFFP3.idLimit; i++) {
@@ -2166,7 +2166,7 @@ private:
             }
         }
 
-        int numRemoved = items.size() - currentidx;
+        int numRemoved = (int)items.size() - currentidx;
         for (int i = 0; i < numRemoved; i++) {
             items.pop_back();
         }

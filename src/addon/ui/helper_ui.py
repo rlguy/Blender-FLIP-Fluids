@@ -17,6 +17,7 @@
 import bpy, platform
 
 from . import domain_simulation_ui
+from . import post_processing_tools_ui
 from . import compositing_tools_ui
 from .. import render
 from ..utils import api_workaround_utils as api_utils
@@ -817,6 +818,22 @@ class FLIPFLUID_PT_HelperPanelMain(bpy.types.Panel):
             self.draw_simulation_setup_panel(context)
 
         self.draw_disable_addon_submenu(context)
+
+
+class FLIPFLUID_PT_HelperPanelPostProcessingTools(bpy.types.Panel):
+    bl_label = "Post-Processing Tools"
+    bl_category = "FLIP Fluids"
+    bl_space_type = 'VIEW_3D'
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_region_type = 'UI'
+
+
+    @classmethod
+    def poll(cls, context):
+        return not context.scene.flip_fluid.is_addon_disabled_in_blend_file()
+
+    def draw(self, context):
+        post_processing_tools_ui.draw_post_processing_tools_panel(self, context)
         
 
 class FLIPFLUID_PT_HelperPanelCompositingTools(bpy.types.Panel):
@@ -984,18 +1001,18 @@ class FLIPFLUID_PT_HelperTechnicalSupport(bpy.types.Panel):
         column.separator()
         column.operator("flip_fluid_operators.increment_and_save_file", icon='FILE_TICK')
 
+
 def register():
-    # These panels will be registered in properties.preferences_properties.py
-    # Small fix: It´s properties.helper_properties.py
+    # These panels will be registered in properties.preferences_properties
     pass
 
 
 def unregister():
     try:
         bpy.utils.unregister_class(FLIPFLUID_PT_HelperPanelMain)
+        bpy.utils.unregister_class(FLIPFLUID_PT_HelperPanelPostProcessingTools)
         bpy.utils.unregister_class(FLIPFLUID_PT_HelperPanelCompositingTools)
         bpy.utils.unregister_class(FLIPFLUID_PT_HelperPanelDisplay)
         bpy.utils.unregister_class(FLIPFLUID_PT_HelperTechnicalSupport)
-
     except:
         pass

@@ -267,7 +267,7 @@ void featherGrid26(Array3d<bool> *grid, int numthreads) {
     size_t gridsize = grid->width * grid->height * grid->depth;
     numthreads = (int)std::min((size_t)numthreads, gridsize);
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&_featherGrid26Thread, grid, &tempgrid, intervals[i], intervals[i + 1]);
     }

@@ -220,6 +220,7 @@ std::vector<vmath::vec3> MeshObject::getVertexVelocities(double dt, float frameI
 }
 
 std::vector<vmath::vec3> MeshObject::getFrameVertexVelocities(int frameno, double dt) {
+    (void)frameno;
     std::vector<vmath::vec3> velocities = _vertexTranslationsCurrent;
 
     double eps = 1e-10;
@@ -243,7 +244,7 @@ void MeshObject::getMeshLevelSet(double dt, float frameInterpolation, int exactB
     // Loose geometry will cause problems when splitting into mesh islands
     std::vector<int> removedVertices = m.removeExtraneousVertices();
     std::vector<vmath::vec3> vertexVelocities = getVertexVelocities(dt, frameInterpolation);
-    for (int i = removedVertices.size() - 1; i >= 0; i--) {
+    for (int i = (int)removedVertices.size() - 1; i >= 0; i--) {
         vertexVelocities.erase(vertexVelocities.begin() + removedVertices[i]);
     }
 
@@ -407,10 +408,10 @@ bool MeshObject::isAppendObjectVelocityEnabled() {
 }
 
 RigidBodyVelocity MeshObject::getRigidBodyVelocity(double framedt) {
-    framedt = fmax(framedt, 1e-6);
+    framedt = fmax(framedt, 1e-6f);
 
     float vscale = _objectVelocityInfluence;
-    float eps = 1e-5;
+    float eps = 1e-5f;
     RigidBodyVelocity rv;
     if (!_isAnimated || _isChangingTopology) {
         TriangleMesh m = getMesh();
@@ -479,7 +480,7 @@ bool MeshObject::isGeometryAABB() {
     AABB bbox(m.vertices);
 
     bool isAABB = true;
-    float eps = 1e-4;
+    float eps = 1e-4f;
     for (size_t i = 0; i < m.triangles.size(); i++) {
         Triangle t = m.triangles[i];
         vmath::vec3 v1 = m.vertices[t.tri[0]];
@@ -785,7 +786,7 @@ void MeshObject::_addMeshIslandsToLevelSetFractureOptimization(
             levelset.calculateUnion(*(finishedItems[i]));
             delete (finishedItems[i]);
         }
-        numItemsProcessed += finishedItems.size();
+        numItemsProcessed += (int)finishedItems.size();
     }
 
     workQueue.notifyFinished();
@@ -860,7 +861,7 @@ void MeshObject::_obstacleMeshLevelSetProducerThread(BoundedBuffer<MeshObject*> 
             TriangleMesh mesh = obstacle->getMesh(frameInterpolation);
             std::vector<int> removedVertices = mesh.removeExtraneousVertices();
             std::vector<vmath::vec3> vertexVelocities = obstacle->getVertexVelocities(dt, frameInterpolation);
-            for (int vidx = removedVertices.size() - 1; vidx >= 0; vidx--) {
+            for (int vidx = (int)removedVertices.size() - 1; vidx >= 0; vidx--) {
                 vertexVelocities.erase(vertexVelocities.begin() + removedVertices[vidx]);
             }
 
@@ -899,7 +900,7 @@ bool MeshObject::_isMeshChanged() {
         return true;
     }
 
-    float eps = 1e-5;
+    float eps = 1e-5f;
     bool isMeshChanged = false;
     for (size_t i = 0; i < _meshPrevious.vertices.size(); i++) {
         if (vmath::length(_meshPrevious.vertices[i] - _meshCurrent.vertices[i]) > eps) {
@@ -1020,12 +1021,12 @@ bool MeshObject::_isRigidBody(TriangleMesh m1, TriangleMesh m2) {
     m2.scale(scale);
 
     bool v1found = false;
-    size_t v1idx = -1;
+    int v1idx = -1;
     for (size_t i = 0; i < m1.vertices.size(); i++) {
         vmath::vec3 p = m1.vertices[i];
         if (!vmath::equals(p, centroid, bigeps)) {
             v1found = true;
-            v1idx = i;
+            v1idx = (int)i;
             break;
         }
     }
@@ -1037,9 +1038,9 @@ bool MeshObject::_isRigidBody(TriangleMesh m1, TriangleMesh m2) {
     vmath::vec3 m1v1 = m1.vertices[v1idx];
 
     bool v2found = false;
-    size_t v2idx = -1;
+    int v2idx = -1;
     for (int i = (int)m1.vertices.size() / 2; i >= 0; i--) {
-        if ((size_t)i == v1idx) {
+        if (i == v1idx) {
             continue;
         }
 

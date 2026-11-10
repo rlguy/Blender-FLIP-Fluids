@@ -126,7 +126,7 @@ void ViscositySolver::_computeFaceStateGridMT(Array3d<float> &solidCenterPhi, in
     size_t numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)std::min(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&ViscositySolver::_computeFaceStateGridThread, this,
                                  intervals[i], intervals[i + 1], &solidCenterPhi, dir);
@@ -185,7 +185,7 @@ void ViscositySolver::_computeSolidCenterPhi(Array3d<float> &solidCenterPhi) {
     size_t numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)std::min(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&ViscositySolver::_computeSolidCenterPhiThread, this,
                                  intervals[i], intervals[i + 1], &solidCenterPhi);
@@ -298,7 +298,7 @@ void ViscositySolver::_estimateVolumeFractions(Array3d<float> *volumes,
     size_t numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)std::min(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&ViscositySolver::_estimateVolumeFractionsThread, this,
                                  intervals[i], intervals[i + 1], 
@@ -493,7 +493,7 @@ void ViscositySolver::_initializeLinearSystemU(SparseMatrixf &matrix, std::vecto
     int numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, indices.size());
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, indices.size(), numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)indices.size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&ViscositySolver::_initializeLinearSystemThreadU, this,
                                  intervals[i], intervals[i + 1], &indices, &matrix, &rhs);
@@ -519,7 +519,7 @@ void ViscositySolver::_initializeLinearSystemV(SparseMatrixf &matrix, std::vecto
     int numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, indices.size());
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, indices.size(), numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)indices.size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&ViscositySolver::_initializeLinearSystemThreadV, this,
                                  intervals[i], intervals[i + 1], &indices, &matrix, &rhs);
@@ -545,7 +545,7 @@ void ViscositySolver::_initializeLinearSystemW(SparseMatrixf &matrix, std::vecto
     int numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, indices.size());
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, indices.size(), numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)indices.size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&ViscositySolver::_initializeLinearSystemThreadW, this,
                                  intervals[i], intervals[i + 1], &indices, &matrix, &rhs);

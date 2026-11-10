@@ -58,7 +58,7 @@ void LevelSetSolver::reinitializeEno(Array3d<float> &inputSDF,
         int numCPU = ThreadUtils::getMaxThreadCount();
         int numthreads = (int)fmin(numCPU, solverCells.size());
         std::vector<std::thread> threads(numthreads);
-        std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, solverCells.size(), numthreads);
+        std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)solverCells.size(), numthreads);
         for (int i = 0; i < numthreads; i++) {
             threads[i] = std::thread(&LevelSetSolver::_stepSolverThreadEno, this,
                                      intervals[i], intervals[i + 1], tempPtr, outputPtr, dx, dtau, &solverCells);
@@ -73,8 +73,8 @@ void LevelSetSolver::reinitializeEno(Array3d<float> &inputSDF,
 
     float *rawarraysrc = outputPtr->getRawArray();
     float *rawarraydst = outputSDF.getRawArray();
-    int n = outputSDF.getNumElements();
-    for (int i = 0; i < n; i++) {
+    size_t n = outputSDF.getNumElements();
+    for (size_t i = 0; i < n; i++) {
         rawarraydst[i] = rawarraysrc[i];
     }
 }
@@ -104,7 +104,7 @@ void LevelSetSolver::reinitializeUpwind(Array3d<float> &inputSDF,
         int numCPU = ThreadUtils::getMaxThreadCount();
         int numthreads = (int)fmin(numCPU, solverCells.size());
         std::vector<std::thread> threads(numthreads);
-        std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, solverCells.size(), numthreads);
+        std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)solverCells.size(), numthreads);
         for (int i = 0; i < numthreads; i++) {
             threads[i] = std::thread(&LevelSetSolver::_stepSolverThreadUpwind, this,
                                      intervals[i], intervals[i + 1], tempPtr, outputPtr, dx, dtau, &solverCells);
@@ -131,8 +131,8 @@ void LevelSetSolver::reinitializeUpwind(Array3d<float> &inputSDF,
 
     float *rawarraysrc = outputPtr->getRawArray();
     float *rawarraydst = outputSDF.getRawArray();
-    int n = outputSDF.getNumElements();
-    for (int i = 0; i < n; i++) {
+    size_t n = outputSDF.getNumElements();
+    for (size_t i = 0; i < n; i++) {
         rawarraydst[i] = rawarraysrc[i];
     }
 }

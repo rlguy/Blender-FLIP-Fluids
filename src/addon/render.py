@@ -21,18 +21,19 @@ from .utils import version_compatibility_utils as vcu
 
 IS_RENDERING = False
 IS_FRAME_REQUIRING_RELOAD = False
-RENDER_PRE_FRAME_NUMBER = 0
 IS_KEYFRAMED_HIDE_RENDER_ISSUE_RELEVANT = False
 
-ENABLE_SURFACE_LOAD = True
-ENABLE_FLUID_PARTICLE_LOAD = True
-ENABLE_FOAM_LOAD = True
-ENABLE_BUBBLE_LOAD = True
-ENABLE_SPRAY_LOAD = True
-ENABLE_DUST_LOAD = True
-ENABLE_OBSTACLE_DEBUG_LOAD = True
-ENABLE_PARTICLE_DEBUG_LOAD = True
-ENABLE_FORCE_FIELD_DEBUG_LOAD = True
+ENABLE_LOAD = {
+    "SURFACE": True,
+    "FLUID_PARTICLES": True,
+    "FOAM": True,
+    "BUBBLE": True,
+    "SPRAY": True,
+    "DUST": True,
+    "OBSTACLE_DEBUG": True,
+    "PARTICLE_DEBUG": True,
+    "FORCE_FIELD_DEBUG": True,
+}
 
 
 def is_rendering():
@@ -41,101 +42,26 @@ def is_rendering():
 
 
 def is_simulation_mesh_load_enabled(mesh_name):
-    global ENABLE_SURFACE_LOAD
-    global ENABLE_FLUID_PARTICLE_LOAD
-    global ENABLE_FOAM_LOAD
-    global ENABLE_BUBBLE_LOAD
-    global ENABLE_SPRAY_LOAD
-    global ENABLE_DUST_LOAD
-    global ENABLE_OBSTACLE_DEBUG_LOAD
-    global ENABLE_PARTICLE_DEBUG_LOAD
-    global ENABLE_FORCE_FIELD_DEBUG_LOAD
-
-    if   mesh_name == 'SURFACE':
-        return ENABLE_SURFACE_LOAD
-    if   mesh_name == 'FLUID_PARTICLES':
-        return ENABLE_FLUID_PARTICLE_LOAD
-    elif mesh_name == 'FOAM':
-        return ENABLE_FOAM_LOAD
-    elif mesh_name == 'BUBBLE':
-        return ENABLE_BUBBLE_LOAD
-    elif mesh_name == 'SPRAY':
-        return ENABLE_SPRAY_LOAD
-    elif mesh_name == 'DUST':
-        return ENABLE_DUST_LOAD
-    elif mesh_name == 'OBSTACLE_DEBUG':
-        return ENABLE_OBSTACLE_DEBUG_LOAD
-    elif mesh_name == 'PARTICLE_DEBUG':
-        return ENABLE_PARTICLE_DEBUG_LOAD
-    elif mesh_name == 'FORCE_FIELD_DEBUG':
-        return ENABLE_FORCE_FIELD_DEBUG_LOAD
-    else:
+    global ENABLE_LOAD
+    try:
+        return ENABLE_LOAD[mesh_name]
+    except KeyError:
         raise Exception("Unknown simulation mesh name: <" + mesh_name + ">")
 
 
 def enable_simulation_mesh_load(mesh_name):
-    global ENABLE_SURFACE_LOAD
-    global ENABLE_FLUID_PARTICLE_LOAD
-    global ENABLE_FOAM_LOAD
-    global ENABLE_BUBBLE_LOAD
-    global ENABLE_SPRAY_LOAD
-    global ENABLE_DUST_LOAD
-    global ENABLE_OBSTACLE_DEBUG_LOAD
-    global ENABLE_PARTICLE_DEBUG_LOAD
-    global ENABLE_FORCE_FIELD_DEBUG_LOAD
-
-    if   mesh_name == 'SURFACE':
-        ENABLE_SURFACE_LOAD = True
-    elif mesh_name == 'FLUID_PARTICLES':
-        ENABLE_FLUID_PARTICLE_LOAD = True
-    elif mesh_name == 'FOAM':
-        ENABLE_FOAM_LOAD = True
-    elif mesh_name == 'BUBBLE':
-        ENABLE_BUBBLE_LOAD = True
-    elif mesh_name == 'SPRAY':
-        ENABLE_SPRAY_LOAD = True
-    elif mesh_name == 'DUST':
-        ENABLE_DUST_LOAD = True
-    elif mesh_name == 'OBSTACLE_DEBUG':
-        ENABLE_OBSTACLE_DEBUG_LOAD = True
-    elif mesh_name == 'PARTICLE_DEBUG':
-        ENABLE_PARTICLE_DEBUG_LOAD = True
-    elif mesh_name == 'FORCE_FIELD_DEBUG':
-        ENABLE_FORCE_FIELD_DEBUG_LOAD = True
-    else:
+    global ENABLE_LOAD
+    try:
+        ENABLE_LOAD[mesh_name] = True
+    except KeyError:
         raise Exception("Unknown simulation mesh name: <" + mesh_name + ">")
 
 
 def disable_simulation_mesh_load(mesh_name):
-    global ENABLE_SURFACE_LOAD
-    global ENABLE_FLUID_PARTICLE_LOAD
-    global ENABLE_FOAM_LOAD
-    global ENABLE_BUBBLE_LOAD
-    global ENABLE_SPRAY_LOAD
-    global ENABLE_DUST_LOAD
-    global ENABLE_OBSTACLE_DEBUG_LOAD
-    global ENABLE_PARTICLE_DEBUG_LOAD
-    global ENABLE_FORCE_FIELD_DEBUG_LOAD
-
-    if   mesh_name == 'SURFACE':
-        ENABLE_SURFACE_LOAD = False
-    elif mesh_name == 'FLUID_PARTICLES':
-        ENABLE_FLUID_PARTICLE_LOAD = False
-    elif mesh_name == 'FOAM':
-        ENABLE_FOAM_LOAD = False
-    elif mesh_name == 'BUBBLE':
-        ENABLE_BUBBLE_LOAD = False
-    elif mesh_name == 'SPRAY':
-        ENABLE_SPRAY_LOAD = False
-    elif mesh_name == 'DUST':
-        ENABLE_DUST_LOAD = False
-    elif mesh_name == 'OBSTACLE_DEBUG':
-        ENABLE_OBSTACLE_DEBUG_LOAD = False
-    elif mesh_name == 'PARTICLE_DEBUG':
-        ENABLE_PARTICLE_DEBUG_LOAD = False
-    elif mesh_name == 'FORCE_FIELD_DEBUG':
-        ENABLE_FORCE_FIELD_DEBUG_LOAD = False
-    else:
+    global ENABLE_LOAD
+    try:
+        ENABLE_LOAD[mesh_name] = False
+    except KeyError:
         raise Exception("Unknown simulation mesh name: <" + mesh_name + ">")
 
 
@@ -205,21 +131,6 @@ def get_current_render_frame():
     dprops = bpy.context.scene.flip_fluid.get_domain_properties()
     if dprops is None:
         return 0 
-
-    """
-    # https://developer.blender.org/T71908 currently breaks
-    # this return due to incorrect frame number that is not
-    # available on render_pre.
-    #
-    # Reason for this return is to prevent the Blender compositor
-    # from changing frames while rendering a single frame, but this
-    # use case is rare.
-
-    if is_rendering():
-        global RENDER_PRE_FRAME_NUMBER
-        return RENDER_PRE_FRAME_NUMBER
-    """
-
     return get_current_simulation_frame()
 
 
@@ -227,7 +138,6 @@ def __get_render_pre_current_frame():
     dprops = bpy.context.scene.flip_fluid.get_domain_properties()
     if dprops is None:
         return 0 
-
     return get_current_simulation_frame()
 
 
@@ -236,7 +146,7 @@ def __get_display_mode():
         return
 
     dprops = __get_domain_properties()
-    if IS_RENDERING:
+    if is_rendering():
         mode = dprops.render.render_display
         if not bpy.context.scene.flip_fluid.show_render:
             mode = 'DISPLAY_NONE'
@@ -251,61 +161,39 @@ def __update_surface_display_mode():
     dprops = __get_domain_properties()
     surface_cache = dprops.mesh_cache.surface
 
+    # For Final display mode
+    surface_display_settings = {
+        "enable_velocity_attribute":             dprops.surface.enable_velocity_vector_attribute,
+        "enable_vorticity_attribute":            dprops.surface.enable_vorticity_vector_attribute,
+        "enable_speed_attribute":                dprops.surface.enable_speed_attribute,
+        "enable_age_attribute":                  dprops.surface.enable_age_attribute,
+        "enable_lifetime_attribute":             dprops.surface.enable_lifetime_attribute,
+        "enable_whitewater_proximity_attribute": dprops.surface.enable_whitewater_proximity_attribute,
+        "enable_color_attribute":                dprops.surface.enable_color_attribute,
+        "enable_uvw_attribute":                  dprops.surface.enable_uvw_attribute,
+        "enable_source_id_attribute":            dprops.surface.enable_source_id_attribute,
+        "enable_viscosity_attribute":            dprops.surface.enable_viscosity_attribute,
+        "enable_density_attribute":              dprops.world.enable_density_attribute,
+    }
+
+    surface_cache.reset_enabled_mesh_attributes()
     display_mode = __get_display_mode()
     if display_mode == 'DISPLAY_FINAL':
         surface_cache.mesh_prefix = ""
         surface_cache.mesh_display_name_prefix = "final_"
-        render_blur = IS_RENDERING and dprops.render.render_surface_motion_blur
-        surface_cache.enable_motion_blur = render_blur
-        surface_cache.motion_blur_scale = dprops.render.surface_motion_blur_scale
-        surface_cache.enable_velocity_attribute = dprops.surface.enable_velocity_vector_attribute
-        surface_cache.enable_vorticity_attribute = dprops.surface.enable_vorticity_vector_attribute
-        surface_cache.enable_speed_attribute = dprops.surface.enable_speed_attribute
-        surface_cache.enable_age_attribute = dprops.surface.enable_age_attribute
-        surface_cache.enable_lifetime_attribute = dprops.surface.enable_lifetime_attribute
-        surface_cache.enable_whitewater_proximity_attribute = dprops.surface.enable_whitewater_proximity_attribute
-        surface_cache.enable_color_attribute = dprops.surface.enable_color_attribute
-        surface_cache.enable_uvw_attribute = dprops.surface.enable_uvw_attribute
-        surface_cache.enable_source_id_attribute = dprops.surface.enable_source_id_attribute
-        surface_cache.enable_viscosity_attribute = dprops.surface.enable_viscosity_attribute
-        surface_cache.enable_density_attribute = dprops.world.enable_density_attribute
-        surface_cache.enable_id_attribute = False
+        for prop_name,value in surface_display_settings.items():
+            setattr(surface_cache, prop_name, value)
+
     elif display_mode == 'DISPLAY_PREVIEW':
         surface_cache.mesh_prefix = "preview"
         surface_cache.mesh_display_name_prefix = "preview_"
-        surface_cache.enable_motion_blur = False
-        surface_cache.enable_velocity_attribute = False
-        surface_cache.enable_vorticity_attribute = False
-        surface_cache.enable_speed_attribute = False
-        surface_cache.enable_age_attribute = False
-        surface_cache.enable_lifetime_attribute = False
-        surface_cache.enable_whitewater_proximity_attribute = False
-        surface_cache.enable_color_attribute = False
-        surface_cache.enable_uvw_attribute = False
-        surface_cache.enable_source_id_attribute = False
-        surface_cache.enable_viscosity_attribute = False
-        surface_cache.enable_density_attribute = False
-        surface_cache.enable_id_attribute = False
+
     elif display_mode == 'DISPLAY_NONE':
         surface_cache.mesh_prefix = "none"
         surface_cache.mesh_display_name_prefix = "none_"
-        surface_cache.enable_motion_blur = False
-        surface_cache.enable_velocity_attribute = False
-        surface_cache.enable_vorticity_attribute = False
-        surface_cache.enable_speed_attribute = False
-        surface_cache.enable_age_attribute = False
-        surface_cache.enable_lifetime_attribute = False
-        surface_cache.enable_whitewater_proximity_attribute = False
-        surface_cache.enable_color_attribute = False
-        surface_cache.enable_uvw_attribute = False
-        surface_cache.enable_source_id_attribute = False
-        surface_cache.enable_viscosity_attribute = False
-        surface_cache.enable_density_attribute = False
-        surface_cache.enable_id_attribute = False
 
 
 def __load_surface_frame(frameno, force_reload=False, depsgraph=None):
-    global IS_RENDERING
     if not __is_domain_set():
         return
 
@@ -315,7 +203,7 @@ def __load_surface_frame(frameno, force_reload=False, depsgraph=None):
 
     __update_surface_display_mode()
 
-    force_load = force_reload or IS_RENDERING
+    force_load = force_reload or is_rendering()
     dprops = __get_domain_properties()
 
     if is_simulation_mesh_load_enabled('SURFACE'):
@@ -327,7 +215,7 @@ def __get_fluid_particle_display_mode():
         return
 
     dprops = __get_domain_properties()
-    if IS_RENDERING:
+    if is_rendering():
         mode = dprops.render.fluid_particle_render_display
     else:
         mode = dprops.render.fluid_particle_viewport_display
@@ -358,56 +246,40 @@ def __update_fluid_particle_display_mode():
     particle_cache = dprops.mesh_cache.particles
     particle_props = dprops.particles
 
+    # For Final/Preview display modes
+    particle_display_settings = {
+        "enable_velocity_attribute":             particle_props.enable_fluid_particle_velocity_vector_attribute,
+        "enable_vorticity_attribute":            particle_props.enable_fluid_particle_vorticity_vector_attribute,
+        "enable_speed_attribute":                particle_props.enable_fluid_particle_speed_attribute,
+        "enable_age_attribute":                  particle_props.enable_fluid_particle_age_attribute,
+        "enable_lifetime_attribute":             particle_props.enable_fluid_particle_lifetime_attribute,
+        "enable_whitewater_proximity_attribute": particle_props.enable_fluid_particle_whitewater_proximity_attribute,
+        "enable_color_attribute":                particle_props.enable_fluid_particle_color_attribute,
+        "enable_uvw_attribute":                  particle_props.enable_fluid_particle_uvw_attribute,
+        "enable_source_id_attribute":            particle_props.enable_fluid_particle_source_id_attribute,
+        "enable_viscosity_attribute":            dprops.surface.enable_viscosity_attribute,
+        "enable_density_attribute":              dprops.world.enable_density_attribute,
+        "enable_id_attribute":                   particle_props.enable_fluid_particle_output,
+        "enable_uid_attribute":                  particle_props.enable_fluid_particle_uid_attribute,
+    }
+    
+    particle_cache.reset_enabled_mesh_attributes()
     display_mode = __get_fluid_particle_display_mode()
-
     if display_mode == 'DISPLAY_FINAL':
         particle_cache.mesh_prefix = "fluidparticles"
         particle_cache.mesh_display_name_prefix = "final_"
-        particle_cache.enable_velocity_attribute = particle_props.enable_fluid_particle_velocity_vector_attribute
-        particle_cache.enable_vorticity_attribute = particle_props.enable_fluid_particle_vorticity_vector_attribute
-        particle_cache.enable_speed_attribute = particle_props.enable_fluid_particle_speed_attribute
-        particle_cache.enable_age_attribute = particle_props.enable_fluid_particle_age_attribute
-        particle_cache.enable_lifetime_attribute = particle_props.enable_fluid_particle_lifetime_attribute
-        particle_cache.enable_whitewater_proximity_attribute = particle_props.enable_fluid_particle_whitewater_proximity_attribute
-        particle_cache.enable_color_attribute = particle_props.enable_fluid_particle_color_attribute
-        particle_cache.enable_uvw_attribute = particle_props.enable_fluid_particle_uvw_attribute
-        particle_cache.enable_source_id_attribute = particle_props.enable_fluid_particle_source_id_attribute
-        particle_cache.enable_viscosity_attribute =  dprops.surface.enable_viscosity_attribute
-        particle_cache.enable_density_attribute =  dprops.world.enable_density_attribute
-        particle_cache.enable_id_attribute = particle_props.enable_fluid_particle_output
-        particle_cache.enable_uid_attribute = particle_props.enable_fluid_particle_uid_attribute
+        for prop_name,value in particle_display_settings.items():
+            setattr(particle_cache, prop_name, value)
+
     elif display_mode == 'DISPLAY_PREVIEW':
         particle_cache.mesh_prefix = "fluidparticles"
         particle_cache.mesh_display_name_prefix = "preview_"
-        particle_cache.enable_velocity_attribute = particle_props.enable_fluid_particle_velocity_vector_attribute
-        particle_cache.enable_vorticity_attribute = particle_props.enable_fluid_particle_vorticity_vector_attribute
-        particle_cache.enable_speed_attribute = particle_props.enable_fluid_particle_speed_attribute
-        particle_cache.enable_age_attribute = particle_props.enable_fluid_particle_age_attribute
-        particle_cache.enable_lifetime_attribute = particle_props.enable_fluid_particle_lifetime_attribute
-        particle_cache.enable_whitewater_proximity_attribute = particle_props.enable_fluid_particle_whitewater_proximity_attribute
-        particle_cache.enable_color_attribute = particle_props.enable_fluid_particle_color_attribute
-        particle_cache.enable_uvw_attribute = particle_props.enable_fluid_particle_uvw_attribute
-        particle_cache.enable_source_id_attribute = particle_props.enable_fluid_particle_source_id_attribute
-        particle_cache.enable_viscosity_attribute = dprops.surface.enable_viscosity_attribute
-        particle_cache.enable_density_attribute = dprops.world.enable_density_attribute
-        particle_cache.enable_id_attribute = particle_props.enable_fluid_particle_output
-        particle_cache.enable_uid_attribute = particle_props.enable_fluid_particle_uid_attribute
+        for prop_name,value in particle_display_settings.items():
+            setattr(particle_cache, prop_name, value)
+
     elif display_mode == 'DISPLAY_NONE':
         particle_cache.mesh_prefix = "none"
         particle_cache.mesh_display_name_prefix = "none_"
-        particle_cache.enable_velocity_attribute = False
-        particle_cache.enable_vorticity_attribute = False
-        particle_cache.enable_speed_attribute = False
-        particle_cache.enable_age_attribute = False
-        particle_cache.enable_lifetime_attribute = False
-        particle_cache.enable_whitewater_proximity_attribute = False
-        particle_cache.enable_color_attribute = False
-        particle_cache.enable_uvw_attribute = False
-        particle_cache.enable_source_id_attribute = False
-        particle_cache.enable_viscosity_attribute = False
-        particle_cache.enable_density_attribute = False
-        particle_cache.enable_id_attribute = False
-        particle_cache.enable_uid_attribute = False
 
     surface_pct, boundary_pct, bubble_pct = __get_fluid_particle_display_percentages()
     particle_cache.ffp3_surface_import_percentage = surface_pct
@@ -416,7 +288,6 @@ def __update_fluid_particle_display_mode():
 
 
 def __load_fluid_particle_frame(frameno, force_reload=False, depsgraph=None):
-    global IS_RENDERING
     if not __is_domain_set():
         return
 
@@ -426,7 +297,7 @@ def __load_fluid_particle_frame(frameno, force_reload=False, depsgraph=None):
 
     __update_fluid_particle_display_mode()
 
-    force_load = force_reload or IS_RENDERING
+    force_load = force_reload or is_rendering()
     dprops = __get_domain_properties()
 
     if is_simulation_mesh_load_enabled('FLUID_PARTICLES'):
@@ -438,7 +309,7 @@ def __get_whitewater_display_mode():
         return
 
     dprops = __get_domain_properties()
-    if IS_RENDERING:
+    if is_rendering():
         mode = dprops.render.whitewater_render_display
     else:
         mode = dprops.render.whitewater_viewport_display
@@ -469,197 +340,55 @@ def __get_whitewater_display_percentages():
 def __update_whitewater_display_mode():
     dprops = __get_domain_properties()
     cache = dprops.mesh_cache
+    whitewater_cache_objects = [
+        cache.foam,
+        cache.bubble,
+        cache.spray,
+        cache.dust,
+    ]
 
+    # For Final/Preview display modes
+    particle_display_settings = {
+        "enable_velocity_attribute": dprops.whitewater.enable_velocity_vector_attribute,
+        "enable_id_attribute":       dprops.whitewater.enable_id_attribute,
+        "enable_lifetime_attribute": dprops.whitewater.enable_lifetime_attribute,
+    }
+
+    cache.foam.reset_enabled_mesh_attributes()
+    cache.bubble.reset_enabled_mesh_attributes()
+    cache.spray.reset_enabled_mesh_attributes()
+    cache.dust.reset_enabled_mesh_attributes()
     display_mode = __get_whitewater_display_mode()
     if display_mode == 'DISPLAY_FINAL':
         cache.foam.mesh_prefix = "foam"
         cache.bubble.mesh_prefix = "bubble"
         cache.spray.mesh_prefix = "spray"
         cache.dust.mesh_prefix = "dust"
-        cache.foam.mesh_display_name_prefix = "final_"
-        cache.bubble.mesh_display_name_prefix = "final_"
-        cache.spray.mesh_display_name_prefix = "final_"
-        cache.dust.mesh_display_name_prefix = "final_"
 
-        render_blur = IS_RENDERING and dprops.render.render_whitewater_motion_blur
-        cache.foam.enable_motion_blur = render_blur
-        cache.bubble.enable_motion_blur = render_blur
-        cache.spray.enable_motion_blur = render_blur
-        cache.dust.enable_motion_blur = render_blur
-        cache.foam.motion_blur_scale = dprops.render.whitewater_motion_blur_scale
-        cache.bubble.motion_blur_scale = dprops.render.whitewater_motion_blur_scale
-        cache.spray.motion_blur_scale = dprops.render.whitewater_motion_blur_scale
-        cache.dust.motion_blur_scale = dprops.render.whitewater_motion_blur_scale
-        cache.foam.enable_velocity_attribute = dprops.whitewater.enable_velocity_vector_attribute
-        cache.bubble.enable_velocity_attribute = dprops.whitewater.enable_velocity_vector_attribute
-        cache.spray.enable_velocity_attribute = dprops.whitewater.enable_velocity_vector_attribute
-        cache.dust.enable_velocity_attribute = dprops.whitewater.enable_velocity_vector_attribute
-        cache.foam.enable_id_attribute = dprops.whitewater.enable_id_attribute
-        cache.bubble.enable_id_attribute = dprops.whitewater.enable_id_attribute
-        cache.spray.enable_id_attribute = dprops.whitewater.enable_id_attribute
-        cache.dust.enable_id_attribute = dprops.whitewater.enable_id_attribute
-        cache.foam.enable_lifetime_attribute = dprops.whitewater.enable_lifetime_attribute
-        cache.bubble.enable_lifetime_attribute = dprops.whitewater.enable_lifetime_attribute
-        cache.spray.enable_lifetime_attribute = dprops.whitewater.enable_lifetime_attribute
-        cache.dust.enable_lifetime_attribute = dprops.whitewater.enable_lifetime_attribute
-        cache.foam.enable_whitewater_proximity_attribute = False
-        cache.bubble.enable_whitewater_proximity_attribute = False
-        cache.spray.enable_whitewater_proximity_attribute = False
-        cache.dust.enable_whitewater_proximity_attribute = False
-        cache.foam.enable_vorticity_attribute = False
-        cache.bubble.enable_vorticity_attribute = False
-        cache.spray.enable_vorticity_attribute = False
-        cache.dust.enable_vorticity_attribute = False
-        cache.foam.enable_speed_attribute = False
-        cache.bubble.enable_speed_attribute = False
-        cache.spray.enable_speed_attribute = False
-        cache.dust.enable_speed_attribute = False
-        cache.foam.enable_age_attribute = False
-        cache.bubble.enable_age_attribute = False
-        cache.spray.enable_age_attribute = False
-        cache.dust.enable_age_attribute = False
-        cache.foam.enable_color_attribute = False
-        cache.bubble.enable_color_attribute = False
-        cache.spray.enable_color_attribute = False
-        cache.dust.enable_color_attribute = False
-        cache.foam.enable_uvw_attribute = False
-        cache.bubble.enable_uvw_attribute = False
-        cache.spray.enable_uvw_attribute = False
-        cache.dust.enable_uvw_attribute = False
-        cache.foam.enable_source_id_attribute = False
-        cache.bubble.enable_source_id_attribute = False
-        cache.spray.enable_source_id_attribute = False
-        cache.dust.enable_source_id_attribute = False
-        cache.foam.enable_viscosity_attribute = False
-        cache.bubble.enable_viscosity_attribute = False
-        cache.spray.enable_viscosity_attribute = False
-        cache.dust.enable_viscosity_attribute = False
-        cache.foam.enable_density_attribute = False
-        cache.bubble.enable_density_attribute = False
-        cache.spray.enable_density_attribute = False
-        cache.dust.enable_density_attribute = False
+        for cache_object in whitewater_cache_objects:
+            cache_object.mesh_display_name_prefix = "final_"
+            for prop_name,value in particle_display_settings.items():
+                setattr(cache_object, prop_name, value)
+
     elif display_mode == 'DISPLAY_PREVIEW':
         cache.foam.mesh_prefix = "foam"
         cache.bubble.mesh_prefix = "bubble"
         cache.spray.mesh_prefix = "spray"
         cache.dust.mesh_prefix = "dust"
-        cache.foam.mesh_display_name_prefix = "preview_"
-        cache.bubble.mesh_display_name_prefix = "preview_"
-        cache.spray.mesh_display_name_prefix = "preview_"
-        cache.dust.mesh_display_name_prefix = "preview_"
-        cache.foam.enable_motion_blur = False
-        cache.bubble.enable_motion_blur = False
-        cache.spray.enable_motion_blur = False
-        cache.dust.enable_motion_blur = False
-        cache.foam.enable_velocity_attribute = dprops.whitewater.enable_velocity_vector_attribute
-        cache.bubble.enable_velocity_attribute = dprops.whitewater.enable_velocity_vector_attribute
-        cache.spray.enable_velocity_attribute = dprops.whitewater.enable_velocity_vector_attribute
-        cache.dust.enable_velocity_attribute = dprops.whitewater.enable_velocity_vector_attribute
-        cache.foam.enable_id_attribute = dprops.whitewater.enable_id_attribute
-        cache.bubble.enable_id_attribute = dprops.whitewater.enable_id_attribute
-        cache.spray.enable_id_attribute = dprops.whitewater.enable_id_attribute
-        cache.dust.enable_id_attribute = dprops.whitewater.enable_id_attribute
-        cache.foam.enable_lifetime_attribute = dprops.whitewater.enable_lifetime_attribute
-        cache.bubble.enable_lifetime_attribute = dprops.whitewater.enable_lifetime_attribute
-        cache.spray.enable_lifetime_attribute = dprops.whitewater.enable_lifetime_attribute
-        cache.dust.enable_lifetime_attribute = dprops.whitewater.enable_lifetime_attribute
-        cache.foam.enable_whitewater_proximity_attribute = False
-        cache.bubble.enable_whitewater_proximity_attribute = False
-        cache.spray.enable_whitewater_proximity_attribute = False
-        cache.dust.enable_whitewater_proximity_attribute = False
-        cache.foam.enable_vorticity_attribute = False
-        cache.bubble.enable_vorticity_attribute = False
-        cache.spray.enable_vorticity_attribute = False
-        cache.dust.enable_vorticity_attribute = False
-        cache.foam.enable_speed_attribute = False
-        cache.bubble.enable_speed_attribute = False
-        cache.spray.enable_speed_attribute = False
-        cache.dust.enable_speed_attribute = False
-        cache.foam.enable_age_attribute = False
-        cache.bubble.enable_age_attribute = False
-        cache.spray.enable_age_attribute = False
-        cache.dust.enable_age_attribute = False
-        cache.foam.enable_color_attribute = False
-        cache.bubble.enable_color_attribute = False
-        cache.spray.enable_color_attribute = False
-        cache.dust.enable_color_attribute = False
-        cache.foam.enable_uvw_attribute = False
-        cache.bubble.enable_uvw_attribute = False
-        cache.spray.enable_uvw_attribute = False
-        cache.dust.enable_uvw_attribute = False
-        cache.foam.enable_source_id_attribute = False
-        cache.bubble.enable_source_id_attribute = False
-        cache.spray.enable_source_id_attribute = False
-        cache.dust.enable_source_id_attribute = False
-        cache.foam.enable_viscosity_attribute = False
-        cache.bubble.enable_viscosity_attribute = False
-        cache.spray.enable_viscosity_attribute = False
-        cache.dust.enable_viscosity_attribute = False
-        cache.foam.enable_density_attribute = False
-        cache.bubble.enable_density_attribute = False
-        cache.spray.enable_density_attribute = False
-        cache.dust.enable_density_attribute = False
+
+        for cache_object in whitewater_cache_objects:
+            cache_object.mesh_display_name_prefix = "preview_"
+            for prop_name,value in particle_display_settings.items():
+                setattr(cache_object, prop_name, value)
+
     elif display_mode == 'DISPLAY_NONE':
         cache.foam.mesh_prefix = "foam_none"
         cache.bubble.mesh_prefix = "bubble_none"
         cache.spray.mesh_prefix = "spray_none"
         cache.dust.mesh_prefix = "dust_none"
-        cache.foam.mesh_display_name_prefix = "none_"
-        cache.bubble.mesh_display_name_prefix = "none_"
-        cache.spray.mesh_display_name_prefix = "none_"
-        cache.dust.mesh_display_name_prefix = "none_"
-        cache.foam.enable_motion_blur = False
-        cache.bubble.enable_motion_blur = False
-        cache.spray.enable_motion_blur = False
-        cache.dust.enable_motion_blur = False
-        cache.foam.enable_velocity_attribute = False
-        cache.bubble.enable_velocity_attribute = False
-        cache.spray.enable_velocity_attribute = False
-        cache.dust.enable_velocity_attribute = False
-        cache.foam.enable_id_attribute = False
-        cache.bubble.enable_id_attribute = False
-        cache.spray.enable_id_attribute = False
-        cache.dust.enable_id_attribute = False
-        cache.foam.enable_lifetime_attribute = False
-        cache.bubble.enable_lifetime_attribute = False
-        cache.spray.enable_lifetime_attribute = False
-        cache.dust.enable_lifetime_attribute = False
-        cache.foam.enable_whitewater_proximity_attribute = False
-        cache.bubble.enable_whitewater_proximity_attribute = False
-        cache.spray.enable_whitewater_proximity_attribute = False
-        cache.dust.enable_whitewater_proximity_attribute = False
-        cache.foam.enable_vorticity_attribute = False
-        cache.bubble.enable_vorticity_attribute = False
-        cache.spray.enable_vorticity_attribute = False
-        cache.dust.enable_vorticity_attribute = False
-        cache.foam.enable_speed_attribute = False
-        cache.bubble.enable_speed_attribute = False
-        cache.spray.enable_speed_attribute = False
-        cache.dust.enable_speed_attribute = False
-        cache.foam.enable_age_attribute = False
-        cache.bubble.enable_age_attribute = False
-        cache.spray.enable_age_attribute = False
-        cache.dust.enable_age_attribute = False
-        cache.foam.enable_color_attribute = False
-        cache.bubble.enable_color_attribute = False
-        cache.spray.enable_color_attribute = False
-        cache.dust.enable_color_attribute = False
-        cache.foam.enable_uvw_attribute = False
-        cache.bubble.enable_uvw_attribute = False
-        cache.spray.enable_uvw_attribute = False
-        cache.dust.enable_uvw_attribute = False
-        cache.foam.enable_source_id_attribute = False
-        cache.bubble.enable_source_id_attribute = False
-        cache.spray.enable_source_id_attribute = False
-        cache.dust.enable_source_id_attribute = False
-        cache.foam.enable_viscosity_attribute = False
-        cache.bubble.enable_viscosity_attribute = False
-        cache.spray.enable_viscosity_attribute = False
-        cache.dust.enable_viscosity_attribute = False
-        cache.foam.enable_density_attribute = False
-        cache.bubble.enable_density_attribute = False
-        cache.spray.enable_density_attribute = False
-        cache.dust.enable_density_attribute = False
+        
+        for cache_object in whitewater_cache_objects:
+            cache_object.mesh_display_name_prefix = "none_"
 
     foam_pct, bubble_pct, spray_pct, dust_pct = __get_whitewater_display_percentages()
     cache.foam.wwp_import_percentage = foam_pct
@@ -670,7 +399,6 @@ def __update_whitewater_display_mode():
 
 
 def __load_whitewater_particle_frame(frameno, force_reload=False, depsgraph=None):
-    global IS_RENDERING
     if not __is_domain_set():
         return
 
@@ -680,7 +408,7 @@ def __load_whitewater_particle_frame(frameno, force_reload=False, depsgraph=None
 
     __update_whitewater_display_mode()
 
-    force_load = force_reload or IS_RENDERING
+    force_load = force_reload or is_rendering()
     if is_simulation_mesh_load_enabled('FOAM'):
         dprops.mesh_cache.foam.load_frame(frameno, force_load, depsgraph)
     if is_simulation_mesh_load_enabled('BUBBLE'):
@@ -691,27 +419,7 @@ def __load_whitewater_particle_frame(frameno, force_reload=False, depsgraph=None
         dprops.mesh_cache.dust.load_frame(frameno, force_load, depsgraph)
 
 
-def get_whitewater_particle_object_scale(whitewater_type):
-    dprops = __get_domain_properties()
-    rprops = dprops.render
-
-    if whitewater_type == 'FOAM':
-        particle_object_scale = rprops.foam_particle_scale
-    elif whitewater_type == 'BUBBLE':
-        particle_object_scale = rprops.bubble_particle_scale
-    elif whitewater_type == 'SPRAY':
-        particle_object_scale = rprops.spray_particle_scale
-    elif whitewater_type == 'DUST':
-        particle_object_scale = rprops.dust_particle_scale
-
-    if rprops.whitewater_particle_object_settings_mode == 'WHITEWATER_OBJECT_SETTINGS_WHITEWATER':
-        return rprops.whitewater_particle_scale
-    else:
-        return particle_object_scale
-
-
 def __load_fluid_particle_debug_frame(frameno, force_reload=False):
-    global IS_RENDERING
     if not __is_domain_set():
         return
 
@@ -719,14 +427,13 @@ def __load_fluid_particle_debug_frame(frameno, force_reload=False):
     if not dprops.debug.enable_fluid_particle_debug_output:
         return
 
-    force_load = force_reload or IS_RENDERING
+    force_load = force_reload or is_rendering()
 
     if is_simulation_mesh_load_enabled('PARTICLE_DEBUG'):
         dprops.mesh_cache.gl_particles.load_frame(frameno, force_load)
 
 
 def __load_obstacle_debug_frame(frameno, force_reload=False):
-    global IS_RENDERING
     if not __is_domain_set():
         return
 
@@ -734,13 +441,12 @@ def __load_obstacle_debug_frame(frameno, force_reload=False):
     if not dprops.debug.export_internal_obstacle_mesh or not dprops.debug.internal_obstacle_mesh_visibility:
         return
 
-    force_load = force_reload or IS_RENDERING
+    force_load = force_reload or is_rendering()
     if is_simulation_mesh_load_enabled('OBSTACLE_DEBUG'):
         dprops.mesh_cache.obstacle.load_frame(frameno, force_load)
 
 
 def __load_force_field_debug_frame(frameno, force_reload=False):
-    global IS_RENDERING
     if not __is_domain_set():
         return
 
@@ -748,7 +454,7 @@ def __load_force_field_debug_frame(frameno, force_reload=False):
     if not dprops.debug.export_force_field:
         return
 
-    force_load = force_reload or IS_RENDERING
+    force_load = force_reload or is_rendering()
     if is_simulation_mesh_load_enabled('FORCE_FIELD_DEBUG'):
         dprops.mesh_cache.gl_force_field.load_frame(frameno, force_load)
 
@@ -821,9 +527,6 @@ def render_pre(scene):
     if not __is_domain_in_scene():
         return
 
-    global RENDER_PRE_FRAME_NUMBER
-    RENDER_PRE_FRAME_NUMBER = __get_render_pre_current_frame()
-
     is_running_cmd = bpy.app.background
     if is_running_cmd:
         print("\n\tFLIP Fluids: Rendering frame " + str(scene.frame_current) + " <" + bpy.data.filepath + ">\n")
@@ -845,7 +548,7 @@ def frame_change_post(scene, depsgraph=None):
 
     if is_rendering():
         if not scene.render.use_lock_interface:
-                print("FLIP FLUIDS WARNING: The Blender interface should be locked during render to prevent render crashes (Blender > Render > Lock Interface).")
+            print("FLIP FLUIDS WARNING: The Blender interface should be locked during render to prevent render crashes (Blender > Render > Lock Interface).")
 
 
     force_reload = False
@@ -869,8 +572,3 @@ def scene_update_post(scene):
         reload_frame(current_frame)
         dprops = bpy.context.scene.flip_fluid.get_domain_properties()
         dprops.render.current_frame = current_frame
-
-
-def is_rendering():
-    global IS_RENDERING
-    return IS_RENDERING

@@ -390,10 +390,10 @@ private:
                                        size_t *numbubble, 
                                        size_t *numspray,
                                        size_t *numdust);
-    size_t _getNumSprayParticles();
-    size_t _getNumBubbleParticles();
-    size_t _getNumFoamParticles();
-    size_t _getNumDustParticles();
+    int _getNumSprayParticles();
+    int _getNumBubbleParticles();
+    int _getNumFoamParticles();
+    int _getNumDustParticles();
 
     void _removeDiffuseParticles();
 

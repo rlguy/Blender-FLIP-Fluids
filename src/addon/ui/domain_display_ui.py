@@ -18,6 +18,8 @@ import bpy
 
 from ..operators import helper_operators
 from ..utils import version_compatibility_utils as vcu
+from .. import types
+from ..types import CacheObjectType
 
 
 def draw_simulation_display_settings(self, context):
@@ -245,7 +247,7 @@ def draw_whitewater_particles_motion_blur_geometry_node_properties(ui_row, bl_mo
             "flip_fluid_operators.helper_initialize_cache_objects", 
             text="Click To Initialize Geometry Nodes - Missing FF_GeometryNodesWhitewater modifier",
             icon="ERROR"
-            ).cache_object_type = 'CACHE_OBJECT_TYPE_WHITEWATER_PARTICLES'
+            ).cache_object_type = CacheObjectType.WHITEWATER_ALL
         return
 
     _draw_particle_modifier_properties(ui_row, bl_mod)
@@ -258,7 +260,7 @@ def draw_fluid_particles_motion_blur_geometry_node_properties(ui_row, bl_mod):
             "flip_fluid_operators.helper_initialize_cache_objects", 
             text="Click To Initialize Geometry Nodes - Missing FF_GeometryNodesFluidParticles modifier",
             icon="ERROR"
-            ).cache_object_type = 'CACHE_OBJECT_TYPE_FLUID_PARTICLES'
+            ).cache_object_type = CacheObjectType.FLUID_PARTICLES
         return
 
     _draw_particle_modifier_properties(ui_row, bl_mod)

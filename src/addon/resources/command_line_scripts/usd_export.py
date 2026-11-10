@@ -22,11 +22,17 @@ def is_blender_52():
     return bpy.app.version >= (5, 2, 0)
 
 
+def is_blender_53():
+    return bpy.app.version >= (5, 3, 0)
+
+
 def get_geometry_nodes_blend_filepath():
-    if is_blender_52():
-        blend_resource_filename = "geometry_nodes_library.blend"
+    if is_blender_53():
+        blend_resource_filename = "geometry_nodes_library-5.3.blend"
+    elif is_blender_52():
+        blend_resource_filename = "geometry_nodes_library-5.2.blend"
     else:
-        blend_resource_filename = "geometry_nodes_library-legacy.blend"
+        blend_resource_filename = "geometry_nodes_library-4.5.blend"
     addon_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     library_filepath = os.path.join(addon_root, "resources", "geometry_nodes", blend_resource_filename)
     return library_filepath
@@ -324,6 +330,7 @@ attribute_export_prop_names = [
     "usd_export_whitewater_proximity",
     "usd_export_viscosity",
     "usd_export_density",
+    "usd_export_uvw",
     "usd_export_id",
     "usd_export_uid",
     "usd_export_source_id",
@@ -341,6 +348,7 @@ option_to_socket_mapping = {
     "usd_export_whitewater_proximity":    "Socket_10",
     "usd_export_viscosity":               "Socket_11",
     "usd_export_density":                 "Socket_12",
+    "usd_export_uvw":                     "Socket_20",
     "usd_export_id":                      "Socket_13",
     "usd_export_uid":                     "Socket_14",
     "usd_export_source_id":               "Socket_15",

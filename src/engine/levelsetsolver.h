@@ -74,8 +74,8 @@ public:
 
 private:
 
-    float _maxCFL = 0.25;
-    float _upwindErrorThreshold = 0.01;
+    float _maxCFL = 0.25f;
+    float _upwindErrorThreshold = 0.01f;
 
     float _getPseudoTimeStep(Array3d<float> &sdf, float dx);
     float _sign(Array3d<float> &sdf, float dx, int i, int j, int k);

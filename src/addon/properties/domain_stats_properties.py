@@ -441,6 +441,10 @@ class DomainStatsProperties(bpy.types.PropertyGroup):
         self.is_stats_current = True
 
 
+    def frame_complete_callback(self):
+        self.is_stats_current = False
+
+
     def scene_update_post(self, scene):
         if self.is_stats_current:
             return

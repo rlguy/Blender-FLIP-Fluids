@@ -55,7 +55,7 @@ void TurbulenceField::_getVelocityGrid(MACVelocityField *macfield,
     size_t numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)std::min(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&TurbulenceField::_getVelocityGridThread, this,
                                  intervals[i], intervals[i + 1], macfield, &vgrid);
@@ -115,7 +115,7 @@ void TurbulenceField::calculateTurbulenceField(MACVelocityField *vfield,
     int numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, fluidCells.size());
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, fluidCells.size(), numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)fluidCells.size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&TurbulenceField::_calculateTurbulenceFieldThread, this,
                                  intervals[i], intervals[i + 1], &vgrid, &fluidCells);

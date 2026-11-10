@@ -83,7 +83,7 @@ namespace NoiseGenerationUtils {
         vmath::vec3(-1.0f, -1.0f, 0.0f).normalize()
         };
     int _gradients2DMask = 7;
-    float _sqrt2 = 1.41421356237;
+    float _sqrt2 = 1.41421356237f;
 
     vmath::vec3 _gradients3D[] = {
         vmath::vec3( 1.0, 1.0, 0.0),

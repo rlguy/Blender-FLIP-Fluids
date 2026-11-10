@@ -71,6 +71,7 @@ class FLIPFluidColorRGB(bpy.types.PropertyGroup):
 def update_helper_category_name(self, context):
     panel_ids = [
         'FLIPFLUID_PT_HelperPanelMain', 
+        'FLIPFLUID_PT_HelperPanelPostProcessingTools', 
         'FLIPFLUID_PT_HelperPanelCompositingTools', 
         'FLIPFLUID_PT_HelperPanelDisplay', 
         'FLIPFLUID_PT_HelperTechnicalSupport'
@@ -874,7 +875,7 @@ class FLIPFluidAddonPreferences(bpy.types.AddonPreferences):
         row.operator(
                 "wm.url_open", 
                 text="Discord Server", 
-            ).url = "https://discord.gg/FLIPFluids"
+            ).url = "https://discord.gg/bNQPjmgt6k"
 
 
 

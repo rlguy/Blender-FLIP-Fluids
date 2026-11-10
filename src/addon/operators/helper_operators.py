@@ -26,6 +26,8 @@ from ..utils import version_compatibility_utils as vcu
 from ..utils import export_utils
 from ..objects import flip_fluid_cache
 from ..objects import flip_fluid_aabb
+from .. import types
+from ..types import CacheObjectType
 from . import bake_operators
 from .. import render
 
@@ -2256,7 +2258,7 @@ class FlipFluidHelperInitializeCacheObjects(bpy.types.Operator):
     bl_label = "Initialize Cache Objects"
     bl_description = ("Initialize simulation meshes, modifiers, and data")
 
-    cache_object_type: StringProperty(default="CACHE_OBJECT_TYPE_NONE")
+    cache_object_type: StringProperty(default=CacheObjectType.NONE)
 
 
     @classmethod
@@ -2266,15 +2268,15 @@ class FlipFluidHelperInitializeCacheObjects(bpy.types.Operator):
 
     def execute(self, context):
         objects_to_initialize = flip_fluid_cache.EnabledMeshCacheObjects()
-        if self.cache_object_type == 'CACHE_OBJECT_TYPE_FLUID_SURFACE':
+        if self.cache_object_type == CacheObjectType.SURFACE:
             objects_to_initialize.fluid_surface = True
-        elif self.cache_object_type == 'CACHE_OBJECT_TYPE_FLUID_PARTICLES':
+        elif self.cache_object_type == CacheObjectType.FLUID_PARTICLES:
             objects_to_initialize.fluid_particles = True
-        elif self.cache_object_type == 'CACHE_OBJECT_TYPE_WHITEWATER_PARTICLES':
+        elif self.cache_object_type in types.WHITEWATER_CACHE_OBJECT_TYPES:
             objects_to_initialize.whitewater_particles = True
-        elif self.cache_object_type == 'CACHE_OBJECT_TYPE_DEBUG_OBSTACLE':
+        elif self.cache_object_type == CacheObjectType.OBSTACLE_DEBUG:
             objects_to_initialize.debug_obstacle = True
-        elif self.cache_object_type == 'CACHE_OBJECT_TYPE_ALL':
+        elif self.cache_object_type == CacheObjectType.ALL:
             objects_to_initialize.fluid_surface = True
             objects_to_initialize.fluid_particles = True
             objects_to_initialize.whitewater_particles = True

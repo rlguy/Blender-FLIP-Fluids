@@ -32,7 +32,7 @@ See any of our [market place product pages](https://github.com/rlguy/Blender-FLI
 ## System Requirements
 
 - Windows, macOS, or Linux operating system
-- Blender 4.5 to 5.2 compatible
+- Blender 4.5 to 5.3 compatible
 - CPU 64-bit Intel® or AMD® or Apple Silicon multi-core processor
 - 8 GB RAM minimum, 16 GB of RAM or more is highly recommended
 
@@ -62,7 +62,7 @@ Installations of the following programs and dependencies will be needed to build
 
 **Required**:
 1. A compiler that supports C++17.
-    - Windows: **MinGW** is the only supported compiler for Windows OS.
+    - Windows: **MinGW** (recommended)
     - macOS: **Clang** (recommended)
     - Linux: **GCC** (recommended)
 2. [CMake](https://cmake.org/) to generate the appropriate solution, project, or Makefiles, for your system.
@@ -126,4 +126,4 @@ Once successfully built, the FLIP Fluids addon will be located in the ```build/b
 - [Bug/Issue Tracker](https://github.com/rlguy/Blender-FLIP-Fluids/issues)
 - [FLIP Fluids Homepage](http://flipfluids.com)
 - [Instagram](https://www.instagram.com/flip.fluids/) | [X (Twitter)](https://x.com/flipfluids) | [Facebook](https://www.facebook.com/FLIPFluids/) | [FLIP Fluids YouTube](https://www.youtube.com/flipfluids) | [BlenderPhysics YouTube](https://www.youtube.com/blenderphysicsvideos)
-- Discord Server: https://discord.gg/FLIPFluids
+- Discord Server: https://discord.gg/bNQPjmgt6k

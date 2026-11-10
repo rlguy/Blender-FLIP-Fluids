@@ -136,7 +136,7 @@ public:
     }
 
     void popAll(std::vector<T> &items) {
-        pop(_bufferSize, items);
+        pop((int)_bufferSize, items);
     }
 
     size_t size() {

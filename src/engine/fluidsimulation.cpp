@@ -3122,8 +3122,8 @@ std::vector<MarkerParticle> FluidSimulation::getMarkerParticles() {
     return getMarkerParticles(0, _markerParticles.size());
 }
 
-std::vector<MarkerParticle> FluidSimulation::getMarkerParticles(int startidx, int endidx) {
-    int size = _markerParticles.size();
+std::vector<MarkerParticle> FluidSimulation::getMarkerParticles(size_t startidx, size_t endidx) {
+    size_t size = _markerParticles.size();
     if (!(startidx >= 0 && startidx <= size) || !(endidx >= 0 && endidx <= size)) {
         std::string msg = "Error: invalid index range.\n";
         msg += "start index: " + _toString(startidx) + " end index: " + _toString(endidx) + "\n";
@@ -3137,7 +3137,7 @@ std::vector<MarkerParticle> FluidSimulation::getMarkerParticles(int startidx, in
     _markerParticles.getAttributeValues("POSITION", positions);
     _markerParticles.getAttributeValues("VELOCITY", velocities);
 
-    for (int i = startidx; i < endidx; i++) {
+    for (size_t i = startidx; i < endidx; i++) {
         MarkerParticle mp(positions->at(i), velocities->at(i));
         particles.push_back(mp);
     }
@@ -3149,8 +3149,8 @@ std::vector<vmath::vec3> FluidSimulation::getMarkerParticlePositions() {
     return getMarkerParticlePositions(0, _markerParticles.size());
 }
 
-std::vector<vmath::vec3> FluidSimulation::getMarkerParticlePositions(int startidx, int endidx) {
-    int size = _markerParticles.size();
+std::vector<vmath::vec3> FluidSimulation::getMarkerParticlePositions(size_t startidx, size_t endidx) {
+    size_t size = _markerParticles.size();
     if (!(startidx >= 0 && startidx <= size) || !(endidx >= 0 && endidx <= size)) {
         std::string msg = "Error: invalid index range.\n";
         msg += "start index: " + _toString(startidx) + " end index: " + _toString(endidx) + "\n";
@@ -3163,7 +3163,7 @@ std::vector<vmath::vec3> FluidSimulation::getMarkerParticlePositions(int startid
     std::vector<vmath::vec3> *positions;
     _markerParticles.getAttributeValues("POSITION", positions);
 
-    for (int i = startidx; i < endidx; i++) {
+    for (size_t i = startidx; i < endidx; i++) {
         particles.push_back(positions->at(i));
     }
 
@@ -3174,8 +3174,8 @@ std::vector<vmath::vec3> FluidSimulation::getMarkerParticleVelocities() {
     return getMarkerParticleVelocities(0, _markerParticles.size());
 }
 
-std::vector<vmath::vec3> FluidSimulation::getMarkerParticleVelocities(int startidx, int endidx) {
-    int size = _markerParticles.size();
+std::vector<vmath::vec3> FluidSimulation::getMarkerParticleVelocities(size_t startidx, size_t endidx) {
+    size_t size = _markerParticles.size();
     if (!(startidx >= 0 && startidx <= size) || !(endidx >= 0 && endidx <= size)) {
         std::string msg = "Error: invalid index range.\n";
         msg += "start index: " + _toString(startidx) + " end index: " + _toString(endidx) + "\n";
@@ -3188,7 +3188,7 @@ std::vector<vmath::vec3> FluidSimulation::getMarkerParticleVelocities(int starti
     std::vector<vmath::vec3> *values;
     _markerParticles.getAttributeValues("VELOCITY", values);
 
-    for (int i = startidx; i < endidx; i++) {
+    for (size_t i = startidx; i < endidx; i++) {
         velocities.push_back(values->at(i));
     }
 
@@ -3200,12 +3200,12 @@ size_t FluidSimulation::getNumDiffuseParticles() {
 }
 
 std::vector<vmath::vec3> FluidSimulation::getDiffuseParticlePositions() {
-    int size = getNumDiffuseParticles();
+    size_t size = getNumDiffuseParticles();
     return getDiffuseParticlePositions(0, size);
 }
 
-std::vector<vmath::vec3> FluidSimulation::getDiffuseParticlePositions(int startidx, int endidx) {
-    int size = getNumDiffuseParticles();
+std::vector<vmath::vec3> FluidSimulation::getDiffuseParticlePositions(size_t startidx, size_t endidx) {
+    size_t size = getNumDiffuseParticles();
     if (!(startidx >= 0 && startidx <= size) || !(endidx >= 0 && endidx <= size)) {
         std::string msg = "Error: invalid index range.\n";
         msg += "start index: " + _toString(startidx) + " end index: " + _toString(endidx) + "\n";
@@ -3220,12 +3220,12 @@ std::vector<vmath::vec3> FluidSimulation::getDiffuseParticlePositions(int starti
 }
 
 std::vector<vmath::vec3> FluidSimulation::getDiffuseParticleVelocities() {
-    int size = getNumDiffuseParticles();
+    size_t size = getNumDiffuseParticles();
     return getDiffuseParticleVelocities(0, size);
 }
 
-std::vector<vmath::vec3> FluidSimulation::getDiffuseParticleVelocities(int startidx, int endidx) {
-    int size = getNumDiffuseParticles();
+std::vector<vmath::vec3> FluidSimulation::getDiffuseParticleVelocities(size_t startidx, size_t endidx) {
+    size_t size = getNumDiffuseParticles();
     if (!(startidx >= 0 && startidx <= size) || !(endidx >= 0 && endidx <= size)) {
         std::string msg = "Error: invalid index range.\n";
         msg += "start index: " + _toString(startidx) + " end index: " + _toString(endidx) + "\n";
@@ -3240,12 +3240,12 @@ std::vector<vmath::vec3> FluidSimulation::getDiffuseParticleVelocities(int start
 }
 
 std::vector<float> FluidSimulation::getDiffuseParticleLifetimes() {
-    int size = getNumDiffuseParticles();
+    size_t size = getNumDiffuseParticles();
     return getDiffuseParticleLifetimes(0, size);
 }
 
-std::vector<float> FluidSimulation::getDiffuseParticleLifetimes(int startidx, int endidx) {
-    int size = getNumDiffuseParticles();
+std::vector<float> FluidSimulation::getDiffuseParticleLifetimes(size_t startidx, size_t endidx) {
+    size_t size = getNumDiffuseParticles();
     if (!(startidx >= 0 && startidx <= size) || !(endidx >= 0 && endidx <= size)) {
         std::string msg = "Error: invalid index range.\n";
         msg += "start index: " + _toString(startidx) + " end index: " + _toString(endidx) + "\n";
@@ -3260,12 +3260,12 @@ std::vector<float> FluidSimulation::getDiffuseParticleLifetimes(int startidx, in
 }
 
 std::vector<char> FluidSimulation::getDiffuseParticleTypes() {
-    int size = getNumDiffuseParticles();
+    size_t size = getNumDiffuseParticles();
     return getDiffuseParticleTypes(0, size);
 }
 
-std::vector<char> FluidSimulation::getDiffuseParticleTypes(int startidx, int endidx) {
-    int size = getNumDiffuseParticles();
+std::vector<char> FluidSimulation::getDiffuseParticleTypes(size_t startidx, size_t endidx) {
+    size_t size = getNumDiffuseParticles();
     if (!(startidx >= 0 && startidx <= size) || !(endidx >= 0 && endidx <= size)) {
         std::string msg = "Error: invalid index range.\n";
         msg += "start index: " + _toString(startidx) + " end index: " + _toString(endidx) + "\n";
@@ -4555,7 +4555,7 @@ void FluidSimulation::_upscaleParticleData() {
     markerParticles.getAttributeValues("VELOCITY", velocities);
 
     bool isAgeDataAvailable = false;
-    std::vector<float> *ages;
+    std::vector<float> *ages = nullptr;
     if (_isSurfaceAgeAttributeEnabled || _isFluidParticleAgeAttributeEnabled) {
         if (_markerParticleAgeLoadQueue.size() == _markerParticleLoadQueue.size()) {
             isAgeDataAvailable = true;
@@ -4574,7 +4574,7 @@ void FluidSimulation::_upscaleParticleData() {
     }
 
     bool isLifetimeDataAvailable = false;
-    std::vector<float> *lifetimes;
+    std::vector<float> *lifetimes = nullptr;
     if (_isSurfaceLifetimeAttributeEnabled || _isFluidParticleLifetimeAttributeEnabled) {
         if (_markerParticleLifetimeLoadQueue.size() == _markerParticleLoadQueue.size()) {
             isLifetimeDataAvailable = true;
@@ -4593,7 +4593,7 @@ void FluidSimulation::_upscaleParticleData() {
     }
 
     bool isViscosityDataAvailable = false;
-    std::vector<float> *viscosities;
+    std::vector<float> *viscosities = nullptr;
     if (_isSurfaceSourceViscosityAttributeEnabled) {
         if (_markerParticleViscosityLoadQueue.size() == _markerParticleLoadQueue.size()) {
             isViscosityDataAvailable = true;
@@ -4612,7 +4612,7 @@ void FluidSimulation::_upscaleParticleData() {
     }
 
     bool isDensityDataAvailable = false;
-    std::vector<float> *densities;
+    std::vector<float> *densities = nullptr;
     if (_isSurfaceDensityAttributeEnabled || _isFluidParticleDensityAttributeEnabled) {
         if (_markerParticleDensityLoadQueue.size() == _markerParticleLoadQueue.size()) {
             isDensityDataAvailable = true;
@@ -4631,7 +4631,7 @@ void FluidSimulation::_upscaleParticleData() {
     }
 
     bool isSourceIDDataAvailable = false;
-    std::vector<int> *sourceids;
+    std::vector<int> *sourceids = nullptr;
     if (_isSurfaceSourceIDAttributeEnabled || _isFluidParticleSourceIDAttributeEnabled) {
         if (_markerParticleSourceIDLoadQueue.size() == _markerParticleLoadQueue.size()) {
             isSourceIDDataAvailable = true;
@@ -4650,7 +4650,7 @@ void FluidSimulation::_upscaleParticleData() {
     }
 
     bool isIDDataAvailable = false;
-    std::vector<uint16_t> *ids;
+    std::vector<uint16_t> *ids = nullptr;
     if (_isFluidParticleIDAttributeEnabled) {
         if (_markerParticleIDLoadQueue.size() == _markerParticleLoadQueue.size()) {
             isIDDataAvailable = true;
@@ -4669,7 +4669,7 @@ void FluidSimulation::_upscaleParticleData() {
     }
 
     bool isUIDDataAvailable = false;
-    std::vector<int> *uids;
+    std::vector<int> *uids = nullptr;
     if (_isFluidParticleUIDAttributeEnabled) {
         if (_markerParticleUIDLoadQueue.size() == _markerParticleLoadQueue.size()) {
             isUIDDataAvailable = true;
@@ -4688,7 +4688,7 @@ void FluidSimulation::_upscaleParticleData() {
     }
 
     bool isColorDataAvailable = false;
-    std::vector<vmath::vec3> *colors;
+    std::vector<vmath::vec3> *colors = nullptr;
     if (_isSurfaceSourceColorAttributeEnabled || _isFluidParticleSourceColorAttributeEnabled) {
         if (_markerParticleColorLoadQueue.size() == _markerParticleLoadQueue.size()) {
             isColorDataAvailable = true;
@@ -4707,7 +4707,7 @@ void FluidSimulation::_upscaleParticleData() {
     }
 
     bool isUVWDataAvailable = false;
-    std::vector<vmath::vec3> *uvws;
+    std::vector<vmath::vec3> *uvws = nullptr;
     if (_isSurfaceSourceUVWAttributeEnabled || _isFluidParticleSourceUVWAttributeEnabled) {
         if (_markerParticleUVWLoadQueue.size() == _markerParticleLoadQueue.size()) {
             isUVWDataAvailable = true;
@@ -4813,17 +4813,17 @@ void FluidSimulation::_upscaleParticleData() {
         markerParticles.getAttributeValues("POSITION", positions);
         markerParticles.getAttributeValues("AGE", ages);
 
-        AttributeTransferParameters<float> params;
-        params.positions = positions;
-        params.attributes = ages;
-        params.attributeGrid = &ageAttributeGrid;
-        params.gridOffset = vmath::vec3(0.5 * dx, 0.5 * dx, 0.5 * dx);
-        params.validGrid = &ageAttributeValidGrid;
-        params.particleRadius = _ageAttributeRadius * dx;
-        params.dx = dx;
+        AttributeTransferParameters<float> ageparams;
+        ageparams.positions = positions;
+        ageparams.attributes = ages;
+        ageparams.attributeGrid = &ageAttributeGrid;
+        ageparams.gridOffset = vmath::vec3(0.5 * dx, 0.5 * dx, 0.5 * dx);
+        ageparams.validGrid = &ageAttributeValidGrid;
+        ageparams.particleRadius = _ageAttributeRadius * dx;
+        ageparams.dx = dx;
 
         AttributeToGridTransfer<float> attributeTransfer;
-        attributeTransfer.transfer(params);
+        attributeTransfer.transfer(ageparams);
 
         GridUtils::extrapolateGrid(&ageAttributeGrid, &ageAttributeValidGrid, _CFLConditionNumber);
     }
@@ -4838,17 +4838,17 @@ void FluidSimulation::_upscaleParticleData() {
         markerParticles.getAttributeValues("POSITION", positions);
         markerParticles.getAttributeValues("LIFETIME", lifetimes);
 
-        AttributeTransferParameters<float> params;
-        params.positions = positions;
-        params.attributes = lifetimes;
-        params.attributeGrid = &lifetimeAttributeGrid;
-        params.validGrid = &lifetimeAttributeValidGrid;
-        params.gridOffset = vmath::vec3(0.5 * dx, 0.5 * dx, 0.5 * dx);
-        params.particleRadius = _lifetimeAttributeRadius * dx;
-        params.dx = dx;
+        AttributeTransferParameters<float> lifeparams;
+        lifeparams.positions = positions;
+        lifeparams.attributes = lifetimes;
+        lifeparams.attributeGrid = &lifetimeAttributeGrid;
+        lifeparams.validGrid = &lifetimeAttributeValidGrid;
+        lifeparams.gridOffset = vmath::vec3(0.5 * dx, 0.5 * dx, 0.5 * dx);
+        lifeparams.particleRadius = _lifetimeAttributeRadius * dx;
+        lifeparams.dx = dx;
 
         AttributeToGridTransfer<float> attributeTransfer;
-        attributeTransfer.transfer(params);
+        attributeTransfer.transfer(lifeparams);
 
         GridUtils::extrapolateGrid(&lifetimeAttributeGrid, &lifetimeAttributeValidGrid, _CFLConditionNumber);
     }
@@ -4863,17 +4863,17 @@ void FluidSimulation::_upscaleParticleData() {
         markerParticles.getAttributeValues("POSITION", positions);
         markerParticles.getAttributeValues("VISCOSITY", viscosities);
 
-        AttributeTransferParameters<float> params;
-        params.positions = positions;
-        params.attributes = viscosities;
-        params.attributeGrid = &viscosityAttributeGrid;
-        params.validGrid = &viscosityAttributeValidGrid;
-        params.gridOffset = vmath::vec3(0.5 * dx, 0.5 * dx, 0.5 * dx);
-        params.particleRadius = _viscosityAttributeRadius * dx;
-        params.dx = dx;
+        AttributeTransferParameters<float> viscparams;
+        viscparams.positions = positions;
+        viscparams.attributes = viscosities;
+        viscparams.attributeGrid = &viscosityAttributeGrid;
+        viscparams.validGrid = &viscosityAttributeValidGrid;
+        viscparams.gridOffset = vmath::vec3(0.5 * dx, 0.5 * dx, 0.5 * dx);
+        viscparams.particleRadius = _viscosityAttributeRadius * dx;
+        viscparams.dx = dx;
 
         AttributeToGridTransfer<float> attributeTransfer;
-        attributeTransfer.transfer(params);
+        attributeTransfer.transfer(viscparams);
 
         GridUtils::extrapolateGrid(&viscosityAttributeGrid, &viscosityAttributeValidGrid, _CFLConditionNumber);
     }
@@ -4893,17 +4893,17 @@ void FluidSimulation::_upscaleParticleData() {
             defaultSourceID = sourceids->at(0);
         }
 
-        AttributeTransferParameters<float> params;
-        params.positions = positions;
-        params.attributes = densities;
-        params.attributeGrid = &densityAttributeGrid;
-        params.validGrid = &densityAttributeValidGrid;
-        params.gridOffset = vmath::vec3(0.5 * dx, 0.5 * dx, 0.5 * dx);
-        params.particleRadius = _densityAttributeRadius * dx;
-        params.dx = dx;
+        AttributeTransferParameters<float> densparams;
+        densparams.positions = positions;
+        densparams.attributes = densities;
+        densparams.attributeGrid = &densityAttributeGrid;
+        densparams.validGrid = &densityAttributeValidGrid;
+        densparams.gridOffset = vmath::vec3(0.5 * dx, 0.5 * dx, 0.5 * dx);
+        densparams.particleRadius = _densityAttributeRadius * dx;
+        densparams.dx = dx;
 
         AttributeToGridTransfer<float> attributeTransfer;
-        attributeTransfer.transfer(params);
+        attributeTransfer.transfer(densparams);
 
         GridUtils::extrapolateGrid(&densityAttributeGrid, &densityAttributeValidGrid, _CFLConditionNumber);
     }
@@ -4937,17 +4937,17 @@ void FluidSimulation::_upscaleParticleData() {
         markerParticles.getAttributeValues("POSITION", positions);
         markerParticles.getAttributeValues("COLOR", colors);
 
-        AttributeTransferParameters<vmath::vec3> params;
-        params.positions = positions;
-        params.attributes = colors;
-        params.attributeGrid = &colorAttributeGrid;
-        params.validGrid = &colorAttributeValidGrid;
-        params.gridOffset = vmath::vec3(0.5 * dx, 0.5 * dx, 0.5 * dx);
-        params.particleRadius = _colorAttributeRadius * dx;
-        params.dx = dx;
+        AttributeTransferParameters<vmath::vec3> colparams;
+        colparams.positions = positions;
+        colparams.attributes = colors;
+        colparams.attributeGrid = &colorAttributeGrid;
+        colparams.validGrid = &colorAttributeValidGrid;
+        colparams.gridOffset = vmath::vec3(0.5 * dx, 0.5 * dx, 0.5 * dx);
+        colparams.particleRadius = _colorAttributeRadius * dx;
+        colparams.dx = dx;
 
         AttributeToGridTransfer<vmath::vec3> attributeTransfer;
-        attributeTransfer.transfer(params);
+        attributeTransfer.transfer(colparams);
 
         for (int k = 0; k < colorAttributeGrid.depth; k++) {
             for (int j = 0; j < colorAttributeGrid.height; j++) {
@@ -4983,17 +4983,17 @@ void FluidSimulation::_upscaleParticleData() {
         markerParticles.getAttributeValues("POSITION", positions);
         markerParticles.getAttributeValues("UVW", uvws);
 
-        AttributeTransferParameters<vmath::vec3> params;
-        params.positions = positions;
-        params.attributes = uvws;
-        params.attributeGrid = &uvwAttributeGrid;
-        params.validGrid = &uvwAttributeValidGrid;
-        params.gridOffset = vmath::vec3(0.5 * dx, 0.5 * dx, 0.5 * dx);
-        params.particleRadius = _uvwAttributeRadius * dx;
-        params.dx = dx;
+        AttributeTransferParameters<vmath::vec3> uvwparams;
+        uvwparams.positions = positions;
+        uvwparams.attributes = uvws;
+        uvwparams.attributeGrid = &uvwAttributeGrid;
+        uvwparams.validGrid = &uvwAttributeValidGrid;
+        uvwparams.gridOffset = vmath::vec3(0.5 * dx, 0.5 * dx, 0.5 * dx);
+        uvwparams.particleRadius = _uvwAttributeRadius * dx;
+        uvwparams.dx = dx;
 
         AttributeToGridTransfer<vmath::vec3> attributeTransfer;
-        attributeTransfer.transfer(params);
+        attributeTransfer.transfer(uvwparams);
 
         for (int k = 0; k < uvwAttributeGrid.depth; k++) {
             for (int j = 0; j < uvwAttributeGrid.height; j++) {
@@ -5767,7 +5767,7 @@ void FluidSimulation::_updateNearSolidGrid() {
     size_t gridsize = _isize * _jsize * _ksize;
     int numthreads = (int)fmin(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&FluidSimulation::_initializeNearSolidGridThread, this,
                                  intervals[i], intervals[i + 1]);
@@ -5784,6 +5784,9 @@ void FluidSimulation::_updateNearSolidGrid() {
 }
 
 void FluidSimulation::_resolveSolidLevelSetUpdateCollisionsThread(int startidx, int endidx) {
+    (void)startidx;
+    (void)endidx;
+
     /*
     AABB boundary = _getBoundaryAABB();
     float maxResolvedDistance = _CFLConditionNumber * _dx;
@@ -5840,7 +5843,7 @@ void FluidSimulation::_resolveSolidLevelSetUpdateCollisions() {
     int numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, _markerParticles.size());
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, _markerParticles.size(), numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)_markerParticles.size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&FluidSimulation::_resolveSolidLevelSetUpdateCollisionsThread, this,
                                  intervals[i], intervals[i + 1]);
@@ -6140,7 +6143,7 @@ void FluidSimulation::_updateForceFieldGrid(double dt) {
 
 void FluidSimulation::_applyConstantBodyForces(ValidVelocityComponentGrid &ex, double dt) {
     vmath::vec3 bodyForce = _getConstantBodyForce();
-    float eps = 1e-6;
+    float eps = 1e-6f;
 
     if (fabs(bodyForce.x) > eps) {
         for (int k = 0; k < _ksize; k++) {
@@ -6203,7 +6206,7 @@ void FluidSimulation::_applyForceFieldGridForcesMT(ValidVelocityComponentGrid &e
     size_t numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&FluidSimulation::_applyForceFieldGridForcesThread, this,
                                  intervals[i], intervals[i + 1], &ex, dt, dir);
@@ -6400,7 +6403,7 @@ void FluidSimulation::_updateWeightGridMT(int dir) {
     size_t numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&FluidSimulation::_updateWeightGridThread, this,
                                  intervals[i], intervals[i + 1], dir);
@@ -6772,7 +6775,7 @@ void FluidSimulation::_constrainVelocityFieldMT(MACVelocityField &MACGrid, int d
     size_t numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, gridsize);
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, gridsize, numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)gridsize, numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&FluidSimulation::_constrainVelocityFieldThread, this,
                                  intervals[i], intervals[i + 1], &MACGrid, dir);
@@ -6957,7 +6960,7 @@ void FluidSimulation::_updateSheetSeeding() {
         _markerParticles.getAttributeValues("POSITION", positions);
         _markerParticles.getAttributeValues("VELOCITY", velocities);
 
-        std::vector<float> *ages;
+        std::vector<float> *ages = nullptr;
         Array3d<float> tempAgeAttributeGrid;
         Array3d<bool> tempAgeAttributeValidGrid;
         if (_isSurfaceAgeAttributeEnabled || _isFluidParticleAgeAttributeEnabled) {
@@ -6967,7 +6970,7 @@ void FluidSimulation::_updateSheetSeeding() {
             _updateMarkerParticleAgeAttributeGrid(tempAgeAttributeGrid, tempAgeAttributeValidGrid);
         }
 
-        std::vector<float> *lifetimes;
+        std::vector<float> *lifetimes = nullptr;
         Array3d<float> tempLifetimeAttributeGrid;
         Array3d<bool> tempLifetimeAttributeValidGrid;
         if (_isSurfaceLifetimeAttributeEnabled || _isFluidParticleLifetimeAttributeEnabled) {
@@ -6977,7 +6980,7 @@ void FluidSimulation::_updateSheetSeeding() {
             _updateMarkerParticleLifetimeAttributeGrid(tempLifetimeAttributeGrid, tempLifetimeAttributeValidGrid);
         }
 
-        std::vector<float> *viscosities;
+        std::vector<float> *viscosities = nullptr;
         Array3d<float> tempViscosityAttributeGrid;
         Array3d<bool> tempViscosityAttributeValidGrid;
         if (_isSurfaceSourceViscosityAttributeEnabled) {
@@ -6987,7 +6990,7 @@ void FluidSimulation::_updateSheetSeeding() {
             _updateMarkerParticleViscosityAttributeGrid(tempViscosityAttributeGrid, tempViscosityAttributeValidGrid);
         }
 
-        std::vector<float> *densities;
+        std::vector<float> *densities = nullptr;
         Array3d<float> tempDensityAttributeGrid;
         Array3d<bool> tempDensityAttributeValidGrid;
         if (_isSurfaceDensityAttributeEnabled || _isFluidParticleDensityAttributeEnabled) {
@@ -6998,7 +7001,7 @@ void FluidSimulation::_updateSheetSeeding() {
         }
 
         int defaultSourceID = 0;
-        std::vector<int> *sourceids;
+        std::vector<int> *sourceids = nullptr;
         Array3d<int> tempSourceIDAttributeGrid;
         Array3d<bool> tempSourceIDAttributeValidGrid;
         if (_isSurfaceSourceIDAttributeEnabled || _isFluidParticleSourceIDAttributeEnabled) {
@@ -7012,17 +7015,17 @@ void FluidSimulation::_updateSheetSeeding() {
             }
         }
 
-        std::vector<uint16_t> *ids;
+        std::vector<uint16_t> *ids = nullptr;
         if (_isFluidParticleIDAttributeEnabled) {
             _markerParticles.getAttributeValues("ID", ids);
         }
 
-        std::vector<int> *uids;
+        std::vector<int> *uids = nullptr;
         if (_isFluidParticleUIDAttributeEnabled) {
             _markerParticles.getAttributeValues("UID", uids);
         }
 
-        std::vector<vmath::vec3> *colors;
+        std::vector<vmath::vec3> *colors = nullptr;
         Array3d<float> tempColorAttributeGridR;
         Array3d<float> tempColorAttributeGridG;
         Array3d<float> tempColorAttributeGridB;
@@ -7039,7 +7042,7 @@ void FluidSimulation::_updateSheetSeeding() {
                                                     tempColorAttributeValidGrid);
         }
 
-        std::vector<vmath::vec3> *uvws;
+        std::vector<vmath::vec3> *uvws = nullptr;
         Array3d<float> tempUVWAttributeGridU;
         Array3d<float> tempUVWAttributeGridV;
         Array3d<float> tempUVWAttributeGridW;
@@ -7129,10 +7132,10 @@ void FluidSimulation::_updateSheetSeeding() {
             }
 
             if (_isSurfaceSourceUVWAttributeEnabled || _isFluidParticleSourceUVWAttributeEnabled) {
-                float u = Interpolation::trilinearInterpolate(p, _dx, tempUVWAttributeGridU);
-                float v = Interpolation::trilinearInterpolate(p, _dx, tempUVWAttributeGridV);
-                float w = Interpolation::trilinearInterpolate(p, _dx, tempUVWAttributeGridW);
-                vmath::vec3 uvw(u, v, w);
+                float uu = Interpolation::trilinearInterpolate(p, _dx, tempUVWAttributeGridU);
+                float vv = Interpolation::trilinearInterpolate(p, _dx, tempUVWAttributeGridV);
+                float ww = Interpolation::trilinearInterpolate(p, _dx, tempUVWAttributeGridW);
+                vmath::vec3 uvw(uu, vv, ww);
                 uvws->push_back(uvw);
             }
         }
@@ -7291,7 +7294,7 @@ void FluidSimulation::_updateMarkerParticleVelocitiesThread() {
     int numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, _markerParticles.size());
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, _markerParticles.size(), numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)_markerParticles.size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
         if (_velocityTransferMethod == VelocityTransferMethod::FLIP) {
             threads[i] = std::thread(&FluidSimulation::_updatePICFLIPMarkerParticleVelocitiesThread, this,
@@ -7596,12 +7599,12 @@ void FluidSimulation::_updateMarkerParticleSourceIDAttributeGrid(ParticleSystem 
 
     std::vector<int> indices(positions->size());
     for (size_t i = 0; i < indices.size(); i++) {
-        indices[i] = i;
+        indices[i] = (int)i;
     }
 
     std::random_device rd;
-    std::mt19937 g(rd());
-    std::shuffle(indices.begin(), indices.end(), g);
+    std::mt19937 gen(rd());
+    std::shuffle(indices.begin(), indices.end(), gen);
     
     std::vector<vmath::vec3> positionsRandom(indices.size());
     std::vector<int> sourceidsRandom(indices.size());
@@ -7677,7 +7680,7 @@ void FluidSimulation::_updateMarkerParticleColorAttributeMixing(double dt) {
         return;
     }
 
-    float eps = 1e-6;
+    float eps = 1e-6f;
     if (_colorAttributeMixingRate < eps || _colorAttributeMixingRadius < eps) {
         return;
     }
@@ -7696,7 +7699,7 @@ void FluidSimulation::_updateMarkerParticleColorAttributeMixing(double dt) {
     int numCPU = ThreadUtils::getMaxThreadCount();
     int numthreads = (int)fmin(numCPU, positions->size());
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, positions->size(), numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)positions->size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&FluidSimulation::_updateMarkerParticleColorAttributeMixingThread, this,
                                  intervals[i], intervals[i + 1], dt, &pointGrid,
@@ -8062,6 +8065,8 @@ void FluidSimulation::_updateMarkerParticleColorAttribute(double dt) {
 }
 
 void FluidSimulation::_updateMarkerParticleUVWAttribute(double dt) {
+    (void)dt;
+
     if (!_isSurfaceSourceUVWAttributeEnabled && !_isFluidParticleSourceUVWAttributeEnabled) {
         return;
     }
@@ -8227,7 +8232,7 @@ vmath::vec3 FluidSimulation::_resolveCollision(vmath::vec3 oldp, vmath::vec3 new
         return newp;
     }
 
-    float eps = 1e-6;
+    float eps = 1e-6f;
     float stepDistance = _markerParticleStepDistanceFactor * (float)_dx;
     float travelDistance = (newp - oldp).length();
     if (travelDistance < eps) {
@@ -8438,7 +8443,7 @@ void FluidSimulation::_advanceMarkerParticles(double dt) {
         int numthreads = (int)fmin(numCPU, positionsCopy.size());
         std::vector<std::thread> threads(numthreads);
         std::vector<vmath::vec3> output(positionsCopy.size());
-        std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, positionsCopy.size(), numthreads);
+        std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)positionsCopy.size(), numthreads);
         for (int i = 0; i < numthreads; i++) {
             threads[i] = std::thread(&FluidSimulation::_advanceMarkerParticlesThread, this,
                                      dt, intervals[i], intervals[i + 1], &positionsCopy, &output);
@@ -8484,7 +8489,7 @@ void FluidSimulation::_addNewFluidCells(std::vector<GridIndex> &cells,
     int numthreads = (int)fmin(numCPU, cells.size());
     std::vector<std::thread> threads(numthreads);
     std::vector<std::vector<vmath::vec3> > particleVectors(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, cells.size(), numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)cells.size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&FluidSimulation::_addNewFluidCellsThread, this,
                                  intervals[i], intervals[i + 1], 
@@ -8524,7 +8529,7 @@ void FluidSimulation::_addNewFluidCells(std::vector<GridIndex> &cells,
     int numthreads = (int)fmin(numCPU, cells.size());
     std::vector<std::thread> threads(numthreads);
     std::vector<std::vector<vmath::vec3> > particleVectors(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, cells.size(), numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)cells.size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&FluidSimulation::_addNewFluidCellsThread, this,
                                  intervals[i], intervals[i + 1], 
@@ -9328,12 +9333,12 @@ void FluidSimulation::_removeMeshNearDomain(TriangleMesh &mesh) {
                                 mesh.vertices[t.tri[2]]) / 3.0;
         GridIndex g = Grid3d::positionToGridIndex(centroid, _dx);
         if (!validCells.isIndexInRange(g) || !validCells(g)) {
-            removalTriangles.push_back(tidx);
+            removalTriangles.push_back((int)tidx);
         } else {
             if (_isMeshingVolumeSet) {
                 float d = _meshingVolumeSDF.trilinearInterpolate(centroid);
                 if (d < _dx) {
-                    removalTriangles.push_back(tidx);
+                    removalTriangles.push_back((int)tidx);
                 }
             }
         }
@@ -9441,7 +9446,7 @@ void FluidSimulation::_generateOutputSurface(TriangleMesh &surface, TriangleMesh
     }
 
     if (_isObstacleMeshingOffsetEnabled) {
-        float eps = 1e-9;
+        float eps = 1e-9f;
         float offset = (float)(_obstacleMeshingOffset * _dx);
         if (std::abs(offset) > eps) {
             // Values near boundary are unchanged so that the mesh is generated
@@ -10235,11 +10240,11 @@ void FluidSimulation::_classifyFluidParticleTypes(ParticleSystem &fluidParticles
     }
 
     int particlesPerThread = 100000;
-    int workerThreads = (_markerParticles.size() / particlesPerThread) + 1;
+    int workerThreads = ((int)_markerParticles.size() / particlesPerThread) + 1;
     int numCPU = std::min(ThreadUtils::getMaxThreadCount(), workerThreads);
     int numthreads = (int)fmin(numCPU, _markerParticles.size());
     std::vector<std::thread> threads(numthreads);
-    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, _markerParticles.size(), numthreads);
+    std::vector<int> intervals = ThreadUtils::splitRangeIntoIntervals(0, (int)_markerParticles.size(), numthreads);
     for (int i = 0; i < numthreads; i++) {
         threads[i] = std::thread(&FluidSimulation::_classifyFluidParticleTypesThread, this,
                                  intervals[i], intervals[i + 1],
@@ -10296,7 +10301,7 @@ void FluidSimulation::_classifyFluidParticleTypesThread(int startidx, int endidx
 
 void FluidSimulation::_generateFluidParticleDataFFP3(ParticleSystem &fluidParticles, FluidParticleDataFFP3 &dataFFP3) {
     std::vector<MarkerParticleType> fluidParticleTypes;
-    _classifyFluidParticleTypes(_markerParticles, fluidParticleTypes);
+    _classifyFluidParticleTypes(fluidParticles, fluidParticleTypes);
 
     bool isSurfaceEnabled = _isFluidParticleSurfaceOutputEnabled;
     bool isBoundaryEnabled = _isFluidParticleBoundaryOutputEnabled;
@@ -10396,13 +10401,13 @@ void FluidSimulation::_generateFluidParticleDataFFP3(ParticleSystem &fluidPartic
         }
 
         if (isSurfaceEnabled && ptype == MarkerParticleType::surface) {
-            dataFFP3.sortedFluidParticleIndexTable[i] = indexOffsetSurface + idBinStartIndexSurface[pid];
+            dataFFP3.sortedFluidParticleIndexTable[i] = (int)indexOffsetSurface + idBinStartIndexSurface[pid];
             idBinStartIndexSurface[pid]++;
         } else if (isBoundaryEnabled && ptype == MarkerParticleType::boundary) {
-            dataFFP3.sortedFluidParticleIndexTable[i] = indexOffsetBoundary + idBinStartIndexBoundary[pid];
+            dataFFP3.sortedFluidParticleIndexTable[i] = (int)indexOffsetBoundary + idBinStartIndexBoundary[pid];
             idBinStartIndexBoundary[pid]++;
         } else if (isInteriorEnabled && ptype == MarkerParticleType::interior) {
-            dataFFP3.sortedFluidParticleIndexTable[i] = indexOffsetInterior + idBinStartIndexInterior[pid];
+            dataFFP3.sortedFluidParticleIndexTable[i] = (int)indexOffsetInterior + idBinStartIndexInterior[pid];
             idBinStartIndexInterior[pid]++;
         }
     }
@@ -10654,9 +10659,9 @@ void FluidSimulation::_outputFluidParticles() {
         Fluid Particle Source ID
     */
     if (_isFluidParticleSourceIDAttributeEnabled) {
-        std::vector<int> *ids;
-        _markerParticles.getAttributeValues("SOURCEID", ids);
-        _generateFluidParticleFFP3FileData(ids, dataFFP3, _outputData.fluidParticleSourceIDAttributeData);
+        std::vector<int> *sids = nullptr;
+        _markerParticles.getAttributeValues("SOURCEID", sids);
+        _generateFluidParticleFFP3FileData(sids, dataFFP3, _outputData.fluidParticleSourceIDAttributeData);
 
         _outputData.frameData.fluidparticlessourceid.enabled = 1;
         _outputData.frameData.fluidparticlessourceid.vertices = dataFFP3.numFluidParticles;
@@ -10669,7 +10674,7 @@ float FluidSimulation::_calculateParticleSpeedPercentileThreshold(float pct) {
     std::vector<vmath::vec3> *velocities;
     _markerParticles.getAttributeValues("VELOCITY", velocities);
 
-    float eps = 1e-3;
+    float eps = 1e-3f;
     float maxs = fmax(_getMaximumMarkerParticleSpeed(), eps);
     float invmax = 1.0f / maxs;
     int nbins = 10000;
@@ -10680,7 +10685,7 @@ float FluidSimulation::_calculateParticleSpeedPercentileThreshold(float pct) {
         binCounts[binidx]++;
     }
 
-    float pthresh = 0.995;
+    float pthresh = pct;
     int threshCount = floor(pthresh * _markerParticles.size());
     int currentCount = 0;
     float slimit = maxs;
@@ -10702,7 +10707,7 @@ void FluidSimulation::_outputFluidParticleDebug() {
     _markerParticles.getAttributeValues("POSITION", positions);
     _markerParticles.getAttributeValues("VELOCITY", velocities);
 
-    float maxSpeed = _calculateParticleSpeedPercentileThreshold(0.995);
+    float maxSpeed = _calculateParticleSpeedPercentileThreshold(0.995f);
     float invmax = 1.0f / maxSpeed;
     int nbins = 1024;
     std::vector<int> binCounts(nbins, 0);
@@ -10842,7 +10847,7 @@ void FluidSimulation::_stepFluid(double dt) {
         _launchAdvectVelocityFieldThread();
         _joinAdvectVelocityFieldThread();
 
-        if (_isSurfaceTensionEnabled or _isSheetSeedingEnabled or _isDiffuseMaterialOutputEnabled) {
+        if (_isSurfaceTensionEnabled || _isSheetSeedingEnabled || _isDiffuseMaterialOutputEnabled) {
             _launchCalculateFluidCurvatureGridThread();
         }
 
@@ -11096,7 +11101,7 @@ void FluidSimulation::_logFrameInfo() {
             pctstr.insert(0, " ");
         }
 
-        float eps = 1e-5;
+        float eps = 1e-5f;
         int n = 60;
         int progress = 0;
         if (tdata.frameTime > eps) {

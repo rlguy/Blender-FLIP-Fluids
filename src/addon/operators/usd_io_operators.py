@@ -314,6 +314,7 @@ class FLIPFluidsUSDExporter(bpy.types.Operator, bpy_extras.io_utils.ExportHelper
             column.prop(hprops, "usd_export_whitewater_proximity")
             column.prop(hprops, "usd_export_viscosity")
             column.prop(hprops, "usd_export_density")
+            column.prop(hprops, "usd_export_uvw")
             column.prop(hprops, "usd_export_id")
             column.prop(hprops, "usd_export_uid")
             column.prop(hprops, "usd_export_source_id")
